@@ -5,6 +5,19 @@ import { ToastContainer, toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'next/navigation';
 import {AuthModal} from '@/components/AuthModal';
+
+// Dynamically load Razorpay script
+const loadRazorpay = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
+
 export default function CheckoutPage() {
   const router = useRouter();
   
@@ -111,6 +124,96 @@ export default function CheckoutPage() {
     setPaymentMethod(e.target.value);
   };
 
+    // Initialize Razorpay
+    const initializeRazorpay = async () => {
+      return await loadRazorpay();
+    };
+  
+    // Create Razorpay Order
+    const createRazorpayOrder = async (amount) => {
+      try {
+        const res = await fetch('/api/create-razorpay-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: amount * 100 }) // Convert to paise
+        });
+        return await res.json();
+      } catch (error) {
+        throw new Error('Failed to create Razorpay order');
+      }
+    };
+  
+    // Handle Online Payment
+    const handleOnlinePayment = async (totalAmount) => {
+      try {
+        const razorpayLoaded = await initializeRazorpay();
+        if (!razorpayLoaded) {
+          toast.error('Razorpay SDK failed to load');
+          return;
+        }
+    
+        const orderResponse = await createRazorpayOrder(totalAmount);
+        const { order } = orderResponse;
+    
+        return new Promise((resolve, reject) => {
+          const options = {
+            key: process.env.NEXT_PUBLIC_RAZORPAY_TEST_KEY,
+            amount: order.amount,
+            currency: "INR",
+            name: "BEA",
+            description: "Product Purchase",
+            order_id: order.id,
+            handler: async function (response) {
+              try {
+                const verificationRes = await fetch('/api/verify-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                  })
+                });
+    
+                if (verificationRes.ok) {
+                  resolve({
+                    paymentId: response.razorpay_payment_id,
+                    status: "paid",
+                    mode: "online"
+                  });
+                } else {
+                  reject(new Error('Payment verification failed'));
+                }
+              } catch (err) {
+                reject(err);
+              }
+            },
+            prefill: {
+              name: `${formData.firstName} ${formData.lastName}`,
+              email: formData.email,
+              contact: formData.phonenumber
+            },
+            theme: {
+              color: "#F37254"
+            }
+          };
+    
+          const razorpay = new window.Razorpay(options);
+          razorpay.open();
+    
+          razorpay.on('payment.failed', function (response) {
+            reject(new Error(response.error.description));
+          });
+        });
+    
+      } catch (error) {
+        console.error('Razorpay error:', error);
+        toast.error('Payment processing failed');
+        throw error;
+      }
+    };
+    
+
   const handleSubmit = async (e) => {
     e.preventDefault();
   
@@ -169,12 +272,28 @@ export default function CheckoutPage() {
         paymentMode = "cash";
       } else if (paymentMethod === 'online') {
         console.log("Online Payment");
-        return;
+        // const paymentResult = await handleOnlinePayment(totalAmount);
+        // if (!paymentResult.ok) {
+        //   throw new Error('Online payment processing failed');
+        // }
+        // paymentId = paymentResult.paymentId;
+        // paymentStatus = paymentResult.status;
+        // paymentMode = paymentResult.mode;
+
+        try {
+          const result = await handleOnlinePayment(totalAmount);
+          paymentId = result.paymentId;
+          paymentStatus = result.status;
+          paymentMode = result.mode;
+        } catch (error) {
+          toast.error(`Payment failed: ${error.message}`);
+          return;
+        }
       } else {
         console.log("Invalid Payment Method");
         return;
       }
-  
+  alert("dgdg");
       // Only save new address if not using saved address
       if (!useSavedAddress || selectedAddress === null) {
         const formDataToSend = new FormData();
@@ -295,7 +414,7 @@ export default function CheckoutPage() {
       }
 
       toast.success("Order placed successfully!");
-      router.push('/allorders');
+      router.push('/order');
       
     } catch (error) {
       console.error("Error submitting order:", error);
@@ -442,7 +561,7 @@ export default function CheckoutPage() {
             <div className="mt-6">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">Payment Method</h3>
               <div className="space-y-2">
-                {["bank", "check", "cash"].map((method) => (
+                {["bank", "online", "cash"].map((method) => (
                   <label key={`payment-method-${method}`} className="flex items-center space-x-2">
                     <input 
                       type="radio" 
@@ -452,7 +571,7 @@ export default function CheckoutPage() {
                       onChange={handlePaymentChange} 
                       className="w-4 h-4 text-orange-500"
                     />
-                    <span>{method === "bank" ? "Direct Bank Transfer" : method === "check" ? "Check Payment" : "Cash on Delivery"}</span>
+                    <span>{method === "bank" ? "Direct Bank Transfer" : method === "online" ? "Check Payment" : "Cash on Delivery"}</span>
                   </label>
                 ))}
               </div>
