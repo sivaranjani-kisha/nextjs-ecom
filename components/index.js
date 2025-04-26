@@ -307,15 +307,11 @@ export default function HomeComponent() {
   const categoryRef = useRef(null);
   
   const scrollLeft = () => {
-    if (categoryRef.current) {
-      categoryRef.current.scrollLeft -= 150;
-    }
+    scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
   };
-
+  
   const scrollRight = () => {
-    if (categoryRef.current) {
-      categoryRef.current.scrollLeft += 150;
-    }
+    scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" });
   };
 
   const getSubcategorySlugs = (parentId) => {
@@ -665,7 +661,7 @@ export default function HomeComponent() {
   animate={isInView.flashSales ? "visible" : "hiddenDown"}
   variants={sectionVariants}
   id="flash-sales-section" 
-  className="mb-16" // Consistent bottom margin
+  className="mb-12"
 >
   {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
     <div className="container mx-auto px-4">
@@ -682,7 +678,6 @@ export default function HomeComponent() {
         </div>
       ) : (
         flashSalesData.length === 1 && flashSalesData[0].bgImage && flashSalesData[0].productImage ? (
-          // If only one item and both images exist, display without slider
           <motion.div variants={itemVariants} className="px-2">
             <motion.div
               whileHover={{ y: -5 }}
@@ -693,8 +688,8 @@ export default function HomeComponent() {
                 backgroundPosition: "center" 
               }}
             >
-              <div className="relative z-10 w-full flex">
-                <div className="w-1/2 flex justify-center items-center">
+              <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-center">
+                <div className="w-full md:w-1/2 flex justify-center items-center">
                   <Image
                     src={flashSalesData[0].productImage}
                     alt={flashSalesData[0].title}
@@ -704,7 +699,7 @@ export default function HomeComponent() {
                   />
                 </div>
 
-                <div className="w-1/2 flex flex-col justify-center items-start pl-4">
+                <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center mt-4 md:mt-0 md:pl-4">
                   <h6 className="text-xl font-semibold mb-2 text-gray-900">{flashSalesData[0].title}</h6>
                   <motion.a
                     whileHover={{ scale: 1.05 }}
@@ -719,7 +714,6 @@ export default function HomeComponent() {
             </motion.div>
           </motion.div>
         ) : (
-          // If multiple items, show the slider
           <motion.div variants={itemVariants}>
             <Slider {...flashSalesSettings} className="flash-sales-slider">
               {flashSalesData.filter(item => item.bgImage && item.productImage).map((item) => (
@@ -733,8 +727,8 @@ export default function HomeComponent() {
                       backgroundPosition: "center" 
                     }}
                   >
-                    <div className="relative z-10 w-full flex">
-                      <div className="w-1/2 flex justify-center items-center">
+                    <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-center">
+                      <div className="w-full md:w-1/2 flex justify-center items-center">
                         <Image
                           src={item.productImage}
                           alt={item.title}
@@ -744,7 +738,7 @@ export default function HomeComponent() {
                         />
                       </div>
 
-                      <div className="w-1/2 flex flex-col justify-center items-start pl-4">
+                      <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center mt-4 md:mt-0 md:pl-4">
                         <h6 className="text-xl font-semibold mb-2 text-gray-900">{item.title}</h6>
                         <motion.a
                           whileHover={{ scale: 1.05 }}
@@ -768,16 +762,15 @@ export default function HomeComponent() {
 </motion.section>
 
 
-
         {/* Brands Section */}
         <motion.section 
           ref={refs.delivery}
           initial={scrollDirection === 'down' ? "hiddenDown" : "hiddenUp"}
           animate={isInView.delivery ? "visible" : scrollDirection === 'down' ? "hiddenDown" : "hiddenUp"}
           variants={sectionVariants}
-          className="mb-16 bg-gray-100 rounded-[23px] py-8" // Consistent bottom margin and padding
+          className="mb-12 bg-gray-100 rounded-[23px] py-8" // Consistent bottom margin and padding
         >
-          <div className="mx-auto p-6">
+          <div className="mx-auto p-1">
           <motion.div variants={containerVariants} className="rounded-lg">
             <motion.div variants={itemVariants} className="flex justify-between items-center mb-4">
               <h5 className="text-lg font-semibold">Shop by Brands</h5>
@@ -823,7 +816,7 @@ export default function HomeComponent() {
         {/* Recommended Products Section */}
       
 
-        <section className="mb-16"> {/* Consistent bottom margin */}
+        <section className="mb-12"> {/* Consistent bottom margin */}
           <div className="container mx-auto px-4">
             <h2 className="text-2xl font-bold mb-8">Recommended for you</h2>
 
@@ -952,8 +945,8 @@ export default function HomeComponent() {
         </section>
 
              {/* Hot Deals Section - Showing only parent categories */}
-                <motion.section className="hot-deals pt-15  mb-10 bg-gray-100">
-              <div className="container mx-auto px-4">
+            <motion.section className="hot-deals pt-15 mb-10 bg-gray-100">
+              <div className="container mx-auto px-4 p-4">
                 {/* Section Header */}
                 <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
                   <h5 className="text-2xl font-bold">Hot Deals Today</h5>
@@ -980,16 +973,15 @@ export default function HomeComponent() {
                     </div>
                   </div>
                 </div>
-        
-                {/* Main Section */}
+
                 <div className="flex flex-row gap-6">
                   {/* Left Tab */}
                   <div className="w-1/4 min-w-[250px] bg-green-600 text-white p-6 rounded-lg flex flex-col justify-center items-center">
-                    <h3 className="text-3xl font-bold mb-7 text-center">Large Appliances</h3>
+                    <h3 className="text-3xl font-bold mb-7 text-center">Air Conditioner</h3>
                     <div className="w-full h-40 flex items-center justify-center my-4">
                       <Image
                         src="/user/large app.jpg"
-                        alt="Large Appliances"
+                        alt="Air Conditioner"
                         width={100}
                         height={100}
                         className="object-contain"
@@ -1002,9 +994,9 @@ export default function HomeComponent() {
                       Shop Now →
                     </Link>
                   </div>
-        
+
                   {/* Scrollable Products */}
-                  <div className="max-w-[1000px] mx-auto">
+                  <div className="flex-1 overflow-hidden">
                     <div
                       ref={scrollContainerRef}
                       className="flex gap-6 overflow-x-auto scroll-smooth pb-4 hide-scrollbar"
@@ -1012,27 +1004,31 @@ export default function HomeComponent() {
                       {products
                         .filter((product) => {
                           const productCategory = categories.find(
-                            (cat) => cat._id === product.category
+                            (cat) => cat._id === product.sub_category
                           );
                           return (
                             productCategory &&
-                            (productCategory.category_name
-                              .toLowerCase()
-                              .includes("large appliance") ||
-                              (productCategory.parentid !== "none" &&
+                            (
+                              productCategory.category_name
+                                .toLowerCase()
+                                .includes("air conditioner") ||
+                              (
+                                productCategory.parentid !== "none" &&
                                 categories.some(
                                   (parentCat) =>
                                     parentCat._id === productCategory.parentid &&
                                     parentCat.category_name
                                       .toLowerCase()
-                                      .includes("large appliance")
-                                )))
+                                      .includes("air conditioner")
+                                )
+                              )
+                            )
                           );
                         })
                         .map((product) => (
                           <div
                             key={product._id}
-                            className="flex-shrink-0 w-[250px]"
+                            className="flex-shrink-0 w-[250px] snap-start"
                           >
                             <Link href={`/product/${product.slug || product._id}`}>
                               <motion.div
@@ -1068,7 +1064,6 @@ export default function HomeComponent() {
                                 <h3 className="mt-3 font-semibold group-hover:text-blue-600 line-clamp-2">
                                   {product.name}
                                 </h3>
-                                {/* <p className="text-gray-500 text-sm">By {product.brand || "Unknown Brand"}</p> */}
                                 <p className="mt-2 text-lg font-bold text-blue-600">
                                   ${product.special_price || product.price}
                                   {product.special_price && (
@@ -1090,7 +1085,7 @@ export default function HomeComponent() {
                   </div>
                 </div>
               </div>
-        
+
               <style jsx>{`
                 .hide-scrollbar::-webkit-scrollbar {
                   display: none;
@@ -1100,7 +1095,8 @@ export default function HomeComponent() {
                   scrollbar-width: none;
                 }
               `}</style>
-            </motion.section>
+           </motion.section>
+
       </div>
     </>
   );

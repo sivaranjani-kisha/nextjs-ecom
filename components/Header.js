@@ -3,7 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
+import { MdAccountCircle } from "react-icons/md";
+import { FaShoppingBag } from "react-icons/fa";
+import { IoLogOut } from "react-icons/io5";
 import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX } from "react-icons/fi";
+import { CircleUser, ShoppingBag, LogOut } from 'lucide-react';
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Logout from "@/components/Logout";
 import { useWishlist } from "@/context/WishlistContext";
@@ -11,9 +15,7 @@ import { useCart } from '@/context/CartContext';
 
 export default function Header() {
   const scrollRef = useRef(null);
-  const autoScrollInterval = useRef(null);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const [formData, setFormData] = useState({
@@ -29,9 +31,27 @@ export default function Header() {
   const [userData, setUserData] = useState(null);
   const { wishlistCount } = useWishlist();
   const { cartCount, updateCartCount } = useCart();
-  const intervalRef = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
   
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -43,65 +63,55 @@ export default function Header() {
     }
   };
 
-  const startAutoScroll = () => {
-    const scrollContainer = scrollRef.current;
-    if (!scrollContainer) return;
-
-    intervalRef.current = setInterval(() => {
-      scrollContainer.scrollBy({ left: 1, behavior: 'smooth' });
-      if (
-        scrollContainer.scrollLeft + scrollContainer.clientWidth >=
-        scrollContainer.scrollWidth
-      ) {
-        scrollContainer.scrollTo({ left: 0, behavior: 'smooth' });
-      }
-    }, 20);
-  };
-
-  const stopAutoScroll = () => {
-    clearInterval(intervalRef.current);
-  };
-
   useEffect(() => {
-    startAutoScroll();
-    return () => stopAutoScroll();
-  }, []);
+    // Load categories from localStorage if available
+    const savedCategories = typeof window !== 'undefined' ? localStorage.getItem('headerCategories') : null;
+    if (savedCategories) {
+      setCategories(JSON.parse(savedCategories));
+    }
+    
 
-  useEffect(() => {
     const fetchCategories = async () => {
+      if (!hasMounted) return;
       try {
         const response = await fetch('/api/categories/get');
         const data = await response.json();
         const parentCategories = data.filter(category => category.parentid === "none" && category.status === "Active");
         setCategories(parentCategories);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('headerCategories', JSON.stringify(parentCategories));
+        }
       } catch (error) {
         console.error("Error fetching categories:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchCategories();
     checkAuthStatus();
-  }, []);
+  }, [hasMounted]);
 
   useEffect(() => {
-    const scrollContainer = scrollRef.current;
-    if (!scrollContainer) return;
-  
-    const scrollInterval = setInterval(() => {
-      if (
-        scrollContainer.scrollLeft + scrollContainer.clientWidth >=
-        scrollContainer.scrollWidth
-      ) {
-        scrollContainer.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        scrollContainer.scrollBy({ left: 150, behavior: 'smooth' });
+    const fetchCartCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch('/api/cart/count', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          updateCartCount(data.count);
+        }
+      } catch (error) {
+        console.error('Failed to fetch cart count:', error);
       }
-    }, 3000);
+    };
   
-    return () => clearInterval(scrollInterval);
-  }, []);
+    fetchCartCount();
+  }, [updateCartCount]);
 
   const checkAuthStatus = async () => {
     try {
@@ -161,6 +171,17 @@ export default function Header() {
         mobile: '',
         password: ''
       });
+      
+      // Update cart count after login
+      const cartResponse = await fetch('/api/cart/count', {
+        headers: {
+          'Authorization': `Bearer ${data.token}`
+        }
+      });
+      if (cartResponse.ok) {
+        const cartData = await cartResponse.json();
+        updateCartCount(cartData.count);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -172,31 +193,11 @@ export default function Header() {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
     setUserData(null);
+    updateCartCount(0); // Reset cart count on logout
   };
 
-  useEffect(() => {
-    const fetchCartCount = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('/api/cart/count', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          updateCartCount(data.count);
-        }
-      } catch (error) {
-        console.error('Failed to fetch cart count:', error);
-      }
-    };
-  
-    fetchCartCount();
-  }, [updateCartCount]);
-
   return (
-    <header className="w-full">
+    <header className="w-full sticky top-0 z-40 bg-white">
       {/* Mobile Top Bar */}
       <div className="lg:hidden bg-white text-black border-b border-gray-200">
         <div className="container mx-auto px-2 py-2 flex items-center justify-between">
@@ -210,7 +211,14 @@ export default function Header() {
 
           {/* Logo - Centered */}
           <Link href="/index" className="mx-auto">
-            <Image src="/user/bea.png" alt="Marketpro" width={60} height={30} className="h-auto" />
+            <Image 
+              src="/user/bea.png" 
+              alt="Marketpro" 
+              width={60} 
+              height={30} 
+              className="h-auto"
+              priority // Prevents layout shift
+            />
           </Link>
 
           {/* Icons - Search, Wishlist, Cart */}
@@ -224,7 +232,7 @@ export default function Header() {
             
             <Link href="/wishlist" className="relative p-2">
               <FiHeart size={20} />
-              {wishlistCount > 0 && (
+              {hasMounted && wishlistCount > 0 && (
                 <span className="absolute top-0 right-0 text-xs bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center">
                   {wishlistCount}
                 </span>
@@ -233,7 +241,7 @@ export default function Header() {
             
             <Link href="/cart" className="relative p-2">
               <FiShoppingCart size={20} />
-              {cartCount > 0 && (
+              {hasMounted && cartCount > 0 && (
                 <span className="absolute top-0 right-0 text-xs bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
                   {cartCount}
                 </span>
@@ -318,7 +326,7 @@ export default function Header() {
                   {isLoggedIn && (
                     <>
                       <li>
-                        <Link href="/orders" className="block py-2 font-medium" onClick={() => setMobileMenuOpen(false)}>My Orders</Link>
+                        <Link href="/order" className="block py-2 font-medium" onClick={() => setMobileMenuOpen(false)}>My Orders</Link>
                       </li>
                       <li>
                         <button 
@@ -340,22 +348,16 @@ export default function Header() {
               <div className="py-3">
                 <h3 className="font-bold text-lg mb-2">Categories</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {loading ? (
-                    [...Array(4)].map((_, i) => (
-                      <div key={i} className="h-10 bg-gray-200 animate-pulse rounded"></div>
-                    ))
-                  ) : (
-                    categories.slice(0, 6).map(category => (
-                      <Link
-                        key={category._id}
-                        href={`/category/${category.category_slug}`}
-                        className="block py-2 px-3 bg-gray-100 rounded hover:bg-gray-200 text-sm"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {category.category_name}
-                      </Link>
-                    ))
-                  )}
+                  {categories.slice(0, 6).map(category => (
+                    <Link
+                      key={category._id}
+                      href={`/category/${category.category_slug}`}
+                      className="block py-2 px-3 bg-gray-100 rounded hover:bg-gray-200 text-sm"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {category.category_name}
+                    </Link>
+                  ))}
                 </div>
               </div>
             </div>
@@ -370,7 +372,14 @@ export default function Header() {
           <div className="container mx-auto flex items-center justify-between px-4">
             {/* Logo */}
             <Link href="/index">
-              <Image src="/user/bea.png" alt="Marketpro" width={70} height={30} className="h-auto" />
+              <Image 
+                src="/user/bea.png" 
+                alt="Marketpro" 
+                width={70} 
+                height={30} 
+                className="h-auto"
+                priority // Prevents layout shift
+              />
             </Link>
 
             {/* Search Bar & Location */}
@@ -415,72 +424,108 @@ export default function Header() {
 
             {/* User Account */}
             <div className="flex items-center space-x-10">
-              {isLoggedIn ? (
-                <div className="relative group">
-                  <button className="flex items-center text-black">
-                    <FiUser size={22} className="text-black" />
-                    <span className="ml-2 font-bold">
-                      Hi, {userData?.username || userData?.name || 'User'}
-                    </span>
-                  </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block">
-                    <Link href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      My Account
-                    </Link>
-                    <Link href="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      My Orders
-                    </Link>
-                    <button 
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setShowAuthModal(true)}
-                  className="flex items-center text-black"
-                >
-                  <FiUser size={22} className="text-black" />
-                  <span className="ml-2 font-bold">Sign In</span>
-                </button>
-              )}
-            </div>
+  {isLoggedIn ? (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="flex items-center text-black focus:outline-none"
+      >
+        <FiUser size={22} className="text-black" />
+        <span className="ml-2 font-bold">
+          Hi, {userData?.username || userData?.name || "User"}
+        </span>
+      </button>
+
+      {dropdownOpen && (
+        <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
+          {/* Top Arrow */}
+          <div className="absolute -top-2 right-4 w-4 h-4 bg-white transform rotate-45 shadow-md"></div>
+
+          <div className="py-2 px-2">
+          <Link
+  href="/account"
+  className="flex items-center gap-3 px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+>
+  <span className="w-7 h-7 flex items-center justify-center rounded-full bg-customBlue text-white">
+    <MdAccountCircle className="w-4 h-4" />
+  </span>
+  My Account
+</Link>
+
+            <Link
+              href="/order"
+              className="flex items-center gap-3 px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+            >
+              <span className="w-7 h-7 flex items-center justify-center rounded-full bg-customBlue text-white">
+              <FaShoppingBag className="w-5 h-5 " />
+              </span>
+              My Orders
+            </Link>
+
+            <hr className="my-2 border-gray-200" />
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-red-50 transition-colors"
+            >
+              <span className="w-7 h-7 flex items-center justify-center rounded-full bg-customBlue text-white">
+              <IoLogOut className="w-5 h-5" />
+              </span>
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  ) : (
+    <button
+      onClick={() => setShowAuthModal(true)}
+      className="flex items-center text-black"
+    >
+      <FiUser size={22} className="text-black" />
+      <span className="ml-2 font-bold">Sign In</span>
+    </button>
+  )}
+</div>
           </div>
         </div>
       </div>
 
       {/* Categories Bar (visible on all screens) */}
-      <div className="overflow-hidden bg-customBlue text-white text-xs py-4 relative" onMouseEnter={stopAutoScroll} onMouseLeave={startAutoScroll}>
-        <button
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white text-customBlue p-2 rounded-full shadow-md z-10"
-          onClick={() => scroll("left")}
-        >
-          <ChevronLeft size={20} />
-        </button>
+      {hasMounted && categories.length > 0 && (
+       <div 
+       className={`overflow-hidden bg-customBlue text-white text-xs py-4 relative transition-opacity duration-300 ${
+         categories.length > 0 ? 'opacity-100' : 'opacity-0 h-0 py-0'
+       }`}
+     >
+          {categories.length > 10 && (
+            <>
+              <button
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white text-customBlue p-2 rounded-full shadow-md z-10"
+                onClick={() => scroll("left")}
+              >
+                <ChevronLeft size={20} />
+              </button>
 
-        <div
-          style={{ overflowX: "auto", whiteSpace: "nowrap" }}
-          ref={scrollRef}
-          className="container mx-auto flex overflow-x-auto scroll-smooth scrollbar-hide gap-4 px-6 header-css"
-        >
-          {loading ? (
-            <div className="flex space-x-4">
-              {[...Array(5)].map((_, index) => (
-                <div key={index} className="flex flex-col items-center min-w-[100px]">
-                  <div className="w-16 h-16 bg-gray-200 rounded-full animate-pulse"></div>
-                  <div className="w-20 h-4 bg-gray-200 rounded mt-2 animate-pulse"></div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            categories.map((category) => (
+              <button
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white text-customBlue p-2 rounded-full shadow-md z-10"
+                onClick={() => scroll("right")}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+
+          <div
+            style={{ overflowX: "auto", whiteSpace: "nowrap" }}
+            ref={scrollRef}
+            className="container mx-auto flex overflow-x-auto scroll-smooth scrollbar-hide gap-4 px-6 header-css"
+          >
+            {categories.map((category) => (
               <Link 
                 key={category._id} 
                 href={`/category/${category.category_slug}`}
-                className="flex flex-col items-center min-w-[100px]"
+                className="flex flex-col items-center min-w-[100px] flex-shrink-0"
               >
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md">
                   {category.image ? (
@@ -498,17 +543,10 @@ export default function Header() {
                   {category.category_name}
                 </span>
               </Link>
-            ))
-          )}
+            ))}
+          </div>
         </div>
-
-        <button
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white text-customBlue p-2 rounded-full shadow-md z-10"
-          onClick={() => scroll("right")}
-        >
-          <ChevronRight size={20} />
-        </button>
-      </div>
+      )}
 
       {/* Auth Modal */}
       {showAuthModal && (

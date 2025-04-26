@@ -105,32 +105,42 @@ export default function OrderComponent() {
       setShowConfirmationModal(false);
     }
   };
-
-  const handleDownloadInvoice = async (orderId) => {
+  const handleDownloadInvoice = async (orderNumber) => {
     try {
-      const response = await fetch(`/api/orders/invoice?order_id=${orderId}`);
-      console.log(response)
+      const response = await fetch(`/api/orders/invoice?order_id=${orderNumber}`);
+  
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to download invoice");
+        // Try to get JSON error message if available
+        let errorMsg = "Failed to download invoice";
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData?.error || errorMsg;
+        } catch {
+          // Ignore if response is not JSON
+        }
+        throw new Error(errorMsg);
       }
   
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
+  
       const a = document.createElement("a");
       a.href = url;
-      a.download = `invoice_${orderId}.pdf`;
+      a.download = `invoice_${orderNumber}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      window.URL.revokeObjectURL(url);
+  
+      window.URL.revokeObjectURL(url); // Cleanup blob
     } catch (error) {
       console.error("Error downloading invoice:", error);
-      setError(error.message || "Failed to download invoice. Please try again.");
+      // Optional: define `setError` somewhere if needed
+      alert(error.message || "Failed to download invoice. Please try again.");
     }
   };
+  
   const filteredOrders = orders.filter((order) =>
-    order.order_id.toLowerCase().includes(searchTerm.toLowerCase())
+    order.order_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
@@ -202,7 +212,7 @@ export default function OrderComponent() {
                   <th className="border px-4 py-2">Order ID</th>
                   <th className="border px-4 py-2">Email</th>
                   <th className="border px-4 py-2">Mobile</th>
-                  <th className="border px-4 py-2">Product ID</th>
+              {/* <th className="border px-4 py-2">Product ID</th> */}
                   <th className="border px-4 py-2">Price</th>
                   <th className="border px-4 py-2">Order Status</th>
                   <th className="border px-4 py-2">Action</th>
@@ -210,13 +220,14 @@ export default function OrderComponent() {
                 </tr>
               </thead>
               <tbody>
+  
                 {paginatedOrders.map((order) => (
                   <tr key={order._id} className="text-center border">
-                    <td className="border px-4 py-2">{order.order_id}</td>
+                    <td className="border px-4 py-2">{order.order_number}</td>
                     <td className="border px-4 py-2">{order.email_address}</td>
-                    <td className="border px-4 py-2">{order.mobile_number}</td>
-                    <td className="border px-4 py-2">{order.product_id}</td>
-                    <td className="border px-4 py-2">{order.price}</td>
+                    <td className="border px-4 py-2">{order.order_phonenumber}</td>
+                 
+                    <td className="border px-4 py-2">{order.order_amount}</td>
                     <td className="border px-4 py-2">{order.order_status}</td>
                     <td className="px-4 py-2 flex space-x-2">
                       {activeTab === "pending" && (
@@ -254,11 +265,8 @@ export default function OrderComponent() {
                     {/* Show Invoice Column Only for Shipped Orders */}
                     {activeTab === "shipped" && (
                       <td className="border px-4 py-2">
-                        <button
-                          onClick={() => handleDownloadInvoice(order.order_id)}
-                          className="bg-blue-500 text-white px-3 py-1 rounded"
-                        >
-                          Download
+                        <button onClick={() => handleDownloadInvoice(order.order_number)}>
+                          Download Invoice
                         </button>
                       </td>
                     )}

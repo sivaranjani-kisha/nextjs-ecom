@@ -293,7 +293,7 @@ export default function CheckoutPage() {
         console.log("Invalid Payment Method");
         return;
       }
-  alert("dgdg");
+ 
       // Only save new address if not using saved address
       if (!useSavedAddress || selectedAddress === null) {
         const formDataToSend = new FormData();

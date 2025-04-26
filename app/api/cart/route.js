@@ -140,7 +140,7 @@ export async function GET(req) {
         { status: 200 }
       );
     }
-
+console.log(cart);
     return NextResponse.json(
       { 
         cart: {

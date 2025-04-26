@@ -174,19 +174,16 @@ useEffect(() => {
                 onMouseLeave={handleMouseLeave}
               >
                 {/* Main Image */}
-                {selectedImage && (
-                  <img
-                    src={selectedImage}
-                    alt={product?.name || "Product"}
-                    className="w-full rounded-lg object-cover"
-                    ref={imgRef}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      setSelectedImage(null); // hide the image if it fails
-                    }}
-                  />
-                )}
-
+                <img
+                  src={selectedImage || "/no-image.jpg"}
+                  alt={product?.name || "Product"}
+                  className="w-full rounded-lg object-cover"
+                  ref={imgRef}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/no-image.jpg"; // fallback image
+                  }}
+                />
 
                 {/* Zoom Box */}
                 {zoomPosition.visible && (
@@ -195,12 +192,16 @@ useEffect(() => {
                     ref={zoomContainerRef}
                   >
                     <img
-                      src={selectedImage}
+                      src={selectedImage || "/no-image.jpg"}
                       alt="Zoomed"
                       className="absolute w-[400%] h-[400%] object-cover"
                       style={{
                         left: `-${zoomPosition.x * 3}%`,
                         top: `-${zoomPosition.y * 3}%`
+                      }}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/no-image.jpg";
                       }}
                     />
                   </div>
@@ -209,30 +210,42 @@ useEffect(() => {
 
               {/* Thumbnails */}
               <div className="flex gap-2 mt-3">
-                {product.images?.map((image, index) => (
+                {product.images?.length > 0 ? (
+                  product.images.map((image, index) => (
+                    <img
+                      key={index}
+                      src={`/uploads/products/${image}`}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-16 h-16 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300"
+                      onClick={() => handleThumbnailClick(index)}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/no-image.jpg"; // fallback for broken thumbnail
+                      }}
+                    />
+                  ))
+                ) : (
                   <img
-                    key={index}
-                    src={`/uploads/products/${image}`}
-                    alt={`Thumbnail ${index + 1}`}
-                    className="w-16 h-16 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300"
-                    onClick={() => handleThumbnailClick(index)}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "none";
-                    }}
+                    src="/no-image.jpg"
+                    alt="No Thumbnail"
+                    className="w-16 h-16 border border-gray-400 rounded-lg"
                   />
-                ))}
+                )}
               </div>
             </div>
           </div>
+
 
           {/* Middle Section */}
           <div className="md:col-span-2">
             <h1 className="text-1xl font-semibold">{product.name}</h1>
             <div className="mt-2 pb-3 border-b border-gray-400">
-              <div className="flex items-center space-x-2 text-yellow-500 text-sm">
-                ⭐⭐⭐⭐⭐ <span className="text-gray-500 text-xs">{product.stock_status} | {product.reviews || 0} Reviews</span>
+            <div className="flex items-center space-x-2 text-yellow-500 text-sm">
+                <span className="text-gray-500 text-xs">{product.item_code}</span>
               </div>
+              {/* <div className="flex items-center space-x-2 text-yellow-500 text-sm">
+                ⭐⭐⭐⭐⭐ <span className="text-gray-500 text-xs">{product.stock_status} | {product.reviews || 0} Reviews</span>
+              </div> */}
             </div>
             {/* <p className="text-gray-700 text-sm mt-3 font-medium">
               {product.sku || "N/A"}

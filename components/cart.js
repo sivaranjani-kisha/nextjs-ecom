@@ -98,14 +98,15 @@ export default function CartComponent() {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
-                    router.push('/login');
+                    // router.push('/login');
                     return;
                 }
 
                 const response = await fetch('/api/cart', {
                     headers: {
                         'Authorization': `Bearer ${token}`
-                    }
+                    },
+                    method : "GET"
                 });
 
                 if (!response.ok) {
@@ -113,6 +114,8 @@ export default function CartComponent() {
                 }
 
                 const data = await response.json();
+                console.log(data);
+                alert("dfg");
                 setCartData(data.cart);
             } catch (err) {
                 setError(err.message);
