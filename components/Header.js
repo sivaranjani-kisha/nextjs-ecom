@@ -368,22 +368,23 @@ export default function Header() {
       {/* Desktop Header */}
       <div className="hidden lg:block">
         {/* Main Header */}
-        <div className="relative py-2 border-b border-gray-300 bg-white text-black">
+        <div className="relative py-1 border-b border-gray-300 bg-white text-black">
           <div className="container mx-auto flex items-center justify-between px-4">
-            {/* Logo */}
-            <Link href="/index">
-              <Image 
-                src="/user/bea.png" 
-                alt="Marketpro" 
-                width={70} 
-                height={30} 
-                className="h-auto"
-                priority // Prevents layout shift
-              />
-            </Link>
+            {/* Left Side: Logo + Search */}
+            <div className="flex items-center space-x-6">
+              {/* Logo */}
+              <Link href="/index">
+                <Image 
+                  src="/user/bea.png" 
+                  alt="Marketpro" 
+                  width={70} 
+                  height={30} 
+                  className="h-auto"
+                  priority 
+                />
+              </Link>
 
-            {/* Search Bar & Location */}
-            <div className="flex-1 flex justify-center items-center space-x-10">
+              {/* Search Bar */}
               <div className="flex items-center border border-gray-300 rounded-full px-3 bg-white">
                 <input
                   type="text"
@@ -394,159 +395,169 @@ export default function Header() {
                   <FiSearch size={18} />
                 </button>
               </div>
+            </div>
 
+            {/* Right Side: All Links closer together */}
+            <div className="flex items-center space-x-6">
               {/* Location */}
-              <Link href="/locator" className="flex items-center relative px-2">
+              <Link href="/locator" className="flex items-center relative">
                 <FiMapPin size={22} className="text-black" />
-                <span className="ml-2 font-bold">Location</span>
+                <span className="ml-1 font-bold text-sm">Location</span>
               </Link>
 
               {/* Wishlist */}
-              <Link href="/wishlist" className="flex items-center relative px-4">
+              <Link href="/wishlist" className="flex items-center relative">
                 <FiHeart size={22} className="text-black" />
                 {wishlistCount > 0 && (
                   <span className="absolute -top-2 -right-2 text-xs bg-red-500 text-white px-1 rounded-full">
                     {wishlistCount}
                   </span>
                 )}
-                <span className="ml-2 font-bold">Wishlist</span>
+                <span className="ml-1 font-bold text-sm">Wishlist</span>
               </Link>
 
               {/* Cart */}
-              <Link href="/cart" className="flex items-center relative px-4">
+              <Link href="/cart" className="flex items-center relative  px-4">
                 <FiShoppingCart size={22} className="text-black" />
                 <span className="absolute top-[-5px] right-[-8px] text-xs bg-customBlue text-white rounded-full w-5 h-5 flex items-center justify-center">
                   {cartCount}
                 </span>
-                <span className="ml-2 font-bold">Cart</span>
+                <span className="ml-1 font-bold text-sm">Cart</span>
               </Link>
+
+              {/* User Account */}
+              <div className="relative" ref={dropdownRef}>
+                {isLoggedIn ? (
+                  <>
+                    <button
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className="flex items-center text-black focus:outline-none"
+                    >
+                      <FiUser size={22} className="text-black" />
+                      <span className="ml-1 font-bold text-sm">
+                        Hi, {userData?.username || userData?.name || "User"}
+                      </span>
+                    </button>
+
+                    {dropdownOpen && (
+                      <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
+                        {/* Top Arrow */}
+                        <div className="absolute -top-2 right-4 w-4 h-4 bg-white transform rotate-45 shadow-md"></div>
+
+                        <div className="py-2 px-2">
+                          <Link
+                            href="/account"
+                            className="flex items-center gap-3 px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+                          >
+                            <span className="w-7 h-7 flex items-center justify-center rounded-full bg-customBlue text-white">
+                              <MdAccountCircle className="w-4 h-4" />
+                            </span>
+                            My Account
+                          </Link>
+
+                          <Link
+                            href="/order"
+                            className="flex items-center gap-3 px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+                          >
+                            <span className="w-7 h-7 flex items-center justify-center rounded-full bg-customBlue text-white">
+                              <FaShoppingBag className="w-5 h-5" />
+                            </span>
+                            My Orders
+                          </Link>
+
+                          <hr className="my-2 border-gray-200" />
+
+                          <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-red-50 transition-colors"
+                          >
+                            <span className="w-7 h-7 flex items-center justify-center rounded-full bg-customBlue text-white">
+                              <IoLogOut className="w-5 h-5" />
+                            </span>
+                            Logout
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setShowAuthModal(true)}
+                    className="flex items-center text-black"
+                  >
+                    <FiUser size={22} className="text-black" />
+                    <span className="ml-1 font-bold text-sm">Sign In</span>
+                  </button>
+                )}
+              </div>
             </div>
-
-            {/* User Account */}
-            <div className="flex items-center space-x-10">
-  {isLoggedIn ? (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setDropdownOpen(!dropdownOpen)}
-        className="flex items-center text-black focus:outline-none"
-      >
-        <FiUser size={22} className="text-black" />
-        <span className="ml-2 font-bold">
-          Hi, {userData?.username || userData?.name || "User"}
-        </span>
-      </button>
-
-      {dropdownOpen && (
-        <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
-          {/* Top Arrow */}
-          <div className="absolute -top-2 right-4 w-4 h-4 bg-white transform rotate-45 shadow-md"></div>
-
-          <div className="py-2 px-2">
-          <Link
-  href="/account"
-  className="flex items-center gap-3 px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-blue-50 transition-colors"
->
-  <span className="w-7 h-7 flex items-center justify-center rounded-full bg-customBlue text-white">
-    <MdAccountCircle className="w-4 h-4" />
-  </span>
-  My Account
-</Link>
-
-            <Link
-              href="/order"
-              className="flex items-center gap-3 px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-blue-50 transition-colors"
-            >
-              <span className="w-7 h-7 flex items-center justify-center rounded-full bg-customBlue text-white">
-              <FaShoppingBag className="w-5 h-5 " />
-              </span>
-              My Orders
-            </Link>
-
-            <hr className="my-2 border-gray-200" />
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-red-50 transition-colors"
-            >
-              <span className="w-7 h-7 flex items-center justify-center rounded-full bg-customBlue text-white">
-              <IoLogOut className="w-5 h-5" />
-              </span>
-              Logout
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  ) : (
-    <button
-      onClick={() => setShowAuthModal(true)}
-      className="flex items-center text-black"
-    >
-      <FiUser size={22} className="text-black" />
-      <span className="ml-2 font-bold">Sign In</span>
-    </button>
-  )}
-</div>
           </div>
         </div>
       </div>
 
+
       {/* Categories Bar (visible on all screens) */}
       {hasMounted && categories.length > 0 && (
-       <div 
-       className={`overflow-hidden bg-customBlue text-white text-xs py-4 relative transition-opacity duration-300 ${
-         categories.length > 0 ? 'opacity-100' : 'opacity-0 h-0 py-0'
-       }`}
-     >
-          {categories.length > 10 && (
-            <>
-              <button
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white text-customBlue p-2 rounded-full shadow-md z-10"
-                onClick={() => scroll("left")}
-              >
-                <ChevronLeft size={20} />
-              </button>
+  <div 
+    className={`overflow-hidden bg-customBlue text-white text-xs py-2 relative transition-opacity duration-300 ${
+      categories.length > 0 ? 'opacity-100' : 'opacity-0 h-0 py-0'
+    }`}
+  >
+    {categories.length > 9 && (
+      <>
+        <button
+          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-300 text-black p-2 rounded-full shadow-md z-10"
+          onClick={() => scroll('left')}
+        >
+          <ChevronLeft size={20} />
+        </button>
 
-              <button
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white text-customBlue p-2 rounded-full shadow-md z-10"
-                onClick={() => scroll("right")}
-              >
-                <ChevronRight size={20} />
-              </button>
-            </>
-          )}
+        <button
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-300 text-black p-2 rounded-full shadow-md z-10"
+          onClick={() => scroll('right')}
+        >
+          <ChevronRight size={20} />
+        </button>
+      </>
+    )}
 
-          <div
-            style={{ overflowX: "auto", whiteSpace: "nowrap" }}
-            ref={scrollRef}
-            className="container mx-auto flex overflow-x-auto scroll-smooth scrollbar-hide gap-4 px-6 header-css"
-          >
-            {categories.map((category) => (
-              <Link 
-                key={category._id} 
-                href={`/category/${category.category_slug}`}
-                className="flex flex-col items-center min-w-[100px] flex-shrink-0"
-              >
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md">
-                  {category.image ? (
-                    <Image 
-                      src={category.image} 
-                      alt={category.category_name} 
-                      width={40} 
-                      height={40} 
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                  )}
-                </div>
-                <span className="text-xs font-medium mt-1 truncate w-[90px] text-center">
-                  {category.category_name}
-                </span>
-              </Link>
-            ))}
+    <div
+      ref={scrollRef}
+      className={`px-2 ${
+        categories.length > 9 
+          ? 'flex overflow-x-auto scroll-smooth scrollbar-hide gap-8'
+          : 'grid grid-cols-9 justify-center gap-8'
+      }`}
+    >
+      {categories.map((category) => (
+        <Link 
+          key={category._id} 
+          href={`/category/${category.category_slug}`}
+          className="flex flex-col items-center flex-shrink-0"
+        >
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center shadow-md">
+            {category.image ? (
+              <Image 
+                src={category.image} 
+                alt={category.category_name} 
+                width={60} 
+                height={60} 
+                className="object-contain"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+            )}
           </div>
-        </div>
-      )}
+          <span className="text-sm font-medium mt-2 text-center w-[80px] truncate">
+            {category.category_name}
+          </span>
+        </Link>
+      ))}
+    </div>
+  </div>
+)}
+
+
 
       {/* Auth Modal */}
       {showAuthModal && (

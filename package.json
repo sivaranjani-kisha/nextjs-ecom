@@ -48,6 +48,7 @@
     "react-toastify": "^11.0.5",
     "scrollbar": "^0.1.12",
     "slick-carousel": "^1.8.1",
+    "swiper": "^11.2.6",
     "tailwind-scrollbar-hide": "^2.0.0",
     "toast": "^0.5.4",
     "xlsx": "^0.18.5",

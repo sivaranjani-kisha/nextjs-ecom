@@ -185,8 +185,8 @@ export default function brandComponent() {
   const pageCount = Math.ceil(filteredCategories.length / itemsPerPage);
 
   return (
-    <div className="container mx-auto mt-10 p-5">
-      <div className="flex justify-between items-center mb-5">
+    <div className="container mx-auto">
+      <div className="flex justify-between items-center mb-1">
         <h2 className="text-2xl font-bold">Brand List</h2>
         <button
           onClick={() => setIsModalOpen(true)}

@@ -3,34 +3,55 @@ import mongoose from "mongoose";
 const DesignBannerSchema = new mongoose.Schema({
   title: {
     type: String,
-    
     trim: true,
-    
   },
   bannerType: {
     type: String,
     required: [true, "Banner type is required"],
     enum: {
-      values: ["topbanner", "flashsale"],
+      values: ["topbanner", "flashsale", "categorybanner"],
       message: "Invalid banner type"
     }
   },
+  // Fields for topbanner and flashsale
   bgImageUrl: {
     type: String,
-    required: [true, "Background image URL is required"]
+    required: function() { return this.bannerType !== 'categorybanner'; }
   },
   bannerImageUrl: {
     type: String,
-   
   },
   redirectUrl: {
     type: String,
-    required: [true, "Redirect URL is required"],
+    required: function() { return this.bannerType !== 'categorybanner'; },
     match: [
       /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
       "Please use a valid URL with HTTP or HTTPS"
     ]
   },
+  
+  // Fields for categorybanner
+  categoryImages: {
+    type: [{
+      imageUrl: String,
+      redirectUrl: {
+        type: String,
+        match: [
+          /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
+          "Please use a valid URL with HTTP or HTTPS"
+        ]
+      }
+    }],
+    required: function() { return this.bannerType === 'categorybanner'; },
+    validate: {
+      validator: function(v) {
+        return this.bannerType !== 'categorybanner' || (v && v.length === 4);
+      },
+      message: "Category banner must have exactly 4 images with redirect URLs"
+    }
+  },
+
+  // Common fields
   startDate: {
     type: Date,
     required: [true, "Start date is required"]
@@ -59,15 +80,19 @@ const DesignBannerSchema = new mongoose.Schema({
 
 // Virtuals for image dimensions based on banner type
 DesignBannerSchema.virtual('bgImageDimensions').get(function() {
-  return this.bannerType === 'topbanner' 
-    ? { width: 1680, height: 499 }
-    : { width: 828, height: 250 };
+  if (this.bannerType === 'topbanner') return { width: 1680, height: 499 };
+  if (this.bannerType === 'flashsale') return { width: 828, height: 250 };
+  return null;
 });
 
 DesignBannerSchema.virtual('bannerImageDimensions').get(function() {
-  return this.bannerType === 'topbanner' 
-    ? { width: 291, height: 147 }
-    : { width: 285, height: 173 };
+  if (this.bannerType === 'topbanner') return { width: 291, height: 147 };
+  if (this.bannerType === 'flashsale') return { width: 285, height: 173 };
+  return null;
+});
+
+DesignBannerSchema.virtual('categoryImageDimensions').get(function() {
+  return { width: 400, height: 400 }; // Adjust dimensions as needed
 });
 
 // Create index for better query performance
@@ -83,7 +108,6 @@ DesignBannerSchema.pre('save', function(next) {
   }
 });
 
-// Check if model exists before creating it
 let DesignBanner;
 try {
   DesignBanner = mongoose.model("ecom_designbanner_info");

@@ -25,7 +25,8 @@ export default function DesignComponent() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterBannerType, setFilterBannerType] = useState("");
   const [isLoadingBanners, setIsLoadingBanners] = useState(false);
-
+  const [categoryImages, setCategoryImages] = useState({});
+  const [categoryRedirectUrls, setCategoryRedirectUrls] = useState({});
   const itemsPerPage = 10;
 
   const bannerOptions = [
@@ -40,6 +41,11 @@ export default function DesignComponent() {
       label: "Flash Sale", 
       bgSize: { width: 828, height: 250 },
       bannerSize: { width: 285, height: 173 }
+    },
+    { 
+      value: "categorybanner", 
+      label: "Category Banner", 
+      categorySize: { width: 400, height: 400 } // Adjust dimensions as needed
     }
   ];
 
@@ -76,7 +82,16 @@ export default function DesignComponent() {
       setIsLoadingBanners(false);
     }
   };
-
+  const handleCategoryImageChange = (e, index) => {
+    const file = e.target.files[0];
+    setCategoryImages(prev => ({ ...prev, [index]: file }));
+  };
+  
+  const handleCategoryRedirectUrlChange = (e, index) => {
+    const value = e.target.value;
+    setCategoryRedirectUrls(prev => ({ ...prev, [index]: value }));
+  };
+  
   // Load banners on component mount and when filters change
   useEffect(() => {
     fetchBanners();
@@ -137,11 +152,8 @@ export default function DesignComponent() {
 
   const handleSubmit = async () => {
     const newErrors = {};
-  
     
-    if (!bgImage) newErrors.bgImage = "Background image is required";
-    //if (!bannerImage) newErrors.bannerImage = "Banner image is required";
-    if (!redirectUrl) newErrors.redirectUrl = "Redirect URL is required";
+    // Common validations
     if (!startDate) newErrors.startDate = "Start date is required";
     if (!endDate) newErrors.endDate = "End date is required";
     if (endDate && startDate && endDate < startDate) newErrors.endDate = "End date must be after the start date";
@@ -149,6 +161,18 @@ export default function DesignComponent() {
     const validBannerTypes = bannerOptions.map(option => option.value);
     if (!validBannerTypes.includes(bannerType)) {
       newErrors.bannerType = "Invalid banner type";
+    }
+  
+    // Banner type specific validations
+    if (bannerType === 'categorybanner') {
+      for (let i = 1; i <= 4; i++) {
+        if (!categoryImages[i]) newErrors[`image${i}`] = `Image ${i} is required`;
+        if (!categoryRedirectUrls[i]) newErrors[`redirectUrl${i}`] = `Redirect URL ${i} is required`;
+      }
+    }
+    else {
+      if (!bgImage) newErrors.bgImage = "Background image is required";
+      if (!redirectUrl) newErrors.redirectUrl = "Redirect URL is required";
     }
   
     if (Object.keys(newErrors).length > 0) {
@@ -161,26 +185,34 @@ export default function DesignComponent() {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("bannerType", bannerType);
-      formData.append("redirectUrl", redirectUrl);
       formData.append("startDate", startDate);
       formData.append("endDate", endDate);
       formData.append("status", status);
-      formData.append("bgImage", bgImage);
-      formData.append("bannerImage", bannerImage);
-
+  
+      if (bannerType === 'categorybanner') {
+        for (let i = 1; i <= 4; i++) {
+          formData.append(`image${i}`, categoryImages[i]);
+          formData.append(`redirectUrl${i}`, categoryRedirectUrls[i]);
+        }
+      } else {
+        formData.append("redirectUrl", redirectUrl);
+        formData.append("bgImage", bgImage);
+        if (bannerImage) formData.append("bannerImage", bannerImage);
+      }
+  
       const res = await fetch("/api/design/add", {
         method: "POST",
         body: formData,
       });
-
+  
       const data = await res.json();
-
+  
       if (res.ok) {
         setMessage(data.message || "Banner added successfully");
         resetForm();
         setIsModalOpen(false);
         setErrors({});
-        fetchBanners(); // Refresh the table after successful submission
+        fetchBanners();
       } else {
         setErrors(data.errors || { error: data.message || "Failed to add banner" });
       }
@@ -206,8 +238,8 @@ export default function DesignComponent() {
   };
 
   return (
-    <div className="container mx-auto mt-10 p-5">
-      <div className="flex justify-between items-center mb-5">
+    <div className="container mx-auto ">
+      <div className="flex justify-between items-center mb-2">
         <h2 className="text-2xl font-bold">Design Banner List</h2>
         <button
           onClick={openModal}
@@ -354,7 +386,7 @@ export default function DesignComponent() {
       {/* Add Banner Modal (existing code remains the same) */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg w-[600px] max-w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-8 rounded-lg shadow-lg w-[800px] max-w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4 text-center">Add Design Banner</h3>
 
             <div className="grid grid-cols-2 gap-4">
@@ -386,68 +418,100 @@ export default function DesignComponent() {
               </div>
             </div>
 
-            <div className="mb-3">
-              <label className="block mb-2 font-medium">
-                Banner Background Image* (Size: {bgImageSize.width}x{bgImageSize.height})
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleBgImageChange}
-                className="border p-2 rounded w-full"
-              />
-              {errors.bgImage && <span className="text-red-500 text-sm">{errors.bgImage}</span>}
-              {bgImage && (
-                <div className="mt-2 text-sm text-gray-500">
-                  Selected: {bgImage.name} ({(bgImage.size / 1024).toFixed(2)} KB)
+            {bannerType === 'categorybanner' ? (
+  <div className="space-y-4">
+    {[1, 2, 3, 4].map((num) => (
+      <div key={num} className="grid grid-cols-2 gap-4 border p-4 rounded-lg">
+        <div>
+          <label className="block mb-2 font-medium">
+            Image {num}* (Size: 400x400)
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleCategoryImageChange(e, num)}
+            className="border p-2 rounded w-full"
+          />
+          {errors[`image${num}`] && (
+            <span className="text-red-500 text-sm">{errors[`image${num}`]}</span>
+          )}
+          {categoryImages[num] && (
+            <div className="mt-2 text-sm text-gray-500">
+              Selected: {categoryImages[num].name} 
+              ({(categoryImages[num].size / 1024).toFixed(2)} KB)
+            </div>
+          )}
+        </div>
+        <div>
+          <label className="block mb-2 font-medium">Redirect URL {num}*</label>
+          <input
+            type="text"
+            value={categoryRedirectUrls[num] || ""}
+            onChange={(e) => handleCategoryRedirectUrlChange(e, num)}
+            className="border p-2 rounded w-full"
+            placeholder="https://example.com"
+          />
+          {errors[`redirectUrl${num}`] && (
+            <span className="text-red-500 text-sm">{errors[`redirectUrl${num}`]}</span>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+) : (
+              <>
+                <div className="mb-3">
+                  <label className="block mb-2 font-medium">
+                    Banner Background Image* (Size: {bgImageSize.width}x{bgImageSize.height})
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBgImageChange}
+                    className="border p-2 rounded w-full"
+                  />
+                  {errors.bgImage && <span className="text-red-500 text-sm">{errors.bgImage}</span>}
+                  {bgImage && (
+                    <div className="mt-2 text-sm text-gray-500">
+                      Selected: {bgImage.name} ({(bgImage.size / 1024).toFixed(2)} KB)
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="mb-3">
-              <label className="block mb-2 font-medium">
-                Banner Image* (Size: {bannerImageSize.width}x{bannerImageSize.height})
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleBannerImageChange}
-                className="border p-2 rounded w-full"
-              />
-              {errors.bannerImage && <span className="text-red-500 text-sm">{errors.bannerImage}</span>}
-              {bannerImage && (
-                <div className="mt-2 text-sm text-gray-500">
-                  Selected: {bannerImage.name} ({(bannerImage.size / 1024).toFixed(2)} KB)
+                <div className="mb-3">
+                  <label className="block mb-2 font-medium">
+                    Banner Image* (Size: {bannerImageSize.width}x{bannerImageSize.height})
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBannerImageChange}
+                    className="border p-2 rounded w-full"
+                  />
+                  {errors.bannerImage && <span className="text-red-500 text-sm">{errors.bannerImage}</span>}
+                  {bannerImage && (
+                    <div className="mt-2 text-sm text-gray-500">
+                      Selected: {bannerImage.name} ({(bannerImage.size / 1024).toFixed(2)} KB)
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-2 font-medium">Redirect URL*</label>
-                <input
-                  type="text"
-                  value={redirectUrl}
-                  onChange={(e) => setRedirectUrl(e.target.value)}
-                  className="border p-2 rounded w-full mb-3"
-                  placeholder="https://example.com"
-                />
-                {errors.redirectUrl && <span className="text-red-500 text-sm">{errors.redirectUrl}</span>}
-              </div>
-              <div>
-                <label className="block mb-2 font-medium">Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="border p-2 rounded w-full mb-3"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-            </div>
+                <div>
+                  <label className="block mb-2 font-medium">Redirect URL*</label>
+                  <input
+                    type="text"
+                    value={redirectUrl}
+                    onChange={(e) => setRedirectUrl(e.target.value)}
+                    className="border p-2 rounded w-full mb-3"
+                    placeholder="https://example.com"
+                  />
+                  {errors.redirectUrl && <span className="text-red-500 text-sm">{errors.redirectUrl}</span>}
+                </div>
+              </>
+            )}
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Common fields (status, dates) */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
                 <label className="block mb-2 font-medium">Start Date*</label>
                 <input
@@ -470,6 +534,18 @@ export default function DesignComponent() {
                 />
                 {errors.endDate && <span className="text-red-500 text-sm">{errors.endDate}</span>}
               </div>
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="border p-2 rounded w-full mb-3"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">

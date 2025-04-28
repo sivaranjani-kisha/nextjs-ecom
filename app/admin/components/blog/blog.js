@@ -315,9 +315,9 @@ export default function BlogComponent() {
     };
 
     return (
-      <div className="container mx-auto mt-10 p-5">
+      <div className="container mx-auto ">
        
-        <div className="flex justify-between items-center mb-5">
+        <div className="flex justify-between items-center mb-1 ">
           <h2 className="text-2xl font-bold">Blog List</h2>
           
           <button

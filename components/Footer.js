@@ -58,26 +58,62 @@ const Footer = () => {
   return (
     <>
       {/* Why Choose Us Section */}
-      <section className="bg-gray-100 py-10">
-        <h2 className="text-2xl font-bold text-center text-gray-900 mb-6">Why Choose Us?</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-9xl mx-auto px-6">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="flex items-center p-4 rounded-xl shadow-md bg-white"
-              style={{ backgroundColor: "#cfd4e1" }}
-            >
-              <div className="bg-blue-500 text-white p-3 rounded-full text-2xl flex items-center justify-center">
-                {feature.icon}
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">{feature.title}</h3>
-                <p className="text-sm text-gray-700">{feature.description}</p>
-              </div>
-            </div>
-          ))}
+      {/* <section style={{ backgroundColor: "#f3f4f6", padding: "40px 0" }}>
+  <h2 style={{ fontSize: "24px", fontWeight: "bold", textAlign: "center", color: "#111827", marginBottom: "24px" }}>
+    Why Choose Us?
+  </h2>
+  <div
+    style={{
+      display: "flex",
+      flexWrap: "wrap",    // allow wrapping if needed
+      justifyContent: "center",
+      gap: "24px",
+      padding: "0 24px",
+      maxWidth: "1440px",
+      margin: "0 auto",
+    }}
+  >
+    {features.map((feature, index) => (
+      <div
+        key={index}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flex: "1 1 300px", // allow to shrink and stretch
+          maxWidth: "350px",
+          padding: "24px",
+          borderRadius: "12px",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+          backgroundColor: "#cfd4e1",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#3b82f6",
+            color: "white",
+            padding: "12px",
+            borderRadius: "9999px",
+            fontSize: "24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {feature.icon}
         </div>
-      </section>
+        <div style={{ marginLeft: "16px" }}>
+          <h3 style={{ fontSize: "18px", fontWeight: "600", color: "#111827", marginBottom: "8px" }}>
+            {feature.title}
+          </h3>
+          <p style={{ fontSize: "14px", color: "#374151" }}>{feature.description}</p>
+        </div>
+      </div>
+    ))}
+  </div>
+</section> */}
+
+
+
 
       {/* Footer Section */}
       <footer className="bg-[#2e2a2a] text-gray-300 text-sm py-10">

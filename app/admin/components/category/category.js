@@ -282,7 +282,7 @@ export default function CategoryComponent() {
   const pageCount = Math.ceil(filteredCategories.length / itemsPerPage);
 
   return (
-    <div className="container mx-auto mt-10 p-5">
+    <div className="container mx-auto ">
       {/* Alert Message */}
       {showAlert && (
         <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4">
@@ -290,7 +290,7 @@ export default function CategoryComponent() {
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-5">
+      <div className="flex justify-between items-center mb-1 ">
         <h2 className="text-2xl font-bold">Category List</h2>
         <button
           onClick={() => setIsModalOpen(true)}

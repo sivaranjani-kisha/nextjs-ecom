@@ -322,6 +322,7 @@ export default function CategoryPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Filters Sidebar */}
+        {products.length > 0 ? (
         <div className="lg:col-span-1 space-y-6">
           {/* Active Filters */}
           {(selectedFilters.brands.length > 0 || 
@@ -645,7 +646,10 @@ export default function CategoryPage() {
               )}
             </div>
         </div>
-
+ ): ( 
+          <div>
+          </div>
+        )}
         {/* Products Grid */}
         <div className="lg:col-span-3">
           {loading ? (
@@ -653,14 +657,22 @@ export default function CategoryPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           ) : products.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium">No products found matching your filters</h3>
-              <button 
+            <div className="text-center mr-[310px] py-10">
+              <img 
+                src="/images/no-productbox.png" 
+                alt="No Products" 
+                className="mx-auto mb-4 w-32 h-32 md:w-40 md:h-40 object-contain" 
+              />
+             {/* <h3 className="text-lg font-medium">No products found</h3> */}
+
+
+          
+              {/* <button 
                 onClick={clearAllFilters}
                 className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 Clear all filters
-              </button>
+              </button> */}
             </div>
           ) : (
             <>
@@ -857,6 +869,7 @@ export default function CategoryPage() {
         </div>
       </div>
       {/* Pagination */}
+      {pageCount > 0 && (
       <ReactPaginate
         breakLabel={<span className="text-gray-400 px-4">...</span>}
         pageCount={pageCount}
@@ -928,7 +941,9 @@ export default function CategoryPage() {
             </svg>
           </div>
         }
+
       />
+    )}
     </div>
   );
 }

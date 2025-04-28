@@ -10,6 +10,7 @@ import Link from "next/link";
 
 export default function ProductPage() {
   const { slug } = useParams();
+  const [showMoreInfo, setShowMoreInfo] = useState(false);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -154,14 +155,14 @@ useEffect(() => {
   return (
     <div className="bg-white min-h-screen overflow-x-hidden">
       {/* 🟠 Wishlist Header Bar */}
-      <div className="bg-blue-50 py-6 px-8 flex justify-between items-center">
+      {/* <div className="bg-blue-50 py-6 px-8 flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-800">Shop Details</h2>
         <div className="flex items-center space-x-2">
           <Link href="/" className="text-gray-600 hover:text-blue-600">🏠 Home</Link>
           <span className="text-gray-500">›</span>
           <span className="text-blue-600 font-semibold">Shop Details</span>
         </div>
-      </div>
+      </div> */}
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -240,45 +241,28 @@ useEffect(() => {
           <div className="md:col-span-2">
             <h1 className="text-1xl font-semibold">{product.name}</h1>
             <div className="mt-2 pb-3 border-b border-gray-400">
-            <div className="flex items-center space-x-2 text-yellow-500 text-sm">
+              {/* Item Code */}
+              <div className="flex items-center space-x-2 text-yellow-500 text-sm">
                 <span className="text-gray-500 text-xs">{product.item_code}</span>
               </div>
-              {/* <div className="flex items-center space-x-2 text-yellow-500 text-sm">
-                ⭐⭐⭐⭐⭐ <span className="text-gray-500 text-xs">{product.stock_status} | {product.reviews || 0} Reviews</span>
-              </div> */}
+
+              {/* Price Section */}
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-customBlue">
+                  Rs.{product.special_price || product.price}
+                </span>
+                {product.special_price && (
+                  <span className="text-gray-500 line-through text-sm">
+                    Rs.{product.price}
+                  </span>
+                )}
+              </div>
             </div>
+
             {/* <p className="text-gray-700 text-sm mt-3 font-medium">
               {product.sku || "N/A"}
             </p> */}
-            <p className="text-gray-700 text-sm mt-3 font-medium">
-              {product.description ? 
-                product.description.split(' ').slice(0, 50).join(' ') + (product.description.split(' ').length > 50 ? '...' : '') 
-                : "N/A"
-              }
-            </p>
-
-            <div className="flex items-center mt-2 pb-3 border-b border-gray-400">
-              <div className="flex items-center space-x-3">
-                <span className="text-2-5xl font-bold text-gray-900">Rs.{product.special_price || product.price}</span>
-                {product.special_price && (
-                  <span className="text-gray-500 line-through text-xl">Rs.{product.price}</span>
-                )}
-              </div>
-              {/* <button className="ml-6 bg-customBlue text-white px-5 py-2 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 text-lg">
-                Order on WhatsApp
-              </button> */}
-            <button 
-              onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: ${product.slug}`)}`, '_blank')} 
-              className="ml-6 bg-customBlue text-white px-5 py-2 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 text-sm flex items-center space-x-2">
-                <svg className="w-5 h-5" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-              </svg><span>Order on WhatsApp</span>
-            </button>
-
-
-
-            </div>
-
+            
             {/* Color Variant Section */}
             {/* <div className="p-3">
               <h3 className="text-sm font-semibold text-gray-900 mb-2">Colour Variant:</h3>
@@ -348,20 +332,20 @@ useEffect(() => {
                 <div className="flex items-center border border-gray-300 rounded-full w-26 h-10">
                   <button 
                     onClick={() => setQuantity(Math.max(1, quantity - 1))} 
-                    className="px-3 py-2 border-r hover:bg-gray-100"
+                    className="px-3 py-2 border-r"
                   >
                     -
                   </button>
                   <span className="px-4 py-2">{quantity}</span>
                   <button 
                     onClick={() => setQuantity(quantity + 1)} 
-                    className="px-3 py-2 border-l hover:bg-gray-100"
+                    className="px-3 py-2 border-l"
                   >
                     +
                   </button>
                 </div>
               </div>
-              <button className="ml-4 bg-blue-600 text-white px-9 h-10 rounded-md shadow-md hover:bg-blue-700 transition duration-300 text-md flex items-center justify-center gap-x-3">
+              <button className="ml-4 bg-customBlue text-white px-9 h-10 rounded-md shadow-md hover:bg-blue-700 transition duration-300 text-md flex items-center justify-center gap-x-3">
                 <FaShoppingCart /> Add To Cart
               </button>
               <div className="flex-grow"></div>
@@ -378,7 +362,85 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="border-b border-gray-400 mt-4"></div>
+            <div className="mt-4 bg-gray-50 p-4 rounded-md">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setShowMoreInfo(!showMoreInfo)}
+              >
+                <h3 className="text-sm font-semibold text-gray-900">MORE INFO</h3>
+                <svg 
+                  className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showMoreInfo ? 'transform rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+    
+                {showMoreInfo && (
+                <div className="mt-3">
+                  <div className="flex flex-row gap-4">
+                    {/* Image Section (Left) */}
+                    <div className="w-[30%] flex-shrink-0">
+                    {/* <img 
+                src={product.image || "/user/placeholder.png"} 
+                alt={product.name}
+                className="w-full h-auto max-w-[150px] max-h-[150px] object-contain rounded-md border border-gray-200 mx-auto"
+              /> */}
+
+                <img
+                  src={selectedImage || "/user/placeholder.png"}
+                  alt={product?.name || "Product"}
+                  className="w-full h-auto max-w-[150px] max-h-[150px] object-contain rounded-md border border-gray-200 mx-auto"
+                  ref={imgRef}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/user/placeholder.png"; // fallback image
+                  }}
+                />
+              </div>
+                    
+                    {/* Content Section (Right) */}
+                    <div className="w-[60%] flex flex-col">
+                      {/* Product Description */}
+                      <p className="text-gray-700 text-sm text-justify">
+                        {product.description ? 
+                          product.description.split(' ').slice(0, 50).join(' ') + (product.description.split(' ').length > 50 ? '...' : '') 
+                          : "No description available"
+                        }
+                      </p>
+                      <div className="border-b border-gray-400 mt-2"></div>
+
+                      <div className="flex items-end justify-between mt-6">
+                        {/* Price Section */}
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-l font-bold text-gray-900">Rs.{product.special_price || product.price}</span>
+                          {product.special_price && (
+                            <span className="text-gray-500 line-through text-sm">Rs.{product.price}</span>
+                          )}
+                        </div>
+
+                        {/* WhatsApp Order Button */}
+                        <button 
+                          onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: ${product.slug}`)}`, '_blank')} 
+                          className="flex items-center gap-2 px-2 py-2 bg-customBlue text-white text-sm rounded-md shadow hover:bg-blue-700 transition duration-300"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                            <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
+                          </svg>
+                          <span className="whitespace-nowrap">Order on whatsapp</span>
+                        </button>
+                      </div>
+
+
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+          <div className="border-b border-gray-400 mt-2"></div>
 
             {/* Coupons */}
             {/* <div className="mt-4">

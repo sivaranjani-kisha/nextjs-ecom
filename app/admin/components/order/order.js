@@ -160,19 +160,19 @@ export default function OrderComponent() {
   };
 
   return (
-    <div className="container mx-auto mt-10 p-5">
+    <div className="container mx-auto ">
       {alertMessage && (
         <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4">
           {alertMessage}
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-3">
         <h2 className="text-2xl font-bold">Order List</h2>
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-4 border-b-2 border-gray-200 mb-8">
+      <div className="flex space-x-4 border-b-2 border-gray-200 mb-5">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -190,7 +190,7 @@ export default function OrderComponent() {
       </div>
 
       {/* Search Box */}
-      <div className="flex justify-start mb-8">
+      <div className="flex justify-start mb-5">
         <input
           type="text"
           placeholder="Search Order..."

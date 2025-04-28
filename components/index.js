@@ -11,8 +11,17 @@ import { FiChevronLeft, FiChevronRight, FiShoppingCart } from 'react-icons/fi';
 import { Heart, ShoppingCart } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
-
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
 export default function HomeComponent() {
+  const features = [
+    { icon: "🚗", title: "Free Shipping", description: "Free shipping all over the US" },
+    { icon: "🔒", title: "100% Satisfaction", description: "Guaranteed satisfaction with every order" },
+    { icon: "💼", title: "Secure Payments", description: "We ensure secure transactions" },
+    { icon: "💬", title: "24/7 Support", description: "We're here to help anytime" },
+  ];
   const scrollContainerRef = useRef(null);
   const containerRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +43,7 @@ export default function HomeComponent() {
   const [parentCategories, setParentCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
-
+  const [categoryBanner, setCategoryBanner] = useState([]);
   // Fetch banner data
   useEffect(() => {
     const fetchBannerData = async () => {
@@ -118,7 +127,7 @@ export default function HomeComponent() {
         setIsFlashSalesLoading(false);
       }
     };
-
+  
     const fetchBrands = async () => {
       setIsBrandsLoading(true);
       try {
@@ -164,6 +173,26 @@ export default function HomeComponent() {
         console.error("Error fetching products:", error);
       }
     };
+
+    const fetchCategoryBanners = async()=>{
+      try {
+        const response = await fetch("/api/design/get"); // your existing API
+        const res = await response.json();
+        const data = res.data;
+
+        // 1. Find the banner with bannerType === 'categorybanner'
+        const categoryBannerData = data.find(item => item.bannerType === "categorybanner");
+
+        // 2. If found, set categoryImages array
+        if (categoryBannerData && categoryBannerData.categoryImages) {
+          setCategoryBanner(categoryBannerData.categoryImages);
+        }
+      } catch (error) {
+        console.error("Error fetching category banners:", error);
+      }
+    }
+
+    fetchCategoryBanners();
 
     fetchBannerData();
     fetchFlashSales();
@@ -342,7 +371,53 @@ export default function HomeComponent() {
   const dealCategories = parentCategories.slice(1, 4);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 5;
-
+  const offers = [
+    {
+      id: 1,
+      href: "/details/HP-ZBook-Firefly-14-G7-Laptop-Intel-Core-i7-10th-Gen-16GB-RA/PJ7278/",
+      bgColor: "bg-purple-50",
+      image: "https://www.ourshopee.com/ourshopee-img/ourshopee_transparant_image/640501204445465898Remove-background-project-10.png?",
+      alt: "HP ZBook Firefly 14 G7 Laptop Intel Core i7 10th Gen, 16GB RAM, 256GB SSD, 14inch Touchscreen, Refurbished",
+      title: "HP ZBook Firefly 14 G7 Laptop Intel Core i7 10th Gen, 16GB RAM, 256GB SSD, 14inch Touchscreen, Refurbished",
+      price: "1279",
+      oldPrice: "1999",
+      discount: "36% OFF"
+    },
+    {
+      id: 2,
+      href: "/details/Apple-MacBook-Air-2017-133-inch-FHD-Display-Intel-Core-i5-Pr/PJ7459/",
+      bgColor: "bg-green-50",
+      image: "https://www.ourshopee.com/ourshopee-img/ourshopee_transparant_image/157358255933126412Remove-background-project-9.png?",
+      alt: "Apple MacBook Air 2017 13.3 inch FHD Display Intel Core i5 Processor 8GB RAM 256GB SSD Storage Silver Refurbished",
+      title: "Apple MacBook Air 2017 13.3 inch FHD Display Intel Core i5 Processor 8GB RAM 256GB SSD Storage Silver Refurbished",
+      price: "799",
+      oldPrice: "1799",
+      discount: "56% OFF"
+    },
+    {
+      id: 3,
+      href: "/details/Dell-Latitude-5411-Business-Laptop-Intel-Core-i5-10th-Genera/PJ8317/",
+      bgColor: "bg-amber-50",
+      image: "https://www.ourshopee.com/ourshopee-img/ourshopee_transparant_image/3670529537588708Remove-background-project-20.png?",
+      alt: "Dell Latitude 5411 Business Laptop, Intel Core i5-10th Generation CPU, 16GB RAM, 256GB SSD , 14 inch  Windows 11 Pro Refurbished",
+      title: "Dell Latitude 5411 Business Laptop, Intel Core i5-10th Generation CPU, 16GB RAM, 256GB SSD , 14 inch  Windows 11 Pro Refurbished",
+      price: "719",
+      oldPrice: "899",
+      discount: "20% OFF"
+    },
+    {
+      id: 4,
+      href: "/details/My-Ruky-Signature-Unisex-65ml/OO1356/",
+      bgColor: "bg-pink-50",
+      image: "https://www.ourshopee.com/ourshopee-img/ourshopee_transparant_image/884926333576922692OO1356.png?",
+      alt: "My Ruky Signature Unisex 65ml",
+      title: "My Ruky Signature Unisex 65ml",
+      price: "65",
+      oldPrice: "91",
+      discount: "29% OFF"
+    },
+  ];
+  
   return (
     <>
       {isLoading && (
@@ -357,8 +432,14 @@ export default function HomeComponent() {
         </div>
       )}
       
+      {/* <div 
+        className={`relative py-4 px-4 md:px-0 lg:px-0 transition-opacity duration-300 ${
+          isLoading ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'
+        }`} 
+        ref={containerRef}
+      > */}
       <div 
-        className={`relative py-12 px-4 md:px-8 lg:px-12 transition-opacity duration-300 ${
+        className={`relative transition-opacity duration-300 ${
           isLoading ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'
         }`} 
         ref={containerRef}
@@ -458,9 +539,9 @@ export default function HomeComponent() {
           initial="hidden"
           animate={isInView.banner ? "visible" : "hidden"}
           variants={containerVariants}
-          className=""
+          className="overflow-hidden pt-0 m-0 " // Make sure there's no padding at the top
         >
-          <div className="relative rounded-[30px]">
+          <div className="relative">
             {isBannerLoading ? (
               <div className="p-6 flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
@@ -471,19 +552,17 @@ export default function HomeComponent() {
                   {bannerData.banner.items.map((item) => (
                     <motion.div
                       key={item.id}
-                      className="p-6 relative h-[500px]"
+                      className="relative h-[2500px]"
                       variants={itemVariants}
                     >
-                      <div className="absolute inset-0 rounded-[30px] overflow-hidden">
+                      <div className="absolute inset-0 overflow-hidden">
                         <Image
                           src={item.bgImageUrl}
                           alt="Background"
                           layout="fill"
                           objectFit="cover"
-                          className="rounded-[30px]"
                           priority
                         />
-                        <div className="absolute inset-0 bg-opacity-20 rounded-[30px]"></div>
                       </div>
 
                       {/* <div className="relative flex items-center h-full max-w-7xl mx-auto">
@@ -586,8 +665,155 @@ export default function HomeComponent() {
             </div>
           </div>
         </motion.section>
+        {/* <section style={{ backgroundColor: "#f3f4f6", padding: "40px 0" }}> */}
+        <section >
+          {/* <h2 style={{ fontSize: "24px", fontWeight: "bold", textAlign: "center", color: "#111827", marginBottom: "24px" }}>
+            Why Choose Us?
+          </h2> */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "nowrap",    // no wrapping
+              justifyContent: "center",
+              gap: "24px",
+              //padding: "0 24px",
+              maxWidth: "1440px",
+              margin: "0 auto",
+            }}
+          >
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flex: "1 1 0",        // allow shrinking
+                  minWidth: "0",         // important for shrinking properly
+                  padding: "24px",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                  backgroundColor: "#cfd4e1",
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: "#3b82f6",
+                    color: "white",
+                    padding: "12px",
+                    borderRadius: "9999px",
+                    fontSize: "24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {feature.icon}
+                </div>
+                <div style={{ marginLeft: "16px" }}>
+                  <h3 style={{ fontSize: "18px", fontWeight: "600", color: "#111827", marginBottom: "8px" }}>
+                    {feature.title}
+                  </h3>
+                  <p style={{ fontSize: "14px", color: "#374151" }}>{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+ {/* nnnnnnnnnnnnnnnnn */}
+ <div className=" px-2 py-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Exciting Offers</h2>
+        <div className="flex gap-2">
+          <button className="swiper-button-prev bg-gray-300 hover:bg-gray-400 p-2 rounded-full">
+            ◀
+          </button>
+          <button className="swiper-button-next bg-gray-300 hover:bg-gray-400 p-2 rounded-full">
+            ▶
+          </button>
+        </div>
+      </div>
 
+      <Swiper
+        modules={[Navigation]}
+        navigation={{
+          nextEl: ".swiper-button-next",
+          prevEl: ".swiper-button-prev",
+        }}
+        slidesPerView={4}
+        spaceBetween={0} // no gap between cards
+        loop={true}
+      >
+        {offers.map((offer) => (
+          <SwiperSlide key={offer.id}>
+            <div className={`card rounded-lg ${offer.bgColor} shadow-sm`}>
+              <div className="flex items-center">
+                <div className="w-1/3 p-2">
+                  <img
+                    src={offer.image}
+                    alt={offer.alt}
+                    className="w-full object-contain pl-1"
+                  />
+                </div>
+                <div className="w-2/3 p-4">
+                  <div className="flex items-center mb-2">
+                    <svg
+                      stroke="currentColor"
+                      fill="none"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      className="mr-1 h-3.5 w-3.5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span className="text-sm">04h : 43m : 59s</span>
+                  </div>
+                  <div className="text-sm line-clamp-2">{offer.title}</div>
+                  <div className="mt-1">
+                    <span className="text-sm font-medium text-gray-700">AED</span>
+                    <span className="ml-1 font-semibold">{offer.price}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="text-sm font-medium text-gray-700 line-through whitespace-nowrap">
+                      {offer.oldPrice}
+                    </div>
+                    <div className="text-sm font-semibold text-green-600 bg-white rounded px-2 whitespace-nowrap">
+                      {offer.discount}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    </div>
+    {/* category banner */}
+    <div className="px-2 sm:px-2 lg:px-2">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+       
 
+        {categoryBanner.map((banner, index) => (
+          <div key={index} className="col-span-1">
+            <div className="card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <Link href={banner.redirectUrl} className="no-underline">
+                <img
+                  src={banner.imageUrl}
+                  alt={`Category Banner ${index + 1}`}
+                  title={`Category Banner ${index + 1}`}
+                  className="w-full h-auto object-cover"
+                  width={400} // width you defined in virtual
+                  height={400}
+                />
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
         {/* Flash Sales Section */}
         {/* <motion.section 
           ref={refs.flashSales}
@@ -661,11 +887,11 @@ export default function HomeComponent() {
   animate={isInView.flashSales ? "visible" : "hiddenDown"}
   variants={sectionVariants}
   id="flash-sales-section" 
-  className="mb-12"
+  className=""
 >
   {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
-    <div className="container mx-auto px-4">
-      <motion.div variants={itemVariants} className="section-heading flex justify-between items-center mb-8">
+    <div className="px-2 py-4">
+      <motion.div variants={itemVariants} className="section-heading flex justify-between items-center mb-4">
         <h5 className="text-2xl font-bold">Flash Sales Today</h5>
         <a href="/shop" className="text-sm font-medium text-gray-700 hover:underline">
           View All Deals
@@ -768,7 +994,7 @@ export default function HomeComponent() {
           initial={scrollDirection === 'down' ? "hiddenDown" : "hiddenUp"}
           animate={isInView.delivery ? "visible" : scrollDirection === 'down' ? "hiddenDown" : "hiddenUp"}
           variants={sectionVariants}
-          className="mb-12 bg-gray-100 rounded-[23px] py-8" // Consistent bottom margin and padding
+          className="mb-2 bg-gray-100 rounded-[23px] py-8" // Consistent bottom margin and padding
         >
           <div className="mx-auto p-1">
           <motion.div variants={containerVariants} className="rounded-lg">
@@ -816,8 +1042,8 @@ export default function HomeComponent() {
         {/* Recommended Products Section */}
       
 
-        <section className="mb-12"> {/* Consistent bottom margin */}
-          <div className="container mx-auto px-4">
+        <section className="mb-2"> {/* Consistent bottom margin */}
+          <div className=" px-2 py-4">
             <h2 className="text-2xl font-bold mb-8">Recommended for you</h2>
 
             {/* Category Filter with Arrows */}
@@ -946,7 +1172,7 @@ export default function HomeComponent() {
 
              {/* Hot Deals Section - Showing only parent categories */}
             <motion.section className="hot-deals pt-15 mb-10 bg-gray-100">
-              <div className="container mx-auto px-4 p-4">
+              <div className=" px-2 py-4">
                 {/* Section Header */}
                 <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
                   <h5 className="text-2xl font-bold">Hot Deals Today</h5>
