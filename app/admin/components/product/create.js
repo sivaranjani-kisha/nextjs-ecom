@@ -49,6 +49,7 @@ export default function AddProductPage() {
     featured_products:[],
     warranty: "",
     extended_warranty: "",
+    product_highlights: [''],
   });
 
     const [variant, setVariant] = useState([{
@@ -807,6 +808,20 @@ export default function AddProductPage() {
     }));
   };
 
+  const handleHighlightChange = (index, value) => {
+    const updatedHighlights = [...product.product_highlights];
+    updatedHighlights[index] = value;
+    setProduct({ ...product, product_highlights: updatedHighlights });
+  };
+  
+  const addHighlight = () => {
+    setProduct({ ...product, product_highlights: [...product.product_highlights, ''] });
+  };
+  
+  const removeHighlight = (index) => {
+    const updatedHighlights = product.product_highlights.filter((_, i) => i !== index);
+    setProduct({ ...product, product_highlights: updatedHighlights });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -835,6 +850,7 @@ export default function AddProductPage() {
       }else{
         formData.append("overviewImages", []);
       }
+      formData.append("highlights", JSON.stringify(product.product_highlights));
       const response = await fetch("/api/product/add", {
         method: "POST",
         body: formData,
@@ -1059,8 +1075,8 @@ export default function AddProductPage() {
         }
         break;
       case 3:
-        if (product.hasVariants && product.variantAttributes.some(attr => !attr.name || !attr.options.length)) {
-          return "Please fill in all variant attributes and options.";
+        if ( product.hasVariants && !variant.every( (attr) => attr.variant_attribute_name.trim() !== '' && attr.options.trim() !== '' && attr.item_code.trim() !== '' && attr.price !== '' && attr.special_price !== '' && attr.quantity !== '' && attr.stock_status.trim() !== '' && attr.status.trim() !== '')) {
+          return 'Please fill in all required variant fields.';
         }
         break;
       case 4:
@@ -1101,7 +1117,7 @@ export default function AddProductPage() {
            {/* <h3 className="text-xl font-semibold mb-4">Product Information</h3> */}
            <div className="grid grid-cols-2 gap-4">
               <div>
-              <label className="block text-sm font-medium text-gray-700">Product Name*</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name*</label>
                 <input
                   type="text"
                   name="name"
@@ -1113,18 +1129,20 @@ export default function AddProductPage() {
               </div>
         
               <div>
-              <label className="block text-sm font-medium text-gray-700">Item Code</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Item Code</label>
                 <input type="text" name="item_code" value={product.item_code} onChange={handleChange} className="w-full border p-2 rounded" required />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-            <div className="border p-2 rounded-md mb-2">
-              <label className="block text-sm font-medium text-gray-700">Categories</label>
+            <div className="rounded-md mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Categories</label>
+              <div className="border rounded-md">
               {renderCategoryTree(categories)}
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Brand</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
               <Select
                 options={brand}
                 onChange={handleBrandChange}
@@ -1136,23 +1154,23 @@ export default function AddProductPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">MRP Price</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">MRP Price</label>
                 <input type="number" name="price" value={product.price} onChange={handleChange} className="w-full border p-2 rounded" required />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Selling Price</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price</label>
                 <input type="number" name="special_price" value={product.special_price} onChange={handleChange} className="w-full border p-2 rounded" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Quantity</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
               <input type="number" name="quantity" value={product.quantity} onChange={handleChange} className="w-full border p-2 rounded" required />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Stock Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stock Status</label>
               <select
                 name="stock_status"
                 value={product.stock_status}
@@ -1305,8 +1323,8 @@ export default function AddProductPage() {
               </div>
         
               <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea name="description" value={product.description} onChange={handleChange} className="w-full border p-2 rounded" rows="3"></textarea>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea name="description" value={product.description} onChange={handleChange} className="w-full border p-2 rounded" rows="4"></textarea>
               </div>
             <div className="space-y-6">
               {/* Overview Image */}
@@ -1400,11 +1418,11 @@ export default function AddProductPage() {
               </div>
 
               {/* Product Description Editor */}
-              <div className="flex flex-col gap-4">
-                <label className="block text-sm font-medium text-gray-700">
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-1 ">
                 Overview Description
                 </label>
-                  <textarea name="overviewdescription" value={product.overviewdescription} onChange={handleChange} className="w-full border p-2 rounded" rows="3"></textarea>
+                  <textarea name="overviewdescription" value={product.overviewdescription} onChange={handleChange} className="w-full border p-2 pt-0 rounded" rows="4"></textarea>
               </div>
             </div>
              
@@ -1751,7 +1769,7 @@ export default function AddProductPage() {
               )}
             </div>
             <div className="border p-4 rounded">
-            <label className="block text-sm font-medium text-gray-700">Filter</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Filter</label>
               <Select
                 options={Filter}
                 isMulti
@@ -1767,7 +1785,7 @@ export default function AddProductPage() {
         {currentStep === 4 && (
           <div className="space-y-4">
             <div>
-               <label className="block text-sm font-medium text-gray-700">Meta Title</label>
+               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
               <input
                 type="text"
                 name="meta_title"
@@ -1777,20 +1795,41 @@ export default function AddProductPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Key Specifications</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Key Specifications</label>
               <textarea name="key_specifications" value={product.key_specifications} onChange={handleChange} className="w-full border p-2 rounded" rows="3"></textarea>
             </div>
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700">Tags</label>
-              <Select
-                options={tagsOptions}
-                isMulti
-                onChange={handleTagsChange}
-                placeholder="Select tags..."
-              />
-            </div> */}
-                        <div>
-            <label className="block text-sm font-medium text-gray-700">Featured Products</label>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Highlights</label>
+
+              {product.product_highlights.map((highlight, index) => (
+                <div key={index} className="flex space-x-2 mb-2">
+                  <input
+                    type="text"
+                    value={highlight}
+                    onChange={(e) => handleHighlightChange(index, e.target.value)}
+                    className="w-full border p-2 rounded"
+                    placeholder={`Highlight #${index + 1}`}
+                  />
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <button type="button"  onClick={addHighlight}  className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" > 
+                        <svg  className="h-5 w-5"  xmlns="http://www.w3.org/2000/svg" fill="currentColor"  viewBox="0 0 20 20"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" /></svg> 
+                      </button>
+                    </div>
+                    <div>
+                      <button type="button" onClick={() => removeHighlight(index)} className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+      
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Featured Products</label>
               <Select
                 isMulti  // Enable multi-select
                 options={allproducts}
@@ -1802,6 +1841,8 @@ export default function AddProductPage() {
                 closeMenuOnSelect={false}
               />
             </div>
+
+
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Warranty</label>
@@ -1816,7 +1857,7 @@ export default function AddProductPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Extended Warranty</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Extended Warranty</label>
               <input
                 type="number"
                 name="extended_warranty"
@@ -1827,7 +1868,7 @@ export default function AddProductPage() {
               />
             </div>
             <div>
-                 <label className="block text-sm font-medium text-gray-700">Status</label>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   name="status"
                   value={product.status}

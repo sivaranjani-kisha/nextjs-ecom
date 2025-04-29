@@ -25,6 +25,7 @@ const ProductSchema = new mongoose.Schema({
   warranty: Number,
   extended_warranty:Number,
   overviewdescription: String,
+  product_highlights: {type: [String],default: [],},
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

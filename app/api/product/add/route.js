@@ -117,6 +117,9 @@ export async function POST(req) {
     productData.category = main_Category;
     productData.sub_category = category;
 
+    const highlights = JSON.parse(formData.get("highlights") || "[]");
+    productData.product_highlights = highlights;
+console.log(productData);
     const newProduct = new Product({
       ...productData,
       images: savedImages,
