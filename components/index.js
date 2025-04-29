@@ -644,7 +644,7 @@ export default function HomeComponent() {
             )}
 
             {/* Scroll Button */}
-            <div className="relative flex items-center justify-center w-full mt-10">
+            {/* <div className="relative flex items-center justify-center w-full mt-10">
               <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-40 h-16 rounded-b-full shadow-lg-new"></div>
               <div
                 className="absolute left-1/2 transform -translate-x-1/2 w-16 h-16 flex items-center justify-center bg-blue-600 rounded-full shadow-md border-4 border-white cursor-pointer"
@@ -662,7 +662,7 @@ export default function HomeComponent() {
                   <CaretDown size={25} className="text-white animate-bounce mt-[-18px]" />
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </motion.section>
         {/* <section style={{ backgroundColor: "#f3f4f6", padding: "40px 0" }}> */}
@@ -1256,7 +1256,7 @@ export default function HomeComponent() {
                             key={product._id}
                             className="flex-shrink-0 w-[250px] snap-start"
                           >
-                            <Link href={`/product/${product.slug || product._id}`}>
+                           
                               <motion.div
                                 whileHover={{ y: -5 }}
                                 className="relative border rounded-lg shadow p-4 transition-all duration-300 hover:border-blue-500 hover:shadow-lg group bg-white h-full"
@@ -1273,11 +1273,14 @@ export default function HomeComponent() {
                                     </span>
                                   </div>
                                 )}
-                                <div className="absolute top-3 right-3 flex gap-2 z-10">
+                                <div className="absolute top-2 right-2 z-10  hover:text-red-500">
+                                  <ProductCard productId={product._id} />
+                                </div>
+                                {/* <div className="absolute top-3 right-3 flex gap-2 z-10">
                                   <button className="p-1 rounded-full bg-white shadow hover:text-red-500">
                                     ❤️
                                   </button>
-                                </div>
+                                </div> */}
                                 <img
                                   src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"}
                                   alt={product.name || "Product image"}
@@ -1287,9 +1290,11 @@ export default function HomeComponent() {
                                     e.target.src = "/placeholder.jpg";
                                   }}
                                 />
+                                 <Link href={`/product/${product.slug || product._id}`}>
                                 <h3 className="mt-3 font-semibold group-hover:text-blue-600 line-clamp-2">
                                   {product.name}
                                 </h3>
+                                </Link>
                                 <p className="mt-2 text-lg font-bold text-blue-600">
                                   ${product.special_price || product.price}
                                   {product.special_price && (
@@ -1304,7 +1309,7 @@ export default function HomeComponent() {
                                   Add To Cart
                                 </button>
                               </motion.div>
-                            </Link>
+                          
                           </div>
                         ))}
                     </div>

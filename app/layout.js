@@ -29,6 +29,8 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <Head>
         <link rel="shortcut icon" href="/images/logo/favicon.png" />
+        
+
         <Script defer src="@/app/app.bundle.js" />
         <script
           defer

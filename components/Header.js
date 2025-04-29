@@ -384,12 +384,15 @@ export default function Header() {
                 />
               </Link>
 
+              
+            </div>
+            <div className="w-[45%]">
               {/* Search Bar */}
               <div className="flex items-center border border-gray-300 rounded-full px-3 bg-white">
                 <input
                   type="text"
                   placeholder="Search for a product or brand"
-                  className="px-4 py-2 outline-none w-72 text-black placeholder:text-gray-400"
+                  className="px-4 py-2 outline-none w-full text-black placeholder:text-gray-400"
                 />
                 <button className="bg-customBlue text-white p-2 rounded-full">
                   <FiSearch size={18} />
@@ -540,8 +543,8 @@ export default function Header() {
               <Image 
                 src={category.image} 
                 alt={category.category_name} 
-                width={60} 
-                height={60} 
+                width={80} 
+                height={80} 
                 className="object-contain"
               />
             ) : (

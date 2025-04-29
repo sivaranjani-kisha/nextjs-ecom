@@ -39,3 +39,22 @@ body {
 .h-20 {
   height: 6.5rem;
 }
+.w-10 {
+  width: 5.5rem;
+}
+.h-10 {
+  height: 5.5rem;
+}
+.w-\[45\%\] {
+  width:45%
+}
+@font-face {
+  font-family: 'Quicksand';
+  src: url('../public/assets/fonts/Quicksand-Bold.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;  
+}
+
+body{
+  font-family: "Quicksand", sans-serif;
+}
