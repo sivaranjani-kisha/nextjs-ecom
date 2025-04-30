@@ -536,9 +536,11 @@ export default function Header() {
         <Link 
           key={category._id} 
           href={`/category/${category.category_slug}`}
-          className="flex flex-col items-center flex-shrink-0"
+          className="flex flex-col items-center flex-shrink-0 transform transition-transform duration-500 ease-out hover:scale-[1.12] active:scale-[1.05]"
         >
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center shadow-md">
+         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center shadow-md transition-transform duration-500 ease-out group-hover:scale-[1.12] group-active:scale-[1.05]">
+
+
             {category.image ? (
               <Image 
                 src={category.image} 
@@ -551,9 +553,10 @@ export default function Header() {
               <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
             )}
           </div>
-          <span className="text-sm font-medium mt-2 text-center w-[80px] truncate">
-            {category.category_name}
-          </span>
+          <span className="text-sm font-medium mt-1 text-center w-[110px]  whitespace-nowrap">
+  {category.category_name}
+</span>
+
         </Link>
       ))}
     </div>
