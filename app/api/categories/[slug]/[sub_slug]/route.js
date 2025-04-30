@@ -19,8 +19,11 @@ export async function GET(req, { params }) {
     }
     
     // Fetch products under this category
-    const products = await Product.find({ sub_category: category._id });
-    if (!products.length) {
+    const products = await Product.find({
+      sub_category: category._id,
+      status: "Active" 
+    });
+    if (!products || products.length === 0) {
       return Response.json({ category, products: [], brands: [], filters: [] });
     }
     
@@ -40,7 +43,6 @@ export async function GET(req, { params }) {
             model: FilterGroup
           })
           .lean();
-    console.log(filters);
     // Add filter_group_name to filters
     const enrichedFilters = filters.map(filter => ({
         ...filter,

@@ -54,20 +54,23 @@ export async function GET(req) {
         product_id: { $in: productIds },
         filter_id: { $in: filterIds }
       });
-      
+      console.log(productFilters);
       // Group filters by product
       const filtersByProduct = productFilters.reduce((acc, pf) => {
         const productId = pf.product_id.toString();
+
         if (!acc[productId]) acc[productId] = new Set();
         acc[productId].add(pf.filter_id.toString());
         return acc;
       }, {});
-      
+      console.log("filtersByProduct",filtersByProduct);
+      console.log("products",products);
       // Filter products to only those that have ALL selected filters
       products = products.filter(product => {
         const productId = product._id.toString();
         const productFilterIds = filtersByProduct[productId] || new Set();
-        return filterIds.every(fid => productFilterIds.has(fid));
+       // return filterIds.every(fid => productFilterIds.has(fid));
+       return filterIds.some(fid => productFilterIds.has(fid));
       });
     }
     

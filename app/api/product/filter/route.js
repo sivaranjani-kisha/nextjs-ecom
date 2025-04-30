@@ -65,7 +65,8 @@ export async function GET(req) {
       products = products.filter(product => {
         const productId = product._id.toString();
         const productFilterIds = filtersByProduct[productId] || new Set();
-        return filterIds.every(fid => productFilterIds.has(fid));
+        //return filterIds.every(fid => productFilterIds.has(fid));
+        return filterIds.some(fid => productFilterIds.has(fid));
       });
     }
     
