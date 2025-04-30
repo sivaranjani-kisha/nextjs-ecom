@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import {AuthModal} from '@/components/AuthModal';
+import { FaShoppingCart} from "react-icons/fa";
+
 const AddToCartButton = ({ productId, quantity = 1 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -64,15 +66,13 @@ const AddToCartButton = ({ productId, quantity = 1 }) => {
       <button 
   onClick={handleAddToCart}
   disabled={isLoading}
-  className={`w-full sm:w-auto px-3 py-2 md:px-4 md:py-2.5 rounded-lg 
-    text-sm md:text-base font-medium transition-all duration-200
-    flex items-center justify-center gap-2
+  className={`w-full sm:w-auto px-2 py-2 md:px-3 md:py-2 rounded-md shadow-md  transition duration-300 text-md flex items-center justify-center gap-x-3
     ${
       isLoading 
-        ? 'bg-gray-400 cursor-not-allowed opacity-75' 
+        ? 'bg-blue-700 cursor-not-allowed opacity-75' 
         : cartSuccess 
           ? 'bg-green-500 text-white hover:bg-green-600'
-          : 'bg-yellow-400 text-black hover:bg-yellow-500'
+          : 'bg-customBlue text-white hover:bg-blue-700'
     }
     active:scale-95 disabled:active:scale-100`}
 >
@@ -101,14 +101,7 @@ const AddToCartButton = ({ productId, quantity = 1 }) => {
     </>
   ) : cartSuccess ? (
     <>
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        className="h-5 w-5" 
-        viewBox="0 0 20 20" 
-        fill="currentColor"
-      >
-        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-      </svg>
+      <FaShoppingCart />
       <span className="hidden sm:inline">Added to Cart</span>
       <span className="sm:hidden">Added</span>
     </>
