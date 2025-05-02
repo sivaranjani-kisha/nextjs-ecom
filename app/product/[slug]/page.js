@@ -7,6 +7,9 @@ import { FaShoppingCart, FaHeart, FaShareAlt, FaBell } from "react-icons/fa";
 import { TbTruckDelivery } from "react-icons/tb";
 import { IoFastFoodOutline, IoReload, IoCardOutline, IoShieldCheckmark, IoStorefront } from "react-icons/io5";
 import Link from "next/link";
+import ProductCard from "@/components/ProductCard";
+import Addtocart from "@/components/AddToCart";
+
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -170,6 +173,35 @@ useEffect(() => {
       </div> */}
 
       <div className="container mx-auto px-4 py-8">
+         {/* Breadcrumb - moved outside the grid but inside container */}
+         <div className="flex items-center text-sm mb-6">
+  <Link 
+    href="/" 
+    className="text-gray-500 hover:text-blue-500 transition-colors flex items-center"
+  >
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      className="h-4 w-4 mr-2" 
+      fill="none" 
+      viewBox="0 0 24 24" 
+      stroke="currentColor"
+    >
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" 
+      />
+    </svg>
+    Home
+  </Link>
+  
+  <span className="mx-2 text-gray-300">/</span>
+  
+  <span className="text-gray-700 font-medium truncate max-w-[200px]">
+    {product.name}
+  </span>
+</div>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Left Section - Product Image with Zoom */}
           <div className="md:col-span-4 relative sticky top-20">
@@ -280,16 +312,12 @@ useEffect(() => {
                   </div>
 
                     {/* Add to Cart Button - Compact */}
-                    <button className="bg-customBlue text-white px-3 h-8 rounded-md shadow-md hover:bg-blue-700 transition duration-300 text-xs flex items-center gap-1 whitespace-nowrap">
-                    <FaShoppingCart size={12} /> Add to Cart
-                  </button>
+                    <Addtocart productId={product._id} className="flex-1" />
                   <div className="flex-grow"></div>
 
                   {/* Action Buttons - Compact */}
                   <div className="ml-2 flex items-center gap-1">
-                    <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
-                      <FaHeart size={10} />
-                    </button>
+                  <ProductCard productId={product._id} />
                     <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
                       <FaShareAlt size={10} />
                     </button>
