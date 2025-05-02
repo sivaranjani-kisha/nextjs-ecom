@@ -4,10 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { ChevronDown, ChevronUp } from "react-feather";
-import { FaPlus, FaMinus } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
+import { ToastContainer, toast } from 'react-toastify';
+
 
 export default function CategoryPage() {
   const [categoryData, setCategoryData] = useState({
@@ -26,33 +27,27 @@ export default function CategoryPage() {
   const [filterGroups, setFilterGroups] = useState({});
   const [loading, setLoading] = useState(true);
   const { slug } = useParams();
-
-    const [currentPage, setCurrentPage] = useState(0);
-    const [sortOption, setSortOption] = useState(''); // Add this with your other state declarations
-    const itemsPerPage = 5; // 5 records per page
-  
-    const handlePageClick = ({ selected }) => {
-      setCurrentPage(selected);
-    };
-
-    const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(true);
-    const [isBrandsExpanded, setIsBrandsExpanded] = useState(true);
-    const [expandedFilters, setExpandedFilters] = useState({}); 
-  // State to toggle the main "Filters" section
+  const [currentPage, setCurrentPage] = useState(0);
+  const [sortOption, setSortOption] = useState('');
+  const itemsPerPage = 5;
+  const handlePageClick = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(true);
+  const [isBrandsExpanded, setIsBrandsExpanded] = useState(true);
+  const [expandedFilters, setExpandedFilters] = useState({}); 
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
   const [wishlist, setWishlist] = useState([]); 
-  // Toggle functions
   const toggleFilters = () => setIsFiltersExpanded(!isFiltersExpanded);
+  const toggleCategories = () => {
+    setIsCategoriesExpanded(!isCategoriesExpanded);
+  };
+  const toggleBrands = () => setIsBrandsExpanded(!isBrandsExpanded);
+  const toggleFilterGroup = (id) => {
+    setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+  const [nofound,setNofound]=useState(false);
 
-
-    // Toggle function
-    const toggleCategories = () => {
-      setIsCategoriesExpanded(!isCategoriesExpanded);
-    };
-    const toggleBrands = () => setIsBrandsExpanded(!isBrandsExpanded);
-    const toggleFilterGroup = (id) => {
-      setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
-    };
   useEffect(() => {
     if (slug) {
       fetchInitialData();
@@ -62,7 +57,6 @@ export default function CategoryPage() {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      
       // Fetch category data (brands, filters, etc.)
       const categoryRes = await fetch(`/api/categories/${slug}`);
       const categoryData = await categoryRes.json();
@@ -107,9 +101,12 @@ export default function CategoryPage() {
       // Fetch initial products
       if (categoryData.products?.length > 0) {
       await fetchFilteredProducts(categoryData);
+      }else{
+        setNofound(true);
       }
     } catch (error) {
-      console.error('Error fetching initial data:', error);
+      // console.error('Error fetching initial data:', error);
+      toast.error("Error fetching initial data",error);
     } finally {
       setLoading(false);
     }
@@ -140,14 +137,6 @@ export default function CategoryPage() {
     }
   };
 
-  const handleWishlistToggle = (productId) => {
-    setWishlist(prev => 
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
-  };
-  
   const sortedProducts = getSortedProducts();
 
   const fetchFilteredProducts = async (categoryData) => {
@@ -156,23 +145,17 @@ export default function CategoryPage() {
       
       const query = new URLSearchParams();
       const categoryId = categoryData.category.map(category => category._id);
-      // query.set('categoryIds', categoryId.join(','));
-      // const categoryIds = selectedFilters.categories.length > 0 
-      // ? selectedFilters.categories 
-      // : category?.map(c => c._id);
       const categoryIds = selectedFilters.categories.length > 0
       ? selectedFilters.categories
-      : categoryData.allCategoryIds; // Use precomputed allCategoryIds from API
+      : categoryData.allCategoryIds;
+      query.set('categoryIds', categoryIds.join(','));
 
-    query.set('categoryIds', categoryIds.join(','));
+      query.set('categoryIds', categoryIds.join(','));
 
-    query.set('categoryIds', categoryIds.join(','));
-
-      
       if (selectedFilters.brands.length > 0) {
         query.set('brands', selectedFilters.brands.join(','));
       }
-      
+    
       query.set('minPrice', selectedFilters.price.min);
       query.set('maxPrice', selectedFilters.price.max);
       
@@ -183,13 +166,13 @@ export default function CategoryPage() {
       const res =await fetch(`/api/product/filter/main?${query}`);
       const data = await res.json();
       setProducts(data);
+    
     } catch (error) {
-      console.error('Error fetching filtered products:', error);
+      toast.error('Error fetching filtered products',error);
     } finally {
       setLoading(false);
     }
   };
- 
 
   const handleFilterChange = (type, value) => {
     setSelectedFilters(prev => {
@@ -245,7 +228,7 @@ export default function CategoryPage() {
             <div className={`flex items-center gap-2 ${level > 0 ? `ml-${level * 4}` : ''}`}>
               <button
                 onClick={() => onFilterChange('categories', category._id)}
-                className={`flex-1 text-left p-2 rounded hover:bg-gray-100 ${
+                className={`flex-1 text-left p-2 rounded hover:bg-gray-100 text-gray-700 ${
                   selectedFilters.includes(category._id) 
                     ? 'bg-blue-100 font-medium' 
                     : ''
@@ -308,6 +291,16 @@ export default function CategoryPage() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
   if (!categoryData.category) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -317,13 +310,38 @@ export default function CategoryPage() {
   }
   const pageCount = Math.ceil(products.length / itemsPerPage);
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">{categoryData.category.category_name}</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Filters Sidebar */}
-        {products.length > 0 ? (
+    <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
+      {!loading && !nofound && categoryData.products.length > 0 ? (
+        <>
+       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
+          <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.main_category.category_name}</h1>
+        </div>
+        <div className="lg:col-span-3">
+          {/* Sorting and Count */}
+          <div className="mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <p className="text-sm text-gray-600">{products.length} products found</p>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">Sort by:</span>
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="px-4 py-2 border rounded-md text-sm bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Featured</option>
+                <option value="price-low-high">Price: Low to High</option>
+                <option value="price-high-low">Price: High to Low</option>
+                <option value="name-a-z">Name: A-Z</option>
+                <option value="name-z-a">Name: Z-A</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+        {/* Filters Sidebar */}
+       
+        <div className="w-full md:w-[250px] shrink-0">
           {/* Active Filters */}
           {(selectedFilters.brands.length > 0 || 
           selectedFilters.categories.length > 0 ||
@@ -415,86 +433,20 @@ export default function CategoryPage() {
             </div>
           )}
 
-          {/* Category Filter */}
-          {/* <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Subcategories</h3>
-            <ul className="space-y-2">
-              {categoryData.category?.map(subCategory => (
-                <li key={subCategory._id}>
-                  <button
-                    onClick={() => handleFilterChange('categories', subCategory._id)}
-                    className={`block w-full text-left p-2 rounded ${
-                      selectedFilters.categories.includes(subCategory._id)
-                        ? 'bg-blue-100 font-medium'
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {subCategory.category_name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div> */}
           {/* Categories Tree */}
-          <div className="bg-white p-4 rounded shadow border">
-            <h3 className="text-lg font-semibold mb-4 pb-4 border-b-2">Categories</h3>
+          <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+            <h3 className="text-base font-semibold mb-3 text-gray-700">Categories</h3>
             {categoryData.categoryTree?.length > 0 ? (
               <CategoryTree categories={categoryData.categoryTree} selectedFilters={selectedFilters.categories}
               onFilterChange={handleFilterChange} />
             ) : (
-              <p className="text-gray-500">No subcategories</p>
+              <p className="text-gray-500 text-sm">No subcategories</p>
             )}
           </div>
-          {/* <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Categories</h3>
-            <ul className="space-y-2">
-              <li key='Categories'>
-                <div className="flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    className={`flex-1 text-left p-2 rounded hover:bg-gray-100`}
-                    onClick={toggleCategories} // Add click handler
-                  >
-                    {categoryData.main_category?.category_name || slug}
-                  </button>
-                  {categoryData.category?.length > 0 && (
-                    <button 
-                      className="p-2 hover:bg-gray-100 rounded"
-                      onClick={toggleCategories}
-                    >
-                      {isCategoriesExpanded ? (
-                        <ChevronUp size={16} />
-                      ) : (
-                        <ChevronDown size={16} />
-                      )}
-                    </button>
-                  )}
-                </div>
-                {isCategoriesExpanded && categoryData.category?.length > 0 && (
-                  <ul className="ml-4 mt-2 border-l-2 border-gray-100 pl-4">
-                    {categoryData.category.map(subCategory => (
-                      <li key={subCategory._id}>
-                        <button
-                          onClick={() => handleFilterChange('categories', subCategory._id)}
-                          className={`block w-full text-left p-2 rounded ${
-                            selectedFilters.categories.includes(subCategory._id)
-                              ? 'bg-blue-100 font-medium'
-                              : 'hover:bg-gray-100'
-                          }`}
-                        >
-                          {subCategory.category_name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            </ul>
-          </div> */}
 
           {/* Price Filter */}
-          <div className="bg-white p-4 rounded shadow border">
-            <h3 className="text-lg font-semibold mb-4 pb-4 border-b-2">Price Range</h3>
+          <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+            <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
             <div className="space-y-4">
               <input
                 type="range"
@@ -506,9 +458,9 @@ export default function CategoryPage() {
                   selectedFilters.price.min, 
                   parseInt(e.target.value)
                 ])}
-                className="w-full"
+                className="w-full range accent-blue-600"
               />
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm text-gray-600">
                 <span>₹{selectedFilters.price.min}</span>
                 <span>₹{selectedFilters.price.max}</span>
               </div>
@@ -516,434 +468,182 @@ export default function CategoryPage() {
           </div>
 
           {/* Brand Filter */}
-          {/* <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Brands</h3>
-            <ul className="space-y-2">
-              {categoryData.brands.map(brand => (
-                <li key={brand._id}>
-                  <button
-                    onClick={() => handleFilterChange('brands', brand._id)}
-                    className={`flex items-center w-full text-left p-2 rounded ${
-                      selectedFilters.brands.includes(brand._id) 
-                        ? 'bg-blue-100 font-medium' 
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {brand.image && (
-                      <div className="w-8 h-8 mr-2 relative">
-                        <Image
-                          src={brand.image.startsWith('http') ? brand.image : `/uploads/brands/${brand.image}`}
-                          alt={brand.brand_name}
-                          fill
-                          className="object-contain"
-                          unoptimized
-                        />
-                      </div>
-                    )}
-                    <span>{brand.brand_name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div> */}
-          <div className="bg-white p-4 rounded shadow border">
-            <div className="flex items-center justify-between pb-4 border-b-2">
-              <h3 className="text-lg font-semibold">Brands</h3>
-              <button onClick={toggleBrands}>
-                {isBrandsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
-            </div>
-
-            {isBrandsExpanded && (
-              <ul className="mt-2 space-y-2">
-                {categoryData.brands.map(brand => (
-                  <li key={brand._id}>
-                    <button
-                      onClick={() => handleFilterChange('brands', brand._id)}
-                      className={`flex items-center w-full text-left p-2 rounded ${selectedFilters.brands.includes(brand._id) ? 'bg-blue-100 font-medium' : 'hover:bg-gray-100'}`}
-                    >
-                      {brand.image && (
-                        <div className="w-8 h-8 mr-2 relative">
-                          <Image
-                            src={brand.image.startsWith('http') ? brand.image : `/uploads/brands/${brand.image}`}
-                            alt={brand.brand_name}
-                            fill
-                            className="object-contain"
-                            unoptimized
-                          />
-                        </div>
-                      )}
-                      <span>{brand.brand_name}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Dynamic Filters */}
-          {/* {Object.values(filterGroups).map(group => (
-            <div key={group._id} className="bg-white p-4 rounded shadow">
-              <h3 className="text-lg font-semibold mb-4">{group.name}</h3>
-              <ul className="space-y-2">
-                {group.filters.map(filter => (
-                  <li key={filter._id}>
-                    <button
-                      onClick={() => handleFilterChange('filters', filter._id)}
-                      className={`block w-full text-left p-2 rounded ${
-                        selectedFilters.filters.includes(filter._id)
-                          ? 'bg-blue-100 font-medium'
-                          : 'hover:bg-gray-100'
-                      }`}
-                    >
-                      {filter.filter_name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))} */}
-          {/* Main Filters Toggle */}
-            <div className="bg-white p-4 rounded shadow border">
-              <div className="flex items-center justify-between pb-4 border-b-2">
-                <h3 className="text-lg font-semibold">Filters</h3>
-                {/* <button onClick={toggleFilters}>
-                  {isFiltersExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button> */}
+          <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+              <div className="flex items-center justify-between pb-2">
+                <h3 className="text-base font-semibold text-gray-700">Brands</h3>
+                <button onClick={toggleBrands} className="text-gray-500 hover:text-gray-700">
+                  {isBrandsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </button>
               </div>
-
-              {/* Show Filter Groups only when Main Filters are Expanded */}
-              {isFiltersExpanded && (
-                <div className="mt-2 space-y-2">
-                  {Object.values(filterGroups).map(group => (
-                    <div key={group._id} className="pl-4 mb-4">
-                      {/* Filter Group Header */}
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-md font-semibold">{group.name}</h4>
-                        <button onClick={() => toggleFilterGroup(group._id)}>
-                          {expandedFilters[group._id] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                        </button>
-                      </div>
-
-                      {/* Filters inside the group (only show when expanded) */}
-                      {expandedFilters[group._id] && (
-                        <ul className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
-                          {group.filters.map(filter => (
-                            <li key={filter._id}>
-                              <button
-                                onClick={() => handleFilterChange('filters', filter._id)}
-                                className={`block w-full text-left p-2 rounded ${selectedFilters.filters.includes(filter._id) ? 'bg-blue-100 font-medium' : 'hover:bg-gray-100'}`}
-                              >
-                                {filter.filter_name}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
+              {isBrandsExpanded && (
+                <ul className="mt-2 space-y-2">
+                  {categoryData.brands.map(brand => (
+                    <li key={brand._id} className="flex items-center">
+                      <button
+                        onClick={() => handleFilterChange('brands', brand._id)}
+                        className={`flex items-center w-full text-left p-2 rounded-md text-sm ${
+                          selectedFilters.brands.includes(brand._id) 
+                            ? 'bg-blue-50 text-blue-600' 
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {brand.image && (
+                          <div className="w-6 h-6 mr-2 relative">
+                            <Image
+                              src={brand.image.startsWith('http') ? brand.image : `/uploads/brands/${brand.image}`}
+                              alt={brand.brand_name}
+                              fill
+                              className="object-contain"
+                              unoptimized
+                            />
+                          </div>
+                        )}
+                        <span>{brand.brand_name}</span>
+                      </button>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
             </div>
-        </div>
- ): ( 
-          <div>
-          </div>
-        )}
-        {/* Products Grid */}
-        <div className="lg:col-span-3">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+
+          {/* Dynamic Filters */}
+            
+          <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
+            <div className="pb-2 mb-2">
+              <h3 className="text-base font-semibold text-gray-700">Product Filters</h3>
             </div>
-          ) : products.length === 0 ? (
-            <div className="text-center mr-[310px] py-10">
+            {isFiltersExpanded && (
+              <div className="space-y-4">
+                {Object.values(filterGroups).map(group => (
+                  <div key={group._id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
+                    {/* Filter Group Header */}
+                    <button  onClick={() => toggleFilterGroup(group._id)} className="flex justify-between items-center w-full group">
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">{group.name}</span>
+                      <ChevronDown 
+                        size={18}
+                        className={`text-gray-400 transition-transform duration-200 ${
+                          expandedFilters[group._id] ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {/* Filter Options */}
+                    {expandedFilters[group._id] && (
+                      <ul className="mt-3 space-y-2 pl-1">
+                        {group.filters.map(filter => (
+                          <li key={filter._id} className="flex items-center">
+                            <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={selectedFilters.filters.includes(filter._id)}
+                                onChange={() => handleFilterChange('filters', filter._id)}
+                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-600">{filter.filter_name}</span>
+                              {filter.count && (
+                                <span className="text-xs text-gray-400 ml-auto">
+                                  ({filter.count})
+                                </span>
+                              )}
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Products Section */}
+        <div className="flex-1">
+          {!loading && products.length > 0 ? (
+            <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+              {getSortedProducts()
+                .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+                .map(product => (
+                  <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md">
+                    <div className="relative aspect-square bg-gray-50">
+                      {product.images?.[0] && (
+                        <Image src={product.images[0].startsWith('http')  ? product.images[0]  : `/uploads/products/${product.images[0]}`} alt={product.name} fill className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105" 
+                        sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                        unoptimized  />
+                      )}
+                      <div >
+                        {product.special_price &&
+                          product.special_price !== product.price && (100 - (product.special_price / product.price) * 100) > 0 && (
+                            <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">{Math.round(100 - (product.special_price / product.price) * 100)}% OFF</span>
+                        )}
+                      </div>
+
+                      <div className="absolute top-2 right-2">
+                        <ProductCard productId={product._id} />
+                      </div>
+                    </div>
+
+                    <div className="p-2 md:p-4">
+                      <Link href={`/product/${product.slug}`} className="block mb-1 md:mb-2">
+                        <h3 className="text-xs sm:text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2">
+                          {product.name}
+                        </h3>
+                      </Link>
+                      
+                      <div className="flex items-center gap-2 mb-3">
+                        {product.special_price && product.special_price !== product.price && (
+                          <span className="text-xs text-gray-500 line-through">₹{product.price.toLocaleString()}</span>
+                        )}
+                        <span className="text-base font-semibold text-blue-600">₹{(product.special_price || product.price).toLocaleString()}</span>
+                      </div>
+
+                      <Addtocart productId={product._id} className="w-full text-xs sm:text-sm py-1.5"  />
+                    </div>
+                  </div>
+                ))}
+            </div>
+            </>
+          ): (
+            <div className="text-center  py-10">
               <img 
                 src="/images/no-productbox.png" 
                 alt="No Products" 
                 className="mx-auto mb-4 w-32 h-32 md:w-40 md:h-40 object-contain" 
               />
-             {/* <h3 className="text-lg font-medium">No products found</h3> */}
-
-
-          
-              {/* <button 
-                onClick={clearAllFilters}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Clear all filters
-              </button> */}
             </div>
-          ) : (
-            <>
-              <div className="mb-4 flex justify-between items-center">
-                <p>{products.length} products found</p>
-                <div className="flex items-center">
-                  <label htmlFor="sort" className="mr-2 text-sm font-medium">Sort by:</label>
-                  <select
-                    id="sort"
-                    value={sortOption}
-                    onChange={(e) => setSortOption(e.target.value)}
-                    className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg px-4 py-2 pr-8 text-sm text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-sm"
-                  >
-                    <option value="">Default</option>
-                    <option value="price-low-high">Price - Low to High</option>
-                    <option value="price-high-low">Price - High to Low</option>
-                    <option value="name-a-z">Name - (A-Z)</option>
-                    <option value="name-z-a">Name - (Z-A)</option>
-                  </select>
-                </div>
-              </div>
-              
-              {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {getSortedProducts().slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map(product => (
-                  <div key={product._id} className="bg-white p-4 rounded-lg shadow hover:border-blue-700 transition-shadow border cursor-pointer">
-                    <div className="relative h-48 mb-4">
-                      {product.images?.[0] && (
-                        <Image
-                          src={
-                            product.images[0].startsWith('http') 
-                              ? product.images[0] 
-                              : `/uploads/products/${product.images[0]}`
-                          }
-                          alt={product.name}
-                          fill
-                          className="object-contain cursor-pointer"
-                          unoptimized
-                        />
-                      )}
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2 line-clamp-2">
-                      <Link href={`/products/${product.slug}`}>
-                        {product.name}
-                      </Link>
-                    </h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      {product.special_price && product.special_price !== product.price && (
-                        <span className="text-gray-500 line-through">
-                          ₹{product.price.toLocaleString()}
-                        </span>
-                      )}
-                      <span className="text-xl font-bold text-blue-600">
-                        ₹{(product.special_price || product.price).toLocaleString()}
-                      </span>
-                    </div>
-                    <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors">
-                      Add to Cart
-                    </button>
-                  </div>
-                ))}
-              </div> */}
-
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  {getSortedProducts().slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map(product => (
-    <div
-      key={product._id}
-      className="group flex flex-col h-full bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 hover:border-blue-200 relative"
-    >
-      {/* Image Section with Top Badges and Lowered Image */}
-      <div className="relative h-52 w-full bg-white overflow-hidden flex justify-center">
-        {/* Discount Badge - Top Left */}
-        {product.special_price && product.special_price !== product.price && (
-          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
-            {Math.round(100 - (product.special_price / product.price * 100))}% OFF
-          </span>
-        )}
-
-        {/* Wishlist Button - Top Right */}
-        {/* <button className="absolute top-2 right-2 z-10" onClick={() => handleWishlistToggle(product._id)}>
-          <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${wishlist.includes(product._id) ? 'text-red-500 fill-current' : 'text-gray-400 hover:text-red-500'}`} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={wishlist.includes(product._id) ? 0 : 1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-          </svg>
-        </button> class="p-1 rounded-full bg-white shadow hover:text-red-500"*/}
-        {/* <button
-          className="absolute top-2 right-2 z-10 rounded-full bg-white shadow hover:text-red-500"
-          onClick={() => handleWishlistToggle(product._id)}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className={`lucide lucide-heart h-6 w-6 ${
-              wishlist.includes(product._id)
-                ? 'text-red-500 fill-current'
-                : 'text-gray-400 hover:text-red-500'
-            }`}
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-          </svg>
-        </button> */}
-
-<div className="absolute top-2 right-2 z-10  hover:text-red-500">
-  <ProductCard productId={product._id} />
-</div>
-
-        {/* Product Image - Lowered slightly */}
-        {product.images?.[0] && (
-          <div className="mt-8"> {/* this pushes image down inside container */}
-            <Image
-              src={
-                product.images[0].startsWith('http')
-                  ? product.images[0]
-                  : `/uploads/products/${product.images[0]}`
-              }
-              alt={product.name}
-              width={160}
-              height={160}
-              className="object-contain transition-transform duration-500 group-hover:scale-105 max-h-44"
-              unoptimized style={{ width: '15rem', height: '13rem' }}
+          )}
+          {pageCount > 0 && (
+            <ReactPaginate 
+            breakLabel="..."
+            pageCount={pageCount}
+            marginPagesDisplayed={1}
+            pageRangeDisplayed={3}
+            onPageChange={handlePageClick}
+            containerClassName="flex justify-center mt-6 gap-1 flex-wrap"
+            pageClassName="mx-0.5"
+            pageLinkClassName="block px-2 py-1 text-xs sm:text-sm rounded border hover:bg-gray-500 min-w-[32px] text-center"
+            activeClassName="bg-blue-600 text-white"
+            previousClassName="mx-0.5"
+            nextClassName="mx-0.5"
+            previousLinkClassName="px-2 py-1 text-xs sm:text-sm rounded border hover:bg-gray-500"
+            nextLinkClassName="px-2 py-1 text-xs sm:text-sm rounded border hover:bg-gray-500"
             />
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="flex flex-col flex-grow p-4">
-        <Link href={`/product/${product.slug}`}>
-          <h3 className="text-md font-semibold text-gray-800 mb-2 hover:text-blue-600 transition-colors line-clamp-2 min-h-[3rem]">
-            {product.name}
-          </h3>
-        </Link>
-
-        {/* Price */}
-        <div className="mt-auto mb-3">
-          <div className="flex items-center gap-2">
-            {product.special_price && product.special_price !== product.price ? (
-              <>
-                <span className="text-lg font-bold text-blue-600">
-                  Rs. {product.special_price.toLocaleString()}
-                </span>
-                <span className="text-gray-500 line-through text-sm">
-                  MRP: {product.price.toLocaleString()}
-                </span>
-              </>
-            ) : (
-              <span className="text-lg font-bold text-gray-800">
-                ₹{product.price.toLocaleString()}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Add to Cart + WhatsApp */}
-        <div className="flex items-center justify-between gap-3">
-          
-            <Addtocart productId={product._id} />
-          
-
-          {/* WhatsApp Icon */}
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(`Check this out: ${product.name}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300"
-          >
-            <svg
-              className="w-5 h-5"
-              viewBox="0 0 32 32"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-            >
-              <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-            </svg>
-          </a>
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
-
-              
-
-
-
-
-
-
-              
-            </>
           )}
         </div>
       </div>
+        </>
+      ) : (
+        <div className="text-center py-10">
+              <img 
+                src="/images/no-productbox.png" 
+                alt="No Products" 
+                className="mx-auto mb-4 w-32 h-32 md:w-40 md:h-40 object-contain" 
+              />
+        </div>
+      )}
+      
       {/* Pagination */}
-      {pageCount > 0 && (
-      <ReactPaginate
-        breakLabel={<span className="text-gray-400 px-4">...</span>}
-        pageCount={pageCount}
-        marginPagesDisplayed={1}
-        pageRangeDisplayed={3}
-        onPageChange={handlePageClick}
-        containerClassName={"flex items-center justify-center mt-12 gap-1"}
-        
-        // Page numbers
-        pageClassName={"relative"}
-        pageLinkClassName={
-          "block w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 " +
-          "bg-gradient-to-b from-white to-gray-50 border border-gray-200 text-gray-600 shadow-sm hover:shadow-md " +
-          "hover:from-blue-50 hover:to-blue-100 hover:border-blue-200 hover:text-blue-600 mx-1"
-        }
-        activeClassName={"transform active:scale-95"}
-        activeLinkClassName={
-          "!bg-gradient-to-b !from-blue-600 !to-blue-700 !text-white !border-blue-700 !shadow-lg"
-        }
-
-        // Arrows
-        previousClassName={"mr-2"}
-        nextClassName={"ml-2"}
-        previousLinkClassName={
-          "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 " +
-          "bg-gradient-to-b from-white to-gray-50 border border-gray-200 text-gray-600 shadow-sm " +
-          "hover:shadow-md hover:from-blue-50 hover:to-blue-100 hover:border-blue-200 hover:text-blue-600"
-        }
-        nextLinkClassName={
-          "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 " +
-          "bg-gradient-to-b from-white to-gray-50 border border-gray-200 text-gray-600 shadow-sm " +
-          "hover:shadow-md hover:from-blue-50 hover:to-blue-100 hover:border-blue-200 hover:text-blue-600"
-        }
-        
-        // Break dots
-        breakClassName={"mx-1"}
-        breakLinkClassName={"text-gray-400 hover:text-gray-600"}
-
-        // Custom arrow icons with hover effect
-        previousLabel={
-          <div className="group flex items-center">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors"
-              viewBox="0 0 20 20" 
-              fill="currentColor"
-            >
-              <path 
-                fillRule="evenodd" 
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" 
-                clipRule="evenodd" 
-              />
-            </svg>
-          </div>
-        }
-        nextLabel={
-          <div className="group flex items-center">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors"
-              viewBox="0 0 20 20" 
-              fill="currentColor"
-            >
-              <path 
-                fillRule="evenodd" 
-                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" 
-                clipRule="evenodd" 
-              />
-            </svg>
-          </div>
-        }
-
-      />
-    )}
+       <ToastContainer />
     </div>
   );
 }
