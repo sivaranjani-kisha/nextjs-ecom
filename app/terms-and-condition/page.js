@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-import termsandcoditionComponent from "@/components/termsandcodition/termsandcodition";
+import TermsandcoditionComponent from "@/components/termsandcodition/termsandcodition";
 
 
 export default function Dashboard() {
@@ -14,7 +14,7 @@ export default function Dashboard() {
   return (
     <div>
       
-      <termsandcoditionComponent /> 
+      <TermsandcoditionComponent /> 
     </div>
   );
 }

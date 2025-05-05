@@ -5,6 +5,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CustomHeader from "@/components/Header";
 import CustomFooter from "@/components/Footer";
+// import CustomHeader from "@/components/Header";
+// import CustomFooter from "@/components/Footer";
 import { usePathname } from "next/navigation";
 import Head from "next/head";
 import Script from "next/script";
