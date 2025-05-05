@@ -7,10 +7,28 @@ import { FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
 import { IoReload, IoStorefront, IoCardOutline, IoShieldCheckmark } from "react-icons/io5";
 import { TbTruckDelivery } from "react-icons/tb";
 import Image from "next/image";
+import { MdAccountCircle } from "react-icons/md";
+import { FaShoppingBag } from "react-icons/fa";
+import { IoLogOut } from "react-icons/io5";
 
 const Footer = () => {
   const [categories, setCategories] = useState([]);
   const [groupedCategories, setGroupedCategories] = useState({ main: [], subs: {} });
+  
+  // Auth state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    mobile: '',
+    password: ''
+  });
+  const [formError, setFormError] = useState('');
+  const [error, setError] = useState('');
+  const [loadingAuth, setLoadingAuth] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -20,7 +38,6 @@ const Footer = () => {
         
         if (data) {
           setCategories(data);
-          // Group categories immediately after fetching
           const grouped = groupCategories(data);
           setGroupedCategories(grouped);
         }
@@ -30,15 +47,85 @@ const Footer = () => {
     };
 
     fetchCategories();
+    checkAuthStatus();
   }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('/api/auth/check', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsLoggedIn(true);
+        setUserData(data.user);
+      } else {
+        localStorage.removeItem('token');
+        setIsLoggedIn(false);
+      }
+    } catch (error) {
+      console.error("Error checking auth status:", error);
+    }
+  };
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setError('');
+    setLoadingAuth(true);
+
+    try {
+      const endpoint = activeTab === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Something went wrong');
+      }
+
+      localStorage.setItem('token', data.token);
+      setIsLoggedIn(true);
+      setUserData(data.user);
+      setShowAuthModal(false);
+      setFormData({
+        name: '',
+        email: '',
+        mobile: '',
+        password: ''
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingAuth(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setUserData(null);
+  };
 
   const groupCategories = (categories) => {
     const grouped = { main: [], subs: {} };
     
-    // First find all main categories (where parentid is "none")
     const mainCats = categories.filter(cat => cat.parentid === "none");
     
-    // Then find all subcategories for each main category
     mainCats.forEach(mainCat => {
       const subs = categories.filter(cat => cat.parentid === mainCat._id.toString());
       grouped.main.push(mainCat);
@@ -48,74 +135,8 @@ const Footer = () => {
     return grouped;
   };
 
-  const features = [
-    { icon: "🚗", title: "Free Shipping", description: "Free shipping all over the US" },
-    { icon: "🔒", title: "100% Satisfaction", description: "Guaranteed satisfaction with every order" },
-    { icon: "💼", title: "Secure Payments", description: "We ensure secure transactions" },
-    { icon: "💬", title: "24/7 Support", description: "We're here to help anytime" },
-  ];
-
   return (
     <>
-      {/* Why Choose Us Section */}
-      {/* <section style={{ backgroundColor: "#f3f4f6", padding: "40px 0" }}>
-  <h2 style={{ fontSize: "24px", fontWeight: "bold", textAlign: "center", color: "#111827", marginBottom: "24px" }}>
-    Why Choose Us?
-  </h2>
-  <div
-    style={{
-      display: "flex",
-      flexWrap: "wrap",    // allow wrapping if needed
-      justifyContent: "center",
-      gap: "24px",
-      padding: "0 24px",
-      maxWidth: "1440px",
-      margin: "0 auto",
-    }}
-  >
-    {features.map((feature, index) => (
-      <div
-        key={index}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flex: "1 1 300px", // allow to shrink and stretch
-          maxWidth: "350px",
-          padding: "24px",
-          borderRadius: "12px",
-          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-          backgroundColor: "#cfd4e1",
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "#3b82f6",
-            color: "white",
-            padding: "12px",
-            borderRadius: "9999px",
-            fontSize: "24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {feature.icon}
-        </div>
-        <div style={{ marginLeft: "16px" }}>
-          <h3 style={{ fontSize: "18px", fontWeight: "600", color: "#111827", marginBottom: "8px" }}>
-            {feature.title}
-          </h3>
-          <p style={{ fontSize: "14px", color: "#374151" }}>{feature.description}</p>
-        </div>
-      </div>
-    ))}
-  </div>
-</section> */}
-
-
-
-
-      {/* Footer Section */}
       <footer className="bg-[#2e2a2a] text-gray-300 text-sm py-10">
         <div className="w-full flex justify-center">
           <div className="w-full max-w-6xl px-6 grid grid-cols-1 md:grid-cols-3 gap-16 justify-between">
@@ -140,7 +161,37 @@ const Footer = () => {
               <div>
                 <h3 className="text-white font-semibold text-lg mb-4">My Account</h3>
                 <ul className="space-y-2">
-                  <li><Link href="#" className="hover:underline hover:text-white">Sign In</Link></li>
+                  {isLoggedIn ? (
+                    <>
+                      {/* <li>
+                        <Link href="/account" className="hover:underline hover:text-white flex items-center gap-2">
+                          <MdAccountCircle /> My Account
+                        </Link>
+                      </li> */}
+                      <li>
+                        <Link href="/order" className="hover:underline hover:text-white flex items-center gap-2">
+                          <FaShoppingBag /> My Orders
+                        </Link>
+                      </li>
+                      <li>
+                        <button 
+                          onClick={handleLogout}
+                          className="hover:underline hover:text-white flex items-center gap-2"
+                        >
+                          <IoLogOut /> Logout
+                        </button>
+                      </li>
+                    </>
+                  ) : (
+                    <li>
+                      <button 
+                        onClick={() => setShowAuthModal(true)}
+                        className="hover:underline hover:text-white"
+                      >
+                        Sign In / Register
+                      </button>
+                    </li>
+                  )}
                 </ul>
               </div>
               <div>
@@ -179,65 +230,149 @@ const Footer = () => {
         </div>
 
         {/* Bottom Section */}
-   {/* Footer Section */}
-<div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-10 border-t border-white">
-  {/* Top Footer - Info & Downloads */}
-  <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6 pb-6">
-    {/* Left Text */}
-    <div className="text-center md:text-left">
-      <p>
-        <a href="#" className="hover:underline text-white">Bharath Electronics ©</a> 2025 All rights reserved.
-      </p>
-    </div>
-
-    {/* App Downloads and Payments */}
-    <div className="flex flex-col md:flex-row items-center gap-4">
-      {/* App Stores */}
-      <div className="flex gap-2">
-        <img src="https://estore.bharathelectronics.in/assets/images/gplay-img.jpg" alt="Google Play" className="p-1 w-[120px]" />
-        <img src="https://estore.bharathelectronics.in/assets/images/app-store-img.jpg" alt="App Store" className="p-1 w-[120px]" />
-      </div>
-      {/* Payments */}
-      <div>
-        <img src="https://estore.bharathelectronics.in/assets/images/payments.png" alt="Payment methods" className="p-2 w-[200px]" />
-      </div>
-    </div>
-  </div>
-
-  {/* Bottom Footer - Category Links */}
-  <div className="bg-[#2e2a2a] py-6">
-    <div className="container mx-auto px-4 text-base font-medium space-y-4">
-      {groupedCategories.main.map((mainCat) => (
-        <div key={mainCat._id}>
-          <Link
-            href={`/category/${mainCat.category_slug}`}
-            className="font-semibold text-white hover:underline whitespace-nowrap"
-          >
-            {mainCat.category_name} :
-          </Link>
-          {groupedCategories.subs[mainCat._id]?.length > 0 && (
-            <span className="text-gray-400 ml-2">
-              {groupedCategories.subs[mainCat._id].map((subcat, index) => (
-                <span key={subcat._id}>
+        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-10 border-t border-white">
+          <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6 pb-6">
+            <div className="text-center md:text-left">
+              <p>
+                <a href="#" className="hover:underline text-white">Bharath Electronics ©</a> 2025 All rights reserved.
+              </p>
+            </div>
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className="flex gap-2">
+                <img src="https://estore.bharathelectronics.in/assets/images/gplay-img.jpg" alt="Google Play" className="p-1 w-[120px]" />
+                <img src="https://estore.bharathelectronics.in/assets/images/app-store-img.jpg" alt="App Store" className="p-1 w-[120px]" />
+              </div>
+              <div>
+                <img src="https://estore.bharathelectronics.in/assets/images/payments.png" alt="Payment methods" className="p-2 w-[200px]" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-[#2e2a2a] py-6">
+            <div className="container mx-auto px-4 text-base font-medium space-y-4">
+              {groupedCategories.main.map((mainCat) => (
+                <div key={mainCat._id}>
                   <Link
-                    href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
-                    className="hover:text-white hover:underline"
+                    href={`/category/${mainCat.category_slug}`}
+                    className="font-semibold text-white hover:underline whitespace-nowrap"
                   >
-                    {subcat.category_name}
+                    {mainCat.category_name} :
                   </Link>
-                  {index < groupedCategories.subs[mainCat._id].length - 1 && ' / '}
-                </span>
+                  {groupedCategories.subs[mainCat._id]?.length > 0 && (
+                    <span className="text-gray-400 ml-2">
+                      {groupedCategories.subs[mainCat._id].map((subcat, index) => (
+                        <span key={subcat._id}>
+                          <Link
+                            href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
+                            className="hover:text-white hover:underline"
+                          >
+                            {subcat.category_name}
+                          </Link>
+                          {index < groupedCategories.subs[mainCat._id].length - 1 && ' / '}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </div>
               ))}
-            </span>
-          )}
+            </div>
+          </div>
         </div>
-      ))}
-    </div>
-  </div>
-</div>
-
-
       </footer>
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
+            <button 
+              onClick={() => {
+                setShowAuthModal(false);
+                setFormError('');
+                setError('');
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+            >
+              &times;
+            </button>
+
+            <div className="flex gap-4 mb-6 border-b">
+              <button
+                className={`pb-2 px-1 ${
+                  activeTab === 'login' 
+                    ? 'border-b-2 border-blue-500 text-blue-600' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setActiveTab('login')}
+              >
+                Login
+              </button>
+              <button
+                className={`pb-2 px-1 ${
+                  activeTab === 'register'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setActiveTab('register')}
+              >
+                Register
+              </button>
+            </div>
+
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              {activeTab === 'register' && (
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              )}
+              <input
+                type="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+              {activeTab === 'register' && (
+                <input
+                  type="tel"
+                  placeholder="Mobile"
+                  value={formData.mobile}
+                  onChange={(e) => setFormData({...formData, mobile: e.target.value})}
+                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              )}
+              <input
+                type="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                minLength={6}
+              />
+              
+              {(formError || error) && (
+                <div className="text-red-500 text-sm">
+                  {formError || error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loadingAuth}
+                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200"
+              >
+                {loadingAuth ? 'Processing...' : activeTab === 'login' ? 'Login' : 'Register'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };
