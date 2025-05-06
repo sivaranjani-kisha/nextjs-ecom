@@ -18,7 +18,7 @@ export default function AdminLayout({ children }) {
         <AdminSider />
         <div className="flex-1">
           <AdminHeader />
-          <main className="flex-1 p-5 mt-8 ml-14 px-8">{children}</main>
+          <main className="flex-1 p-5 mt-8 ml-14 px-8 h-[calc(100vh-3.5rem)] overflow-y-auto">{children}</main>
         </div>
       </div>
     </AuthProvider>

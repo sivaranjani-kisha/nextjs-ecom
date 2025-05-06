@@ -614,7 +614,14 @@ export default function HomeComponent() {
                                     />
                                     </div>
                                     <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center mt-4 md:mt-0 md:pl-4">
-                                    <h6 className="text-xl font-semibold mb-2 text-gray-900">{item.title}</h6>
+                                       <motion.h6 
+                                            className="text-xl font-semibold mb-2 text-gray-900"
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 1.1 }}
+                                            transition={{ type: "spring", stiffness: 300, damping: 10 }}
+                                            >
+                                            {item.title}
+                                        </motion.h6>
                                     <motion.a
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
@@ -733,7 +740,7 @@ export default function HomeComponent() {
                             <div className="relative">
                                 <div 
                                     ref={scrollContainerRef} 
-                                    className="flex gap-6 overflow-x-auto scroll-smooth pb-4 hide-scrollbar"
+                                    className="flex gap-6 "
                                 >
                                 
                                 {/* Dynamic Category Banner Card */}

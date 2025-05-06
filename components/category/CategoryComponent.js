@@ -226,7 +226,7 @@ export default function CategoryPage() {
         {categories.map((category) => (
           <div key={category._id}>
             <div className={`flex items-center gap-2 ${level > 0 ? `ml-${level * 4}` : ''}`}>
-              <button
+              {/* <button
                 onClick={() => onFilterChange('categories', category._id)}
                 className={`flex-1 text-left p-2 rounded hover:bg-gray-100 text-gray-700 ${
                   selectedFilters.includes(category._id) 
@@ -235,20 +235,36 @@ export default function CategoryPage() {
                 }`}
               >
                 {category.category_name}
-              </button>
+              </button> */}
+               <Link
+                href={`/category/${slug}/${category.category_slug}`}
               
-              {category.subCategories?.length > 0 && (
-                <button
-                  onClick={() => toggleCategory(category._id)}
-                  className="p-2 hover:bg-gray-100 rounded"
-                >
-                  {expandedCategories.includes(category._id) ? (
-                    <ChevronUp size={16} />
-                  ) : (
-                    <ChevronDown size={16} />
-                  )}
-                </button>
-              )}
+                className="p-2 hover:bg-gray-100 rounded inline-flex items-center"
+              >{category.category_name}
+                {/* {expandedCategories.includes(category._id) ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )} */}
+              </Link>
+              
+              {/* {category.subCategories?.length > 0 && (
+                <Link
+                href={`/category/${category._id}`}
+                onClick={(e) => {
+                  e.preventDefault(); // Optional: prevent navigation if you only want toggle
+                  toggleCategory(category._id);
+                }}
+                className="p-2 hover:bg-gray-100 rounded inline-flex items-center"
+              >{category.category_name}
+                {expandedCategories.includes(category._id) ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
+              </Link>
+              
+              )} */}
             </div>
             
             {category.subCategories?.length > 0 && 
