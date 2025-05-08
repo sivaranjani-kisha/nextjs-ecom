@@ -1,5 +1,5 @@
 "use client";
-import  React,{ useState, useEffect } from "react";
+import  React,{ useState, useEffect,useRef,useCallback  } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -35,19 +35,22 @@ export default function CategoryPage() {
   
   const { sub_slug } = useParams();
   const { slug } = useParams();
-
-  const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5; // 5 records per page
-  
-  const handlePageClick = ({ selected }) => {
-    setCurrentPage(selected);
-  };
   const toggleBrands = () => setIsBrandsExpanded(!isBrandsExpanded);
   const toggleFilterGroup = (id) => {
     setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
   };
-
   const [nofound,setNofound]=useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const itemsPerPage = 5;
+  const productsContainerRef = useRef(null);
+  const scrollPositionBeforeFetch = useRef({
+    y: 0,
+    containerHeight: 0,
+    isRestoring: false
+  });
+  const sentinelRef = useRef(null);
+
   useEffect(() => {
     if (sub_slug) {
       fetchInitialData();
@@ -94,12 +97,10 @@ export default function CategoryPage() {
       });
       setFilterGroups(groups);
       if (categoryData.products?.length > 0) {
-        await fetchFilteredProducts(categoryData);
+        await fetchFilteredProducts(categoryData.category._id, 1, true);
       }else{
         setNofound(true);
       }
-      // Fetch initial products
-      await fetchFilteredProducts(categoryData.category._id);
     } catch (error) {
       toast.error('Error fetching initial data:', error);
     } finally {
@@ -109,7 +110,8 @@ export default function CategoryPage() {
 
 
 
-  const fetchFilteredProducts = async (categoryId) => {
+  // const fetchFilteredProducts = async (categoryId) => {
+      const fetchFilteredProducts = useCallback(async (categoryId, pageNum = 1, initialLoad = false) => {
     try {
       setLoading(true);
       
@@ -126,42 +128,112 @@ export default function CategoryPage() {
       if (selectedFilters.filters.length > 0) {
         query.set('filters', selectedFilters.filters.join(','));
       }
-      
+      query.set('page', pageNum);
+      query.set('limit', itemsPerPage);
       const res =await fetch(`/api/product/filter?${query}`);
-      const data = await res.json();
-      setProducts(data);
+      const { products, pagination } = await res.json();
+
+      if (pageNum === 1 || initialLoad) {
+        setProducts(products);
+      } else {
+        setProducts(prev => [...prev, ...products]);
+      }
+  
+      setHasMore(pagination.hasMore);
+      if (products.length === 0 && pageNum === 1) {
+        setNofound(true);
+      }
     } catch (error) {
       toast.error('Error fetching filtered products:', error);
     } finally {
       setLoading(false);
     }
-  };
-  const pageCount = Math.ceil(products.length / itemsPerPage);
+  }, [selectedFilters]);
 
+  const fetchMoreData = () => {
+    if (!loading && hasMore) {
+      setPage(prev => prev + 1);
+      fetchFilteredProducts(categoryData.category._id, page + 1);
+    }
+  };
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry.isIntersecting && !loading && hasMore) {
+          // Save scroll position and container height
+          scrollPositionBeforeFetch.current = {
+            y: window.scrollY,
+            containerHeight: productsContainerRef.current?.scrollHeight || 0,
+            isRestoring: false
+          };
+          
+          await fetchMoreData();
+        }
+      },
+      { rootMargin: '250px' }
+    );
+  
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+  
+    return () => {
+      if (sentinelRef.current) {
+        observer.unobserve(sentinelRef.current);
+      }
+    };
+  }, [loading, hasMore]);
+  
+  // Add this effect for scroll restoration
+  useEffect(() => {
+    if (!loading && scrollPositionBeforeFetch.current.y > 0 && !scrollPositionBeforeFetch.current.isRestoring) {
+      const container = productsContainerRef.current;
+      if (!container) return;
+  
+      // Calculate height difference after DOM update
+      const newContainerHeight = container.scrollHeight;
+      const heightDifference = newContainerHeight - scrollPositionBeforeFetch.current.containerHeight;
+      
+      // Prevent scroll jump if we're at the same position
+      if (heightDifference > 0) {
+        scrollPositionBeforeFetch.current.isRestoring = true;
+        window.scrollTo({
+          top: scrollPositionBeforeFetch.current.y + heightDifference,
+          behavior: 'smooth'
+        });
+        
+        // Reset after scroll
+        requestAnimationFrame(() => {
+          scrollPositionBeforeFetch.current = {
+            y: 0,
+            containerHeight: 0,
+            isRestoring: false
+          };
+        });
+      }
+    }
+  }, [products, loading]); // Trigger when products or loading state changes
+  
+
+  // Sorting functionality
   const getSortedProducts = () => {
     const sortedProducts = [...products];
-    
     switch(sortOption) {
       case 'price-low-high':
-        return sortedProducts.sort((a, b) => 
-          (a.special_price ) - (b.special_price )
-        );
+        return sortedProducts.sort((a, b) => a.special_price - b.special_price);
       case 'price-high-low':
-        return sortedProducts.sort((a, b) => 
-          (b.special_price) - (a.special_price)
-        );
+        return sortedProducts.sort((a, b) => b.special_price - a.special_price);
       case 'name-a-z':
-        return sortedProducts.sort((a, b) => 
-          a.name.localeCompare(b.name)
-        );
+        return sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
       case 'name-z-a':
-        return sortedProducts.sort((a, b) => 
-          b.name.localeCompare(a.name)
-        );
+        return sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
       default:
         return sortedProducts;
     }
   };
+
 
   const handleWishlistToggle = (productId) => {
     setWishlist(prev => 
@@ -202,7 +274,8 @@ export default function CategoryPage() {
 
   useEffect(() => {
     if (categoryData.category?._id) {
-      fetchFilteredProducts(categoryData.category._id);
+      setPage(1);
+      fetchFilteredProducts(categoryData.category._id,1);
     }
   }, [selectedFilters]);
 
@@ -214,7 +287,7 @@ export default function CategoryPage() {
     });
   };
 
-  if (loading && !categoryData.category) {
+  if ((loading || !categoryData.category) && page == 1) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
@@ -224,29 +297,29 @@ export default function CategoryPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="container mx-auto px-4 py-8">
+  //       <div className="flex justify-center items-center h-64">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
   
-  if (!categoryData.category) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold">Category not found</h1>
-      </div>
-    );
-  }
+  // if (!categoryData.category) {
+  //   return (
+  //     <div className="container mx-auto px-4 py-8">
+  //       <h1 className="text-2xl font-bold">Category not found</h1>
+  //     </div>
+  //   );
+  // }
  
   return(
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
       <ToastContainer/>
-      {!loading && !nofound && categoryData.products.length > 0 ? (
-        <>
+      {!nofound && categoryData.products.length > 0 ? (
+      <>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
         <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.category.category_name}</h1>
@@ -463,13 +536,11 @@ export default function CategoryPage() {
         </div>
 
         {/* Products Section */}
-        <div className="flex-1">
-          {!loading && products.length > 0 ? (
+        <div ref={productsContainerRef} className="products-container flex-1">
+          {products.length > 0 ? (
             <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-              {getSortedProducts()
-                .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
-                .map(product => (
+                {getSortedProducts().map(product => (
                   <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md">
                     <div className="relative aspect-square bg-gray-50">
                       {product.images?.[0] && (
@@ -518,23 +589,23 @@ export default function CategoryPage() {
               />
             </div>
           )}
-          {pageCount > 0 && (
-            <ReactPaginate 
-            breakLabel="..."
-            pageCount={pageCount}
-            marginPagesDisplayed={1}
-            pageRangeDisplayed={3}
-            onPageChange={handlePageClick}
-            containerClassName="flex justify-center mt-6 gap-1 flex-wrap"
-            pageClassName="mx-0.5"
-            pageLinkClassName="block px-2 py-1 text-xs sm:text-sm rounded border hover:bg-gray-500 min-w-[32px] text-center"
-            activeClassName="bg-blue-600 text-white"
-            previousClassName="mx-0.5"
-            nextClassName="mx-0.5"
-            previousLinkClassName="px-2 py-1 text-xs sm:text-sm rounded border hover:bg-gray-500"
-            nextLinkClassName="px-2 py-1 text-xs sm:text-sm rounded border hover:bg-gray-500"
-            />
+
+          {/* Loading Indicator */}
+          {loading && (page==1) && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
           )}
+
+          {/* End of Results Message */}
+          {!hasMore && products.length > 0 && (
+            <p className="text-center text-gray-500 py-4">
+              You've reached the end of products
+            </p>
+          )}
+          {products.length > 0 && <div ref={sentinelRef} className="h-px" />}
+
+          
         </div>
       </div>
       </>
