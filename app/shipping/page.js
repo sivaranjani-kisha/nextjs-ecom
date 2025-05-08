@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-import shippingComponent from "@/components/shipping/shipping";
+import ShippingComponent from "@/components/shipping/shipping";
 
 
 export default function Dashboard() {
@@ -14,7 +14,7 @@ export default function Dashboard() {
   return (
     <div>
       
-      <shippingComponent /> 
+      <ShippingComponent /> 
     </div>
   );
 }

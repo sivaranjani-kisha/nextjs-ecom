@@ -115,7 +115,7 @@ export default function CartComponent() {
 
                 const data = await response.json();
                 console.log(data);
-                alert("dfg");
+                // alert("dfg");
                 setCartData(data.cart);
             } catch (err) {
                 setError(err.message);

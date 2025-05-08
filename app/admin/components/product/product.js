@@ -135,7 +135,7 @@ export default function CategoryComponent() {
   const pageCount = Math.ceil(filteredProducts.length / itemsPerPage);
 
   return (
-    <div className="container mx-auto mt-10 p-5">
+    <div className="container mx-auto ">
 
 {/* <div className="flex justify-between items-center mb-5">
   <h2 className="text-2xl font-bold">Products List</h2>
@@ -143,7 +143,10 @@ export default function CategoryComponent() {
     + Add Product
   </Link>
 </div> */}
-
+      <div className="flex justify-between items-center mb-1 ">
+        <h2 className="text-2xl font-bold">Product List</h2>
+       
+      </div>
       {/* Search Box */}
       <div className="flex justify-between items-center mb-5">
         <input

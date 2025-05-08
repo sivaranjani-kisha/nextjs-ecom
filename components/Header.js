@@ -448,7 +448,7 @@ export default function Header() {
                         <div className="absolute -top-2 right-4 w-4 h-4 bg-white transform rotate-45 shadow-md"></div>
 
                         <div className="py-2 px-2">
-                          <Link
+                          {/* <Link
                             href="/account"
                             className="flex items-center gap-3 px-4 py-2 rounded-md text-sm text-gray-700 hover:bg-blue-50 transition-colors"
                           >
@@ -456,7 +456,7 @@ export default function Header() {
                               <MdAccountCircle className="w-4 h-4" />
                             </span>
                             My Account
-                          </Link>
+                          </Link> */}
 
                           <Link
                             href="/order"

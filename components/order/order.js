@@ -128,15 +128,15 @@ export default function Order() {
             <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-customBlue transition-all duration-300 shadow-sm">
               <h3 className="text-lg font-semibold text-customBlue mb-6 pb-2 border-b border-gray-100">My Account</h3>
               <nav className="space-y-2">
-                <Link href="/profile" className="w-full flex items-center gap-2 px-5 py-3 text-base font-medium text-gray-700 rounded-lg hover:text-customBlue hover:bg-blue-100 hover:pl-6 transition-all">
+                {/* <Link href="/profile" className="w-full flex items-center gap-2 px-5 py-3 text-base font-medium text-gray-700 rounded-lg hover:text-customBlue hover:bg-blue-100 hover:pl-6 transition-all">
                   <RiAccountCircleFill className="text-customBlue text-xl" />
                   <span>Profile</span>
                 </Link>
                 <Link href="/address" className="w-full flex items-center gap-2 px-5 py-3 text-base font-medium text-gray-600 rounded-lg hover:text-customBlue hover:bg-blue-100 hover:pl-6 transition-all">
                   <FaAddressBook className="text-customBlue text-xl" />
                   <span>Addresses</span>
-                </Link>
-                <Link href="/orders" className="w-full flex items-center gap-2 px-5 py-3 text-base font-medium text-gray-600 rounded-lg hover:text-customBlue hover:bg-blue-100 hover:pl-6 transition-all">
+                </Link> */}
+                <Link href="/order" className="w-full flex items-center gap-2 px-5 py-3 text-base font-medium text-gray-600 rounded-lg hover:text-customBlue hover:bg-blue-100 hover:pl-6 transition-all">
                   <HiShoppingBag className="text-customBlue text-xl" />
                   <span>Orders</span>
                 </Link>

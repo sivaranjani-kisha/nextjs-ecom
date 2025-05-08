@@ -4,7 +4,7 @@ import { FaTags, FaLock, FaShoppingCart, FaBlog, FaUser, FaEnvelope, FaBoxOpen }
 import { MdCategory } from "react-icons/md";
 
 const menuItems = [
-  { href: "/", icon: <TiHome size={24} />, label: "Home" },
+  { href: "/admin", icon: <TiHome size={24} />, label: "Home" },
   { href: "/admin/category", icon: <MdCategory size={24} />, label: "Category" },
   { href: "/admin/product", icon: <FaBoxOpen size={24} />, label: "Product" },
   { href: "/admin/design", icon: <FaTags size={24} />, label: "Banner" },

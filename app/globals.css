@@ -19,8 +19,13 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Quicksand,sans-serif;
+  /* font-family: Quicksand,sans-serif; */
   overflow-x: hidden;
+  font-family: "Quicksand", sans-serif;
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }
 
 .header-css {
@@ -149,8 +154,4 @@ body {
   src: url('../public/assets/fonts/Quicksand-Bold.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;  
-}
-
-body{
-  font-family: "Quicksand", sans-serif;
 }

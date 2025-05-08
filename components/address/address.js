@@ -86,14 +86,14 @@ export default function Address() {
             <div className="bg-white p-6 rounded-xl border border-gray-200  hover:border-customBlue transition-all duration-300 shadow-sm">
               <h3 className="text-lg font-semibold text-customBlue mb-6 pb-2 hover:border-customBlue transition-all duration-300 border-b border-gray-100">My Account</h3>
               <nav className="space-y-2">
-              <Link href="/profile" className="w-full flex items-center gap-2 px-5 py-3 text-lg text-base font-medium text-gray-700 rounded-lg transition-all duration-200 hover:text-customBlue hover:bg-blue-100 hover:pl-6">
+              {/* <Link href="/profile" className="w-full flex items-center gap-2 px-5 py-3 text-lg text-base font-medium text-gray-700 rounded-lg transition-all duration-200 hover:text-customBlue hover:bg-blue-100 hover:pl-6">
                 <RiAccountCircleFill className="text-customBlue text-2xl" />
                   <span>Profile</span>
               </Link>
               <Link href="/address" className="w-full flex items-center gap-2 px-5 py-3 text-lg text-base font-medium text-gray-600 rounded-lg transition-all duration-200 hover:text-customBlue hover:bg-blue-100 hover:pl-6">
                 <FaAddressBook className="text-customBlue text-2xl"/>
                   <span>Addresses</span>
-              </Link>
+              </Link> */}
               <Link href="/orders" className="w-full flex items-center gap-2 px-5 py-3 text-lg text-base font-medium text-gray-600 rounded-lg transition-all duration-200 hover:text-customBlue hover:bg-blue-100 hover:pl-6">
                 <HiShoppingBag className="text-customBlue text-2xl"/>
                   <span>Orders</span>

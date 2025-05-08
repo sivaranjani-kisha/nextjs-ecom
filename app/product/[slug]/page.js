@@ -9,6 +9,7 @@ import { IoFastFoodOutline, IoReload, IoCardOutline, IoShieldCheckmark, IoStoref
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
+import ProductBreadcrumb from "@/components/ProductBreadcrumb";
 
 
 export default function ProductPage() {
@@ -174,34 +175,7 @@ useEffect(() => {
 
       <div className="container mx-auto px-4 py-8">
          {/* Breadcrumb - moved outside the grid but inside container */}
-         <div className="flex items-center text-sm mb-6">
-  <Link 
-    href="/" 
-    className="text-gray-500 hover:text-blue-500 transition-colors flex items-center"
-  >
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      className="h-4 w-4 mr-2" 
-      fill="none" 
-      viewBox="0 0 24 24" 
-      stroke="currentColor"
-    >
-      <path 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        strokeWidth={2} 
-        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" 
-      />
-    </svg>
-    Home
-  </Link>
-  
-  <span className="mx-2 text-gray-300">/</span>
-  
-  <span className="text-gray-700 font-medium truncate max-w-[200px]">
-    {product.name}
-  </span>
-</div>
+         <ProductBreadcrumb product={product} />
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Left Section - Product Image with Zoom */}
           <div className="md:col-span-4 relative sticky top-20">
@@ -278,57 +252,60 @@ useEffect(() => {
           <div className="md:col-span-5">
             <h1 className="text-1xl font-semibold">{product.name}</h1>
             <div className="mt-2 pb-3 border-b border-gray-400">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                {/* Left Section - Price */}
-                <div>
-                  <div className="flex items-center space-x-2 text-yellow-500 text-sm">
-                    <span className="text-gray-500 text-xs">{product.item_code}</span>
-                    <p className="text-gray-700 text-sm font-semibold mb-1">Quantity:</p>
-                  </div>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-customBlue">
-                      Rs.{product.special_price || product.price}
-                    </span>
-                    {product.special_price && (
-                      <span className="text-gray-500 line-through text-sm">
-                        Rss.{product.price}
-                      </span>
-                    )}
+            {/* Top Row - Item Code and Quantity Label */}
+            <div className="flex items-center space-x-2 text-sm mb-1">
+              <span className="text-gray-500 text-xs">{product.item_code}</span>
+              <p className="text-gray-700 font-semibold">Quantity:</p>
+            </div>
 
-                    <div className="ml-8 flex items-center border border-gray-300 rounded-full h-8">
-                    <button 
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))} 
-                      className="px-2 py-1 border-r text-xs"
-                    >
-                      -
-                    </button>
-                    <span className="px-2 py-1 text-xs w-6 text-center">{quantity}</span>
-                    <button 
-                      onClick={() => setQuantity(quantity + 1)} 
-                      className="px-2 py-1 border-l text-xs"
-                    >
-                      +
-                    </button>
-                  </div>
+            {/* Bottom Row - All elements in one line */}
+            <div className="flex items-center gap-4">
+              {/* Price Section */}
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-customBlue">
+                  Rs.{product.special_price || product.price}
+                </span>
+                {product.special_price && (
+                  <span className="text-gray-500 line-through text-sm">
+                    Rs.{product.price}
+                  </span>
+                )}
+              </div>
 
-                    {/* Add to Cart Button - Compact */}
-                    <Addtocart productId={product._id} className="flex-1" />
-                  <div className="flex-grow"></div>
+              {/* Quantity Selector */}
+              <div className="flex items-center border border-gray-300 rounded-full h-8">
+                <button 
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))} 
+                  className="px-2 py-1 border-r text-xs"
+                >
+                  -
+                </button>
+                <span className="px-2 py-1 text-xs w-6 text-center">{quantity}</span>
+                <button 
+                  onClick={() => setQuantity(quantity + 1)} 
+                  className="px-2 py-1 border-l text-xs"
+                >
+                  +
+                </button>
+              </div>
 
-                  {/* Action Buttons - Compact */}
-                  <div className="ml-2 flex items-center gap-1">
-                  <ProductCard productId={product._id} />
-                    <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
-                      <FaShareAlt size={10} />
-                    </button>
-                    <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
-                      <FaBell size={10} />
-                    </button>
-                  </div>
-                  </div>
-                </div>
+              {/* Add to Cart Button */}
+              <div className="flex-shrink-0">
+                <Addtocart productId={product._id} />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-1">
+              <ProductCard productId={product._id} />
+                <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
+                  <FaShareAlt size={10} />
+                </button>
+                <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
+                  <FaBell size={10} />
+                </button>
               </div>
             </div>
+          </div>
             {/* <p className="text-gray-700 text-sm mt-3 font-medium">
               {product.sku || "N/A"}
             </p> */}
@@ -486,34 +463,37 @@ useEffect(() => {
 
             {/* Product highlight section */}
             <div className="mt-4 bg-gray-50 p-4 rounded-md">
-              <div 
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => setShowHighlights(!showHighlights)}
-              >
-                <h3 className="text-sm font-semibold text-gray-900">PRODUCT HIGHLIGHTS</h3>
-                <svg 
-                  className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showFeatures ? 'transform rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+                <div 
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setShowHighlights(!showHighlights)}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-    
-                {showHighlights && (
-                <div className="mt-3">
-                  <div className="flex flex-row gap-4">
-                      {/* Product Description */}
-                      <p className="text-gray-700 text-sm text-justify">
-                        {product.description ? 
-                          product.description.split(' ').slice(0, 50).join(' ') + (product.description.split(' ').length > 50 ? '...' : '') 
-                          : "No Highlights available"
-                        }
-                      </p>
-                    </div>
+                  <h3 className="text-sm font-semibold text-gray-900">PRODUCT HIGHLIGHTS</h3>
+                  <svg 
+                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showHighlights ? 'transform rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
-              )}
+
+                  {showHighlights && (
+                    <div className="mt-3">
+                      {product.highlights && product.highlights.trim() !== '' ? (
+                        <ol className="list-decimal pl-5 space-y-1 text-xs text-gray-600">
+                          {product.highlights
+                            .split('\n')
+                            .filter(item => item.trim() !== '')
+                            .map((item, index) => (
+                              <li key={index}>{item.trim()}</li>
+                            ))}
+                        </ol>
+                      ) : (
+                        <p className="text-xs text-gray-500">No highlights available.</p>
+                      )}
+                    </div>
+                  )}
             </div>
           <div className="border-b border-gray-400 mt-2"></div>
 
