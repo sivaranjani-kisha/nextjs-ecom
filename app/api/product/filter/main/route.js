@@ -13,6 +13,10 @@ export async function GET(req) {
     const minPrice = parseFloat(searchParams.get('minPrice')) || 0;
     const maxPrice = parseFloat(searchParams.get('maxPrice')) || 1000000;
     const filterIds = searchParams.get('filters')?.split(',') || [];
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = parseInt(searchParams.get('limit')) || 5;
+
+
     // Base query - always filter by category
     let query = { 
         sub_category: { $in: categoryIds }, // Use $in for multiple categories
@@ -41,40 +45,91 @@ export async function GET(req) {
     ];
     
     // First fetch products matching brand and price filters
-    let products = await Product.find(query)
-      .populate('brand', 'brand_name brand_slug')
-      .lean();
+    // let products = await Product.find(query)
+    //   .populate('brand', 'brand_name brand_slug')
+    //   .lean();
     
-    // Apply additional filters if any
-    if (filterIds.length > 0) {
-      const productIds = products.map(p => p._id);
+    // // Apply additional filters if any
+    // if (filterIds.length > 0) {
+    //   const productIds = products.map(p => p._id);
       
-      // Get all product-filter relationships that match our criteria
-      const productFilters = await ProductFilter.find({
-        product_id: { $in: productIds },
-        filter_id: { $in: filterIds }
-      });
-      console.log(productFilters);
-      // Group filters by product
-      const filtersByProduct = productFilters.reduce((acc, pf) => {
-        const productId = pf.product_id.toString();
+    //   // Get all product-filter relationships that match our criteria
+    //   const productFilters = await ProductFilter.find({
+    //     product_id: { $in: productIds },
+    //     filter_id: { $in: filterIds }
+    //   });
+    //   console.log(productFilters);
+    //   // Group filters by product
+    //   const filtersByProduct = productFilters.reduce((acc, pf) => {
+    //     const productId = pf.product_id.toString();
 
-        if (!acc[productId]) acc[productId] = new Set();
-        acc[productId].add(pf.filter_id.toString());
-        return acc;
-      }, {});
-      console.log("filtersByProduct",filtersByProduct);
-      console.log("products",products);
-      // Filter products to only those that have ALL selected filters
-      products = products.filter(product => {
-        const productId = product._id.toString();
-        const productFilterIds = filtersByProduct[productId] || new Set();
-       // return filterIds.every(fid => productFilterIds.has(fid));
-       return filterIds.some(fid => productFilterIds.has(fid));
-      });
-    }
+    //     if (!acc[productId]) acc[productId] = new Set();
+    //     acc[productId].add(pf.filter_id.toString());
+    //     return acc;
+    //   }, {});
+    //   console.log("filtersByProduct",filtersByProduct);
+    //   console.log("products",products);
+    //   // Filter products to only those that have ALL selected filters
+    //   products = products.filter(product => {
+    //     const productId = product._id.toString();
+    //     const productFilterIds = filtersByProduct[productId] || new Set();
+    //    // return filterIds.every(fid => productFilterIds.has(fid));
+    //    return filterIds.some(fid => productFilterIds.has(fid));
+    //   });
+    // }
     
-    return Response.json(products);
+    // return Response.json(products);
+    let productsQuery = Product.find(query)
+    .populate('brand', 'brand_name brand_slug');
+  
+  // Apply additional filters if any
+  if (filterIds.length > 0) {
+    const productIds = await productsQuery.distinct('_id');
+    
+    const productFilters = await ProductFilter.find({
+      product_id: { $in: productIds },
+      filter_id: { $in: filterIds }
+    });
+    
+    const filtersByProduct = productFilters.reduce((acc, pf) => {
+      const productId = pf.product_id.toString();
+      if (!acc[productId]) acc[productId] = new Set();
+      acc[productId].add(pf.filter_id.toString());
+      return acc;
+    }, {});
+    
+    // Get only product IDs that match all filters
+    const filteredProductIds = productIds.filter(id => {
+      const productId = id.toString();
+      const productFilterIds = filtersByProduct[productId] || new Set();
+      return filterIds.some(fid => productFilterIds.has(fid));
+    });
+    
+    // Update the query to only include filtered products
+    query._id = { $in: filteredProductIds };
+    productsQuery = Product.find(query).populate('brand', 'brand_name brand_slug');
+  }
+  
+  // Apply pagination
+  const skip = (page - 1) * limit;
+  const products = await productsQuery
+    .skip(skip)
+    .limit(limit)
+    .lean();
+  
+  // Get total count for pagination info (optional)
+  const totalProducts = await Product.countDocuments(query);
+  const totalPages = Math.ceil(totalProducts / limit);
+  
+  return Response.json({
+    products,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalProducts,
+      hasMore: page < totalPages
+    }
+  });
   } catch (error) {
     console.error('Error in /api/product/filter:', error);
     return Response.json(

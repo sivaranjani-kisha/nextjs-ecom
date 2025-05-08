@@ -1,14 +1,12 @@
 "use client";
-import  React,{ useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback,useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { ChevronDown, ChevronUp } from "react-feather";
-import ReactPaginate from "react-paginate";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import { ToastContainer, toast } from 'react-toastify';
-
 
 export default function CategoryPage() {
   const [categoryData, setCategoryData] = useState({
@@ -27,12 +25,7 @@ export default function CategoryPage() {
   const [filterGroups, setFilterGroups] = useState({});
   const [loading, setLoading] = useState(true);
   const { slug } = useParams();
-  const [currentPage, setCurrentPage] = useState(0);
   const [sortOption, setSortOption] = useState('');
-  const itemsPerPage = 5;
-  const handlePageClick = ({ selected }) => {
-    setCurrentPage(selected);
-  };
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(true);
   const [isBrandsExpanded, setIsBrandsExpanded] = useState(true);
   const [expandedFilters, setExpandedFilters] = useState({}); 
@@ -48,28 +41,38 @@ export default function CategoryPage() {
   };
   const [nofound,setNofound]=useState(false);
 
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const itemsPerPage = 5;
+  const productsContainerRef = useRef(null);
+  const scrollPositionBeforeFetch = useRef({
+    y: 0,
+    containerHeight: 0,
+    isRestoring: false
+  });
+  const sentinelRef = useRef(null);
+
+  // Fetch initial data
   useEffect(() => {
     if (slug) {
       fetchInitialData();
     }
   }, [slug]);
-
+  
   const fetchInitialData = async () => {
     try {
-      setLoading(true);
-      // Fetch category data (brands, filters, etc.)
+      //setLoading(true);
       const categoryRes = await fetch(`/api/categories/${slug}`);
       const categoryData = await categoryRes.json();
-   
+      
       setCategoryData({
         ...categoryData,
-        categoryTree: categoryData.category, // Hierarchical categoryData
+        categoryTree: categoryData.category,
         allCategoryIds: categoryData.allCategoryIds
       });
-      
-      // Set initial price range based on products in category
+
       if (categoryData.products?.length > 0) {
-        const prices = categoryData.products.map(p => p.special_price );
+        const prices = categoryData.products.map(p => p.special_price);
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
         setPriceRange([minPrice, maxPrice]);
@@ -78,12 +81,10 @@ export default function CategoryPage() {
           price: { min: minPrice, max: maxPrice }
         }));
       }
-      
-      // Organize filters by their groups
+
       const groups = {};
       categoryData.filters.forEach(filter => {
         const groupId = filter.filter_group_name;
-        
         if (groupId) {
           if (!groups[groupId]) {
             groups[groupId] = {
@@ -97,80 +98,142 @@ export default function CategoryPage() {
         }
       });
       setFilterGroups(groups);
-      
-      // Fetch initial products
       if (categoryData.products?.length > 0) {
-      await fetchFilteredProducts(categoryData);
-      }else{
-        setNofound(true);
+      await fetchFilteredProducts(categoryData, 1, true);
       }
     } catch (error) {
-      // console.error('Error fetching initial data:', error);
-      toast.error("Error fetching initial data",error);
+      toast.error("Error fetching initial data");
     } finally {
       setLoading(false);
     }
   };
 
-  const getSortedProducts = () => {
-    const sortedProducts = [...products];
-    
-    switch(sortOption) {
-      case 'price-low-high':
-        return sortedProducts.sort((a, b) => 
-          (a.special_price ) - (b.special_price )
-        );
-      case 'price-high-low':
-        return sortedProducts.sort((a, b) => 
-          (b.special_price ) - (a.special_price )
-        );
-      case 'name-a-z':
-        return sortedProducts.sort((a, b) => 
-          a.name.localeCompare(b.name)
-        );
-      case 'name-z-a':
-        return sortedProducts.sort((a, b) => 
-          b.name.localeCompare(a.name)
-        );
-      default:
-        return sortedProducts;
-    }
-  };
-
-  const sortedProducts = getSortedProducts();
-
-  const fetchFilteredProducts = async (categoryData) => {
+  const fetchFilteredProducts = useCallback(async (categoryData, pageNum = 1, initialLoad = false) => {
     try {
       setLoading(true);
-      
       const query = new URLSearchParams();
-      const categoryId = categoryData.category.map(category => category._id);
       const categoryIds = selectedFilters.categories.length > 0
-      ? selectedFilters.categories
-      : categoryData.allCategoryIds;
-      query.set('categoryIds', categoryIds.join(','));
+        ? selectedFilters.categories
+        : categoryData.allCategoryIds;
 
       query.set('categoryIds', categoryIds.join(','));
+      query.set('page', pageNum);
+      query.set('limit', itemsPerPage);
 
       if (selectedFilters.brands.length > 0) {
         query.set('brands', selectedFilters.brands.join(','));
       }
-    
       query.set('minPrice', selectedFilters.price.min);
       query.set('maxPrice', selectedFilters.price.max);
       
       if (selectedFilters.filters.length > 0) {
         query.set('filters', selectedFilters.filters.join(','));
       }
-      
-      const res =await fetch(`/api/product/filter/main?${query}`);
-      const data = await res.json();
-      setProducts(data);
-    
+
+      const res = await fetch(`/api/product/filter/main?${query}`);
+      //const data = await res.json();
+      const { products, pagination } = await res.json();
+
+      if (pageNum === 1 || initialLoad) {
+        setProducts(products);
+      } else {
+        setProducts(prev => [...prev, ...products]);
+      }
+  
+      setHasMore(pagination.hasMore);
+      if (products.length === 0 && pageNum === 1) {
+        setNofound(true);
+      }
     } catch (error) {
-      toast.error('Error fetching filtered products',error);
+      toast.error('Error fetching products'+error);
     } finally {
       setLoading(false);
+    }
+  }, [selectedFilters]);
+
+  const fetchMoreData = () => {
+    if (!loading && hasMore) {
+      setPage(prev => prev + 1);
+      fetchFilteredProducts(categoryData, page + 1);
+    }
+  };
+
+  // Handle filter changes
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry.isIntersecting && !loading && hasMore) {
+          // Save scroll position and container height
+          scrollPositionBeforeFetch.current = {
+            y: window.scrollY,
+            containerHeight: productsContainerRef.current?.scrollHeight || 0,
+            isRestoring: false
+          };
+          
+          await fetchMoreData();
+        }
+      },
+      { rootMargin: '250px' }
+    );
+  
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+  
+    return () => {
+      if (sentinelRef.current) {
+        observer.unobserve(sentinelRef.current);
+      }
+    };
+  }, [loading, hasMore]);
+  
+  // Add this effect for scroll restoration
+  useEffect(() => {
+    if (!loading && scrollPositionBeforeFetch.current.y > 0 && !scrollPositionBeforeFetch.current.isRestoring) {
+      const container = productsContainerRef.current;
+      if (!container) return;
+  
+      // Calculate height difference after DOM update
+      const newContainerHeight = container.scrollHeight;
+      const heightDifference = newContainerHeight - scrollPositionBeforeFetch.current.containerHeight;
+      
+      // Prevent scroll jump if we're at the same position
+      if (heightDifference > 0) {
+        scrollPositionBeforeFetch.current.isRestoring = true;
+        window.scrollTo({
+          top: scrollPositionBeforeFetch.current.y + heightDifference,
+          behavior: 'smooth'
+        });
+        
+        // Reset after scroll
+        requestAnimationFrame(() => {
+          scrollPositionBeforeFetch.current = {
+            y: 0,
+            containerHeight: 0,
+            isRestoring: false
+          };
+        });
+      }
+    }
+  }, [products, loading]); // Trigger when products or loading state changes
+  
+
+  // Sorting functionality
+  const getSortedProducts = () => {
+    const sortedProducts = [...products];
+    switch(sortOption) {
+      case 'price-low-high':
+        return sortedProducts.sort((a, b) => a.special_price - b.special_price);
+      case 'price-high-low':
+        return sortedProducts.sort((a, b) => b.special_price - a.special_price);
+      case 'name-a-z':
+        return sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-z-a':
+        return sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
+      default:
+        return sortedProducts;
     }
   };
 
@@ -284,7 +347,8 @@ export default function CategoryPage() {
 
   useEffect(() => {
     if (categoryData.main_category && categoryData.category) {
-      fetchFilteredProducts( categoryData);
+      setPage(1);
+      fetchFilteredProducts( categoryData,1);
     }
   }, [selectedFilters, categoryData.main_category, categoryData.category]);
 
@@ -297,7 +361,7 @@ export default function CategoryPage() {
     });
   };
 
-  if (loading && !categoryData.category) {
+  if ((loading || !categoryData.category) && page == 1) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
@@ -307,29 +371,20 @@ export default function CategoryPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      </div>
-    );
-  }
 
-  if (!categoryData.category) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold">Category not found</h1>
-      </div>
-    );
-  }
-  const pageCount = Math.ceil(products.length / itemsPerPage);
+  // if (!categoryData.category) {
+  //   return (
+  //     <div className="container mx-auto px-4 py-8">
+  //       <h1 className="text-2xl font-bold">Category not found</h1>
+  //     </div>
+  //   );
+  // }
+
   return (
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
-      {!loading && !nofound && categoryData.products.length > 0 ? (
-        <>
-       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    {!nofound && categoryData.products.length > 0 ? (
+      <>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
           <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.main_category.category_name}</h1>
         </div>
@@ -354,6 +409,7 @@ export default function CategoryPage() {
           </div>
         </div>
       </div>
+      {/* ... [Keep all your existing filter and header JSX] ... */}
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
         {/* Filters Sidebar */}
        
@@ -485,42 +541,42 @@ export default function CategoryPage() {
 
           {/* Brand Filter */}
           <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
-              <div className="flex items-center justify-between pb-2">
-                <h3 className="text-base font-semibold text-gray-700">Brands</h3>
-                <button onClick={toggleBrands} className="text-gray-500 hover:text-gray-700">
-                  {isBrandsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                </button>
-              </div>
-              {isBrandsExpanded && (
-                <ul className="mt-2 space-y-2">
-                  {categoryData.brands.map(brand => (
-                    <li key={brand._id} className="flex items-center">
-                      <button
-                        onClick={() => handleFilterChange('brands', brand._id)}
-                        className={`flex items-center w-full text-left p-2 rounded-md text-sm ${
-                          selectedFilters.brands.includes(brand._id) 
-                            ? 'bg-blue-50 text-blue-600' 
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {brand.image && (
-                          <div className="w-6 h-6 mr-2 relative">
-                            <Image
-                              src={brand.image.startsWith('http') ? brand.image : `/uploads/brands/${brand.image}`}
-                              alt={brand.brand_name}
-                              fill
-                              className="object-contain"
-                              unoptimized
-                            />
-                          </div>
-                        )}
-                        <span>{brand.brand_name}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <div className="flex items-center justify-between pb-2">
+              <h3 className="text-base font-semibold text-gray-700">Brands</h3>
+              <button onClick={toggleBrands} className="text-gray-500 hover:text-gray-700">
+                {isBrandsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </button>
             </div>
+            {isBrandsExpanded && (
+              <ul className="mt-2 space-y-2">
+                {categoryData.brands.map(brand => (
+                  <li key={brand._id} className="flex items-center">
+                    <button
+                      onClick={() => handleFilterChange('brands', brand._id)}
+                      className={`flex items-center w-full text-left p-2 rounded-md text-sm ${
+                        selectedFilters.brands.includes(brand._id) 
+                          ? 'bg-blue-50 text-blue-600' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {brand.image && (
+                        <div className="w-6 h-6 mr-2 relative">
+                          <Image
+                            src={brand.image.startsWith('http') ? brand.image : `/uploads/brands/${brand.image}`}
+                            alt={brand.brand_name}
+                            fill
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
+                      )}
+                      <span>{brand.brand_name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           {/* Dynamic Filters */}
             
@@ -573,54 +629,50 @@ export default function CategoryPage() {
           </div>
         </div>
         {/* Products Section */}
-        <div className="flex-1">
-          {!loading && products.length > 0 ? (
-            <>
+        <div ref={productsContainerRef} className="products-container flex-1">
+          {products.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-              {getSortedProducts()
-                .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
-                .map(product => (
-                  <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md">
-                    <div className="relative aspect-square bg-gray-50">
-                      {product.images?.[0] && (
-                        <Image src={product.images[0].startsWith('http')  ? product.images[0]  : `/uploads/products/${product.images[0]}`} alt={product.name} fill className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105" 
-                        sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                        unoptimized  />
+              {getSortedProducts().map(product => (
+                <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md">
+                  <div className="relative aspect-square bg-gray-50">
+                    {product.images?.[0] && (
+                      <Image src={product.images[0].startsWith('http')  ? product.images[0]  : `/uploads/products/${product.images[0]}`} alt={product.name} fill className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105" 
+                      sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                      unoptimized  />
+                    )}
+                    <div >
+                      {product.special_price &&
+                        product.special_price !== product.price && (100 - (product.special_price / product.price) * 100) > 0 && (
+                          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">{Math.round(100 - (product.special_price / product.price) * 100)}% OFF</span>
                       )}
-                      <div >
-                        {product.special_price &&
-                          product.special_price !== product.price && (100 - (product.special_price / product.price) * 100) > 0 && (
-                            <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">{Math.round(100 - (product.special_price / product.price) * 100)}% OFF</span>
-                        )}
-                      </div>
-
-                      <div className="absolute top-2 right-2">
-                        <ProductCard productId={product._id} />
-                      </div>
                     </div>
 
-                    <div className="p-2 md:p-4">
-                      <Link href={`/product/${product.slug}`} className="block mb-1 md:mb-2">
-                        <h3 className="text-xs sm:text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2">
-                          {product.name}
-                        </h3>
-                      </Link>
-                      
-                      <div className="flex items-center gap-2 mb-3">
-                        {product.special_price && product.special_price !== product.price && (
-                          <span className="text-xs text-gray-500 line-through">₹{product.price.toLocaleString()}</span>
-                        )}
-                        <span className="text-base font-semibold text-blue-600">₹{(product.special_price || product.price).toLocaleString()}</span>
-                      </div>
-
-                      <Addtocart productId={product._id} className="w-full text-xs sm:text-sm py-1.5"  />
+                    <div className="absolute top-2 right-2">
+                      <ProductCard productId={product._id} />
                     </div>
                   </div>
-                ))}
+
+                  <div className="p-2 md:p-4">
+                    <Link href={`/product/${product.slug}`} className="block mb-1 md:mb-2">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2">
+                        {product.name}
+                      </h3>
+                    </Link>
+                    
+                    <div className="flex items-center gap-2 mb-3">
+                      {product.special_price && product.special_price !== product.price && (
+                        <span className="text-xs text-gray-500 line-through">₹{product.price.toLocaleString()}</span>
+                      )}
+                      <span className="text-base font-semibold text-blue-600">₹{(product.special_price || product.price).toLocaleString()}</span>
+                    </div>
+
+                    <Addtocart productId={product._id} className="w-full text-xs sm:text-sm py-1.5"  />
+                  </div>
+                </div>
+              ))}
             </div>
-            </>
-          ): (
-            <div className="text-center  py-10">
+          ) : (
+            <div className="text-center py-10">
               <img 
                 src="/images/no-productbox.png" 
                 alt="No Products" 
@@ -628,38 +680,34 @@ export default function CategoryPage() {
               />
             </div>
           )}
-          {pageCount > 0 && (
-            <ReactPaginate 
-            breakLabel="..."
-            pageCount={pageCount}
-            marginPagesDisplayed={1}
-            pageRangeDisplayed={3}
-            onPageChange={handlePageClick}
-            containerClassName="flex justify-center mt-6 gap-1 flex-wrap"
-            pageClassName="mx-0.5"
-            pageLinkClassName="block px-2 py-1 text-xs sm:text-sm rounded border hover:bg-gray-500 min-w-[32px] text-center"
-            activeClassName="bg-blue-600 text-white"
-            previousClassName="mx-0.5"
-            nextClassName="mx-0.5"
-            previousLinkClassName="px-2 py-1 text-xs sm:text-sm rounded border hover:bg-gray-500"
-            nextLinkClassName="px-2 py-1 text-xs sm:text-sm rounded border hover:bg-gray-500"
-            />
+
+          {/* Loading Indicator */}
+          {loading && (page==1) && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
           )}
+
+          {/* End of Results Message */}
+          {!hasMore && products.length > 0 && (
+            <p className="text-center text-gray-500 py-4">
+              You've reached the end of products
+            </p>
+          )}
+          {products.length > 0 && <div ref={sentinelRef} className="h-px" />}
         </div>
       </div>
-        </>
-      ) : (
-        <div className="text-center py-10">
-              <img 
-                src="/images/no-productbox.png" 
-                alt="No Products" 
-                className="mx-auto mb-4 w-32 h-32 md:w-40 md:h-40 object-contain" 
-              />
-        </div>
-      )}
-      
-      {/* Pagination */}
-       <ToastContainer />
+      </>
+    ) : (
+      <div className="text-center py-10">
+            <img 
+              src="/images/no-productbox.png" 
+              alt="No Products" 
+              className="mx-auto mb-4 w-32 h-32 md:w-40 md:h-40 object-contain" 
+            />
+      </div>
+    )}
+      <ToastContainer />
     </div>
   );
 }
