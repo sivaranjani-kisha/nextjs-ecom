@@ -12,7 +12,8 @@ import { Heart, ShoppingCart } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation } from 'swiper/modules';
+import { Navigation, Autoplay } from "swiper/modules";
+
 import 'swiper/css';
 import 'swiper/css/navigation';
 export default function HomeComponent() {
@@ -32,6 +33,9 @@ export default function HomeComponent() {
         items: []
         }
     });
+    const [userData, setUserData] = useState(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [hasMounted, setHasMounted] = useState(false);
     const [loading, setLoading] = useState(true);
     const [flashSalesData, setFlashSalesData] = useState([]);
     const [brands, setBrands] = useState([]);
@@ -192,6 +196,35 @@ export default function HomeComponent() {
         }, 2000);
         return () => clearTimeout(timer);
     }, []);
+    useEffect(() => {
+        setHasMounted(true);
+      }, []);
+    
+      useEffect(() => {
+        if (!hasMounted) return;
+      
+        const savedCategories = localStorage.getItem('headerCategories');
+        if (savedCategories) {
+          setCategories(JSON.parse(savedCategories));
+        }
+      
+        const fetchCategories = async () => {
+          try {
+            const response = await fetch('/api/categories/get');
+            const data = await response.json();
+            const parentCategories = data.filter(
+              (category) => category.parentid === "none" && category.status === "Active"
+            );
+            setCategories(parentCategories);
+            localStorage.setItem('headerCategories', JSON.stringify(parentCategories));
+          } catch (error) {
+            console.error("Error fetching categories:", error);
+          }
+        };
+      
+        fetchCategories();
+        checkAuthStatus();
+      }, [hasMounted]);
 
     // Animation controls
     const controls = useAnimation();
@@ -200,7 +233,31 @@ export default function HomeComponent() {
         flashSales: useRef(null),
         delivery: useRef(null),
     };
-
+    const checkAuthStatus = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          if (!token) return;
+    
+          const response = await fetch('/api/auth/check', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            }
+          });
+    
+          if (response.ok) {
+            const data = await response.json();
+            setIsLoggedIn(true);
+            setUserData(data.user);
+          } else {
+            localStorage.removeItem('token');
+            setIsLoggedIn(false);
+          }
+        } catch (error) {
+          console.error("Error checking auth status:", error);
+        }
+      };
     const isInView = {
         banner: useInView(refs.banner, { once: true, amount: 0.1 }),
         flashSales: useInView(refs.flashSales, { once: true, amount: 0.1 }),
@@ -344,52 +401,27 @@ export default function HomeComponent() {
     const dealCategories = parentCategories.slice(1, 4);
     const [currentPage, setCurrentPage] = useState(0);
     const itemsPerPage = 5;
-    const offers = [
-        {
-          id: 1,
-          href: "/details/HP-ZBook-Firefly-14-G7-Laptop-Intel-Core-i7-10th-Gen-16GB-RA/PJ7278/",
-          bgColor: "bg-purple-50",
-          image: "https://www.ourshopee.com/ourshopee-img/ourshopee_transparant_image/640501204445465898Remove-background-project-10.png?",
-          alt: "HP ZBook Firefly 14 G7 Laptop Intel Core i7 10th Gen, 16GB RAM, 256GB SSD, 14inch Touchscreen, Refurbished",
-          title: "HP ZBook Firefly 14 G7 Laptop Intel Core i7 10th Gen, 16GB RAM, 256GB SSD, 14inch Touchscreen, Refurbished",
-          price: "1279",
-          oldPrice: "1999",
-          discount: "36% OFF"
-        },
-        {
-          id: 2,
-          href: "/details/Apple-MacBook-Air-2017-133-inch-FHD-Display-Intel-Core-i5-Pr/PJ7459/",
-          bgColor: "bg-green-50",
-          image: "https://www.ourshopee.com/ourshopee-img/ourshopee_transparant_image/157358255933126412Remove-background-project-9.png?",
-          alt: "Apple MacBook Air 2017 13.3 inch FHD Display Intel Core i5 Processor 8GB RAM 256GB SSD Storage Silver Refurbished",
-          title: "Apple MacBook Air 2017 13.3 inch FHD Display Intel Core i5 Processor 8GB RAM 256GB SSD Storage Silver Refurbished",
-          price: "799",
-          oldPrice: "1799",
-          discount: "56% OFF"
-        },
-        {
-          id: 3,
-          href: "/details/Dell-Latitude-5411-Business-Laptop-Intel-Core-i5-10th-Genera/PJ8317/",
-          bgColor: "bg-amber-50",
-          image: "https://www.ourshopee.com/ourshopee-img/ourshopee_transparant_image/3670529537588708Remove-background-project-20.png?",
-          alt: "Dell Latitude 5411 Business Laptop, Intel Core i5-10th Generation CPU, 16GB RAM, 256GB SSD , 14 inch  Windows 11 Pro Refurbished",
-          title: "Dell Latitude 5411 Business Laptop, Intel Core i5-10th Generation CPU, 16GB RAM, 256GB SSD , 14 inch  Windows 11 Pro Refurbished",
-          price: "719",
-          oldPrice: "899",
-          discount: "20% OFF"
-        },
-        {
-          id: 4,
-          href: "/details/My-Ruky-Signature-Unisex-65ml/OO1356/",
-          bgColor: "bg-pink-50",
-          image: "https://www.ourshopee.com/ourshopee-img/ourshopee_transparant_image/884926333576922692OO1356.png?",
-          alt: "My Ruky Signature Unisex 65ml",
-          title: "My Ruky Signature Unisex 65ml",
-          price: "65",
-          oldPrice: "91",
-          discount: "29% OFF"
-        },
-    ];
+    const [offers, setOffers] = useState([]);
+    const [offerProducts, setOfferProducts] = useState([]);
+    const bgClasses = ["bg-purple-50", "bg-green-50", "bg-amber-50", "bg-pink-50"];
+
+    useEffect(() => {
+      const fetchOfferProducts = async () => {
+        try {
+          const res = await fetch("/api/offers/offer-products");
+          const data = await res.json();
+  
+          if (data.success) {
+            setOfferProducts(data.data);
+          }
+        } catch (err) {
+          console.error("Error loading offer products", err);
+        }
+      };
+  
+      fetchOfferProducts();
+    }, []);
+  
 
     return (
         <>
@@ -406,6 +438,65 @@ export default function HomeComponent() {
             )}
             {/* main div start */}
             <div className={`relative transition-opacity duration-300 ${isLoading ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`} ref={containerRef} >
+                
+            {hasMounted && categories.length > 0 && (
+                        <div className="bg-white-200 py-2 relative border-b border-gray-200 shadow">
+                          <div className="max-w-7xl mx-auto px-4 relative">
+                            {/* Swiper arrows */}
+                            <div className="absolute -left-6 top-1/2 z-10 -translate-y-1/2 custom-swiper-prev cursor-pointer hidden md:block">
+                              <div className="p-2 bg-customBlue rounded-full shadow">
+                                <FiChevronLeft size={20} className="text-white" />
+                              </div>
+                            </div>
+                            <div className="absolute -right-6 top-1/2 z-10 -translate-y-1/2 custom-swiper-next cursor-pointer hidden md:block">
+                              <div className="p-2 bg-customBlue rounded-full shadow">
+                                <FiChevronRight size={20} className="text-white" />
+                              </div>
+                            </div>
+                
+                            <Swiper
+                              modules={[Navigation]}
+                              navigation={{
+                                prevEl: '.custom-swiper-prev',
+                                nextEl: '.custom-swiper-next',
+                              }}
+                              spaceBetween={10}
+                              slidesPerView={6}
+                              breakpoints={{
+                                320: { slidesPerView: 3 },
+                                640: { slidesPerView: 4 },
+                                768: { slidesPerView: 5 },
+                                1024: { slidesPerView: 7 },
+                              }}
+                            >
+                              {categories.map((category) => (
+                                <SwiperSlide key={category._id}>
+                                  <Link href={`/category/${category.category_slug}`}>
+                                    <div className="flex flex-col items-center text-center w-full transition-transform duration-300 hover:scale-105 mt-4">
+                                      <div className="w-36 h-36 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn">
+                                        {category.image ? (
+                                          <Image
+                                            src={category.image}
+                                            alt={category.category_name}
+                                            width={80}
+                                            height={80}
+                                            className="object-contain"
+                                          />
+                                        ) : (
+                                          <div className="w-10 h-10 bg-gray-300 rounded-full" />
+                                        )}
+                                      </div>
+                                      <span className="mt-2 text-sm font-medium text-gray-700 hover:text-customBlue">
+                                        {category.category_name}
+                                      </span>
+                                    </div>
+                                  </Link>
+                                </SwiperSlide>
+                              ))}
+                            </Swiper>
+                          </div>
+                        </div>
+                      )}
                 {/* Banner Section start */}
                 <motion.section ref={refs.banner} initial="hidden" animate={isInView.banner ? "visible" : "hidden"} variants={containerVariants} className="overflow-hidden pt-0 m-0 ">
                     <div className="relative">
@@ -462,48 +553,147 @@ export default function HomeComponent() {
                 </section>
 
                 {/* Existing offer code start */}
-                <div className="px-2 py-4 p-2">
+                <div className="px-2 py-4">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold">Exciting Offers</h2>
+                        {offerProducts.length > 3 && (
                         <div className="flex gap-2">
-                            <button className="swiper-button-prev bg-gray-300 hover:bg-gray-400 p-2 rounded-full">◀</button>
-                            <button className="swiper-button-next bg-gray-300 hover:bg-gray-400 p-2 rounded-full">▶</button>
+                            {/* <button className="swiper-button-prev bg-gray-300 hover:bg-gray-400 p-2 rounded-full">◀</button>
+                            <button className="swiper-button-next bg-gray-300 hover:bg-gray-400 p-2 rounded-full">▶</button> */}
                         </div>
+                        )}
                     </div>
-                    <Swiper modules={[Navigation]} navigation={{nextEl: ".swiper-button-next",prevEl: ".swiper-button-prev",}} slidesPerView={4} spaceBetween={0} loop={true}>
-                        {offers.map((offer) => (
-                            <SwiperSlide key={offer.id}>
-                            <div className={`card rounded-lg ${offer.bgColor} shadow-sm`}>
+
+                    {offerProducts.length === 0 && <p>No active offers found.</p>}
+
+                    {/* If only 1 or 2 products, show static row */}
+                    {offerProducts.length > 0 && offerProducts.length <= 2 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {offerProducts.map((product, index) => (
+                            <div
+                            key={product._id}
+                            className={`card rounded-lg shadow-sm ${bgClasses[index] || "bg-yellow-100"}`}
+                            >
+                            <div className="flex items-center">
+                                <div className="w-1/3 p-2">
+                                <Link href={`/product/${product.slug}`} className="block">
+                                    <img
+                                        src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"}
+                                        alt={product.item_code}
+                                        className="w-full object-contain pl-1"
+                                    />
+                                </Link>
+                                </div>
+                                <div className="w-2/3 p-4">
+                                <div className="flex items-center mb-2">
+                                    <svg
+                                    stroke="currentColor"
+                                    fill="none"
+                                    strokeWidth="2"
+                                    viewBox="0 0 24 24"
+                                    className="mr-1 h-3.5 w-3.5"
+                                    >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                    </svg>
+                                    {/* <span className="text-sm">04h : 43m : 59s</span> */}
+                                </div>
+                                <Link href={`/product/${product.slug}`} className="block">
+                                     <div className="text-sm line-clamp-2">{product.name}</div>
+                                </Link>
+                                <div className="mt-1">
+                                    <span className="text-sm font-medium text-gray-700">Rs.</span>
+                                    <span className="ml-1 font-semibold">{product.price}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <div className="text-sm font-medium text-gray-400 line-through whitespace-nowrap">
+                                    <span className="text-sm font-medium text-gray-400">Rs.</span>
+                                    {product.special_price ? product.price : product.price + 20}
+                                    </div>
+                                    <div className="text-sm font-semibold text-green-600 bg-white rounded px-2 whitespace-nowrap">
+                                    {product.special_price ? "Special Offer" : "Limited Time"}
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                            </div>
+                        ))}
+                        </div>
+                    )}
+
+                    {/* If 3 or more products, show Swiper */}
+                    {offerProducts.length >= 3 && (
+                        <Swiper
+                        modules={[Navigation, Autoplay]}
+                        navigation={{
+                        nextEl: ".swiper-button-next",
+                        prevEl: ".swiper-button-prev",
+                        }}
+                        autoplay={{
+                        delay: 5000,
+                        disableOnInteraction: false,
+                        }}
+                        slidesPerView={4}
+                        spaceBetween={0}
+                        loop={true}
+                    >
+                    
+                        {offerProducts.map((product, index) => (
+                            <SwiperSlide key={product._id}>
+                            <div className={`card rounded-lg shadow-sm ${bgClasses[index % bgClasses.length]}`}>
                                 <div className="flex items-center">
-                                    <div className="w-1/3 p-2">
-                                        <img src={offer.image} alt={offer.alt} className="w-full object-contain pl-1" />
+                                <div className="w-1/3 p-2">
+                                <Link href={`/product/${product.slug}`} className="block">
+                                    <img
+                                    src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"}
+                                    alt={product.item_code}
+                                    className="w-full object-contain pl-1"
+                                    />
+                                    </Link>
+                                </div>
+                                <div className="w-2/3 p-4">
+                                    {/* <div className="flex items-center mb-2">
+                                    <svg
+                                        stroke="currentColor"
+                                        fill="none"
+                                        strokeWidth="2"
+                                        viewBox="0 0 24 24"
+                                        className="mr-1 h-3.5 w-3.5"
+                                    >
+                                        <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        />
+                                    </svg>
+                                    <span className="text-sm">04h : 43m : 59s</span>
+                                    </div> */}
+                                    <Link href={`/product/${product.slug}`} className="block">
+                                     <div className="text-sm line-clamp-2">{product.name}</div>
+                                    </Link>
+                                    <div className="mt-1">
+                                    <span className="text-sm font-medium text-gray-700">Rs.</span>
+                                    <span className="ml-1 font-semibold">{product.price}</span>
                                     </div>
-                                    <div className="w-2/3 p-4">
-                                        <div className="flex items-center mb-2">
-                                            <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" className="mr-1 h-3.5 w-3.5" >
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span className="text-sm">04h : 43m : 59s</span>
-                                        </div>
-                                        <div className="text-sm line-clamp-2">{offer.title}</div>
-                                        <div className="mt-1">
-                                            <span className="text-sm font-medium text-gray-700">AED</span>
-                                            <span className="ml-1 font-semibold">{offer.price}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <div className="text-sm font-medium text-gray-700 line-through whitespace-nowrap">
-                                                {offer.oldPrice}
-                                            </div>
-                                            <div className="text-sm font-semibold text-green-600 bg-white rounded px-2 whitespace-nowrap">
-                                                {offer.discount}
-                                            </div>
-                                        </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                    <div className="text-sm font-medium text-gray-400 line-through whitespace-nowrap">
+                                        <span className="text-sm font-medium text-gray-400">Rs.</span>
+                                        {product.special_price ? product.price : product.price + 20}
                                     </div>
+                                    <div className="text-sm font-semibold text-green-600 bg-white rounded px-2 whitespace-nowrap">
+                                        {product.special_price ? "Special Offer" : "Limited Time"}
+                                    </div>
+                                    </div>
+                                </div>
                                 </div>
                             </div>
                             </SwiperSlide>
                         ))}
-                    </Swiper>
+                        </Swiper>
+                    )}
                 </div>
 
                 {/* category banner code start */}
@@ -740,7 +930,7 @@ export default function HomeComponent() {
                             <div className="relative">
                                 <div 
                                     ref={scrollContainerRef} 
-                                    className="flex gap-6 "
+                                    className="flex gap-6 overflow-x-auto scroll-smooth pb-4 hide-scrollbar"
                                 >
                                 
                                 {/* Dynamic Category Banner Card */}
@@ -750,12 +940,12 @@ export default function HomeComponent() {
                                         <h3 className="text-xl font-bold mb-4">{selectedCategory.category_name}</h3>
                                         <div className="flex-1 flex items-center justify-center">
                                             <img 
-                                            src={selectedCategory.image || "/uploads/products/category-placeholder.jpg"} 
+                                            src={selectedCategory.image || "/user/placeholder.png"} 
                                             alt={selectedCategory.category_name} 
                                             className="h-80 object-contain"
                                             onError={(e) => { 
                                                 e.target.onerror = null; 
-                                                e.target.src = "/uploads/products/category-placeholder.jpg"; 
+                                                e.target.src = "/user/placeholder.png"; 
                                             }}
                                             />
                                         </div>

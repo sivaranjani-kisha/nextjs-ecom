@@ -3,7 +3,7 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import CustomHeader from "@/components/Header";
+import CustomHeader from "@/components/Headernew";
 import CustomFooter from "@/components/Footer";
 // import CustomHeader from "@/components/Header";
 // import CustomFooter from "@/components/Footer";
