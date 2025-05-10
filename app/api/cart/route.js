@@ -73,7 +73,7 @@ export async function POST(req) {
         items: [{
           productId,
           quantity,
-          price: product.price,
+          price: product.special_price,
           name: product.name,
           image: product.images[0]
         }]
@@ -140,7 +140,7 @@ export async function GET(req) {
         { status: 200 }
       );
     }
-console.log(cart);
+console.log(cart.items);
     return NextResponse.json(
       { 
         cart: {
@@ -150,7 +150,7 @@ console.log(cart);
           items: cart.items.map(item => ({
             productId: item.productId._id,
             name: item.productId.name,
-            price: item.productId.price,
+            price: item.price,
             image: item.productId.images[0],
             quantity: item.quantity
           }))

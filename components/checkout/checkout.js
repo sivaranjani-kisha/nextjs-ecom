@@ -261,7 +261,7 @@ export default function CheckoutPage() {
   
       setError("");
   
-      const totalAmount = cartItems.reduce((sum, item) => sum + item.price, 0);
+      const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       let paymentId = "";
       let paymentStatus = "";
       let paymentMode = "";
