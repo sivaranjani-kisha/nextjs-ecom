@@ -203,18 +203,18 @@ const WishlistPage = () => {
                         className="rounded-lg"
                       />
                       <div className="ml-4">
-                         <Link href={`/product/${item.slug}`}>
+                         {/* <Link href={`/product/${item.productId.slug}`}> */}
                       <p className="font-semibold hover:text-orange-500 cursor-pointer">
                       {item.name.length > 50 ? `${item.name.substring(0, 50)}...` : item.name}
                       </p>
-                      </Link>
+                      {/* </Link> */}
                         <div className="flex items-center text-sm text-gray-500 mt-1">
                           <span className="text-yellow-500">⭐ {item.rating}</span>
                           <span className="ml-2">| {item.reviews} Reviews</span>
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-center font-semibold">${item.price.toFixed(2)}</td>
+                    <td className="py-4 px-6 text-center font-semibold">Rs. {item.price.toFixed(2)}</td>
                     <td className="py-4 px-6 text-center text-green-600 font-semibold">
                       {item.stockStatus}
                     </td>

@@ -303,7 +303,18 @@ export default function CategoryPage() {
                 href={`/category/${slug}/${category.category_slug}`}
               
                 className="p-2 hover:bg-gray-100 rounded inline-flex items-center"
-              >{category.category_name}
+              >     {category.image && (
+                        <div className="w-6 h-6 mr-2 relative">
+                          <Image
+                            src={category.image.startsWith('http') ? category.image : `/uploads/categories/${category.image}`}
+                            alt={category.category_name}
+                            fill
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
+                      )}
+                {category.category_name}
                 {/* {expandedCategories.includes(category._id) ? (
                   <ChevronUp size={16} />
                 ) : (
@@ -562,7 +573,7 @@ export default function CategoryPage() {
                       {brand.image && (
                         <div className="w-6 h-6 mr-2 relative">
                           <Image
-                            src={brand.image.startsWith('http') ? brand.image : `/uploads/brands/${brand.image}`}
+                            src={brand.image.startsWith('http') ? brand.image : `/uploads/Brands/${brand.image}`}
                             alt={brand.brand_name}
                             fill
                             className="object-contain"
