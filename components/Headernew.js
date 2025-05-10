@@ -90,15 +90,8 @@ useEffect(() => {
   const handleSearch = () => {
     if (!searchQuery.trim()) return; // Don't search if empty
     
-    // Create URL with search parameters
-    const searchParams = new URLSearchParams();
-    searchParams.append('query', searchQuery.trim());
-    if (selectedCategory !== 'All Categories') {
-      searchParams.append('category', selectedCategory);
-    }
-    
-    // Navigate to search page with query parameters
-    router.push(`/search?${searchParams.toString()}`);
+    const categoryParam = selectedCategory !== 'All Categories' ? selectedCategory : '';
+    router.push(`/search?query=${searchQuery}&category=${categoryParam}`);
   };
 
   // Modify the search button to use the handler

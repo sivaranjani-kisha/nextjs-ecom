@@ -246,12 +246,73 @@ export async function PUT(req) {
 }
 
 // DELETE method for removing items
+// export async function DELETE(req) {
+//   try {
+//     await connectDB();
+//     const authHeader = req.headers.get('authorization');
+//     const token = authHeader?.split(' ')[1];
+
+//     if (!token) {
+//       return NextResponse.json(
+//         { error: "Authorization token required" },
+//         { status: 401 }
+//       );
+//     }
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     const userId = decoded.userId;
+//     const { productId } = await req.json();
+
+//     const cart = await Cart.findOne({ userId });
+//     if (!cart) {
+//       return NextResponse.json({ error: "Cart not found" }, { status: 404 });
+//     }
+
+//     const existingItemIndex = cart.items.findIndex(
+//       item => item.productId.toString() === productId
+//     );
+
+//     if (existingItemIndex === -1) {
+//       return NextResponse.json({ error: "Item not found in cart" }, { status: 404 });
+//     }
+
+//     // Remove the item
+//     cart.items.splice(existingItemIndex, 1);
+
+//     // Recalculate totals
+//     cart.totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+//     cart.totalPrice = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+//     await cart.save();
+
+//     return NextResponse.json(
+//       {
+//         message: "Item removed from cart",
+//         cart: {
+//           id: cart._id,
+//           totalItems: cart.totalItems,
+//           totalPrice: cart.totalPrice,
+//           items: cart.items
+//         }
+//       },
+//       { status: 200 }
+//     );
+
+//   } catch (error) {
+//     console.error("Remove from cart error:", error);
+//     return NextResponse.json(
+//       { error: error.message || "Failed to remove from cart" },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function DELETE(req) {
   try {
     await connectDB();
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.split(' ')[1];
-    
+
     if (!token) {
       return NextResponse.json(
         { error: "Authorization token required" },
@@ -261,32 +322,40 @@ export async function DELETE(req) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
-    const { productId } = await req.json();
+    const { productId, clearAll } = await req.json();
 
-    let cart = await Cart.findOne({ userId });
+    const cart = await Cart.findOne({ userId });
     if (!cart) {
-      return NextResponse.json(
-        { error: "Cart not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Cart not found" }, { status: 404 });
     }
 
-    // Remove the item
-    cart.items = cart.items.filter(
-      item => item.productId.toString() !== productId
-    );
+    if (clearAll) {
+      // Clear the entire cart
+      cart.items = [];
+      cart.totalItems = 0;
+      cart.totalPrice = 0;
+    } else {
+      // Remove a specific item
+      const existingItemIndex = cart.items.findIndex(
+        item => item.productId.toString() === productId
+      );
 
-    // Recalculate totals
-    cart.totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-    cart.totalPrice = cart.items.reduce(
-      (sum, item) => sum + (item.price * item.quantity), 0
-    );
+      if (existingItemIndex === -1) {
+        return NextResponse.json({ error: "Item not found in cart" }, { status: 404 });
+      }
+
+      cart.items.splice(existingItemIndex, 1);
+
+      // Recalculate totals
+      cart.totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+      cart.totalPrice = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    }
 
     await cart.save();
 
     return NextResponse.json(
-      { 
-        message: "Item removed from cart",
+      {
+        message: clearAll ? "Cart cleared" : "Item removed from cart",
         cart: {
           id: cart._id,
           totalItems: cart.totalItems,
@@ -300,8 +369,9 @@ export async function DELETE(req) {
   } catch (error) {
     console.error("Remove from cart error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to remove from cart" },
+      { error: error.message || "Failed to update cart" },
       { status: 500 }
     );
   }
 }
+
