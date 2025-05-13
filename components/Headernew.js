@@ -103,7 +103,7 @@ useEffect(() => {
   };
   const messages = [
   "Welcome to our store! Enjoy the best deals and quality products.",
-  "Free shipping on orders over $50. Shop now and save more!",
+  
 ];
  const [current, setCurrent] = useState(0);
 
@@ -253,7 +253,9 @@ useEffect(() => {
 
           {/* Logo (Hidden on mobile) */}
           <div className="hidden sm:block mr-12 bg-white p-2 rounded-lg">
+            <Link href="/index" className="mx-auto">
             <img src="/user/bea.png" alt="Logo" className="h-auto" width={60} height={30} />
+            </Link>
           </div>
 
           {/* Search Bar (Hidden on mobile - will show in mobile menu) */}

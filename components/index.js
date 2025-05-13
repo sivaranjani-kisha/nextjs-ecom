@@ -439,64 +439,65 @@ export default function HomeComponent() {
             {/* main div start */}
             <div className={`relative transition-opacity duration-300 ${isLoading ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`} ref={containerRef} >
                 
-            {hasMounted && categories.length > 0 && (
-                        <div className="bg-white-200 py-2 relative border-b border-gray-200 shadow">
-                          <div className="max-w-7xl mx-auto px-4 relative">
-                            {/* Swiper arrows */}
-                            <div className="absolute -left-6 top-1/2 z-10 -translate-y-1/2 custom-swiper-prev cursor-pointer hidden md:block">
-                              <div className="p-2 bg-customBlue rounded-full shadow">
-                                <FiChevronLeft size={20} className="text-white" />
-                              </div>
-                            </div>
-                            <div className="absolute -right-6 top-1/2 z-10 -translate-y-1/2 custom-swiper-next cursor-pointer hidden md:block">
-                              <div className="p-2 bg-customBlue rounded-full shadow">
-                                <FiChevronRight size={20} className="text-white" />
-                              </div>
-                            </div>
-                
-                            <Swiper
-                              modules={[Navigation]}
-                              navigation={{
-                                prevEl: '.custom-swiper-prev',
-                                nextEl: '.custom-swiper-next',
-                              }}
-                              spaceBetween={10}
-                              slidesPerView={6}
-                              breakpoints={{
-                                320: { slidesPerView: 3 },
-                                640: { slidesPerView: 4 },
-                                768: { slidesPerView: 5 },
-                                1024: { slidesPerView: 7 },
-                              }}
-                            >
-                              {categories.map((category) => (
-                                <SwiperSlide key={category._id}>
-                                  <Link href={`/category/${category.category_slug}`}>
-                                    <div className="flex flex-col items-center text-center w-full transition-transform duration-300 hover:scale-105 mt-4">
-                                      <div className="w-36 h-36 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn">
-                                        {category.image ? (
-                                          <Image
-                                            src={category.image}
-                                            alt={category.category_name}
-                                            width={80}
-                                            height={80}
-                                            className="object-contain"
-                                          />
-                                        ) : (
-                                          <div className="w-10 h-10 bg-gray-300 rounded-full" />
-                                        )}
-                                      </div>
-                                      <span className="mt-2 text-sm font-medium text-gray-700 hover:text-customBlue">
-                                        {category.category_name}
-                                      </span>
-                                    </div>
-                                  </Link>
-                                </SwiperSlide>
-                              ))}
-                            </Swiper>
-                          </div>
-                        </div>
-                      )}
+         {hasMounted && categories.length > 0 && (
+           <div className="bg-white py-2 relative border-b border-gray-200 shadow">
+             <div className="max-w-7xl mx-auto px-2 sm:px-4 relative">
+               {/* Swiper arrows - hidden on mobile */}
+               <div className="absolute -left-2 sm:-left-6 top-1/2 z-10 -translate-y-1/2 custom-swiper-prev cursor-pointer hidden md:block">
+                 <div className="p-2 bg-customBlue rounded-full shadow">
+                   <FiChevronLeft size={20} className="text-white" />
+                 </div>
+               </div>
+               <div className="absolute -right-2 sm:-right-6 top-1/2 z-10 -translate-y-1/2 custom-swiper-next cursor-pointer hidden md:block">
+                 <div className="p-2 bg-customBlue rounded-full shadow">
+                   <FiChevronRight size={20} className="text-white" />
+                 </div>
+               </div>
+         
+               <Swiper
+                 modules={[Navigation]}
+           navigation={{
+             prevEl: '.custom-swiper-prev',
+             nextEl: '.custom-swiper-next',
+           }}
+           spaceBetween={12} // Increase spacing between slides
+           slidesPerView={3}
+           breakpoints={{
+             320: { slidesPerView: 3, spaceBetween: 10 },
+             460: { slidesPerView: 4, spaceBetween: 12 },
+             640: { slidesPerView: 5, spaceBetween: 14 },
+             768: { slidesPerView: 6, spaceBetween: 16 },
+             1024: { slidesPerView: 9, spaceBetween: 18 },
+           }}
+         >
+                 {categories.map((category) => (
+                   <SwiperSlide key={category._id}>
+                     <Link href={`/category/${category.category_slug}`}>
+                       <div className="flex flex-col items-center text-center w-full transition-transform duration-300 hover:scale-105 mt-3 sm:mt-4">
+                         <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn">
+                           {category.image ? (
+                             <Image
+                               src={category.image}
+                               alt={category.category_name}
+                               width={60}
+                               height={60}
+                               className="object-contain"
+                             />
+                           ) : (
+                             <div className="w-10 h-10 bg-gray-300 rounded-full" />
+                           )}
+                         </div>
+                         <span className="mt-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-customBlue text-center px-1 whitespace-nowrap">
+                           {category.category_name}
+                         </span>
+                       </div>
+                     </Link>
+                   </SwiperSlide>
+                 ))}
+               </Swiper>
+             </div>
+           </div>
+         )}
                 {/* Banner Section start */}
                 <motion.section ref={refs.banner} initial="hidden" animate={isInView.banner ? "visible" : "hidden"} variants={containerVariants} className="overflow-hidden pt-0 m-0 ">
                     <div className="relative">
@@ -534,23 +535,56 @@ export default function HomeComponent() {
                 </motion.section>
 
                 {/* features code start */}
-                <section className="p-2">
-                    <div style={{display: "flex",flexWrap: "nowrap", justifyContent: "center",gap: "24px",maxWidth: "1440px",margin: "0 auto",}}>
-                        {features.map((feature, index) => (
-                            <div key={index} style={{ display: "flex",alignItems: "center",flex: "1 1 0",minWidth: "0",padding: "24px",borderRadius: "12px",boxShadow: "0 4px 6px rgba(0,0,0,0.1)",backgroundColor: "#cfd4e1",}}>
-                                <div style={{backgroundColor: "#3b82f6",color: "white",padding: "12px",borderRadius: "9999px",fontSize: "24px",display: "flex",alignItems: "center",justifyContent: "center",}}>
-                                    {feature.icon}
-                                </div>
-                                <div style={{ marginLeft: "16px" }}>
-                                    <h3 style={{ fontSize: "18px", fontWeight: "600", color: "#111827", marginBottom: "8px" }}>
-                                        {feature.title}
-                                    </h3>
-                                    <p style={{ fontSize: "14px", color: "#374151" }}>{feature.description}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+       {/* features code start */}
+               <section className="p-2">
+    <div style={{
+        display: "flex",
+        flexWrap: "nowrap",
+        justifyContent: "center",
+        gap: "24px",
+        maxWidth: "1440px",
+        margin: "0 auto",
+    }}>
+        {features.map((feature, index) => (
+            <div key={index} style={{
+                display: "flex",
+                alignItems: "center",
+                flex: "1 1 0",
+                minWidth: "0",
+                padding: "24px",
+                borderRadius: "12px",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                background: "linear-gradient(135deg, #deb9b9, #73a0e0)"
+            }}>
+                <div style={{
+                    backgroundColor: "#ffffff",
+                    color: "white",
+                    padding: "12px",
+                    borderRadius: "9999px",
+                    fontSize: "24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}>
+                    {feature.icon}
+                </div>
+                <div style={{ marginLeft: "16px" }}>
+                    <h3 style={{
+                        fontSize: "18px",
+                        fontWeight: "600",
+                        color: "#111827",
+                        marginBottom: "8px"
+                    }}>
+                        {feature.title}
+                    </h3>
+                    <p style={{ fontSize: "14px", color: "#374151" }}>{feature.description}</p>
+                </div>
+            </div>
+        ))}
+    </div>
+</section>
+
+
 
                 {/* Existing offer code start */}
                 <div className="px-2 py-4">
