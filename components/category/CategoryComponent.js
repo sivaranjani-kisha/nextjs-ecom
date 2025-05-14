@@ -306,7 +306,7 @@ export default function CategoryPage() {
               >     {category.image && (
                         <div className="w-6 h-6 mr-2 relative">
                           <Image
-                            src={category.image.startsWith('http') ? category.image : `/uploads/categories/${category.image}`}
+                            src={category.image.startsWith('http') ? category.image : `/${category.image}`}
                             alt={category.category_name}
                             fill
                             className="object-contain"

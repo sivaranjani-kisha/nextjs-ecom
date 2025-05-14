@@ -313,21 +313,32 @@ export default function HomeComponent() {
             }
         ]
     };
-
     const brandSettings = {
-        dots: false,
         infinite: true,
-        speed: 500,
-        slidesToShow: 7,
+        speed: 5000, // Higher speed for continuous effect
+        slidesToShow: 7, // Adjust according to your design
         slidesToScroll: 1,
         autoplay: true,
-        autoplaySpeed: 4000,
-        responsive: [
-            { breakpoint: 1024, settings: { slidesToShow: 4 } },
-            { breakpoint: 768, settings: { slidesToShow: 2 } },
-            { breakpoint: 480, settings: { slidesToShow: 1 } }
-        ]
+        autoplaySpeed: 0, // 0ms delay between scrolls
+        cssEase: "linear", // Smooth continuous scroll
+        arrows: false, // Optional: hide arrows
+        pauseOnHover: false, // Optional: keep scrolling on hover
     };
+
+    // const brandSettings = {
+    //     dots: false,
+    //     infinite: true,
+    //     speed: 500,
+    //     slidesToShow: 7,
+    //     slidesToScroll: 1,
+    //     autoplay: true,
+    //     autoplaySpeed: 4000,
+    //     responsive: [
+    //         { breakpoint: 1024, settings: { slidesToShow: 4 } },
+    //         { breakpoint: 768, settings: { slidesToShow: 2 } },
+    //         { breakpoint: 480, settings: { slidesToShow: 1 } }
+    //     ]
+    // };
     
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -439,16 +450,16 @@ export default function HomeComponent() {
             {/* main div start */}
             <div className={`relative transition-opacity duration-300 ${isLoading ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`} ref={containerRef} >
                 
-         {hasMounted && categories.length > 0 && (
+ {hasMounted && categories.length > 0 && (
            <div className="bg-white py-2 relative border-b border-gray-200 shadow">
-             <div className="max-w-7xl mx-auto px-2 sm:px-4 relative">
+             <div className="max-w-7xl mx-auto px-2 sm:px-7 relative">
                {/* Swiper arrows - hidden on mobile */}
-               <div className="absolute -left-2 sm:-left-6 top-1/2 z-10 -translate-y-1/2 custom-swiper-prev cursor-pointer hidden md:block">
+               <div className="absolute -left-2 sm:-left-2 top-1/2 z-10 -translate-y-1/2 custom-swiper-prev cursor-pointer hidden md:block">
                  <div className="p-2 bg-customBlue rounded-full shadow">
                    <FiChevronLeft size={20} className="text-white" />
                  </div>
                </div>
-               <div className="absolute -right-2 sm:-right-6 top-1/2 z-10 -translate-y-1/2 custom-swiper-next cursor-pointer hidden md:block">
+               <div className="absolute -right-2 sm:-right-2 top-1/2 z-10 -translate-y-1/2 custom-swiper-next cursor-pointer hidden md:block">
                  <div className="p-2 bg-customBlue rounded-full shadow">
                    <FiChevronRight size={20} className="text-white" />
                  </div>
@@ -456,18 +467,19 @@ export default function HomeComponent() {
          
                <Swiper
                  modules={[Navigation]}
-           navigation={{
-             prevEl: '.custom-swiper-prev',
-             nextEl: '.custom-swiper-next',
-           }}
-           spaceBetween={12} // Increase spacing between slides
-           slidesPerView={3}
+                navigation={{
+                    prevEl: '.custom-swiper-prev',
+                    nextEl: '.custom-swiper-next',
+                }}
+           spaceBetween={12} 
            breakpoints={{
              320: { slidesPerView: 3, spaceBetween: 10 },
              460: { slidesPerView: 4, spaceBetween: 12 },
              640: { slidesPerView: 5, spaceBetween: 14 },
              768: { slidesPerView: 6, spaceBetween: 16 },
-             1024: { slidesPerView: 9, spaceBetween: 18 },
+             900: { slidesPerView: 7, spaceBetween: 20 }, // Increased from 6 to 7
+             1024: { slidesPerView: 7, spaceBetween: 24 }, // Reduced from 9 to 7 and increased spaceBetween
+             1280: { slidesPerView: 9, spaceBetween: 18 } // Added a new breakpoint for wider screens
            }}
          >
                  {categories.map((category) => (
@@ -497,8 +509,7 @@ export default function HomeComponent() {
                </Swiper>
              </div>
            </div>
-         )}
-                {/* Banner Section start */}
+         )}                {/* Banner Section start */}
                 <motion.section ref={refs.banner} initial="hidden" animate={isInView.banner ? "visible" : "hidden"} variants={containerVariants} className="overflow-hidden pt-0 m-0 ">
                     <div className="relative">
                         {isBannerLoading ? (
@@ -767,10 +778,10 @@ export default function HomeComponent() {
                     variants={itemVariants}
                     className="section-heading flex justify-between items-center mb-4 p-2"
                     >
-                    <h5 className="text-2xl font-bold">Flash Sales Today</h5>
-                    <a href="/shop" className="text-sm font-medium text-gray-700 hover:underline">
+                    <h5 className="text-2xl font-bold">Categories</h5>
+                    {/* <a href="/shop" className="text-sm font-medium text-gray-700 hover:underline">
                         View All Deals
-                    </a>
+                    </a> */}
                     </motion.div>
 
                     {isFlashSalesLoading ? (

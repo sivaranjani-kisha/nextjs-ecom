@@ -90,8 +90,15 @@ useEffect(() => {
   const handleSearch = () => {
     if (!searchQuery.trim()) return; // Don't search if empty
     
-    const categoryParam = selectedCategory !== 'All Categories' ? selectedCategory : '';
-    router.push(`/search?query=${searchQuery}&category=${categoryParam}`);
+    // Create URL with search parameters
+    const searchParams = new URLSearchParams();
+    searchParams.append('query', searchQuery.trim());
+    if (selectedCategory !== 'All Categories') {
+      searchParams.append('category', selectedCategory);
+    }
+    
+    // Navigate to search page with query parameters
+    router.push(`/search?${searchParams.toString()}`);
   };
 
   // Modify the search button to use the handler
@@ -102,8 +109,7 @@ useEffect(() => {
     }
   };
   const messages = [
-  "Welcome to our store! Enjoy the best deals and quality products.",
-  
+  "Welcome to our store! Enjoy the best deals and quality products."
 ];
  const [current, setCurrent] = useState(0);
 
@@ -217,7 +223,7 @@ useEffect(() => {
   return (
    <header className="sticky top-0 z-50">
       {/* Top Announcement Bar */}
- <div className="bg-white text-customBlue px-4 py-1 overflow-hidden relative w-full">
+ <div className="bg-white text-orange-500 px-4 py-1 overflow-hidden relative w-full">
       <div className="relative w-full overflow-hidden h-8 flex items-center">
         <motion.div
           key={current} // Important to reset animation when content changes
@@ -253,9 +259,9 @@ useEffect(() => {
 
           {/* Logo (Hidden on mobile) */}
           <div className="hidden sm:block mr-12 bg-white p-2 rounded-lg">
-            <Link href="/index" className="mx-auto">
-            <img src="/user/bea.png" alt="Logo" className="h-auto" width={60} height={30} />
-            </Link>
+           <Link href="/index" className="mx-auto">
+          <img src="/user/bea.png" alt="Logo" className="h-auto" width={60} height={30} />
+          </Link>
           </div>
 
           {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
