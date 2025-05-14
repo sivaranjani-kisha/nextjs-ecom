@@ -88,9 +88,11 @@ export default function ProductBreadcrumb({ product }) {
               {category.category_name}
             </Link>
           ) : (
-            <span className="text-gray-500 whitespace-nowrap">
+            <Link 
+            href={`/category/${category.category_slug || category._id}`}
+            className="text-gray-500 whitespace-nowrap hover:text-blue-500">
               {category.category_name}
-            </span>
+            </Link>
           )}
         </div>
       ))}

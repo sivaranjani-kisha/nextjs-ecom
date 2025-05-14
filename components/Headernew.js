@@ -109,7 +109,8 @@ useEffect(() => {
     }
   };
   const messages = [
-  "Welcome to our store! Enjoy the best deals and quality products."
+  "Welcome to our store! Enjoy the best deals and quality products.",
+  "Free shipping on orders over $50. Shop now and save more!",
 ];
  const [current, setCurrent] = useState(0);
 
@@ -295,7 +296,7 @@ useEffect(() => {
           </div>
 
           {/* Icons Group */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-[2rem] sm:gap-4">
             {/* Mobile Search Button (Hidden on desktop) */}
             <button 
               onClick={toggleMobileMenu}
@@ -314,7 +315,7 @@ useEffect(() => {
             <Link href="/wishlist" className="flex items-center relative p-1 sm:p-0">
               <FaHeart size={18} className="text-white" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 text-[10px] bg-white text-customBlue rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-2 -right-4 text-[10px] bg-white text-customBlue rounded-full w-4 h-4 flex items-center justify-center">
                   {wishlistCount}
                 </span>
               )}
@@ -324,7 +325,7 @@ useEffect(() => {
             {/* Cart */}
             <Link href="/cart" className="flex items-center relative p-1 sm:p-0 sm:px-2">
               <FaShoppingCart size={18} className="text-white" />
-              <span className="absolute -top-1 -right-1 text-[10px] bg-white text-customBlue rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 text-[10px] bg-white text-customBlue rounded-full w-4 h-4 flex items-center justify-center">
                 {cartCount}
               </span>
               <span className="ml-1 font-bold text-xs sm:text-sm text-white hidden lg:inline">Cart</span>

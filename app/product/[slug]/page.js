@@ -693,62 +693,86 @@ useEffect(() => {
 
           {/* Right Section - Seller Info */}
           <div className="md:col-span-3 border border-gray-300 rounded-lg shadow-md bg-white mb-14 w-full max-w-sm max-h-[490px] overflow-y-scroll scrollbar-hide">
-          <div className="px-4 py-4">
-            <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
-              Frequently Bought Together:
-            </h3>
+        {featuredProducts?.length > 0 && (
+  <div className="px-4 py-4"> 
+    <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
+      Frequently Bought Together:
+    </h3>
 
-            {featuredProducts.map((item, index) => (
-              <div key={item._id} className="flex items-start mb-4">
-                <input type="checkbox" className="mt-2 mr-3" />
-                <div className="flex items-start gap-3">
-                  {item.images?.[0] && (
-                    <img
-                      src={`/uploads/products/${item.images[0]}`}
-                      alt={item.name}
-                      className="w-16 h-16 object-contain"
-                    />
-                  )}
-                  <div className="text-sm">
-                  <div className="text-gray-800 font-medium">
-                    {item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name.padEnd(20, ' ')}
-                  </div>
-                    {/* <div className="text-gray-500">
-                      {item.description?.slice(0, 20)}...
-                    </div> */}
-                    <div className="text-orange-600 font-medium">Buy Together for</div>
-                    <div className="text-gray-800 font-semibold">
-                      ₹ {item.special_price || item.price}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+    {featuredProducts.map((item) => (
+      <div key={item._id} className="flex items-start mb-4">
+        <input type="checkbox" className="mt-2 mr-3" />
+        <div className="flex items-start gap-3">
+          {item.images?.[0] && (
+            <img
+              src={`/uploads/products/${item.images[0]}`}
+              alt={item.name}
+              className="w-16 h-16 object-contain"
+            />
+          )}
+          <div className="text-sm">
+            <div className="text-gray-800 font-medium">
+              {item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name.padEnd(20, ' ')}
+            </div>
+            <div className="text-orange-600 font-medium">Buy Together for</div>
+            <div className="text-gray-800 font-semibold">
+              ₹ {item.special_price || item.price}
+            </div>
           </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
 
 
 
             {/* Protection Plan */}
-            <div className="border-t border-gray-300 px-4 py-4">
-              <h4 className="text-sm font-semibold text-orange-600 mb-2">Want to protect your product?</h4>
-              <p className="text-sm font-bold text-gray-800 underline mb-2">Accidental and Liquid Damage Protection Plan</p>
+           {(product?.warranty || product?.extended_warranty) && (
+  <div className="border-t border-gray-300 px-4 py-4">
+    <h4 className="text-sm font-semibold text-orange-600 mb-2">
+      Want to protect your product?
+    </h4>
 
-              <div className="text-sm text-gray-800 space-y-2 mb-4">
-                <div className="flex items-center">
-                  <input type="radio" name="protection" className="mr-2" />
-                  <label>1 Year Accidental And Liquid Damage <span className="text-green-600 font-bold ml-2">₹  {product.warranty}</span></label>
-                </div>
-                
-              </div>
+    {product?.warranty && (
+      <>
+        <p className="text-sm font-bold text-gray-800 underline mb-2">
+          Accidental and Liquid Damage Protection Plan
+        </p>
+        <div className="text-sm text-gray-800 space-y-2 mb-4">
+          <div className="flex items-center">
+            <input type="radio" name="protection" className="mr-2" />
+            <label>
+              1 Year Accidental And Liquid Damage
+              <span className="text-green-600 font-bold ml-2">
+                ₹ {product.warranty}
+              </span>
+            </label>
+          </div>
+        </div>
+      </>
+    )}
 
-              <p className="text-sm font-bold text-gray-800 underline mb-2">Extended Warranty</p>
-              <div className="text-sm text-gray-800">
-                <div className="flex items-center">
-                  <input type="radio" name="warranty" className="mr-2" />
-                  <label>1 Year Extended Warranty Protection <span className="text-green-600 font-bold ml-2">₹ {product.extended_warranty} </span></label>
-                </div>
-              </div>
-            </div>
+    {product?.extended_warranty && (
+      <>
+        <p className="text-sm font-bold text-gray-800 underline mb-2">
+          Extended Warranty
+        </p>
+        <div className="text-sm text-gray-800">
+          <div className="flex items-center">
+            <input type="radio" name="warranty" className="mr-2" />
+            <label>
+              1 Year Extended Warranty Protection
+              <span className="text-green-600 font-bold ml-2">
+                ₹ {product.extended_warranty}
+              </span>
+            </label>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+)}
             {/* <div className="mt-4 px-4">
               <div className="flex items-center justify-between bg-customBlue text-white px-3 py-2 rounded-full">
                 <div className="flex items-center gap-2">
