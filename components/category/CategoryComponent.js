@@ -98,9 +98,9 @@ export default function CategoryPage() {
         }
       });
       setFilterGroups(groups);
-      if (categoryData.products?.length > 0) {
-      await fetchFilteredProducts(categoryData, 1, true);
-      }
+      // if (categoryData.products?.length > 0) {
+      // await fetchFilteredProducts(categoryData, 1, true);
+      // }
     } catch (error) {
       toast.error("Error fetching initial data");
     } finally {
