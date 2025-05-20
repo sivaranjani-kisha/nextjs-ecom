@@ -307,7 +307,12 @@ export default function ProductComponent() { // Changed from CategoryComponent t
 
 // Edit Product Modal Component
 function EditProductModal({ product, onClose, onUpdate }) {
-  const [formData, setFormData] = useState(product);
+ const [formData, setFormData] = useState({
+  ...product,
+  filters: product.filters || [],
+  featured_products: product.featured_products || [],
+  product_highlights: product.product_highlights || []
+});
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [categories, setCategories] = useState([]);
@@ -736,7 +741,7 @@ function EditProductModal({ product, onClose, onUpdate }) {
                   options={filters}
                   isMulti
                   onChange={handleFilterChange}
-                  value={filters.filter(f => formData.filters.includes(f.value))}
+                  value={filters.filter(f => (formData.filters || []).includes(f.value))}
                   placeholder="Select filters..."
                 />
               </div>
@@ -814,7 +819,7 @@ function EditProductModal({ product, onClose, onUpdate }) {
                   options={allProducts}
                   onChange={handleFeaturedChange}
                   value={allProducts.filter(option => 
-                    formData.featured_products.includes(option.value)
+                    (formData.featured_products|| []).includes(option.value)
                   )}
                   placeholder="Select products for featured..."
                   closeMenuOnSelect={false}

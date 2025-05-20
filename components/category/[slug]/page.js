@@ -56,7 +56,21 @@ export default function CategoryPage() {
       fetchInitialData();
     }
   }, [sub_slug]);
+const handleProductClick = (product) => {
+        const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
 
+        const alreadyViewed = stored.find((p) => p._id === product._id);
+
+        const updated = alreadyViewed
+            ? stored.filter((p) => p._id !== product._id)
+            : stored;
+
+        updated.unshift(product); // Add to beginning
+
+        const limited = updated.slice(0, 10); // Limit to 10 recent products
+
+        localStorage.setItem('recentlyViewed', JSON.stringify(limited));
+    };
   const fetchInitialData = async () => {
     try {
       setLoading(true);
@@ -561,7 +575,7 @@ export default function CategoryPage() {
                     </div>
 
                     <div className="p-2 md:p-4">
-                      <Link href={`/product/${product.slug}`} className="block mb-1 md:mb-2">
+                      <Link href={`/product/${product.slug}`} className="block mb-1 md:mb-2" onClick={() => handleProductClick(product)}>
                         <h3 className="text-xs sm:text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2">
                           {product.name}
                         </h3>

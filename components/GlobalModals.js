@@ -14,7 +14,10 @@ const GlobalModals = () => {
       onClose={closeAuthModal}
       onSuccess={() => {
         closeAuthModal();
-        if (onAuthSuccess) onAuthSuccess();
+        // if (onAuthSuccess) onAuthSuccess();
+         if (typeof onAuthSuccess === 'function') {
+  onAuthSuccess();
+}
       }}
     />
   );

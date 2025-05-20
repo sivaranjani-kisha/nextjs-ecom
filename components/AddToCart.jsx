@@ -2,18 +2,20 @@
 
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
-import {AuthModal} from '@/components/AuthModal';
+import { useModal } from '@/context/ModalContext';
+// import {AuthModal} from '@/components/AuthModal';
 import { FaShoppingCart} from "react-icons/fa";
 
 const AddToCartButton = ({ productId, quantity = 1 }) => {
+  const { openAuthModal } = useModal();
   const [isLoading, setIsLoading] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authError, setAuthError] = useState('');
+  // const [showAuthModal, setShowAuthModal] = useState(false);
+  // const [authError, setAuthError] = useState('');
   const [cartSuccess, setCartSuccess] = useState(false);
   const { cartCount, updateCartCount } = useCart();
   const handleAddToCart = async () => {
     setIsLoading(true);
-    setAuthError('');
+    // setAuthError('');
     setCartSuccess(false);
     
     try {
@@ -31,9 +33,13 @@ const AddToCartButton = ({ productId, quantity = 1 }) => {
       const data = await response.json();
       
       if (!data.loggedIn) {
-        setShowAuthModal(true);
-        return;
-      }
+  openAuthModal({
+    error: 'Please log in to continue.',
+    onSuccess: () => handleAddToCart(), // retry on success
+  });
+  return;
+}
+
 
       // Add to cart API call
       const cartResponse = await fetch('/api/cart', {
@@ -120,7 +126,7 @@ const AddToCartButton = ({ productId, quantity = 1 }) => {
     </>
   )}
 </button>
-
+{/* 
       {showAuthModal && (
         <AuthModal 
           onClose={() => setShowAuthModal(false)}
@@ -130,7 +136,7 @@ const AddToCartButton = ({ productId, quantity = 1 }) => {
           }}
           error={authError}
         />
-      )}
+      )} */}
     </>
   );
 };

@@ -87,12 +87,19 @@ useEffect(() => {
   const router = useRouter(); // Initialize the router
 
   // Add this search handler function
-  const handleSearch = () => {
-    if (!searchQuery.trim()) return; // Don't search if empty
+ const handleSearch = () => {
+    // Don't search if both are empty
+    if (!searchQuery.trim() && selectedCategory === 'All Categories') {
+      return;
+    }
     
     // Create URL with search parameters
     const searchParams = new URLSearchParams();
-    searchParams.append('query', searchQuery.trim());
+    
+    if (searchQuery.trim()) {
+      searchParams.append('query', searchQuery.trim());
+    }
+    
     if (selectedCategory !== 'All Categories') {
       searchParams.append('category', selectedCategory);
     }
@@ -225,7 +232,7 @@ useEffect(() => {
    <header className="sticky top-0 z-50">
       {/* Top Announcement Bar */}
  <div className="bg-white text-orange-500 px-4 py-1 overflow-hidden relative w-full">
-      <div className="relative w-full overflow-hidden h-8 flex items-center">
+      <div className="relative w-full overflow-hidden h-4 flex items-center">
         <motion.div
           key={current} // Important to reset animation when content changes
           initial={{ x: '100%' }}

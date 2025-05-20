@@ -13,6 +13,7 @@ import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from "swiper/modules";
+import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -408,6 +409,25 @@ export default function HomeComponent() {
         );
     })() : products;
 
+
+
+    const handleProductClick = (product) => {
+        const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
+
+        const alreadyViewed = stored.find((p) => p._id === product._id);
+
+        const updated = alreadyViewed
+            ? stored.filter((p) => p._id !== product._id)
+            : stored;
+
+        updated.unshift(product); // Add to beginning
+
+        const limited = updated.slice(0, 10); // Limit to 10 recent products
+
+        localStorage.setItem('recentlyViewed', JSON.stringify(limited));
+    };
+
+
     const featuredCategory = parentCategories[0];
     const dealCategories = parentCategories.slice(1, 4);
     const [currentPage, setCurrentPage] = useState(0);
@@ -450,7 +470,7 @@ export default function HomeComponent() {
             {/* main div start */}
             <div className={`relative transition-opacity duration-300 ${isLoading ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`} ref={containerRef} >
                 
- {hasMounted && categories.length > 0 && (
+        {hasMounted && categories.length > 0 && (
            <div className="bg-white py-2 relative border-b border-gray-200 shadow">
              <div className="max-w-7xl mx-auto px-2 sm:px-7 relative">
                {/* Swiper arrows - hidden on mobile */}
@@ -486,19 +506,33 @@ export default function HomeComponent() {
                    <SwiperSlide key={category._id}>
                      <Link href={`/category/${category.category_slug}`}>
                        <div className="flex flex-col items-center text-center w-full transition-transform duration-300 hover:scale-105 mt-3 sm:mt-4">
-                         <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn">
+                         {/* <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn">
                            {category.image ? (
                              <Image
                                src={category.image}
                                alt={category.category_name}
-                               width={60}
-                               height={60}
+                               width={80}
+                               height={80}
                                className="object-contain"
                              />
                            ) : (
                              <div className="w-10 h-10 bg-gray-300 rounded-full" />
                            )}
-                         </div>
+                         </div> */}
+                         <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn group">
+                {category.image ? (
+                    <Image
+                    src={category.image}
+                    alt={category.category_name}
+                    width={70}
+                    height={70}
+                    className="object-contain transition-transform duration-300 group-hover:scale-110"
+                    />
+                ) : (
+                    <div className="w-10 h-10 bg-gray-300 rounded-full" />
+                )}
+                </div>
+
                          <span className="mt-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-customBlue text-center px-1 whitespace-nowrap">
                            {category.category_name}
                          </span>
@@ -509,7 +543,8 @@ export default function HomeComponent() {
                </Swiper>
              </div>
            </div>
-         )}                {/* Banner Section start */}
+        )}        
+                 {/* Banner Section start */}
                 <motion.section ref={refs.banner} initial="hidden" animate={isInView.banner ? "visible" : "hidden"} variants={containerVariants} className="overflow-hidden pt-0 m-0 ">
                     <div className="relative">
                         {isBannerLoading ? (
@@ -1034,7 +1069,7 @@ export default function HomeComponent() {
                                                         }} 
                                                     />
                                                 </div>
-                                                <Link href={`/product/${product.slug || product._id}`}>
+                                                <Link href={`/product/${product.slug || product._id}`} onClick={() => handleProductClick(product)}>
                                                     <h3 className="mt-3 font-semibold group-hover:text-blue-600 line-clamp-2">
                                                         {product.name}
                                                     </h3>
@@ -1047,10 +1082,10 @@ export default function HomeComponent() {
                                                         </span>
                                                     )}
                                                 </p>
-                                                <p className="text-sm text-gray-600">
+                                                {/* <p className="text-sm text-gray-600">
                                                     ⭐ {product.rating || "N/A"} (
                                                     {product.reviews ? product.reviews.toLocaleString() : "0"})
-                                                </p>
+                                                </p> */}
                                                 <div className="mt-3 flex items-center justify-between gap-2">
                                                     <Addtocart productId={product._id} className="flex-1" />
                                                     <a 
@@ -1077,7 +1112,7 @@ export default function HomeComponent() {
                         )}
                     </div>
                 </motion.section>
-
+<RecentlyViewedProducts />
                 {/* Hot deal section - showing only parent categories */}
                 
             </div>

@@ -93,12 +93,13 @@
 
 // components/AddToWishlistButton.jsx
 "use client";
-
+import { useModal } from '@/context/ModalContext';
 import { useState,useEffect  } from 'react';
 import { useWishlist } from '@/context/WishlistContext';
 import { Heart } from 'lucide-react';
 import {AuthModal} from '@/components/AuthModal';
 const AddToWishlistButton = ({ productId }) => {
+  const { openAuthModal } = useModal();
   const [isLoading, setIsLoading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -127,8 +128,10 @@ const AddToWishlistButton = ({ productId }) => {
       
       const data = await response.json();
       
-      if (!data.loggedIn) {
-        setShowAuthModal(true);
+     if (!data.loggedIn) {
+        openAuthModal(() => {
+          handleWishlistAction(); // Retry after login
+        }, 'You must be logged in to add to wishlist.');
         return;
       }
 
@@ -169,7 +172,8 @@ const AddToWishlistButton = ({ productId }) => {
         </button>
 
       {/* AuthModal remains the same */}
-      {showAuthModal && (
+      {/* {showAuthModal && (
+        <div className="fixed inset-0 z-[9999]">
         <AuthModal 
           onClose={() => setShowAuthModal(false)}
           onSuccess={() => {
@@ -178,7 +182,8 @@ const AddToWishlistButton = ({ productId }) => {
           }}
           error={authError}
         />
-      )}
+        </div>
+      )} */}
     </>
   );
 };

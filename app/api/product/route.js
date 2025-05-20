@@ -1,60 +1,64 @@
-import  connectToDatabase  from "@/lib/db";
-import Product from "@/models/product";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import Product from '@/models/product';
+import dbConnect from '@/lib/db';
 
-export async function GET(req) {
+export async function POST(request) {
   try {
-    await connectToDatabase(); // Ensure DB connection
+    // 1. Connect to database
+    await dbConnect();
 
-    const { searchParams } = new URL(req.url);
+    // 2. Parse the request body
+    const body = await request.json();
+    const { _id, ...updateData } = body;
 
-    const category = searchParams.get("category");
-    const name = searchParams.get("name");
-    const item_code = searchParams.get("item_code");
-    const status = searchParams.get("status");
+    console.log('Updating product with ID:', _id);
+    console.log('Update data:', updateData);
 
-    let filter = {};
+    // 3. Validate required fields
+    if (!_id) {
+      return NextResponse.json(
+        { success: false, message: "Product ID is required" },
+        { status: 400 }
+      );
+    }
 
-    if (category) filter.category = category;
-    if (name) filter.name = { $regex: new RegExp(name, "i") }; // Case-insensitive search
-    if (item_code) filter.item_code = item_code;
-    if (status) filter.status = status;
+    // 4. Prepare the update object
+    const updateObj = {
+      ...updateData,
+      updatedAt: new Date() // Always update the timestamp
+    };
 
-    const products = await Product.find(filter).lean(); // Fetch filtered products
+    // 5. Perform the update
+    const updatedProduct = await Product.findByIdAndUpdate(
+      _id,
+      updateObj,
+      { new: true } // Return the updated document
+    ).lean();
 
-    return NextResponse.json(products, { status: 200 });
+    if (!updatedProduct) {
+      return NextResponse.json(
+        { success: false, message: "Product not found" },
+        { status: 404 }
+      );
+    }
+
+    // 6. Convert MongoDB ObjectId to string
+    if (updatedProduct._id) {
+      updatedProduct._id = updatedProduct._id.toString();
+    }
+
+    // 7. Return success response
+    return NextResponse.json({
+      success: true,
+      message: "Product updated successfully",
+      data: updatedProduct
+    });
+
   } catch (error) {
-    console.error("Error fetching products:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Update Product Error:", error);
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
-
-
-
-
-// import connectToDatabase from "@/lib/db";
-// import Product from "@/models/product";
-// import { NextResponse } from "next/server";
-
-// export async function GET(req, { params }) {
-//   try {
-//     await connectToDatabase();
-
-//     const { slug } = params; // Get slug from URL params
-
-//     if (!slug) {
-//       return NextResponse.json({ error: "Missing product slug" }, { status: 400 });
-//     }
-// console.log(slug);
-//     const product = await Product.findOne({ slug }).lean();
-
-//     if (!product) {
-//       return NextResponse.json({ error: "Product not found" }, { status: 404 });
-//     }
-
-//     return NextResponse.json(product, { status: 200 });
-//   } catch (error) {
-//     console.error("Error fetching product:", error);
-//     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-//   }
-// }

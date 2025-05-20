@@ -11,19 +11,31 @@ export async function GET(req) {
   try {
     await dbConnect();
     
-    // Build search filter
-    const searchFilter = {
-      $or: [
-        { name: { $regex: query, $options: 'i' } },
-        { item_code: { $regex: query, $options: 'i' } }
-      ]
-    };
+    // Build base filter for active products
+    const searchFilter = { status: "Active" };
 
-    // Add category filter if specified
-    if (category) {
-      const categoryDoc = await Category.findOne({ category_name: category });
+    // Add text search conditions if query exists
+    if (query) {
+      searchFilter.$or = [
+        { name: { $regex: query, $options: 'i' } },
+        { item_code: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } },
+        { keywords: { $regex: query, $options: 'i' } }
+      ];
+    }
+
+    // Add category filter if specified and not 'All Categories'
+    if (category && category !== 'All Categories') {
+      const categoryDoc = await Category.findOne({ 
+        category_name: category,
+        status: "Active"
+      });
+      
       if (categoryDoc) {
         searchFilter.category = categoryDoc._id;
+      } else {
+        // Return empty if category not found
+        return NextResponse.json([]);
       }
     }
 

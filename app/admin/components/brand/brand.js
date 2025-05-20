@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FaPlus, FaMinus } from "react-icons/fa";
+import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import { Icon } from '@iconify/react';
 
@@ -9,6 +9,8 @@ export default function BrandComponent() {
   const [brand, setBrand] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingBrand, setEditingBrand] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [newBrand, setNewBrand] = useState({
     brand_name: "",
@@ -16,6 +18,7 @@ export default function BrandComponent() {
     image: null,
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [editImagePreview, setEditImagePreview] = useState(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [brandToDelete, setBrandToDelete] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -52,12 +55,26 @@ export default function BrandComponent() {
     setNewBrand({ ...newBrand, [e.target.name]: e.target.value });
   };
 
+  // Handle edit input change
+  const handleEditInputChange = (e) => {
+    setEditingBrand({ ...editingBrand, [e.target.name]: e.target.value });
+  };
+
   // Handle image upload
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setNewBrand((prev) => ({ ...prev, image: file }));
       setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Handle edit image upload
+  const handleEditImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setEditingBrand((prev) => ({ ...prev, image: file, existingImage: prev.image }));
+      setEditImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -88,8 +105,56 @@ export default function BrandComponent() {
           image: null,
         });
         setImagePreview(null);
+        setSuccessMessage("Brand Added Successfully");
+        setShowSuccessModal(true);
       } else {
         console.error("Error adding brand:", result.error);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  // Handle brand edit
+  const handleEditBrand = (brand) => {
+    setEditingBrand({
+      ...brand,
+      image: brand.image,
+      existingImage: brand.image
+    });
+    setEditImagePreview(brand.image ? `/uploads/brands/${brand.image}` : null);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle brand update
+  const handleUpdateBrand = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("id", editingBrand._id);
+    formData.append("brand_name", editingBrand.brand_name);
+    formData.append("status", editingBrand.status);
+    formData.append("existingImage", editingBrand.existingImage || "");
+    if (editingBrand.image instanceof File) {
+      formData.append("image", editingBrand.image);
+    }
+
+    try {
+      const response = await fetch("/api/brand/update", {
+        method: "PUT",
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setIsEditModalOpen(false);
+        fetchBrand();
+        setEditingBrand(null);
+        setEditImagePreview(null);
+        setSuccessMessage("Brand Updated Successfully");
+        setShowSuccessModal(true);
+      } else {
+        console.error("Error updating brand:", result.error);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -146,20 +211,27 @@ export default function BrandComponent() {
           <td className="p-2">{brand.brand_slug}</td>
           <td className="p-2">
             {brand.image ? (
-              <img src={`/uploads/brands/${brand.image}`} alt="brand" className="h-7 mx-auto" />
+              <img src={`${brand.image}`} alt="brand" className="h-7 mx-auto" />
             ) : (
               "No Image"
             )}
           </td>
           <td className="p-2 font-semibold">
             {brand.status === "Active" ? (
-              <span className="text-green-500">Active</span>
+              <span className="bg-green-100 text-green-600 px-6 py-1.5 rounded-full font-medium text-sm">Active</span>
             ) : (
-              <span className="text-red-500">Inactive</span>
+              <span className="bg-red-100 text-red-600 px-6 py-1.5 rounded-full font-medium text-sm">Inactive</span>
             )}
           </td>
           <td>
             <div className="flex items-center gap-2 justify-center">
+              <button
+                onClick={() => handleEditBrand(brand)}
+                className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                title="Edit"
+              >
+               <FaEdit className="w-3 h-3" />
+              </button>
               <button
                 onClick={() => {
                   setBrandToDelete(brand._id);
@@ -190,10 +262,6 @@ export default function BrandComponent() {
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-5 mt-5">
         <h2 className="text-2xl font-bold">Brand List</h2>
-        {/* <div className="flex items-center space-x-2">
-          <Icon icon="solar:home-smile-angle-outline" className="w-6 h-6 text-gray-700" />
-          <span className="text-lg font-semibold">Dashboard - Brand</span>
-        </div> */}
       </div>
 
       {isLoading ? (
@@ -375,6 +443,102 @@ export default function BrandComponent() {
                   className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
                 >
                   Add Brand
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Editing Brand */}
+      {isEditModalOpen && editingBrand && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+            {/* Header with close button */}
+            <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Edit Brand</h2>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-700 focus:outline-none"
+                aria-label="Close modal"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="px-6 py-6 overflow-y-auto flex-grow">
+              <form onSubmit={handleUpdateBrand} className="space-y-5">
+                {/* Brand Name */}
+                <div>
+                  <label htmlFor="edit_brand_name" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Brand Name
+                  </label>
+                  <input
+                    name="brand_name"
+                    value={editingBrand.brand_name}
+                    onChange={handleEditInputChange}
+                    id="edit_brand_name"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    placeholder="Enter Brand Name"
+                    required
+                  />
+                </div>
+
+                {/* Upload Image */}
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image</label>
+                  <input
+                    type="file"
+                    onChange={handleEditImageChange}
+                    className="block w-full text-sm text-gray-600
+                      file:mr-3 file:py-1 file:px-3
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100
+                    "
+                  />
+                  {editImagePreview && (
+                    <img
+                      src={editImagePreview}
+                      alt="Preview"
+                      className="mt-3 h-16 rounded-md object-contain mx-auto"
+                    />
+                  )}
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label htmlFor="edit_status" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    id="edit_status"
+                    value={editingBrand.status}
+                    onChange={handleEditInputChange}
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                >
+                  Update Brand
                 </button>
               </form>
             </div>

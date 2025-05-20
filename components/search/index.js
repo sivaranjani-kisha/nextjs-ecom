@@ -18,21 +18,37 @@ export default function SearchComponent() {
   const [sortOption, setSortOption] = useState('');
 
   useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        const res = await axios.get(
-          `/api/search?query=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`
-        );
-        setProducts(res.data);
-      } catch (err) {
-        toast.error("Failed to load search results");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchResults();
-  }, [query, category]);
+      const fetchResults = async () => {
+          try {
+            setLoading(true);
+            let url = '/api/search?';
+            
+            if (query) {
+              url += `query=${encodeURIComponent(query)}`;
+            }
+            
+            if (category) {
+              if (query) url += '&';
+              url += `category=${encodeURIComponent(category)}`;
+            }
+    
+            const res = await axios.get(url);
+            setProducts(res.data);
+          } catch (err) {
+            toast.error("Failed to load search results");
+            console.error("Search error:", err);
+          } finally {
+            setLoading(false);
+          }
+        };
+    
+        if (query || category) {
+          fetchResults();
+        } else {
+          setLoading(false);
+          setProducts([]);
+        }
+      }, [query, category]);
 
     const getSortedProducts = () => {
     const sortedProducts = [...products];
@@ -54,10 +70,10 @@ export default function SearchComponent() {
 return (
     <div className="container mx-auto px-4 py-2">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">
+        {/* <h1 className="text-3xl font-bold text-gray-900 mb-1">
           Search Results for "{query}"
           {category && ` in ${category}`}
-        </h1>
+        </h1> */}
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-1 gap-4">
           <p className="text-gray-600">
