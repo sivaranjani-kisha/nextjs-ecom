@@ -1,62 +1,180 @@
-import Link from "next/link";
-import { TiHome } from "react-icons/ti";
-import { FaTags, FaLock, FaShoppingCart, FaBlog, FaUser, FaEnvelope, FaBoxOpen } from "react-icons/fa";
-import { MdCategory } from "react-icons/md";
+'use client';
 
-const menuItems = [
-  { href: "/admin", icon: <TiHome size={24} />, label: "Home" },
-  { href: "/admin/category", icon: <MdCategory size={24} />, label: "Category" },
-  { href: "/admin/product", icon: <FaBoxOpen size={24} />, label: "Product" },
-  { href: "/admin/design", icon: <FaTags size={24} />, label: "Banner" },
-  { href: "/admin/order", icon: <FaShoppingCart size={24} />, label: "Order" },
-  { href: "/admin/offer", icon: <FaTags size={24} />, label: "Offer" },
-  { href: "/admin/blog", icon: <FaBlog size={24} />, label: "Blog" },
-  { href: "/admin/user", icon: <FaUser size={24} />, label: "User" },
-  { href: "/admin/contact", icon: <FaEnvelope size={24} />, label: "Contact" },
-];
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Icon } from '@iconify/react';
 
-export default function AdminSider() {
+export default function AdminSider({ collapsed }) {
+  const [activeMenu, setActiveMenu] = useState('Dashboard');
+  const [openSubmenu, setOpenSubmenu] = useState(null);
+  const router = useRouter();
+
+  const menuItems = [
+    { icon: 'material-symbols:category', label: 'Category', link: 'category' },
+    {
+      icon: 'mdi:package-variant-closed',
+      label: 'Product',
+      submenu: [
+        { icon: 'mdi:format-list-bulleted', label: 'Product List', link: 'product', dotColor: 'bg-green-500' },
+        { icon: 'mdi:tag-outline', label: 'Brand', link: 'brand', dotColor: 'bg-red-500' },
+        { icon: 'mdi:upload', label: 'Bulk Upload', link: 'product/bulk_upload', dotColor: 'bg-yellow-500' }
+      ]
+    },
+    { icon: 'mdi:image-outline', label: 'Banner', link: 'design' },
+    { icon: 'material-symbols:receipt-long', label: 'Order', link: 'order' },
+    { icon: 'mdi:tag-outline', label: 'Offer', link: 'offer' },
+    { icon: 'mdi:note-text-outline', label: 'Blog', link: 'blog' },
+    { icon: 'mdi:account-outline', label: 'User', link: 'user' },
+    { icon: 'mdi:phone-outline', label: 'Contact', link: 'contact' }
+  ];
+
   return (
-    <div className="leftbar-tab z-[99] duration-300 print:hidden">
-      <div className="flex w-[60px] bg-white shadow-md dark:bg-slate-800 py-4 items-center fixed top-0 z-[99]
-        rounded-[100px] m-4 flex-col h-[calc(100%-30px)]">
-
-        {/* Logo */}
-        <a href="/" className="block text-center logo">
-          <span>
-            <img src="/assets/images/logo-sm.png" alt="logo-small" className="logo-sm h-8" />
-          </span>
-        </a>
-
-        {/* Sidebar Icons */}
-        <div className="icon-body max-h-full w-full">
-          <ul className="flex-col w-full items-center mt-[60px] flex-1 space-y-6 relative">
-            {menuItems.map((item, index) => (
-              <li key={index} className="relative group flex justify-center">
-                <Link href={item.href} className="p-0 hover:bg-gray-200 rounded-lg flex items-center justify-center">
-                  {item.icon}
-                </Link>
-                {/* Name */}
-                <span className="absolute left-[65px] top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-md 
-                opacity-0 group-hover:opacity-100 transition-all duration-200 z-50 whitespace-nowrap">
-                  {item.label}
-                </span>
-              </li>
-            ))}
-
-            {/* Logout */}
-            <li className="relative group flex justify-center">
-              <button className="p-3 hover:bg-gray-200 rounded-lg flex items-center justify-center">
-                <FaLock size={24} />
-              </button>
-              <span className="absolute left-[65px] top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-md 
-              opacity-0 group-hover:opacity-100 transition-all duration-200 z-50 whitespace-nowrap">
-                Logout
-              </span>
-            </li>
-          </ul>
-        </div>
+    <aside
+      className={`h-screen bg-white border-r border-gray-200 fixed top-0 left-0 shadow z-50 overflow-y-auto transition-all duration-300 ${
+        collapsed ? 'w-16' : 'w-52'
+      }`}
+    >
+      <div
+        className={`flex items-center px-4 py-4 border-b border-gray-200 ${
+          collapsed ? 'justify-center' : 'justify-between'
+        }`}
+      >
+        {!collapsed ? (
+          <a href="/" className="flex items-center space-x-2">
+            <img src="/admin/assets/images/bea.png" alt="Site Logo" className="h-9" />
+            <span className="text-sm font-bold text-gray-700">Bharath Electronics</span>
+          </a>
+        ) : (
+          <img src="/admin/assets/images/bea.png" alt="Site Logo" className="h-9" />
+        )}
       </div>
-    </div>
+
+      <nav className="mt-4">
+        <ul className="px-2 space-y-1">
+          {/* <li className="w-8 text-xs text-gray-500 uppercase tracking-wider">
+            {!collapsed && 'Application'}
+          </li> */}
+
+          {menuItems.map((item) =>
+            item.submenu ? (
+              <SidebarItemWithSubmenu
+                key={item.label}
+                item={item}
+                activeMenu={activeMenu}
+                setActiveMenu={setActiveMenu}
+                collapsed={collapsed}
+                openSubmenu={openSubmenu}
+                setOpenSubmenu={setOpenSubmenu}
+                router={router}
+              />
+            ) : (
+              <SidebarItem
+                key={item.label}
+                icon={item.icon}
+                label={item.label}
+                link={item.link}
+                activeMenu={activeMenu}
+                setActiveMenu={setActiveMenu}
+                collapsed={collapsed}
+                router={router}
+              />
+            )
+          )}
+        </ul>
+      </nav>
+    </aside>
+  );
+}
+
+function SidebarItem({ icon, label, link, activeMenu, setActiveMenu, collapsed, router }) {
+  const active = activeMenu === label;
+
+  const handleClick = () => {
+    setActiveMenu(label);
+    router.push(`/admin/${link}`);
+  };
+
+  return (
+    <li>
+      <button
+        onClick={handleClick}
+        className={`w-full flex items-center px-3 py-3 rounded-lg text-md font-medium transition-colors duration-200
+          ${active ? 'bg-blue-500 text-white' : 'text-gray-700 hover:text-blue-500'}
+          ${collapsed ? 'justify-center' : 'space-x-3'}`}
+      >
+        <Icon icon={icon} className={collapsed ? "text-2xl" : "text-xl"} />
+        {!collapsed && <span>{label}</span>}
+      </button>
+    </li>
+  );
+}
+
+function SidebarItemWithSubmenu({
+  item,
+  activeMenu,
+  setActiveMenu,
+  collapsed,
+  openSubmenu,
+  setOpenSubmenu,
+  router
+}) {
+  const isOpen = openSubmenu === item.label;
+
+  const toggleSubmenu = () => {
+    setOpenSubmenu(isOpen ? null : item.label);
+  };
+
+  return (
+    <li>
+      <button
+        onClick={toggleSubmenu}
+        className={`w-full flex items-center px-3 py-3 rounded-lg text-md font-medium transition-colors duration-200
+          ${isOpen ? 'bg-blue-100 text-blue-600' : 'text-gray-700 hover:text-blue-500'}
+          ${collapsed ? 'justify-center' : 'space-x-3'}`}
+      >
+        <Icon icon={item.icon} className={collapsed ? "text-2xl" : "text-xl"} />
+        {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
+        {!collapsed && (
+          <Icon
+            icon={isOpen ? 'mdi:chevron-down' : 'mdi:chevron-right'}
+            className="text-lg"
+          />
+        )}
+        {collapsed && (
+          <Icon
+            icon={isOpen ? 'mdi:chevron-down' : 'mdi:chevron-right'}
+            className="text-sm ml-1"
+          />
+        )}
+      </button>
+
+      {!collapsed && isOpen && (
+        <ul className="ml-6 mt-1 space-y-1">
+          {item.submenu.map((subItem) => (
+            <li key={subItem.label}>
+              <button
+                onClick={() => {
+                  setActiveMenu(subItem.label);
+                  setOpenSubmenu(item.label);
+                  router.push(`/admin/${subItem.link}`);
+                }}
+                className={`w-full flex items-center px-2 py-2 rounded text-sm space-x-3
+                  ${
+                    activeMenu === subItem.label
+                      ? 'bg-blue-500 text-white'
+                      : 'text-gray-600 hover:text-blue-500'
+                  }`}
+              >
+                {/* Submenu Icon */}
+                {subItem.icon && <Icon icon={subItem.icon} className="text-lg" />}
+                
+                {/* Submenu Label */}
+                <span>{subItem.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }

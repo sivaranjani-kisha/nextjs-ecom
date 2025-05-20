@@ -1,112 +1,87 @@
-"use client";
+'use client';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation'; // Import useRouter
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // For redirecting after logout
-  
-import { Search, Bell, Moon, ChevronLeft } from "lucide-react";
-import Image from "next/image";
+const AdminHeader = ({ toggleSidebar }) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const router = useRouter(); // Initialize the router
 
-export default function TopBar() {
-  const [theme, setTheme] = useState("light");
-    const [showLogout, setShowLogout] = useState(false);
-    const [adminName, setAdminName] = useState("Admin"); // Default name
-    const router = useRouter();
-  
-    // Fetch admin name from local storage or API
-    useEffect(() => {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setAdminName(user.name || "Admin"); // Default to "Admin" if name is missing
+  const toggleDropdown = () => setDropdownOpen((prev) => !prev);
+
+  // Sign out function
+  const handleSignOut = async (e) => {
+    e.preventDefault();
+    try {
+      // Here you would typically call your sign-out API
+      // For example, if using NextAuth:
+      // const res = await signOut({ redirect: false });
+      
+      // For demo purposes, we'll just clear any auth token and redirect
+      localStorage.removeItem('authToken'); // Remove if you store tokens
+      sessionStorage.removeItem('authToken'); // Remove if you store tokens
+      
+      // Redirect to login page
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Error during sign out:', error);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.profile-dropdown')) {
+        setDropdownOpen(false);
       }
-    }, []);
-  
-    // Logout function
-    const handleLogout = () => {
-      localStorage.removeItem("token"); // Clear authentication data
-      localStorage.removeItem("user"); // Remove user data
-      setShowLogout(false);
-      router.push("login"); // Redirect to login page
     };
-  
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
-    <div className="fixed ml-24 left-0 right-0 print:hidden z-50 h-16  dark:bg-gray-800 ">
-      <nav className="flex-1  ml-14 px-8">
-        <div className="flex items-center justify-between h-full">
-           {/* Menu Toggle Button */}
-           {/* <div className="flex items-center gap-4 ml-4">
-            <button className="flex rounded-full relative p-2 hover:bg-gray-100 dark:hover:bg-gray-800">
-              <ChevronLeft className="text-3xl text-gray-600 dark:text-gray-300" />
-            </button>
-          </div> */}
-          
-          {/* Left Section - Search Bar */}
-          <div className="flex-1 max-w-2xl">
-            {/* <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder="Search..."
-              />
-            </div> */}
+    <header className="navbar-header border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 py-3 px-6 flex items-center justify-between">
+      {/* Left side - Sidebar toggle and search */}
+      <div className="flex items-center space-x-4">
+        {/* Sidebar toggle button */}
+        <button onClick={toggleSidebar} className="text-gray-600 dark:text-white focus:outline-none">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Right side - Avatar */}
+      <div className="profile-dropdown relative">
+        <button
+          onClick={toggleDropdown}
+          className="flex items-center focus:outline-none"
+        >
+          <div className="w-11 h-11 rounded-full bg-gray-300 dark:bg-neutral-600 overflow-hidden flex items-center justify-center">
+            <Image
+              src="/admin/assets/images/user.png"
+              alt="User Avatar"
+              width={40}
+              height={40}
+              className="object-cover"
+            />
           </div>
+        </button>
 
-          {/* Right Section */}
-          <div className="flex items-center gap-4 ml-4">
-            
-            
-
-          
-
-            {/* Profile Dropdown */}
-                       <div className="relative">
-                         <button className="flex items-center rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800">
-                           <Image
-                             src="/assets/images/admin-logo-1.jpg"
-                             alt="User"
-                             width={32}
-                             height={32}
-                             className="rounded-full"
-                           />
-                           <span className="hidden xl:block ml-2 text-left">
-                             {/* <span className="block font-medium text-gray-600 dark:text-gray-400">
-                               {adminName}
-                             </span> */}
-                             {/* Clickable Admin Text */}
-                             <span
-                               role="button"
-                               tabIndex="0"
-                               onClick={() => setShowLogout(!showLogout)}
-                               className="block font-medium text-gray-600 dark:text-gray-400"
-                             >
-                               Admin ▼
-                             </span>
-                           </span>
-                         </button>
-           
-                         {/* Logout Dropdown */}
-                         {showLogout && (
-                           <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
-                             <ul className="py-1">
-                               <li>
-                                 <button
-                                   onClick={handleLogout}
-                                   className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
-                                 >
-                                   Sign out
-                                 </button>
-                               </li>
-                             </ul>
-                           </div>
-                         )}
-                       </div>
+        {/* Dropdown menu */}
+        {dropdownOpen && (
+          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-700 rounded-md shadow-lg py-1 z-50">
+            <a
+              href="#"
+              onClick={handleSignOut}
+              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-600"
+            >
+              Sign out
+            </a>
           </div>
-        </div>
-      </nav>
-    </div>
+        )}
+      </div>
+    </header>
   );
-}
+};
+
+export default AdminHeader;

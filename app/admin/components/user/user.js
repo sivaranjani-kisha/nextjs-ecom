@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Icon } from '@iconify/react';
 
 export default function UserComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -8,8 +9,8 @@ export default function UserComponent() {
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1); // Track current page
-  const [itemsPerPage] = useState(5); // Number of items per page
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
@@ -17,7 +18,7 @@ export default function UserComponent() {
     password: "",
     confirmPassword: "",
     user_type: "user",
-    status: "Active", // Ensure status is included
+    status: "Active",
   });
 
   useEffect(() => {
@@ -39,17 +40,18 @@ export default function UserComponent() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
   const handleDelete = async (userId) => {
     try {
       const response = await axios.delete(`/api/users/delete`, {
-        data: { userId }, // Send userId in the request body
+        data: { userId },
       });
   
       if (response.data.success) {
         setAlertMessage("✅ User set to inactive successfully!");
         setShowAlert(true);
         setTimeout(() => setShowAlert(false), 3000);
-        fetchUsers(); // Refresh the user list
+        fetchUsers();
       } else {
         setAlertMessage("❌ Error setting user to inactive");
         setShowAlert(true);
@@ -61,6 +63,7 @@ export default function UserComponent() {
       setTimeout(() => setShowAlert(false), 3000);
     }
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
@@ -73,7 +76,7 @@ export default function UserComponent() {
       await axios.post("/api/users/add", {
         ...formData,
         user_type: "user",
-        status: formData.status, // Ensure status is included
+        status: formData.status,
       });
       setAlertMessage("✅ User added successfully!");
       setShowAlert(true);
@@ -89,7 +92,7 @@ export default function UserComponent() {
         password: "",
         confirmPassword: "",
         user_type: "user",
-        status: "Active", // Reset status to default
+        status: "Active",
       });
     } catch (error) {
       setAlertMessage(error.response?.data?.message || "❌ Error adding user");
@@ -98,7 +101,6 @@ export default function UserComponent() {
     }
   };
 
-  // Filter users based on search query
   const filteredUsers = users.filter(user => {
     const name = user.name || "";
     const email = user.email || "";
@@ -111,81 +113,108 @@ export default function UserComponent() {
     );
   });
 
-  // Pagination logic
+  // Pagination calculations
+  const totalEntries = filteredUsers.length;
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const startEntry = indexOfFirstUser + 1;
+  const endEntry = Math.min(indexOfLastUser, totalEntries);
 
-  // Change page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Render pagination buttons
-  const renderPagination = () => {
-    const pageNumbers = [];
-    for (let i = 1; i <= Math.ceil(filteredUsers.length / itemsPerPage); i++) {
-      pageNumbers.push(i);
-    }
-
-    return (
-      <ul className="pagination flex justify-center mt-4" role="navigation" aria-label="Pagination">
-        <li className="page-item">
-          <button
-            onClick={() => paginate(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="page-link px-3 py-2 border rounded mx-1"
-            aria-label="Previous page"
-            rel="prev"
-          >
-            Previous
-          </button>
-        </li>
-        {pageNumbers.map(number => (
-          <li key={number} className={`page-item ${currentPage === number ? "active" : ""}`}>
-            <button
-              onClick={() => paginate(number)}
-              className="page-link px-3 py-2 border rounded mx-1"
-              aria-label={`Page ${number}`}
-              aria-current={currentPage === number ? "page" : undefined}
-            >
-              {number}
-            </button>
-          </li>
-        ))}
-        <li className="page-item">
-          <button
-            onClick={() => paginate(currentPage + 1)}
-            disabled={currentPage === pageNumbers.length}
-            className="page-link px-3 py-2 border rounded mx-1"
-            aria-label="Next page"
-            rel="next"
-          >
-            Next
-          </button>
-        </li>
-      </ul>
-    );
-  };
+ const renderPagination = () => {
+  const pageNumbers = [];
+  for (let i = 1; i <= Math.ceil(filteredUsers.length / itemsPerPage); i++) {
+    pageNumbers.push(i);
+  }
 
   return (
-    <div className="container mx-auto ">
-      <div className="flex justify-between items-center mb-1">
+    <div className="flex justify-between items-center mt-4">
+      {/* Left side: Entry text */}
+      <div className="text-sm text-gray-600">
+        Showing {startEntry} to {endEntry} of {filteredUsers.length} entries
+      </div>
+
+      {/* Right side: Pagination */}
+      <div className="pagination flex items-center space-x-1">
+        {/* Previous Button */}
+        <button
+          onClick={() => paginate(currentPage - 1)}
+          disabled={currentPage === 1}
+          className={`px-3 py-1.5 border border-gray-300 rounded-md ${
+            currentPage === 1
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-black bg-white hover:bg-gray-100"
+          }`}
+          aria-label="Previous page"
+        >
+          «
+        </button>
+
+        {/* Page Number Buttons */}
+        {Array.from({ length: Math.ceil(filteredUsers.length / itemsPerPage) }, (_, i) => (
+          <button
+            key={i + 1}
+            onClick={() => paginate(i + 1)}
+            className={`px-3 py-1.5 border border-gray-300 rounded-md ${
+              currentPage === i + 1
+                ? "bg-blue-500 text-white"
+                : "text-black bg-white hover:bg-gray-100"
+            }`}
+            aria-label={`Page ${i + 1}`}
+            aria-current={currentPage === i + 1 ? "page" : undefined}
+          >
+            {i + 1}
+          </button>
+        ))}
+
+        {/* Next Button */}
+        <button
+          onClick={() => paginate(currentPage + 1)}
+          disabled={currentPage === Math.ceil(filteredUsers.length / itemsPerPage)}
+          className={`px-3 py-1.5 border border-gray-300 rounded-md ${
+            currentPage === Math.ceil(filteredUsers.length / itemsPerPage)
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-black bg-white hover:bg-gray-100"
+          }`}
+          aria-label="Next page"
+        >
+          »
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+  return (
+    <div className="container mx-auto">
+      <div className="flex justify-between items-center mb-5 mt-5">
         <h2 className="text-2xl font-bold">User List</h2>
-        <button onClick={() => setIsModalOpen(true)} className="bg-blue-500 text-white px-4 py-2 rounded-md">+ Add User</button>
       </div>
-      <div className="flex justify-start mb-5">
-        <input
-          type="text"
-          placeholder="Search User..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border px-3 py-2 rounded-md w-64"
-        />
-      </div>
+ <hr className="border-t border-gray-200 mb-4" />
       {isLoading ? (
         <p>Loading...</p>
       ) : (
         <>
           <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
+            <div className="flex justify-between items-center mb-5 w-full">
+              <input
+                type="text"
+                placeholder="Search User..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border px-3 py-2 rounded-md w-64"
+              />
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md"
+              >
+                + Add User
+              </button>
+            </div>
+            <hr className="border-t border-gray-200 mb-4" />
             <table className="w-full border border-gray-300">
               <thead>
                 <tr className="bg-gray-200">
@@ -213,25 +242,27 @@ export default function UserComponent() {
                         )}
                       </td>
                       <td className="p-2">
-                      <button
-                          onClick={() => handleDelete(user._id)} // Assuming user._id is the unique identifier
-                          className="bg-red-500 text-white px-3 py-1 rounded"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex items-center gap-2 justify-center">
+                          <button
+                            onClick={() => handleDelete(user._id)}
+                            className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center"
+                            title="Delete"
+                          >
+                            <Icon icon="mingcute:delete-2-line" />
+                          </button>
+                        </div>
                       </td>
-                   </tr>
+                    </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="p-2 text-center text-gray-500">No users found.</td>
+                    <td colSpan="6" className="p-2 text-center text-gray-500">No users found.</td>
                   </tr>
                 )}
               </tbody>
             </table>
-            {renderPagination()} {/* Render pagination buttons */}
+            {renderPagination()}
           </div>
-          
         </>
       )}
 

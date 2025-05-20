@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { FaPlus, FaMinus } from "react-icons/fa";
 import Select from "react-select";
+import { Icon } from '@iconify/react';
 
 export default function OfferComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -158,6 +159,7 @@ export default function OfferComponent() {
       setOfferData({ ...offerData, [name]: value });
     }
   };
+
   const handleDelete = async (offerId) => {
     try {
       const response = await fetch("/api/offers/delete", {
@@ -190,6 +192,7 @@ export default function OfferComponent() {
       setTimeout(() => setAlertMessage(""), 3000);
     }
   };
+
   const getAllSubcategories = (categoryId) => {
     const category = categories.find((cat) => cat._id === categoryId);
     if (!category) return [categoryId];
@@ -315,19 +318,15 @@ export default function OfferComponent() {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredOffers.slice(indexOfFirstItem, indexOfLastItem);
+  const startEntry = (currentPage - 1) * itemsPerPage + 1;
+  const endEntry = Math.min(currentPage * itemsPerPage, filteredOffers.length);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="container mx-auto">
-      <div className="flex justify-between items-center mb-1">
+      <div className="flex justify-between items-center mb-5 mt-5">
         <h2 className="text-2xl font-bold">Offer List</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md"
-        >
-          + Add Offer
-        </button>
       </div>
       {alertMessage && (
         <div
@@ -338,19 +337,34 @@ export default function OfferComponent() {
           {alertMessage}
         </div>
       )}
-      <div className="flex justify-start mb-5">
-        <input
-          type="text"
-          placeholder="Search Offer..."
-          className="border px-3 py-2 rounded-md w-64"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+
       {isLoading ? (
         <p>Loading offers...</p>
       ) : (
         <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
+          <div className="flex justify-between items-center mb-5">
+            {/* Search Box */}
+            <div>
+              <input
+                type="text"
+                placeholder="Search Offer..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border px-3 py-2 rounded-md w-64"
+              />
+            </div>
+
+            {/* Add Offer Button */}
+            <div>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md"
+              >
+                + Add Offer
+              </button>
+            </div>
+          </div>
+          <hr className="border-t border-gray-200 mb-4" />
           <table className="w-full border border-gray-300">
             <thead>
               <tr className="bg-gray-200">
@@ -383,13 +397,18 @@ export default function OfferComponent() {
                         <span className="text-red-500">Inactive</span>
                       )}
                     </td>
-                    <td className="p-2">
-                      <button
-                        onClick={() => handleDelete(offer._id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded"
-                      >
-                        Delete
-                      </button>
+                    <td>
+                      <div className="flex items-center gap-2 justify-center">
+                        <button
+                          onClick={() => {
+                            handleDelete(offer._id);
+                          }}
+                          className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center"
+                          title="Delete"
+                        >
+                          <Icon icon="mingcute:delete-2-line" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -402,243 +421,329 @@ export default function OfferComponent() {
               )}
             </tbody>
           </table>
-          <div className="pagination flex justify-center mt-4">
-            <button
-              onClick={() => paginate(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={`px-3 py-2 border rounded mx-1 ${
-                currentPage === 1
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              Previous
-            </button>
+          <div className="flex justify-between items-center mt-4">
+            {/* Left side: Entry text */}
+            <div className="text-sm text-gray-600">
+              Showing {startEntry} to {endEntry} of {filteredOffers.length} entries
+            </div>
 
-            {Array.from(
-              { length: Math.ceil(filteredOffers.length / itemsPerPage) },
-              (_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => paginate(i + 1)}
-                  className={`px-3 py-2 border rounded mx-1 ${
-                    currentPage === i + 1
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              )
-            )}
+            {/* Right side: Pagination */}
+            <div className="pagination flex items-center space-x-1">
+              <button
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-3 py-1.5 border border-gray-300 rounded-md ${
+                  currentPage === 1
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-black bg-white hover:bg-gray-100"
+                }`}
+                aria-label="Previous page"
+              >
+                «
+              </button>
 
-            <button
-              onClick={() => paginate(currentPage + 1)}
-              disabled={currentPage === Math.ceil(filteredOffers.length / itemsPerPage)}
-              className={`px-3 py-2 border rounded mx-1 ${
-                currentPage === Math.ceil(filteredOffers.length / itemsPerPage)
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              Next
-            </button>
+              {Array.from(
+                { length: Math.ceil(filteredOffers.length / itemsPerPage) },
+                (_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => paginate(i + 1)}
+                    className={`px-3 py-1.5 border border-gray-300 rounded-md ${
+                      currentPage === i + 1
+                        ? "bg-blue-500 text-white"
+                        : "text-black bg-white hover:bg-gray-100"
+                    }`}
+                    aria-label={`Page ${i + 1}`}
+                    aria-current={currentPage === i + 1 ? "page" : undefined}
+                  >
+                    {i + 1}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === Math.ceil(filteredOffers.length / itemsPerPage)}
+                className={`px-3 py-1.5 border border-gray-300 rounded-md ${
+                  currentPage === Math.ceil(filteredOffers.length / itemsPerPage)
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-black bg-white hover:bg-gray-100"
+                }`}
+                aria-label="Next page"
+              >
+                »
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-1/2 max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4 top-0 bg-white p-2 z-10">
-              <h3 className="text-lg font-semibold">Create Festival Offer</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+            {/* Header with bottom border and close button */}
+            <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Create Festival Offer</h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-gray-500"
+                className="text-gray-400 hover:text-gray-700 focus:outline-none"
+                aria-label="Close modal"
               >
-                ✖
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div>
-                <label className="block text-gray-700">Offer Code</label>
-                <input
-                  type="text"
-                  name="offer_code"
-                  value={offerData.offer_code}
-                  onChange={handleChange}
-                  className="w-full border px-3 py-2 rounded-md"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700">Offer Status</label>
-                <select
-                  name="fest_offer_status"
-                  value={offerData.fest_offer_status}
-                  onChange={handleChange}
-                  className="w-full border px-3 py-2 rounded-md"
-                  required
-                >
-                  <option value="">Select Your Offer Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-gray-700">Note</label>
-                <input
-                  type="text"
-                  name="notes"
-                  value={offerData.notes}
-                  onChange={handleChange}
-                  className="w-full border px-3 py-2 rounded-md"
-                  required
-                />
-              </div>
-              <div className="flex gap-4">
-                <div className="w-1/2">
-                  <label className="block text-gray-700">From Date</label>
-                  <input
-                    type="date"
-                    name="from_date"
-                    value={offerData.from_date}
-                    onChange={handleChange}
-                    className="w-full border px-3 py-2 rounded-md"
-                    required
-                  />
-                </div>
-                <div className="w-1/2">
-                  <label className="block text-gray-700">To Date</label>
-                  <input
-                    type="date"
-                    name="to_date"
-                    value={offerData.to_date}
-                    onChange={handleChange}
-                    className="w-full border px-3 py-2 rounded-md"
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-gray-700">Apply Offer To</label>
-                <select
-                  name="offer_product_category"
-                  value={offerData.offer_product_category}
-                  onChange={(e) => {
-                    handleChange(e);
-                    // Clear existing selections when changing type
-                    setOfferData(prev => ({
-                      ...prev,
-                      offer_product: [],
-                      offer_category: [],
-                      [e.target.name]: e.target.value
-                    }));
-                  }}
-                  className="w-full border px-3 py-2 rounded-md"
-                  required
-                >
-                  <option value="">Select Apply To</option>
-                  <option value="product">Specific Products</option>
-                  <option value="category">Product Categories</option>
-                </select>
-              </div>
 
-              {/* Show products selection only when "Specific Products" is selected */}
-              {offerData.offer_product_category === "product" && (
+            {/* Scrollable body */}
+            <div className="px-6 py-6 overflow-y-auto flex-grow">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Offer Code */}
                 <div>
-                  <label className="block text-gray-700">Select Products</label>
-                  <Select
-                    options={products.map(product => ({
-                      value: product._id,
-                      label: product.name
-                    }))}
-                    isMulti
-                    placeholder="Search and select products..."
-                    value={offerData.offer_product.map(p => ({
-                      value: p,
-                      label: products.find(prod => prod._id === p)?.name || p
-                    }))}
-                    onChange={(selectedOptions) => {
-                      const selectedValues = selectedOptions.map(option => option.value);
+                  <label htmlFor="offer_code" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Offer Code
+                  </label>
+                  <input
+                    type="text"
+                    name="offer_code"
+                    id="offer_code"
+                    value={offerData.offer_code}
+                    onChange={handleChange}
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    required
+                  />
+                </div>
+
+                {/* Offer Status */}
+                <div>
+                  <label htmlFor="fest_offer_status" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Offer Status
+                  </label>
+                  <select
+                    name="fest_offer_status"
+                    id="fest_offer_status"
+                    value={offerData.fest_offer_status}
+                    onChange={handleChange}
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    required
+                  >
+                    <option value="">Select Your Offer Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+
+                {/* Note */}
+                <div>
+                  <label htmlFor="notes" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Note
+                  </label>
+                  <input
+                    type="text"
+                    name="notes"
+                    id="notes"
+                    value={offerData.notes}
+                    onChange={handleChange}
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    required
+                  />
+                </div>
+
+                {/* Date Range */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="from_date" className="block mb-1 text-sm font-semibold text-gray-700">
+                      From Date
+                    </label>
+                    <input
+                      type="date"
+                      name="from_date"
+                      id="from_date"
+                      value={offerData.from_date}
+                      onChange={handleChange}
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="to_date" className="block mb-1 text-sm font-semibold text-gray-700">
+                      To Date
+                    </label>
+                    <input
+                      type="date"
+                      name="to_date"
+                      id="to_date"
+                      value={offerData.to_date}
+                      onChange={handleChange}
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Apply Offer To */}
+                <div>
+                  <label htmlFor="offer_product_category" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Apply Offer To
+                  </label>
+                  <select
+                    name="offer_product_category"
+                    id="offer_product_category"
+                    value={offerData.offer_product_category}
+                    onChange={(e) => {
+                      handleChange(e);
                       setOfferData(prev => ({
                         ...prev,
-                        offer_product: selectedValues
+                        offer_product: [],
+                        offer_category: [],
+                        [e.target.name]: e.target.value
                       }));
                     }}
-                    className="mt-2"
-                  />
-                </div>
-              )}
-
-              {/* Show category tree only when "Product Categories" is selected */}
-              {offerData.offer_product_category === "category" && (
-                <div>
-                  <label className="block text-gray-700">Select Categories</label>
-                  <CategoryTree 
-                    categories={categories} 
-                    products={products} 
-                    handleChange={handleChange} 
-                    offerData={offerData}
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-gray-700">Offer Type</label>
-                <select
-                  name="offer_type"
-                  value={offerData.offer_type}
-                  onChange={(e) => {
-                    handleChange(e);
-                    setSelectedOfferType(e.target.value);
-                  }}
-                  className="w-full border px-3 py-2 rounded-md"
-                  required
-                >
-                  <option value="">Select Offer Type</option>
-                  <option value="percentage">Percentage</option>
-                  <option value="fixed_price">Fixed Price</option>
-                </select>
-              </div>
-              {selectedOfferType === "percentage" && (
-                <div>
-                  <label className="block text-gray-700">Percentage (%)</label>
-                  <input
-                    type="number"
-                    name="percentage"
-                    value={offerData.percentage}
-                    onChange={handleChange}
-                    className="w-full border px-3 py-2 rounded-md"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
                     required
-                    min="1"
-                    max="100"
-                  />
+                  >
+                    <option value="">Select Apply To</option>
+                    <option value="product">Specific Products</option>
+                    <option value="category">Product Categories</option>
+                  </select>
                 </div>
-              )}
-              {selectedOfferType === "fixed_price" && (
+
+                {/* Products Selection */}
+                {offerData.offer_product_category === "product" && (
+                  <div>
+                    <label className="block mb-1 text-sm font-semibold text-gray-700">
+                      Select Products
+                    </label>
+                    <Select
+                      options={products.map(product => ({
+                        value: product._id,
+                        label: product.name
+                      }))}
+                      isMulti
+                      placeholder="Search and select products..."
+                      value={offerData.offer_product.map(p => ({
+                        value: p,
+                        label: products.find(prod => prod._id === p)?.name || p
+                      }))}
+                      onChange={(selectedOptions) => {
+                        const selectedValues = selectedOptions.map(option => option.value);
+                        setOfferData(prev => ({
+                          ...prev,
+                          offer_product: selectedValues
+                        }));
+                      }}
+                      className="mt-1"
+                      classNamePrefix="select"
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          borderColor: '#d1d5db',
+                          borderRadius: '0.375rem',
+                          minHeight: '42px',
+                          '&:hover': {
+                            borderColor: '#d1d5db'
+                          }
+                        })
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Category Tree */}
+                {offerData.offer_product_category === "category" && (
+                  <div>
+                    <label className="block mb-1 text-sm font-semibold text-gray-700">
+                      Select Categories
+                    </label>
+                    <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2">
+                      <CategoryTree 
+                        categories={categories} 
+                        products={products} 
+                        handleChange={handleChange} 
+                        offerData={offerData}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Offer Type */}
                 <div>
-                  <label className="block text-gray-700">Fixed Price (₹)</label>
-                  <input
-                    type="number"
-                    name="fixed_price"
-                    value={offerData.fixed_price}
-                    onChange={handleChange}
-                    className="w-full border px-3 py-2 rounded-md"
+                  <label htmlFor="offer_type" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Offer Type
+                  </label>
+                  <select
+                    name="offer_type"
+                    id="offer_type"
+                    value={offerData.offer_type}
+                    onChange={(e) => {
+                      handleChange(e);
+                      setSelectedOfferType(e.target.value);
+                    }}
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
                     required
-                    min="1"
-                  />
+                  >
+                    <option value="">Select Offer Type</option>
+                    <option value="percentage">Percentage</option>
+                    <option value="fixed_price">Fixed Price</option>
+                  </select>
                 </div>
-              )}
-              <div className="text-right sticky bottom-0 bg-white p-2 z-10">
-                <button
-                  type="submit"
-                  className="bg-green-500 text-white px-4 py-2 rounded-md"
-                >
-                  Save Offer
-                </button>
-              </div>
-            </form>
+
+                {/* Percentage Input */}
+                {selectedOfferType === "percentage" && (
+                  <div>
+                    <label htmlFor="percentage" className="block mb-1 text-sm font-semibold text-gray-700">
+                      Percentage (%)
+                    </label>
+                    <input
+                      type="number"
+                      name="percentage"
+                      id="percentage"
+                      value={offerData.percentage}
+                      onChange={handleChange}
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      required
+                      min="1"
+                      max="100"
+                    />
+                  </div>
+                )}
+
+                {/* Fixed Price Input */}
+                {selectedOfferType === "fixed_price" && (
+                  <div>
+                    <label htmlFor="fixed_price" className="block mb-1 text-sm font-semibold text-gray-700">
+                      Fixed Price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      name="fixed_price"
+                      id="fixed_price"
+                      value={offerData.fixed_price}
+                      onChange={handleChange}
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      required
+                      min="1"
+                    />
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                  >
+                    Save Offer
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

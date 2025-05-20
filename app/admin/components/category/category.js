@@ -1,31 +1,37 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FaPlus, FaMinus } from "react-icons/fa";
-import ReactPaginate from "react-paginate";
+import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
+import { Icon } from '@iconify/react';
 
 export default function CategoryComponent() {
   const [categories, setCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [newCategory, setNewCategory] = useState({
     category_name: "",
     parentid: "none",
     status: "Active",
     image: null,
-    //show_on_home: "No"
+  });
+  const [categoryToUpdate, setCategoryToUpdate] = useState({
+    _id: "",
+    category_name: "",
+    parentid: "none",
+    status: "Active",
+    image: null,
+    existingImage: null,
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
-  const [alertMessage, setAlertMessage] = useState(""); // State for alert message
-  const [showAlert, setShowAlert] = useState(false); // State to control alert visibility
-
-  // Pagination state
+  const [alertMessage, setAlertMessage] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5; // 5 records per page
+  const itemsPerPage = 5;
 
   // Fetch categories from API
   const fetchCategories = async () => {
@@ -43,11 +49,6 @@ export default function CategoryComponent() {
   useEffect(() => {
     fetchCategories();
   }, []);
-
-  // Handle page change
-  const handlePageClick = ({ selected }) => {
-    setCurrentPage(selected);
-  };
 
   // Toggle subcategories
   const toggleCategory = (categoryId) => {
@@ -67,7 +68,7 @@ export default function CategoryComponent() {
     const file = e.target.files[0];
     if (file) {
       setNewCategory((prev) => ({ ...prev, image: file }));
-      setImagePreview(URL.createObjectURL(file)); // Preview the image
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -86,15 +87,14 @@ export default function CategoryComponent() {
     if (isCategoryNameExists(newCategory.category_name)) {
       setAlertMessage("Category name already exists!");
       setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 3000); // Hide alert after 3 seconds
-      return; // Stop further execution
+      setTimeout(() => setShowAlert(false), 3000);
+      return;
     }
 
     const formData = new FormData();
     formData.append("category_name", newCategory.category_name);
     formData.append("parentid", newCategory.parentid);
     formData.append("status", newCategory.status);
-    //formData.append("show_on_home", newCategory.show_on_home);
     if (newCategory.image) {
       formData.append("image", newCategory.image);
     }
@@ -108,14 +108,13 @@ export default function CategoryComponent() {
       const result = await response.json();
       if (response.ok) {
         setIsModalOpen(false);
-        fetchCategories(); // Refresh the list
+        fetchCategories();
 
         // Reset form
         setNewCategory({
           category_name: "",
           parentid: "none",
           status: "Active",
-         // show_on_home:"No",
           image: null,
         });
         setImagePreview(null);
@@ -123,12 +122,53 @@ export default function CategoryComponent() {
         // Show success alert
         setAlertMessage("Category added successfully!");
         setShowAlert(true);
-        setTimeout(() => setShowAlert(false), 3000); // Hide alert after 3 seconds
+        setTimeout(() => setShowAlert(false), 3000);
       } else {
         console.error("Error adding category:", result.error);
       }
     } catch (error) {
       console.error("Error:", error);
+    }
+  };
+
+  // Handle category update
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("_id", categoryToUpdate._id);
+    formData.append("category_name", categoryToUpdate.category_name);
+    formData.append("parentid", categoryToUpdate.parentid);
+    formData.append("status", categoryToUpdate.status);
+    if (categoryToUpdate.image instanceof File) {
+      formData.append("image", categoryToUpdate.image);
+    }
+    formData.append("existingImage", categoryToUpdate.existingImage || "");
+
+    try {
+      const response = await fetch("/api/categories/update", {
+        method: "PUT",
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setIsUpdateModalOpen(false);
+        fetchCategories();
+        setAlertMessage("Category updated successfully!");
+        setShowAlert(true);
+        setTimeout(() => setShowAlert(false), 3000);
+      } else {
+        console.error("Error updating category:", result.error);
+        setAlertMessage(result.error || "Failed to update category");
+        setShowAlert(true);
+        setTimeout(() => setShowAlert(false), 3000);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setAlertMessage("Failed to update category");
+      setShowAlert(true);
+      setTimeout(() => setShowAlert(false), 3000);
     }
   };
 
@@ -143,22 +183,18 @@ export default function CategoryComponent() {
 
       const result = await response.json();
       if (response.ok) {
-        fetchCategories(); // Refresh the list
-
-        // Show success alert
+        fetchCategories();
         setAlertMessage("Category deleted successfully!");
         setShowAlert(true);
-        setTimeout(() => setShowAlert(false), 3000); // Hide alert after 3 seconds
+        setTimeout(() => setShowAlert(false), 3000);
       } else {
         console.error("Error:", result.error);
-        alert("Failed to delete category.");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred.");
     } finally {
-      setShowConfirmationModal(false); // Close confirmation modal
-      setCategoryToDelete(null); // Reset category to delete
+      setShowConfirmationModal(false);
+      setCategoryToDelete(null);
     }
   };
 
@@ -190,13 +226,22 @@ export default function CategoryComponent() {
     return categories.map((category) => (
       <div key={category._id} className="ml-4">
         <div
-           className={`p-2 cursor-pointer ${
-            newCategory.parentid === category._id ? "text-blue-500 font-semibold" : "text-black"
+          className={`p-2 cursor-pointer ${
+            (newCategory.parentid === category._id || categoryToUpdate.parentid === category._id) 
+              ? "text-blue-500 font-semibold" 
+              : "text-black"
           }`}
-          onClick={() => setNewCategory({ ...newCategory, parentid: category._id })}
+          onClick={() => {
+            if (isUpdateModalOpen) {
+              setCategoryToUpdate({...categoryToUpdate, parentid: category._id});
+            } else {
+              setNewCategory({...newCategory, parentid: category._id});
+            }
+          }}
         >
           {category.children.length > 0 && (
-            <button type="button"
+            <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 toggleCategory(category._id);
@@ -206,7 +251,11 @@ export default function CategoryComponent() {
               {expandedCategories[category._id] ? <FaMinus /> : <FaPlus />}
             </button>
           )}
-          <span className={`font-semibold ${newCategory.parentid === category.category_name ? "text-blue-500" : ""}`}>
+          <span className={`font-semibold ${
+            (newCategory.parentid === category._id || categoryToUpdate.parentid === category._id) 
+              ? "text-blue-500" 
+              : ""
+          }`}>
             {category.category_name}
           </span>
         </div>
@@ -214,107 +263,168 @@ export default function CategoryComponent() {
       </div>
     ));
   };
+
   const getParentCategoryName = (parentId) => {
     if (parentId === "none") return "No Parent";
     const parentCategory = categories.find((category) => category._id === parentId);
     return parentCategory ? parentCategory.category_name : "Unknown";
   };
+
   // Render category rows with pagination
   const renderCategoryRows = () => {
     const flattenedCategories = flattenCategories(categories);
     const filteredCategories = flattenedCategories.filter((category) =>
       category.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      category.category_slug.toLowerCase().includes(searchQuery.toLowerCase())
+      (category.category_slug && category.category_slug.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     return filteredCategories
       .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
-      .map((category, index) => (
+      .map((category) => (
         <tr key={category._id} className="text-center border-b">
-          <td className="p-2 font-bold flex items-center">
+          <td className="flex items-center p-2">
             {categories.some((cat) => cat.parentid === category._id) && (
-              <button type="button"
+              <button
+                type="button"
                 onClick={() => toggleCategory(category._id)}
                 className="mr-2 text-blue-500"
+                aria-label="Expand/Collapse"
               >
-                {expandedCategories[category.category_name] ? <FaMinus /> : <FaPlus />}
+                {expandedCategories[category._id] ? <FaMinus /> : <FaPlus />}
               </button>
             )}
-            <span style={{ paddingLeft: `${category.level * 20}px` }}>{category.category_name}</span>
+            <span style={{ paddingLeft: `${category.level * 20}px` }} className="font-medium">
+              {category.category_name}
+            </span>
           </td>
-          <td className="p-2">{category.category_slug}</td>
-          <td className="p-2">{getParentCategoryName(category.parentid)}</td>
-          <td className="p-2">
+          <td>
+            <span className="text-primary-600">
+              {category.category_slug || 'N/A'}
+            </span>
+          </td>
+          <td>{getParentCategoryName(category.parentid)}</td>
+          <td>
             {category.image ? (
-              <img src={`${category.image}`} alt="Category" className="h-10 mx-auto" />
+              <img src={category.image} alt="Category" className="h-8 mx-auto rounded-lg" />
             ) : (
-              "No Image"
+              'No Image'
             )}
           </td>
-          <td className="p-2 font-semibold">
-            {category.status === "Active" ? (
-              <span className="text-green-500">Active</span>
+          <td>
+            {category.status === 'Active' ? (
+              <span className="bg-green-100 text-green-600 px-6 py-1.5 rounded-full font-medium text-sm">
+                Active
+              </span>
             ) : (
-              <span className="text-red-500">Inactive</span>
+              <span className="bg-red-100 text-red-600 px-6 py-1.5 rounded-full font-medium text-sm">
+                Inactive
+              </span>
             )}
           </td>
-          <td className="p-2 font-semibold">
-            <button
-              onClick={() => {
-                setCategoryToDelete(category._id);
-                setShowConfirmationModal(true);
-              }}
-              className="bg-red-500 text-white px-3 py-1 rounded"
-            >
-              Delete
-            </button>
+          <td>
+            <div className="flex items-center gap-2 justify-center">
+              <button
+                onClick={() => {
+                  setCategoryToUpdate({
+                    ...category,
+                    existingImage: category.image || null
+                  });
+                  setIsUpdateModalOpen(true);
+                }}
+                className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                title="Edit"
+              >
+                <FaEdit className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => {
+                  setCategoryToDelete(category._id);
+                  setShowConfirmationModal(true);
+                }}
+                className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center"
+                title="Delete"
+              >
+                <Icon icon="mingcute:delete-2-line" />
+              </button>
+            </div>
           </td>
         </tr>
       ));
   };
 
-  // Calculate page count based on filtered and flattened categories
+  // Calculate pagination data
   const flattenedCategories = flattenCategories(categories);
   const filteredCategories = flattenedCategories.filter((category) =>
     category.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    category.category_slug.toLowerCase().includes(searchQuery.toLowerCase())
+    (category.category_slug && category.category_slug.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   const pageCount = Math.ceil(filteredCategories.length / itemsPerPage);
+
+  // Handle page change
+  const paginate = (pageIndex) => {
+    if (pageIndex >= 0 && pageIndex < pageCount) {
+      setCurrentPage(pageIndex);
+    }
+  };
 
   return (
     <div className="container mx-auto ">
       {/* Alert Message */}
       {showAlert && (
-        <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4">
+        <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4 mt-5">
           {alertMessage}
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-1 ">
+      <div className="flex justify-between items-center mb-5">
         <h2 className="text-2xl font-bold">Category List</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md"
-        >
-          + Add Category
-        </button>
-      </div>
-
-      {/* Search Box */}
-      <div className="flex justify-start mb-5">
-        <input
-          type="text"
-          placeholder="Search Category..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border px-3 py-2 rounded-md w-64"
-        />
       </div>
 
       {isLoading ? (
         <p>Loading categories...</p>
       ) : (
         <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
+          {/* Search and Add Category */}
+          <div className="flex justify-between items-center bg-white mb-3">
+            <div className="relative w-64">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <svg
+                  className="w-4 h-4 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.5a7.5 7.5 0 010 15z"
+                  />
+                </svg>
+              </span>
+              <input
+                type="text"
+                placeholder="Search Category..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(0);
+                }}
+                className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
+            >
+              + Add Category
+            </button>
+          </div>
+
+          <hr className="border-t border-gray-200 mb-4" />
+
+          {/* Categories Table */}
           <table className="w-full border border-gray-300">
             <thead>
               <tr className="bg-gray-200">
@@ -340,112 +450,282 @@ export default function CategoryComponent() {
           </table>
 
           {/* Pagination */}
-          <ReactPaginate
-            previousLabel={"Previous"}
-            nextLabel={"Next"}
-            breakLabel={"..."}
-            pageCount={pageCount}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            onPageChange={handlePageClick}
-            containerClassName={"pagination flex justify-center mt-4"}
-            activeClassName={"active"}
-            pageClassName={"page-item"}
-            pageLinkClassName={"page-link px-3 py-2 border rounded mx-1"}
-            previousClassName={"page-item"}
-            nextClassName={"page-item"}
-            previousLinkClassName={"page-link px-3 py-2 border rounded mx-1"}
-            nextLinkClassName={"page-link px-3 py-2 border rounded mx-1"}
-            breakClassName={"page-item"}
-            breakLinkClassName={"page-link px-3 py-2 border rounded mx-1"}
-          />
+          <div className="flex justify-between items-center mt-6 flex-wrap gap-3">
+            <div className="text-sm text-gray-600">
+              Showing {Math.min(currentPage * itemsPerPage + 1, filteredCategories.length)} to{" "}
+              {Math.min((currentPage + 1) * itemsPerPage, filteredCategories.length)} of{" "}
+              {filteredCategories.length} entries
+            </div>
+
+            <div className="pagination flex items-center space-x-1">
+              <button
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 0}
+                className={`px-3 py-1.5 border border-gray-300 rounded-md ${
+                  currentPage === 0
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-black bg-white hover:bg-gray-100"
+                }`}
+                aria-label="Previous page"
+              >
+                «
+              </button>
+
+              {Array.from({ length: pageCount }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => paginate(i)}
+                  className={`px-3 py-1.5 border border-gray-300 rounded-md ${
+                    currentPage === i
+                      ? "bg-blue-500 text-white"
+                      : "text-black bg-white hover:bg-gray-100"
+                  }`}
+                  aria-label={`Page ${i + 1}`}
+                  aria-current={currentPage === i ? "page" : undefined}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === pageCount - 1}
+                className={`px-3 py-1.5 border border-gray-300 rounded-md ${
+                  currentPage === pageCount - 1
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-black bg-white hover:bg-gray-100"
+                }`}
+                aria-label="Next page"
+              >
+                »
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Modal for Adding Category */}
+      {/* Add Category Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-5 rounded-lg w-96 relative max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-center">Add Category</h2>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-3 right-3 text-red-500 text-xl"
-            >
-              ×
-            </button>
-            <form onSubmit={handleAddCategory} className="mt-4">
-              <input
-                name="category_name"
-                value={newCategory._id}
-                onChange={handleInputChange}
-                className="w-full border p-2 mb-2 rounded"
-                placeholder="Category Name"
-                required
-              />
-
-              {/* Category Selection Tree */}
-              <div className="border p-2 mb-2 rounded max-h-40 overflow-y-auto">
-                <div>
-                  <div
-                    className={`p-2 cursor-pointer font-semibold ${newCategory.parentid === "none" ? "text-blue-500" : ""}`}
-                    onClick={() => setNewCategory({ ...newCategory, parentid: "none" })}
-                  >
-                    <span className="text-black">Category</span>
-                  </div>
-                  {renderCategoryTree(buildCategoryTree(categories))}
-                </div>
-              </div>
-
-              <input
-                type="file"
-                onChange={handleImageChange}
-                className="w-full border p-2 mb-2"
-              />
-              {imagePreview && <img src={imagePreview} alt="Preview" className="h-16 mx-auto" />}
-
-              <select
-                name="status"
-                value={newCategory.status}
-                onChange={handleInputChange}
-                className="w-full border p-2 mb-2 rounded"
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Add Category</h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-700 focus:outline-none"
+                aria-label="Close modal"
               >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-              {/* <div className="mb-4">
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      Show on Home Page
-    </label>
-    <div className="flex space-x-4">
-      <label className="inline-flex items-center">
-        <input
-          type="radio"
-          name="show_on_home"
-          value="Yes"
-          checked={newCategory.show_on_home === "Yes"}
-          onChange={handleInputChange}
-          className="form-radio h-4 w-4 text-blue-600"
-        />
-        <span className="ml-2">Yes</span>
-      </label>
-      <label className="inline-flex items-center">
-        <input
-          type="radio"
-          name="show_on_home"
-          value="No"
-          checked={newCategory.show_on_home === "No"}
-          onChange={handleInputChange}
-          className="form-radio h-4 w-4 text-blue-600"
-        />
-        <span className="ml-2">No</span>
-      </label>
-    </div>
-  </div> */}
-
-              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded w-full mt-2">
-                Add Category
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            </form>
+            </div>
+
+            <div className="px-6 py-6 overflow-y-auto flex-grow">
+              <form onSubmit={handleAddCategory} className="space-y-5">
+                <div>
+                  <label htmlFor="category_name" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Category Name
+                  </label>
+                  <input
+                    name="category_name"
+                    value={newCategory.category_name}
+                    onChange={handleInputChange}
+                    id="category_name"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    placeholder="Enter Category Name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Parent Category</label>
+                  <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2">
+                    <div>
+                      <div
+                        className={`p-2 cursor-pointer rounded-md font-semibold ${
+                          newCategory.parentid === "none"
+                            ? "bg-blue-100 text-blue-600"
+                            : "text-gray-800 hover:bg-gray-100"
+                        }`}
+                        onClick={() => setNewCategory({ ...newCategory, parentid: "none" })}
+                      >
+                        Category
+                      </div>
+                      {renderCategoryTree(buildCategoryTree(categories))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image</label>
+                  <input
+                    type="file"
+                    onChange={handleImageChange}
+                    className="block w-full text-sm text-gray-600
+                      file:mr-3 file:py-1 file:px-3
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                  {imagePreview && (
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="mt-3 h-16 rounded-md object-contain mx-auto"
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="status" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    id="status"
+                    value={newCategory.status}
+                    onChange={handleInputChange}
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                >
+                  Add Category
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Category Modal */}
+      {isUpdateModalOpen && categoryToUpdate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Update Category</h2>
+              <button
+                onClick={() => setIsUpdateModalOpen(false)}
+                className="text-gray-400 hover:text-gray-700 focus:outline-none"
+                aria-label="Close modal"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-6 py-6 overflow-y-auto flex-grow">
+              <form onSubmit={handleUpdateCategory} className="space-y-5">
+                <div>
+                  <label htmlFor="update_category_name" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Category Name
+                  </label>
+                  <input
+                    name="category_name"
+                    value={categoryToUpdate.category_name}
+                    onChange={(e) => setCategoryToUpdate({...categoryToUpdate, category_name: e.target.value})}
+                    id="update_category_name"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    placeholder="Enter Category Name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Parent Category</label>
+                  <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2">
+                    <div>
+                      <div
+                        className={`p-2 cursor-pointer rounded-md font-semibold ${
+                          categoryToUpdate.parentid === "none"
+                            ? "bg-blue-100 text-blue-600"
+                            : "text-gray-800 hover:bg-gray-100"
+                        }`}
+                        onClick={() => setCategoryToUpdate({...categoryToUpdate, parentid: "none"})}
+                      >
+                        Category
+                      </div>
+                      {renderCategoryTree(buildCategoryTree(categories))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image</label>
+                  <input
+                    type="file"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setCategoryToUpdate(prev => ({...prev, image: file}));
+                        setImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
+                    className="block w-full text-sm text-gray-600
+                      file:mr-3 file:py-1 file:px-3
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                  {categoryToUpdate.image && (
+                    <img
+                      src={
+                        categoryToUpdate.image instanceof File
+                          ? URL.createObjectURL(categoryToUpdate.image)
+                          : categoryToUpdate.image
+                      }
+                      alt="Preview"
+                      className="mt-3 h-16 rounded-md object-contain mx-auto"
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="update_status" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    id="update_status"
+                    value={categoryToUpdate.status}
+                    onChange={(e) => setCategoryToUpdate({...categoryToUpdate, status: e.target.value})}
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                >
+                  Update Category
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
