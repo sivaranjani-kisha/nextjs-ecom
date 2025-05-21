@@ -127,7 +127,7 @@ const AddToWishlistButton = ({ productId }) => {
       });
       
       const data = await response.json();
-      
+       
      if (!data.loggedIn) {
         openAuthModal(() => {
           handleWishlistAction(); // Retry after login

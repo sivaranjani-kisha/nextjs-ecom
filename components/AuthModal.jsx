@@ -10,7 +10,7 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
   const [formError, setFormError] = useState('');
   const { updateCartCount } = useCart();
   const { updateWishlist } = useWishlist();
-
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
