@@ -80,8 +80,10 @@ export async function POST(req) {
       const overviewPath = join(uploadDir, 'overview-images');
       overviewZipInstance.extractAllTo(overviewPath, true);
     }
-
-    if (!products || products.length === 0) {
+console.log("products.length ",products.length );
+const validProducts = products.slice(1).filter(row => row && row.length > 0 && row[0]); // Skip header and empty rows
+console.log("Actual product count:", validProducts.length);
+    if (!validProducts || validProducts.length === 0) {
       return NextResponse.json(
         { error: "No products found in the uploaded Excel file." },
         { status: 400 }
@@ -93,8 +95,8 @@ export async function POST(req) {
       await mongoose.connect(process.env.MONGODB_URI);
     }
 
-    for (let i = 1; i < products.length; i++) {
-      const row = products[i];
+    for (let i = 1; i < validProducts.length; i++) {
+      const row = validProducts[i];
       
       // Process category and brand
       const category = await Category.findOne({ category_name: row[3] }).select("_id");
@@ -152,7 +154,7 @@ export async function POST(req) {
         status: row[19],
         stock_status: row[2] > 0 ? "In Stock" : "Out of Stock",
       };
-
+console.log(productData);
       // Check for existing product
       const existingProduct = await Product.findOne({
         $or: [
@@ -221,8 +223,8 @@ export async function POST(req) {
     }
 
     return NextResponse.json({
-      message: `Successfully processed ${products.length - 1} products.`,
-      productCount: products.length - 1,
+      message: `Successfully processed ${validProducts.length } products.`,
+      productCount: validProducts.length ,
     });
   } catch (error) {
     console.error('Bulk upload error:', error);
