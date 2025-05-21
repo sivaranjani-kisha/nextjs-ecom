@@ -3,13 +3,18 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { useState } from 'react';
 import CustomHeader from "@/components/Headernew";
 import CustomFooter from "@/components/Footer";
+import GlobalModals from '@/components/GlobalModals';
+import { AuthProvider } from '@/context/AuthContext';
 // import CustomHeader from "@/components/Header";
 // import CustomFooter from "@/components/Footer";
 import { usePathname } from "next/navigation";
 import Head from "next/head";
 import Script from "next/script";
+import { AuthModal } from '@/components/AuthModal';
+import { ModalProvider } from '@/context/ModalContext';
 
 
 import { WishlistProvider } from "@/context/WishlistContext";
@@ -26,6 +31,8 @@ const geistMono = Geist_Mono({
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   return (
     <html lang="en">
@@ -55,13 +62,26 @@ export default function RootLayout({ children }) {
         </style>
       </Head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <div id="modal-root"></div>
+         <ModalProvider>
+        {showAuthModal && (
+          <AuthModal
+            error={authError}
+            onClose={() => setShowAuthModal(false)}
+            onSuccess={() => setShowAuthModal(false)}
+          />
+        )}
         <WishlistProvider> {/* ✅ Wrap the entire app */}
         <CartProvider>
+           <AuthProvider>
           {!pathname?.startsWith("/admin") && <CustomHeader />}
           {children}
           {!pathname?.startsWith("/admin") && <CustomFooter />}
+          <GlobalModals />
+          </AuthProvider>
         </CartProvider>
         </WishlistProvider>
+        </ModalProvider>
       </body>
     </html>
   );
