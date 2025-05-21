@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { jwtDecode } from 'jwt-decode';
+import { useRouter } from 'next/navigation';
+import {AuthModal} from '@/components/AuthModal';
 
 export default function OrderComponent() {
   const [activeTab, setActiveTab] = useState("pending");
@@ -23,6 +26,9 @@ export default function OrderComponent() {
     { id: "shipped", label: "Shipped Orders" },
   ];
 
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [authError, setAuthError] = useState('');
+
   useEffect(() => {
     fetchOrders();
   }, [activeTab]);
@@ -33,8 +39,23 @@ export default function OrderComponent() {
 
   const fetchOrders = async () => {
     setLoading(true);
+    const token = localStorage.getItem("token");
+      if (!token) {
+        setShowAuthModal(true);
+        setLoading(false);
+        return;
+      }
+
     try {
-      const response = await fetch(`/api/orders/get?status=${activeTab}`);
+
+       const decoded = jwtDecode(token);
+        const userId = decoded.userId;
+
+      const response = await fetch(`/api/orders/get?status=${activeTab}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
       const data = await response.json();
       if (data.success) {
         setOrders(data.orders);

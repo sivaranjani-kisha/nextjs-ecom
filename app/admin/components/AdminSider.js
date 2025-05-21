@@ -14,11 +14,21 @@ export default function AdminSider({ collapsed }) {
     {
       icon: 'mdi:package-variant-closed',
       label: 'Product',
+      // submenu: [
+      //   { icon: 'mdi:format-list-bulleted', label: 'Product List', link: 'product', dotColor: 'bg-green-500' },
+      //   { icon: 'mdi:tag-outline', label: 'Brand', link: 'brand', dotColor: 'bg-red-500' },
+      //   { icon: 'mdi:upload', label: 'Bulk Upload', link: 'product/bulk_upload', dotColor: 'bg-yellow-500' },
+      //    { icon: 'mdi:upload', label: 'Filter Group', link: 'filter_group', dotColor: 'bg-yellow-500' },
+      //    { icon: 'mdi:upload', label: 'Filter', link: 'filter', dotColor: 'bg-yellow-500' }
+      // ]
       submenu: [
         { icon: 'mdi:format-list-bulleted', label: 'Product List', link: 'product', dotColor: 'bg-green-500' },
         { icon: 'mdi:tag-outline', label: 'Brand', link: 'brand', dotColor: 'bg-red-500' },
-        { icon: 'mdi:upload', label: 'Bulk Upload', link: 'product/bulk_upload', dotColor: 'bg-yellow-500' }
+        { icon: 'mdi:upload', label: 'Bulk Upload', link: 'product/bulk_upload', dotColor: 'bg-yellow-500' },
+        { icon: 'mdi:filter-variant', label: 'Filter Group', link: 'filter_group', dotColor: 'bg-yellow-500' },
+        { icon: 'mdi:filter-outline', label: 'Filter', link: 'filter', dotColor: 'bg-yellow-500' }
       ]
+
     },
     { icon: 'mdi:image-outline', label: 'Banner', link: 'design' },
     { icon: 'material-symbols:receipt-long', label: 'Order', link: 'order' },
