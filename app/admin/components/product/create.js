@@ -1116,17 +1116,26 @@ export default function AddProductPage() {
            <div className="space-y-4">
            {/* <h3 className="text-xl font-semibold mb-4">Product Information</h3> */}
            <div className="grid grid-cols-2 gap-4">
-              <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name*</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={product.name}
-                  onChange={handleChange}
-                  className="w-full border p-2 rounded"
-                  required
-                />
-              </div>
+           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name* (Minimum 60 characters)</label>
+            <input
+              type="text"
+              name="name"
+              value={product.name}
+              onChange={handleChange}
+              className={`w-full border p-2 rounded ${
+                product.name.length < 60 && product.name.length > 0 ? "border-red-500" : ""
+              }`}
+              required
+              minLength={60}  // HTML5 validation (but may not show until form submission)
+            />
+            {/* Show error message if less than 60 chars */}
+            {product.name.length > 0 && product.name.length < 60 && (
+              <p className="text-red-500 text-xs mt-1">
+                Minimum 60 characters required (currently: {product.name.length})
+              </p>
+            )}
+          </div>
         
               <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Item Code</label>

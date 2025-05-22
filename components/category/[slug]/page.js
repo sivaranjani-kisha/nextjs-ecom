@@ -32,7 +32,7 @@ export default function CategoryPage() {
   const [sortOption, setSortOption] = useState('');
     // Toggle functions
   const toggleFilters = () => setIsFiltersExpanded(!isFiltersExpanded);
-  
+    const [showEndMessage, setShowEndMessage] = useState(false);
   const { sub_slug } = useParams();
   const { slug } = useParams();
   const toggleBrands = () => setIsBrandsExpanded(!isBrandsExpanded);
@@ -122,7 +122,17 @@ const handleProductClick = (product) => {
     }
   };
 
-
+  useEffect(() => {
+    if (!hasMore && products.length > 0) {
+      setShowEndMessage(true);
+      const timer = setTimeout(() => {
+        setShowEndMessage(false);
+      }, 2000); // 2000ms = 2 seconds
+      return () => clearTimeout(timer);
+    } else {
+      setShowEndMessage(false); // Clear message when there's more or no products
+    }
+  }, [hasMore, products.length]);
 
   // const fetchFilteredProducts = async (categoryId) => {
       const fetchFilteredProducts = useCallback(async (categoryId, pageNum = 1, initialLoad = false) => {
@@ -700,11 +710,16 @@ const handleProductClick = (product) => {
           )}
 
           {/* End of Results Message */}
-          {!hasMore && products.length > 0 && (
+          {/* {!hasMore && products.length > 0 && (
             <p className="text-center text-gray-500 py-4">
               You've reached the end of products
             </p>
-          )}
+          )} */}
+           {showEndMessage && (
+          <p className="text-center text-gray-500 py-4">
+            You've reached the end of products
+          </p>
+        )}
           {products.length > 0 && <div ref={sentinelRef} className="h-px" />}
 
           

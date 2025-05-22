@@ -14,6 +14,7 @@ export default function CategoryPage() {
     brands: [],
     filters: []
   });
+  const [showEndMessage, setShowEndMessage] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState({
     categories: [],
@@ -107,6 +108,17 @@ export default function CategoryPage() {
       setLoading(false);
     }
   };
+  //const [showEndMessage, setShowEndMessage] = useState(false);
+
+useEffect(() => {
+  if (!hasMore && products.length > 0) {
+    setShowEndMessage(true);
+    const timer = setTimeout(() => {
+      setShowEndMessage(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }
+}, [hasMore, products.length]);
 
   const fetchFilteredProducts = useCallback(async (categoryData, pageNum = 1, initialLoad = false) => {
     try {
@@ -251,7 +263,17 @@ export default function CategoryPage() {
         return sortedProducts;
     }
   };
-
+useEffect(() => {
+  if (!hasMore && products.length > 0) {
+    setShowEndMessage(true);
+    const timer = setTimeout(() => {
+      setShowEndMessage(false);
+    }, 2000); // 2000ms = 2 seconds
+    return () => clearTimeout(timer);
+  } else {
+    setShowEndMessage(false); // Clear message when there's more or no products
+  }
+}, [hasMore, products.length]);
   const handleFilterChange = (type, value) => {
     setSelectedFilters(prev => {
       const newFilters = { ...prev };
@@ -768,11 +790,11 @@ export default function CategoryPage() {
           )}
 
           {/* End of Results Message */}
-          {!hasMore && products.length > 0 && (
-            <p className="text-center text-gray-500 py-4">
-              You've reached the end of products
-            </p>
-          )}
+        {showEndMessage && (
+          <p className="text-center text-gray-500 py-4">
+            You've reached the end of products
+          </p>
+        )}
           {products.length > 0 && <div ref={sentinelRef} className="h-px" />}
         </div>
       </div>

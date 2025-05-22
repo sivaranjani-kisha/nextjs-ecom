@@ -463,53 +463,38 @@ useEffect(() => {
 
             {/* Product highlight section */}
             <div className="mt-4 bg-gray-50 p-4 rounded-md">
-  <div 
-    className="flex items-center justify-between cursor-pointer"
-    onClick={() => setShowHighlights(!showHighlights)}
-  >
-    <h3 className="text-sm font-semibold text-gray-900">PRODUCT HIGHLIGHTS</h3>
-    <svg 
-      className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showHighlights ? 'transform rotate-180' : ''}`} 
-      fill="none" 
-      stroke="currentColor" 
-      viewBox="0 0 24 24"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  </div>
+                <div 
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setShowHighlights(!showHighlights)}
+                >
+                  <h3 className="text-sm font-semibold text-gray-900">PRODUCT HIGHLIGHTS</h3>
+                  <svg 
+                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showHighlights ? 'transform rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
 
-  {showHighlights && (
-    <div className="mt-3">
-      {/* Updated logic to handle both string and array formats */}
-      {product.highlights ? (
-        Array.isArray(product.highlights) ? (
-          // If highlights is an array
-          <ol className="list-decimal pl-5 space-y-1 text-xs text-gray-600">
-            {product.highlights.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ol>
-        ) : typeof product.highlights === 'string' ? (
-          // If highlights is a string with newlines
-          product.highlights.trim() !== '' ? (
-            <ol className="list-decimal pl-5 space-y-1 text-xs text-gray-600">
-              {product.highlights
-                .split('\n')
-                .filter(item => item.trim() !== '')
-                .map((item, index) => (
-                  <li key={index}>{item.trim()}</li>
-                ))}
-            </ol>
-          ) : (
-            <p className="text-xs text-gray-500">No highlights available.</p>
-          )
-        ) : null
-      ) : (
-        <p className="text-xs text-gray-500">No highlights available.</p>
-      )}
-    </div>
-  )}
-</div>
+                  {showHighlights && (
+                    <div className="mt-3">
+                      {product.highlights && product.highlights.trim() !== '' ? (
+                        <ol className="list-decimal pl-5 space-y-1 text-xs text-gray-600">
+                          {product.highlights
+                            .split('\n')
+                            .filter(item => item.trim() !== '')
+                            .map((item, index) => (
+                              <li key={index}>{item.trim()}</li>
+                            ))}
+                        </ol>
+                      ) : (
+                        <p className="text-xs text-gray-500">No highlights available.</p>
+                      )}
+                    </div>
+                  )}
+            </div>
           <div className="border-b border-gray-400 mt-2"></div>
 
             {/* Coupons */}

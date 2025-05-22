@@ -453,18 +453,21 @@ export default function HomeComponent() {
       fetchOfferProducts();
     }, []);
   
-
+ 
     return (
         <>
             {isLoading && (
-                <div className="preloader fixed inset-0 z-[9999] flex justify-center items-center bg-white">
-                    <Image 
-                    src="/images/thumbs/bea.webp"
-                    alt="Loading"
-                    width={64}
-                    height={64}
-                    className="animate-spin"
-                    />
+                // <div className="preloader fixed inset-0 z-[9999] flex justify-center items-center bg-white">
+                //     <Image 
+                //     src="/images/thumbs/bea.webp"
+                //     alt="Loading"
+                //     width={64}
+                //     height={64}
+                //     className="animate-spin"
+                //     />
+                // </div>
+               <div className="preloader fixed inset-0 z-[9999] flex justify-center items-center bg-white">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
                 </div>
             )}
             {/* main div start */}

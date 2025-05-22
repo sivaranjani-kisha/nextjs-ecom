@@ -38,24 +38,25 @@ export default function DesignComponent() {
   const itemsPerPage = 5;
 
   const bannerOptions = [
-    { 
-      value: "topbanner", 
-      label: "Top Banner", 
-      bgSize: { width: 1680, height: 499 },
-      bannerSize: { width: 291, height: 147 }
-    },
-    { 
-      value: "flashsale", 
-      label: "Flash Sale", 
-      bgSize: { width: 828, height: 250 },
-      bannerSize: { width: 285, height: 173 }
-    },
-    { 
-      value: "categorybanner", 
-      label: "Category Banner", 
-      categorySize: { width: 400, height: 400 }
-    }
-  ];
+  { 
+    value: "topbanner", 
+    label: "Top Banner", 
+    bgSize: { width: 1680, height: 499 },
+    bannerSize: { width: 291, height: 147 }
+  },
+  { 
+    value: "flashsale", 
+    label: "Flash Sale", 
+    bgSize: { width: 828, height: 250 },
+    bannerSize: { width: 285, height: 173 }
+  },
+  { 
+    value: "categorybanner", 
+    label: "Category Banner", 
+    bgSize: { width: 400, height: 400 },
+    bannerSize: null // Explicitly set to null for category banners
+  }
+];
 
   // Calculate pagination values
   const startEntry = (currentPage - 1) * itemsPerPage + 1;
@@ -139,14 +140,18 @@ const handleDeleteBanner = async () => {
       setStartDate(banner.startDate.split('T')[0]);
       setEndDate(banner.endDate.split('T')[0]);
       setStatus(banner.status);
-      setExistingBgImage(banner.bgImage);
-      setExistingBannerImage(banner.bannerImage);
+      setExistingBgImage(banner.bgImageUrl);
+      setExistingBannerImage(banner.bannerImageUrl);
       
       // Set image sizes based on banner type
       const selectedOption = bannerOptions.find(option => option.value === banner.bannerType);
       if (selectedOption) {
-        setBgImageSize(selectedOption.bgSize);
-        setBannerImageSize(selectedOption.bannerSize);
+        if (selectedOption.bgSize) setBgImageSize(selectedOption.bgSize);
+    if (selectedOption.bannerSize) setBannerImageSize(selectedOption.bannerSize);
+    if (selectedOption.categorySize) {
+      // For category banners, we might not need bannerImageSize
+      setBgImageSize(selectedOption.categorySize);
+    }
       }
       
       setIsEditModalOpen(true);
@@ -187,10 +192,14 @@ const handleDeleteBanner = async () => {
         
         if (bgImage) {
           formData.append("bgImage", bgImage);
-        }
+        }else {
+  formData.append("bgImage", new Blob()); // Send empty blob if no new image
+}
         if (bannerImage) {
           formData.append("bannerImage", bannerImage);
-        }
+        }else {
+  formData.append("bannerImage", new Blob()); // Send empty blob if no new image
+}
         formData.append("existingBgImage", existingBgImage || "");
         formData.append("existingBannerImage", existingBannerImage || "");
   
@@ -284,7 +293,7 @@ const handleDeleteBanner = async () => {
     const newErrors = {};
     
     // Common validations
-    if (!title) newErrors.title = "Title is required";
+    if (!title) newErrors.title = "Title is requiredd";
     if (!startDate) newErrors.startDate = "Start date is required";
     if (!endDate) newErrors.endDate = "End date is required";
     if (endDate && startDate && endDate < startDate) newErrors.endDate = "End date must be after the start date";
@@ -818,21 +827,38 @@ const handleDeleteBanner = async () => {
               <input
                 type="file"
                 accept="image/*"
-                onChange={handleBgImageChange}
+                onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              setBgImage(file);
+              setExistingBgImage(null); // Clear existing image when new one is selected
+            }
+          }}
                 className="border p-2 rounded w-full"
               />
               {errors.bgImage && <span className="text-red-500 text-sm">{errors.bgImage}</span>}
-              {existingBgImage && !bgImage && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">Current Image:</p>
-                  <img src={existingBgImage} alt="Current Background" className="h-20 mt-1" />
-                </div>
-              )}
-              {bgImage && (
-                <div className="mt-2 text-sm text-gray-500">
-                  New Selected: {bgImage.name} ({(bgImage.size / 1024).toFixed(2)} KB)
-                </div>
-              )}
+               {existingBgImage && !bgImage && (
+          <div className="mt-2">
+            <p className="text-sm text-gray-500">Current Image:</p>
+            <img 
+              src={`${existingBgImage}`} 
+              alt="Current Background" 
+              className="h-20 mt-1 object-contain"
+            />
+          </div>
+        )} 
+        
+        {/* Show preview of newly selected image */}
+        {bgImage && (
+          <div className="mt-2">
+            <p className="text-sm text-gray-500">New Image:</p>
+            <img
+              src={URL.createObjectURL(bgImage)}
+              alt="New Background Preview"
+              className="h-20 mt-1 object-contain"
+            />
+          </div>
+        )}
             </div>
 
             <div className="mb-3">
@@ -853,10 +879,16 @@ const handleDeleteBanner = async () => {
                 </div>
               )}
               {bannerImage && (
-                <div className="mt-2 text-sm text-gray-500">
-                  New Selected: {bannerImage.name} ({(bannerImage.size / 1024).toFixed(2)} KB)
-                </div>
-              )}
+            <img
+              src={
+                typeof bannerImage === "string"
+                  ? `/uploads/banners/${bannerImage}`
+                  : URL.createObjectURL(bannerImage)
+              }
+              alt="Banner Preview"
+              className="w-32 h-auto mt-2"
+            />
+          )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
