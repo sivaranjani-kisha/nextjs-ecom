@@ -1,63 +1,69 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FaPlus, FaMinus } from "react-icons/fa";
+import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
+import { Icon } from '@iconify/react';
 
 export default function FiltergroupComponent() {
-  const [Filtergroup, setFiltergroup] = useState([]);
+  const [filterGroups, setFilterGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [newFiltergroup, setNewFiltergroup] = useState({
     filtergroup_name: "",
     status: "Active",
+    _id: null
   });
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [FiltergroupToDelete, setFiltergroupToDelete] = useState(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false); // State for success modal
-  const [successMessage, setSuccessMessage] = useState(""); // State for success message
+  const [filterGroupToDelete, setFilterGroupToDelete] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5; // 5 records per page
+  const itemsPerPage = 5;
 
-  const fetchFiltergroup = async () => {
+  const fetchFilterGroups = async () => {
     try {
       const response = await fetch("/api/filter_group");
       const data = await response.json();
-      setFiltergroup(data.data);
+      setFilterGroups(data.data);
       setIsLoading(false);
     } catch (error) {
-      console.error("Error fetching Filtergroup:", error);
+      console.error("Error fetching filter groups:", error);
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchFiltergroup();
+    fetchFilterGroups();
   }, []);
 
-  // Handle page change
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
   };
 
-
-
-  // Handle input change
   const handleInputChange = (e) => {
     setNewFiltergroup({ ...newFiltergroup, [e.target.name]: e.target.value });
   };
 
-  // Handle category submission
   const handleAddFiltergroup = async (e) => {
     e.preventDefault();
 
     const formData = new FormData();
     formData.append("filtergroup_name", newFiltergroup.filtergroup_name);
     formData.append("status", newFiltergroup.status);
+    
+    if (newFiltergroup._id) {
+      formData.append("filtergroupId", newFiltergroup._id);
+    }
+
     try {
-      const response = await fetch("/api/filter_group/add", {
+      const url = newFiltergroup._id 
+        ? "/api/filter_group/update" 
+        : "/api/filter_group/add";
+        
+      const response = await fetch(url, {
         method: "POST",
         body: formData,
       });
@@ -65,22 +71,24 @@ export default function FiltergroupComponent() {
       const result = await response.json();
       if (response.ok) {
         setIsModalOpen(false);
-        fetchFiltergroup(); // Refresh the list
-
-        // Reset form
+        fetchFilterGroups();
         setNewFiltergroup({
           filtergroup_name: "",
           status: "Active",
+          _id: null
         });
+        setSuccessMessage(newFiltergroup._id 
+          ? "Filter group updated successfully" 
+          : "Filter group added successfully");
+        setShowSuccessModal(true);
       } else {
-        console.error("Error adding Filtergroup:", result.error);
+        console.error("Error:", result.error);
       }
     } catch (error) {
       console.error("Error:", error);
     }
   };
 
-  // Handle category deletion
   const handleDeleteFiltergroup = async (filtergroupId) => {
     try {
       const response = await fetch("/api/filter_group/delete", {
@@ -91,154 +99,180 @@ export default function FiltergroupComponent() {
 
       const result = await response.json();
       if (response.ok) {
-        setSuccessMessage("Filtergroup Deleted Successfully"); // Set success message
-        setShowSuccessModal(true); // Show success modal
-        fetchFiltergroup(); // Refresh the list
+        setSuccessMessage("Filter group deleted successfully");
+        setShowSuccessModal(true);
+        fetchFilterGroups();
       } else {
         console.error("Error:", result.error);
-        alert("Failed to delete category.");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred.");
     } finally {
-      setShowConfirmationModal(false); // Close confirmation modal
-      setFiltergroupToDelete(null); // Reset category to delete
+      setShowConfirmationModal(false);
+      setFilterGroupToDelete(null);
     }
   };
 
-  const flattenCategories = (Filtergroup, parentId = "none", level = 0, result = []) => {
-    Filtergroup.forEach((Filtergroups) => {
-        result.push({ ...Filtergroups, level });
-      });
+  const handleEditFiltergroup = (filtergroup) => {
+    setNewFiltergroup({
+      filtergroup_name: filtergroup.filtergroup_name,
+      status: filtergroup.status,
+      _id: filtergroup._id
+    });
+    setIsModalOpen(true);
+  };
+
+  const flattenFilterGroups = (groups, parentId = "none", level = 0, result = []) => {
+    groups.forEach((group) => {
+      result.push({ ...group, level });
+    });
     return result;
   };
 
-  // Render category rows with pagination
-  const renderFiltergroupRows = () => {
-    console.log(flattenCategories(Filtergroup));
-    const flattenedCategories = flattenCategories(Filtergroup);
-    const filteredCategories = flattenedCategories.filter((Filtergroups) =>
-        Filtergroups.filtergroup_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    Filtergroups.filtergroup_slug.toLowerCase().includes(searchQuery.toLowerCase())
+  const renderFilterGroupRows = () => {
+    const flattenedGroups = flattenFilterGroups(filterGroups);
+    const filteredGroups = flattenedGroups.filter((group) =>
+      group.filtergroup_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.filtergroup_slug.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    return filteredCategories
+    return filteredGroups
       .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
-      .map((Filtergroup, index) => (
-        <tr key={Filtergroup._id} className="text-center border-b">
-           <td className="p-2">{Filtergroup.filtergroup_name}</td>
-          <td className="p-2">{Filtergroup.filtergroup_slug}</td>
+      .map((group, index) => (
+        <tr key={group._id} className="text-center border-b">
+          <td className="p-2">{group.filtergroup_name}</td>
+          <td className="p-2">{group.filtergroup_slug}</td>
           <td className="p-2 font-semibold">
-            {Filtergroup.status === "Active" ? (
+            {group.status === "Active" ? (
               <span className="text-green-500">Active</span>
             ) : (
               <span className="text-red-500">Inactive</span>
             )}
           </td>
-          <td className="p-2 font-semibold">
-            <button
-              onClick={() => {
-                setFiltergroupToDelete(Filtergroup._id);
-                setShowConfirmationModal(true);
-              }}
-              className="bg-red-500 text-white px-3 py-1 rounded"
-            >
-              Delete
-            </button>
+          <td className="px-4 py-2">
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => handleEditFiltergroup(group)}
+                className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-200"
+                title="Edit"
+              >
+                <FaEdit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  setFilterGroupToDelete(group._id);
+                  setShowConfirmationModal(true);
+                }}
+                className="w-8 h-8 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center hover:bg-pink-200"
+                title="Delete"
+              >
+                <Icon icon="mingcute:delete-2-line" className="w-4 h-4" />
+              </button>
+            </div>
           </td>
         </tr>
       ));
   };
 
-  const flattenedCategories = flattenCategories(Filtergroup);
-  const filteredCategories = flattenedCategories.filter((Filtergroups) =>
-    Filtergroups.filtergroup_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  Filtergroups.filtergroup_slug.toLowerCase().includes(searchQuery.toLowerCase())
+  const flattenedGroups = flattenFilterGroups(filterGroups);
+  const filteredGroups = flattenedGroups.filter((group) =>
+    group.filtergroup_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    group.filtergroup_slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const pageCount = Math.ceil(filteredCategories.length / itemsPerPage);
+  const pageCount = Math.ceil(filteredGroups.length / itemsPerPage);
+  const startEntry = currentPage * itemsPerPage + 1;
+  const endEntry = Math.min((currentPage + 1) * itemsPerPage, filteredGroups.length);
 
   return (
-    <div className="container mx-auto mt-10 p-5">
-      <div className="flex justify-between items-center mb-5">
-        <h2 className="text-2xl font-bold">Filter group List</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md"
-        >
-          + Add Filter group 
-        </button>
-      </div>
-
-      {/* Search Box */}
-      <div className="flex justify-start mb-5">
-        <input
-          type="text"
-          placeholder="Search Filter group..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border px-3 py-2 rounded-md w-64"
-        />
+    <div className="container mx-auto">
+      <div className="flex justify-between items-center mb-5 mt-5">
+        <h2 className="text-2xl font-bold">Filter Group List</h2>
       </div>
 
       {isLoading ? (
-        <p>Loading Filter groups...</p>
+        <p>Loading filter groups...</p>
       ) : (
         <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
+          <div className="flex justify-between mb-5">
+            <input
+              type="text"
+              placeholder="Search filter group..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border px-3 py-2 rounded-md w-64"
+            />
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md"
+            >
+              + Add Filter Group
+            </button>
+          </div>
+
           <table className="w-full border border-gray-300">
             <thead>
               <tr className="bg-gray-200">
-                <th className="p-2">Filtergroup Name</th>
-                <th className="p-2">Filtergroup Slug</th>
+                <th className="p-2">Filter Group Name</th>
+                <th className="p-2">Filter Group Slug</th>
                 <th className="p-2">Status</th>
                 <th className="p-2">Action</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCategories.length > 0 ? (
-                renderFiltergroupRows()
+              {filteredGroups.length > 0 ? (
+                renderFilterGroupRows()
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center p-4">
-                    No Filter groups found
+                  <td colSpan="4" className="text-center p-4">
+                    No filter groups found
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
 
-          {/* Pagination */}
-          <ReactPaginate
-            previousLabel={"Previous"}
-            nextLabel={"Next"}
-            breakLabel={"..."}
-            pageCount={pageCount}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            onPageChange={handlePageClick}
-            containerClassName={"pagination flex justify-center mt-4"}
-            activeClassName={"active"}
-            pageClassName={"page-item"}
-            pageLinkClassName={"page-link px-3 py-2 border rounded mx-1"}
-            previousClassName={"page-item"}
-            nextClassName={"page-item"}
-            previousLinkClassName={"page-link px-3 py-2 border rounded mx-1"}
-            nextLinkClassName={"page-link px-3 py-2 border rounded mx-1"}
-            breakClassName={"page-item"}
-            breakLinkClassName={"page-link px-3 py-2 border rounded mx-1"}
-          />
+          <div className="flex justify-between items-center mt-4">
+            <div className="text-sm text-gray-600">
+              Showing {startEntry} to {endEntry} of {filteredGroups.length} entries
+            </div>
+            <ReactPaginate
+              previousLabel={"«"}
+              nextLabel={"»"}
+              breakLabel={"..."}
+              pageCount={pageCount}
+              onPageChange={handlePageClick}
+              forcePage={currentPage}
+              containerClassName={"flex items-center space-x-1"}
+              pageLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md text-black bg-white hover:bg-gray-100`}
+              previousLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md ${
+                currentPage === 0 ? "text-gray-400 cursor-not-allowed" : "text-black bg-white hover:bg-gray-100"
+              }`}
+              nextLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md ${
+                currentPage === pageCount - 1 ? "text-gray-400 cursor-not-allowed" : "text-black bg-white hover:bg-gray-100"
+              }`}
+              activeLinkClassName={"bg-blue-500 text-black"}
+              breakLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md text-black bg-white hover:bg-gray-100`}
+            />
+          </div>
         </div>
       )}
 
-      {/* Modal for Adding Filter */}
+      {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-5 rounded-lg w-96 relative">
-            <h2 className="text-lg font-bold text-center">Add 
-            Filter group
+            <h2 className="text-lg font-bold text-center">
+              {newFiltergroup._id ? "Edit" : "Add"} Filter Group
             </h2>
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                setIsModalOpen(false);
+                setNewFiltergroup({
+                  filtergroup_name: "",
+                  status: "Active",
+                  _id: null
+                });
+              }}
               className="absolute top-3 right-3 text-red-500 text-xl"
             >
               ×
@@ -249,23 +283,21 @@ export default function FiltergroupComponent() {
                 value={newFiltergroup.filtergroup_name}
                 onChange={handleInputChange}
                 className="w-full border p-2 mb-2 rounded"
-                placeholder="Filter group Name"
+                placeholder="Filter Group Name"
                 required
               />
-
-
               <select
                 name="status"
                 value={newFiltergroup.status}
                 onChange={handleInputChange}
                 className="w-full border p-2 mb-2 rounded"
+                required
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
-
               <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded w-full mt-2">
-                Add Filter group
+                {newFiltergroup._id ? "Update" : "Add"} Filter Group
               </button>
             </form>
           </div>
@@ -276,21 +308,20 @@ export default function FiltergroupComponent() {
       {showConfirmationModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-bold mb-4">Delete Filter group</h2>
-            <p className="mb-4">Are you sure you want to delete this Filter group?</p>
-
+            <h2 className="text-xl font-bold mb-4">Delete Filter Group</h2>
+            <p className="mb-4">Are you sure you want to delete this filter group?</p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowConfirmationModal(false)}
                 className="bg-gray-300 px-4 py-2 rounded-md"
               >
-                No, Close
+                Cancel
               </button>
               <button
-                onClick={() => handleDeleteFiltergroup(FiltergroupToDelete)}
+                onClick={() => handleDeleteFiltergroup(filterGroupToDelete)}
                 className="bg-red-500 px-4 py-2 rounded-md text-white"
               >
-                Yes, Delete
+                Delete
               </button>
             </div>
           </div>
@@ -303,7 +334,6 @@ export default function FiltergroupComponent() {
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
             <h2 className="text-xl font-bold mb-4">Success</h2>
             <p className="mb-4">{successMessage}</p>
-
             <div className="flex justify-end">
               <button
                 onClick={() => setShowSuccessModal(false)}
