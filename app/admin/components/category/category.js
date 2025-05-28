@@ -11,6 +11,7 @@ export default function CategoryComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState(""); // "active" | "inactive" | ""
   const [newCategory, setNewCategory] = useState({
     category_name: "",
     parentid: "none",
@@ -31,7 +32,9 @@ export default function CategoryComponent() {
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
+
+  
 
   // Fetch categories from API
   const fetchCategories = async () => {
@@ -273,10 +276,17 @@ export default function CategoryComponent() {
   // Render category rows with pagination
   const renderCategoryRows = () => {
     const flattenedCategories = flattenCategories(categories);
-    const filteredCategories = flattenedCategories.filter((category) =>
-      category.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (category.category_slug && category.category_slug.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredCategories = flattenedCategories.filter((category) => {
+  const matchesSearch =
+    category.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (category.category_slug && category.category_slug.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const matchesStatus =
+    statusFilter === "" || category.status.toLowerCase() === statusFilter.toLowerCase();
+
+  return matchesSearch && matchesStatus;
+});
+
 
     return filteredCategories
       .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
@@ -354,10 +364,16 @@ export default function CategoryComponent() {
 
   // Calculate pagination data
   const flattenedCategories = flattenCategories(categories);
-  const filteredCategories = flattenedCategories.filter((category) =>
+  const filteredCategories = flattenedCategories.filter((category) => {
+  const matchesSearch =
     category.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (category.category_slug && category.category_slug.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+    (category.category_slug && category.category_slug.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const matchesStatus =
+    statusFilter === "" || category.status.toLowerCase() === statusFilter.toLowerCase();
+
+  return matchesSearch && matchesStatus;
+});
   const pageCount = Math.ceil(filteredCategories.length / itemsPerPage);
 
   // Handle page change
@@ -368,10 +384,10 @@ export default function CategoryComponent() {
   };
 
   return (
-    <div className="container mx-auto ">
+    <div className="container mx-auto p-4">
       {/* Alert Message */}
       {showAlert && (
-        <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4 mt-5">
+        <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4">
           {alertMessage}
         </div>
       )}
@@ -386,41 +402,77 @@ export default function CategoryComponent() {
         <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
           {/* Search and Add Category */}
           <div className="flex justify-between items-center bg-white mb-3">
-            <div className="relative w-64">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <svg
-                  className="w-4 h-4 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.5a7.5 7.5 0 010 15z"
-                  />
-                </svg>
-              </span>
-              <input
-                type="text"
-                placeholder="Search Category..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(0);
-                }}
-                className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
+  {/* Search and Status Filter Grouped */}
+  <div className="flex items-center gap-4">
+    {/* Search Input */}
+    <div className="relative w-64">
+      <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+        <svg
+          className="w-4 h-4 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.5a7.5 7.5 0 010 15z"
+          />
+        </svg>
+      </span>
+      <input
+        type="text"
+        placeholder="Search Category..."
+        value={searchQuery}
+        onChange={(e) => {
+          setSearchQuery(e.target.value);
+          setCurrentPage(0);
+        }}
+        className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+      />
+    </div>
 
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
-            >
-              + Add Category
-            </button>
-          </div>
+    {/* Status Filter Dropdown */}
+    <div className="relative w-48">
+      <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+        <svg
+          className="w-4 h-4 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.5a7.5 7.5 0 010 15z"
+          />
+        </svg>
+      </span>
+      <select
+        value={statusFilter}
+        onChange={(e) => {
+          setStatusFilter(e.target.value);
+          setCurrentPage(0);
+        }}
+        className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+      >
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+  </div>
+
+  {/* Add Category Button */}
+  <button
+    onClick={() => setIsModalOpen(true)}
+    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
+  >
+    + Add Category
+  </button>
+</div>
 
           <hr className="border-t border-gray-200 mb-4" />
 

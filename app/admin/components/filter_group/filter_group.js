@@ -112,7 +112,16 @@ export default function FiltergroupComponent() {
       setFilterGroupToDelete(null);
     }
   };
+// Add this useEffect hook near your other hooks
+useEffect(() => {
+  if (showSuccessModal) {
+    const timer = setTimeout(() => {
+      setShowSuccessModal(false);
+    }, 2000); // 2000 milliseconds = 2 seconds
 
+    return () => clearTimeout(timer); // Clean up the timer if the component unmounts
+  }
+}, [showSuccessModal]);
   const handleEditFiltergroup = (filtergroup) => {
     setNewFiltergroup({
       filtergroup_name: filtergroup.filtergroup_name,
@@ -144,9 +153,9 @@ export default function FiltergroupComponent() {
           <td className="p-2">{group.filtergroup_slug}</td>
           <td className="p-2 font-semibold">
             {group.status === "Active" ? (
-              <span className="text-green-500">Active</span>
+              <span className="bg-green-100 text-green-600 px-6 py-1.5 rounded-full font-medium text-sm">Active</span>
             ) : (
-              <span className="text-red-500">Inactive</span>
+              <span className="bg-red-100 text-red-600 px-6 py-1.5 rounded-full font-medium text-sm">Inactive</span>
             )}
           </td>
           <td className="px-4 py-2">
@@ -258,51 +267,88 @@ export default function FiltergroupComponent() {
       )}
 
       {/* Add/Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-5 rounded-lg w-96 relative">
-            <h2 className="text-lg font-bold text-center">
-              {newFiltergroup._id ? "Edit" : "Add"} Filter Group
-            </h2>
-            <button
-              onClick={() => {
-                setIsModalOpen(false);
-                setNewFiltergroup({
-                  filtergroup_name: "",
-                  status: "Active",
-                  _id: null
-                });
-              }}
-              className="absolute top-3 right-3 text-red-500 text-xl"
-            >
-              ×
-            </button>
-            <form onSubmit={handleAddFiltergroup} className="mt-4">
-              <input
-                name="filtergroup_name"
-                value={newFiltergroup.filtergroup_name}
-                onChange={handleInputChange}
-                className="w-full border p-2 mb-2 rounded"
-                placeholder="Filter Group Name"
-                required
-              />
-              <select
-                name="status"
-                value={newFiltergroup.status}
-                onChange={handleInputChange}
-                className="w-full border p-2 mb-2 rounded"
-                required
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded w-full mt-2">
-                {newFiltergroup._id ? "Update" : "Add"} Filter Group
-              </button>
-            </form>
+     {isModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+    <div className="bg-white rounded-2xl shadow-lg w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+      {/* Header */}
+      <div className="flex justify-between items-center border-b px-6 py-4">
+        <h2 className="text-xl font-semibold text-gray-900">
+          {newFiltergroup._id ? "Edit" : "Add"} Filter Group
+        </h2>
+        <button
+          onClick={() => {
+            setIsModalOpen(false);
+            setNewFiltergroup({
+              filtergroup_name: "",
+              status: "Active",
+              _id: null
+            });
+          }}
+          className="text-gray-400 hover:text-gray-700"
+          aria-label="Close modal"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="px-6 py-6 overflow-y-auto flex-grow">
+        <form onSubmit={handleAddFiltergroup} className="space-y-5">
+          {/* Filter Group Name */}
+          <div>
+            <label htmlFor="filtergroup_name" className="block mb-1 text-sm font-semibold text-gray-700">
+              Filter Group Name
+            </label>
+            <input
+              type="text"
+              id="filtergroup_name"
+              name="filtergroup_name"
+              value={newFiltergroup.filtergroup_name}
+              onChange={handleInputChange}
+              className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter Filter Group Name"
+              required
+            />
           </div>
-        </div>
-      )}
+
+          {/* Status */}
+          <div>
+            <label htmlFor="status" className="block mb-1 text-sm font-semibold text-gray-700">
+              Status
+            </label>
+            <select
+              name="status"
+              id="status"
+              value={newFiltergroup.status}
+              onChange={handleInputChange}
+              className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+              required
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+          >
+            {newFiltergroup._id ? "Update" : "Add"} Filter Group
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Confirmation Modal */}
       {showConfirmationModal && (

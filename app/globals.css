@@ -54,6 +54,9 @@ body::-webkit-scrollbar {
   width:45%
 }
 
+.w-\[41\%\] {
+  width:41%
+}
 .lg\:w-\[80\%\]{
   width:80%;
 }
@@ -154,4 +157,8 @@ body::-webkit-scrollbar {
   src: url('../public/assets/fonts/Quicksand-Bold.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;  
+}
+.py-3 {
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem
 }

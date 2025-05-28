@@ -3,14 +3,15 @@ import ProductDetailsSection from "@/components/ProductDetailsSection";
 import RelatedProducts from "@/components/RelatedProducts";
 import {  useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { FaShoppingCart, FaHeart, FaShareAlt, FaBell } from "react-icons/fa";
+import { FaShoppingCart, FaHeart, FaShareAlt, FaRupeeSign, FaCartPlus, FaBell } from "react-icons/fa";
+import { FiShoppingCart } from "react-icons/fi";
 import { TbTruckDelivery } from "react-icons/tb";
 import { IoFastFoodOutline, IoReload, IoCardOutline, IoShieldCheckmark, IoStorefront } from "react-icons/io5";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import ProductBreadcrumb from "@/components/ProductBreadcrumb";
-
+import RazorpayOffers from "@/components/RazorpayOffers";
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -21,7 +22,44 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [showEMIModal, setShowEMIModal] = useState(false);
   const [featuredProducts, setFeaturedProducts] = useState([]);
+
+
+  // In your ProductPage component, add these state variables near the top:
+const [selectedFrequentProducts, setSelectedFrequentProducts] = useState([]);
+const [cartTotal, setCartTotal] = useState(0);
+const [selectedWarranty, setSelectedWarranty] = useState(null);
+const [selectedExtendedWarranty, setSelectedExtendedWarranty] = useState(null);
+
+
+
+// Add this function to handle frequent product selection
+const toggleFrequentProduct = (product) => {
+  setSelectedFrequentProducts(prev => {
+    const existingIndex = prev.findIndex(p => p._id === product._id);
+    if (existingIndex >= 0) {
+      return prev.filter(p => p._id !== product._id);
+    } else {
+      return [...prev, product];
+    }
+  });
+};
+
+//  Add this useEffect to calculate the cart total whenever selected products change
+useEffect(() => {
+  let total = product ? (product.special_price || product.price) * quantity : 0;
+
+  selectedFrequentProducts.forEach(item => {
+    total += (item.special_price || item.price);
+  });
+
+  if (selectedWarranty) total += selectedWarranty;
+  if (selectedExtendedWarranty) total += selectedExtendedWarranty;
+
+  setCartTotal(total);
+}, [selectedFrequentProducts, product, quantity, selectedWarranty, selectedExtendedWarranty]);
+
 
 useEffect(() => {
   const fetchFeaturedProducts = async () => {
@@ -291,18 +329,27 @@ useEffect(() => {
 
               {/* Add to Cart Button */}
               <div className="flex-shrink-0">
-                <Addtocart productId={product._id} />
+                <Addtocart
+  productId={product._id}
+  quantity={quantity}
+  additionalProducts={selectedFrequentProducts.map(p => p._id)}
+  warranty={selectedWarranty}
+  extendedWarranty={selectedExtendedWarranty}
+  selectedFrequentProducts={selectedFrequentProducts}
+/>
+
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: ${product.slug}`)}`, '_blank')}>
               <ProductCard productId={product._id} />
                 <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
+
                   <FaShareAlt size={10} />
                 </button>
-                <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
+                {/* <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
                   <FaBell size={10} />
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
@@ -362,6 +409,113 @@ useEffect(() => {
               )}
               <p className="text-gray-600 text-sm mt-1">Available only: <span className="font-bold">{product.quantity}</span></p>
             </div>
+
+            {/* Add this code right after the Stock Alert section */}
+              {/* <div className="border-2 border-customBlue rounded-lg overflow-hidden bg-blue-50 shadow-md mt-4">
+              
+                <div className="bg-customBlue px-4 py-3 rounded-t-lg">
+                  <h3 className="text-base font-semibold text-white">
+                    EMI OPTIONS AVAILABLE
+                  </h3>
+                </div>
+
+               
+                <div className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <img 
+                        src="/emi-bank-logos.png" 
+                        alt="Bank Logos" 
+                        className="h-6 w-auto"
+                      />
+                      <span className="text-sm text-blue-700">
+                        From <span className="font-bold">₹{Math.floor((product.special_price || product.price) / 6)}</span>/month
+                      </span>
+                    </div>
+                    <button className="text-sm font-semibold text-blue-700 hover:underline">
+                      View Plans
+                    </button>
+                  </div>
+                  <p className="text-xs text-blue-600">
+                    Credit Card EMI available on orders above ₹5,000
+                  </p>
+                </div>
+              </div> */}
+
+{/* <h4><b>Available offers</b></h4> */}
+                  
+                           
+                           <RazorpayOffers amount={product.special_price} />
+ 
+ 
+
+
+{/* EMI Modal */}
+{showEMIModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-white rounded-lg w-full max-w-md mx-4">
+      <div className="p-4 border-b flex justify-between items-center">
+        <h3 className="font-semibold">EMI Options</h3>
+        <button 
+          onClick={() => setShowEMIModal(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          &times;
+        </button>
+      </div>
+      
+      <div className="p-4 max-h-[60vh] overflow-y-auto">
+        <div className="mb-4">
+          <h4 className="font-medium text-sm mb-2">Credit Card EMI</h4>
+          <div className="space-y-3">
+            {[
+              { bank: 'HDFC Bank', tenure: '3 Months', emi: Math.floor((product.special_price || product.price) / 3) },
+              { bank: 'ICICI Bank', tenure: '6 Months', emi: Math.floor((product.special_price || product.price) / 6) },
+              { bank: 'SBI Card', tenure: '9 Months', emi: Math.floor((product.special_price || product.price) / 9) },
+              { bank: 'Axis Bank', tenure: '12 Months', emi: Math.floor((product.special_price || product.price) / 12) },
+            ].map((option, index) => (
+              <div key={index} className="flex justify-between items-center p-2 border rounded">
+                <div>
+                  <div className="font-medium text-sm">{option.bank}</div>
+                  <div className="text-xs text-gray-500">{option.tenure}</div>
+                </div>
+                <div className="font-semibold">₹{option.emi}/month</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="mt-4">
+          <h4 className="font-medium text-sm mb-2">Debit Card EMI</h4>
+          <div className="space-y-3">
+            {[
+              { bank: 'Kotak Bank', tenure: '6 Months', emi: Math.floor((product.special_price || product.price) / 6) },
+              { bank: 'IndusInd Bank', tenure: '9 Months', emi: Math.floor((product.special_price || product.price) / 9) },
+            ].map((option, index) => (
+              <div key={index} className="flex justify-between items-center p-2 border rounded">
+                <div>
+                  <div className="font-medium text-sm">{option.bank}</div>
+                  <div className="text-xs text-gray-500">{option.tenure}</div>
+                </div>
+                <div className="font-semibold">₹{option.emi}/month</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-4 border-t text-sm">
+        <p className="text-gray-600 mb-2">* Interest rates may vary based on your bank's policies</p>
+        <button 
+          className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium"
+          onClick={() => setShowEMIModal(false)}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
             {/* Product More Info */}
 
@@ -693,7 +847,8 @@ useEffect(() => {
 
           {/* Right Section - Seller Info */}
           <div className="md:col-span-3 border border-gray-300 rounded-lg shadow-md bg-white mb-14 w-full max-w-sm max-h-[490px] overflow-y-scroll scrollbar-hide">
-        {featuredProducts?.length > 0 && (
+      {/* Update the frequently bought together section to include AddToCart functionality: */}
+{featuredProducts?.length > 0 && (
   <div className="px-4 py-4"> 
     <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
       Frequently Bought Together:
@@ -701,7 +856,12 @@ useEffect(() => {
 
     {featuredProducts.map((item) => (
       <div key={item._id} className="flex items-start mb-4">
-        <input type="checkbox" className="mt-2 mr-3" />
+        <input 
+          type="checkbox" 
+          className="mt-2 mr-3" 
+          checked={selectedFrequentProducts.some(p => p._id === item._id)}
+          onChange={() => toggleFrequentProduct(item)}
+        />
         <div className="flex items-start gap-3">
           {item.images?.[0] && (
             <img
@@ -741,7 +901,7 @@ useEffect(() => {
         </p>
         <div className="text-sm text-gray-800 space-y-2 mb-4">
           <div className="flex items-center">
-            <input type="radio" name="protection" className="mr-2" />
+            <input type="radio" name="protection" className="mr-2" onChange={() => setSelectedWarranty(product.warranty)} />
             <label>
               1 Year Accidental And Liquid Damage
               <span className="text-green-600 font-bold ml-2">
@@ -760,7 +920,7 @@ useEffect(() => {
         </p>
         <div className="text-sm text-gray-800">
           <div className="flex items-center">
-            <input type="radio" name="warranty" className="mr-2" />
+            <input type="radio" name="warranty" className="mr-2" onChange={() => setSelectedExtendedWarranty(product.extended_warranty)} />
             <label>
               1 Year Extended Warranty Protection
               <span className="text-green-600 font-bold ml-2">
@@ -789,29 +949,26 @@ useEffect(() => {
               </div>
             </div> */}
 
-            <div className="mt-4 px-4">
-              <div className="flex items-center justify-between bg-customBlue text-white px-3 py-2 rounded-full">
-                
-                {/* Left - Icon + Text */}
-                <div className="flex items-center gap-2">
-                  <div className="bg-white p-1.5 rounded-full flex items-center justify-center w-8 h-8">
-                    <IoStorefront className="text-blue-600 text-lg" />
-                  </div>
-                  <div className="text-sm font-medium leading-tight">
-                    <div>By</div>
-                    <div className="truncate max-w-[100px]">
-                      {product.brand || "Estore"}
-                    </div>
-                  </div>
-                </div>
+      <div className="mt-5 px-2">
+  <div className="flex items-center justify-between bg-customBlue text-white px-4 py-2 rounded-full shadow-sm w-full">
 
-                {/* Right - Button */}
-                <button className="bg-white text-blue-600 text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap">
-                  View Store
-                </button>
+    {/* Left - Cart Icon + Label */}
+    <div className="flex items-center space-x-2">
+      <FaCartPlus  className="text-white w-5 h-5" />
+      <span className="text-lg font-semibold">Cart Total</span>
+    </div>
 
-              </div>
-            </div>
+    {/* Right - Price + View Cart link below */}
+    <div className="flex flex-col items-end leading-tight">
+      <span className="text-md font-semibold">₹{cartTotal.toLocaleString()}</span>
+      <Link href="/cart" className="text-[12px] text-blue-100 hover:underline mt-0.5">
+        View Cart
+      </Link>
+    </div>
+
+  </div>
+</div>
+
 
             <div className="border-b border-gray-300 w-full mt-4"></div>
 
@@ -847,5 +1004,8 @@ useEffect(() => {
             />
       </div>
     </div>
+    
   );
 }
+
+

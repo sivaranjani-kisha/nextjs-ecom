@@ -61,6 +61,7 @@ export async function POST(req) {
         cart.items.push({
           productId,
           quantity,
+          mrp_price:product.price,
           price: product.special_price,
           name: product.name,
           image: product.images[0] // Assuming first image
@@ -73,6 +74,7 @@ export async function POST(req) {
         items: [{
           productId,
           quantity,
+          mrp_price:product.price,
           price: product.special_price,
           name: product.name,
           image: product.images[0]

@@ -10,6 +10,7 @@ export default function AdminSider({ collapsed }) {
   const router = useRouter();
 
   const menuItems = [
+     { icon: 'material-symbols:category', label: 'Dashboard', link: 'dashboard' },
     { icon: 'material-symbols:category', label: 'Category', link: 'category' },
     {
       icon: 'mdi:package-variant-closed',
@@ -31,7 +32,16 @@ export default function AdminSider({ collapsed }) {
 
     },
     { icon: 'mdi:image-outline', label: 'Banner', link: 'design' },
-    { icon: 'material-symbols:receipt-long', label: 'Order', link: 'order' },
+    {
+    icon: 'material-symbols:receipt-long',
+    label: 'Order',
+    submenu: [
+      { icon: 'mdi:clock-outline', label: 'Pending Order', link: 'order/pending-order', dotColor: 'bg-yellow-500' },
+      { icon: 'mdi:cancel', label: 'Cancel Order', link: 'order/cancel-order', dotColor: 'bg-red-500' },
+      { icon: 'mdi:truck-delivery-outline', label: 'Shipped Order', link: 'order/shipping-order', dotColor: 'bg-green-500' }
+    ]
+  },
+   
     { icon: 'mdi:tag-outline', label: 'Offer', link: 'offer' },
     { icon: 'mdi:note-text-outline', label: 'Blog', link: 'blog' },
     { icon: 'mdi:account-outline', label: 'User', link: 'user' },
