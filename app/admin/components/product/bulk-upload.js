@@ -161,12 +161,12 @@ export default function BulkUploadPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
-          <Link
+          {/* <Link
             href="/admin/product"
             className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
           >
             Cancel
-          </Link>
+          </Link> */}
           <button
             type="submit"
             disabled={isLoading}

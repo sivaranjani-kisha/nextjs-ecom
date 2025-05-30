@@ -162,3 +162,11 @@ body::-webkit-scrollbar {
     padding-top: 0.8rem;
     padding-bottom: 0.8rem
 }
+/* styles/globals.css or any CSS file loaded globally */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}

@@ -15,7 +15,7 @@ const steps = [
   { title: "Others" },
 ];
 
-export default function AddProductPage() {
+export default function AddProductPage({ mode = "add", productData = null, productId = null }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [product, setProduct] = useState({
     name: "",
@@ -132,6 +132,22 @@ export default function AddProductPage() {
       toast.error(error);
     }
   };
+
+    useEffect(() => {
+     if (mode === "edit" && productData) {
+    setProduct(productData);
+
+    if (productData.hasVariants && Array.isArray(productData.variants)) {
+      setVariant(productData.variants);
+
+      // Initialize variantImages with placeholder for File objects
+      const images = productData.variants.map(v => ({
+        images: (v.images || []).map(img => img)  // keep original image names
+      }));
+      setVariantImages(images);
+    }
+  }
+  }, [mode, productData]);
   useEffect(() => {
     fetchCategories();
     fetchFilter();
@@ -139,11 +155,33 @@ export default function AddProductPage() {
     fetchallproducts();
   }, []);
 
-    const handleVariantFieldChange1 = (index, field, value) => {
-      const updatedVariants = [...variant];
-      updatedVariants[index] = { ...updatedVariants[index], [field]: value };
-      setVariant(updatedVariants);
-    };
+   const handleVariantFieldChange1 = (index, field, value) => {
+  const updatedVariants = variant.map((v, i) =>
+  i === index
+    ? {
+        ...v,
+        variant_attribute_name: v.variant_attribute_name || "",
+        options: v.options || "",
+        item_code: v.item_code || "",
+        price: v.price || "",
+        special_price: v.special_price || "",
+        quantity: v.quantity || "",
+        stock_status: v.stock_status || "In Stock",
+        status: v.status || "Active",
+        images: v.images || [],
+        [field]: value,
+      }
+    : v
+);
+
+  setVariant(updatedVariants);
+setProduct(prev => ({
+  ...prev,
+  variants: updatedVariants
+}));
+};
+
+
   
     // const handleImageChange1 = (index, filez) => {
     //   if (filez.length <= 4) {
@@ -401,23 +439,28 @@ export default function AddProductPage() {
       setVariant(updatedVariants);
     };
 
-    const handleAddVariant1 = () => {
-      setVariant(prev => [
-        ...prev,
-        {
-          variant_attribute_name: "",
-          options: "",
-          item_code: "",
-          price: "",
-          special_price: "",
-          quantity: "",
-          stock_status: "In Stock",
-          images: [],
-          status: "Active"
-        }
-      ]);
-      setVariantImages(prev => [...prev, { images: [] }]);
-    };
+   const handleAddVariant1 = () => {
+  const newVariant = {
+    variant_attribute_name: "",
+    options: "",
+    item_code: "",
+    price: "",
+    special_price: "",
+    quantity: "",
+    stock_status: "In Stock",
+    images: [],
+    status: "Active"
+  };
+
+  setVariant(prev => [...prev, newVariant]);
+  setVariantImages(prev => [...prev, { images: [] }]);
+
+  setProduct(prev => ({
+    ...prev,
+    variants: [...prev.variants, newVariant]
+  }));
+};
+
 
   const buildCategoryTree = (categories, parentId = "none") => {
     return categories
@@ -581,8 +624,21 @@ export default function AddProductPage() {
   // }, [product.variantAttributes, product.hasVariants]);
  
   const handleCategoryChange = (category) => {
-    setSelectedCategory(category._id);
-  };
+  setSelectedCategory(category._id);
+  setProduct((prev) => ({
+    ...prev,
+    category: category._id, // set subcategory here
+  }));
+};
+
+
+  useEffect(() => {
+  if (product) {
+    setSelectedCategory(product.category); // This is the subcategory ID
+  }
+}, [product]);
+
+  
   
   const renderCategoryTree = (categories, level = 0) => {
     return categories.map((category) => (
@@ -625,63 +681,68 @@ export default function AddProductPage() {
   };
 
   useEffect(() => {
-    if (product.hasVariants && product.variantAttributes.length > 0) {
-      const validAttributes = product.variantAttributes.filter(
-        (attr) => attr.name && attr.options.length > 0
-      );
-  
-      if (validAttributes.length === 0) return;
-  
-      const optionsArrays = validAttributes.map((attr) =>
-        attr.options.map((opt) => ({ [attr.name]: opt }))
-      );
-  
-      const allCombinations = combinations(...optionsArrays);
-  
-      const newVariants = allCombinations.map((combination) => {
-        // Find an existing variant that matches the current combination
-        const existingVariant = product.variants.find((variant) =>
-          combination.every((c) =>
-            variant.attributes.some(
-              (attr) =>
-                attr.name === Object.keys(c)[0] &&
-                attr.value === Object.values(c)[0]
-            )
+  if (
+    product.hasVariants &&
+    product.variantAttributes.length > 0 &&
+    (!product.variants || product.variants.length === 0)
+  ) {
+    const validAttributes = product.variantAttributes.filter(
+      (attr) => attr.name && attr.options.length > 0
+    );
+
+    if (validAttributes.length === 0) return;
+
+    const optionsArrays = validAttributes.map((attr) =>
+      attr.options.map((opt) => ({ [attr.name]: opt }))
+    );
+
+    const allCombinations = combinations(...optionsArrays);
+
+    const newVariants = allCombinations.map((combination) => {
+      const existingVariant = product.variants?.find((variant) =>
+        combination.every((c) =>
+          variant.attributes?.some(
+            (attr) =>
+              attr.name === Object.keys(c)[0] &&
+              attr.value === Object.values(c)[0]
           )
-        );
-  
-        // Return the existing variant if it exists, otherwise create a new one
-        return (
-          existingVariant || {
-            attributes: combination.map((c) => ({
-              name: Object.keys(c)[0],
-              value: Object.values(c)[0],
-            })),
-            item_code: "",
-            price: "",
-            special_price: "",
-            quantity: "",
-            images: [],
-          }
-        );
-      });
-  
-      setProduct((prev) => ({
-        ...prev,
-        variants: newVariants.filter(
-          (v, index, self) =>
-            index ===
-            self.findIndex((t) =>
-              t.attributes.every((attr) =>
-                v.attributes.some(
-                  (a) => a.name === attr.name && a.value === attr.value
-                )
+        )
+      );
+
+      return (
+        existingVariant || {
+          attributes: combination.map((c) => ({
+            name: Object.keys(c)[0],
+            value: Object.values(c)[0],
+          })),
+          item_code: "",
+          price: "",
+          special_price: "",
+          quantity: "",
+          images: [],
+          stock_status: "",
+          status: "",
+        }
+      );
+    });
+
+    setProduct((prev) => ({
+      ...prev,
+      variants: newVariants.filter(
+        (v, index, self) =>
+          index ===
+          self.findIndex((t) =>
+            t.attributes.every((attr) =>
+              v.attributes.some(
+                (a) => a.name === attr.name && a.value === attr.value
               )
             )
-        ),
-      }));
-    }
-  }, [product.variantAttributes, product.hasVariants]);
+          )
+      ),
+    }));
+  }
+}, [product.variantAttributes, product.hasVariants]);
+
 
   const handleVariantFieldChange = async (variantIndex, attrIndex, field, value) => {
     let uploadedImagePaths = [];
@@ -717,36 +778,37 @@ export default function AddProductPage() {
     return `${timestamp}-${randomString}-${originalFileName}`;
   };
   
-  const uploadImages = async (files) => {
-    const uploadedFilePaths = [];
-  
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const formData = new FormData();
-      const uniqueFileName = generateUniqueFileName(file.name);
-  
-      formData.append("image", file);
-      
-      try {
-        // Send the file to the server
-        const response = await fetch("/api/product/upload", {
-          method: "POST",
-          body: formData,
-        });
-  
-        if (response.ok) {
-          const { savedImages } = await response.json();
-          uploadedFilePaths.push(savedImages);
-        } else {
-          toast.error(response.statusText);
-        }
-      } catch (error) {
-        toast.error(error);
+ const uploadImages = async (files) => {
+  const uploadedFilePaths = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file) continue; // ✅ Skip null/undefined files
+
+    const formData = new FormData();
+    const uniqueFileName = generateUniqueFileName(file.name);
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("/api/product/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const { savedImages } = await response.json();
+        uploadedFilePaths.push(savedImages); // push string or array based on your API
+      } else {
+        toast.error(response.statusText);
       }
+    } catch (error) {
+      toast.error(error.message);
     }
-  
-    return uploadedFilePaths;
-  };
+  }
+
+  return uploadedFilePaths;
+};
+
 
   
   const handleChange = (e) => {
@@ -804,7 +866,7 @@ export default function AddProductPage() {
   const handleFilterChange = (selectedOptions) => {
     setProduct((prev) => ({
       ...prev,
-      filters: selectedOptions.map((option) => option.value),
+      filters: selectedOptions,
     }));
   };
 
@@ -827,83 +889,63 @@ export default function AddProductPage() {
     e.preventDefault();
     try {
       const formData = new FormData();
-      formData.append("product", JSON.stringify(product));
-      if( product.files && product.files.length > 0){
-        product.files.forEach((file) => formData.append("images", file));
-      }else{
-        formData.append("images", []);
+      // ✅ Clean the product object before sending
+    const cleanedProduct = {
+      ...product,
+      filters: product.filters.map(f => f.value), // ✅ FIXED here
+    };
+
+    // Upload each variant's images and inject filenames
+const uploadedVariantImages = [];
+
+// Attach variant images to FormData dynamically
+for (let i = 0; i < variantImages.length; i++) {
+  const variantImgGroup = variantImages[i].images;
+
+  for (let j = 0; j < variantImgGroup.length; j++) {
+    const imageFile = variantImgGroup[j];
+    if (imageFile) {
+      formData.append(`variant_${i}_image_${j}`, imageFile);
+    }
+  }
+}
+
+
+const variantsWithImages = product.variants.map((variant, i) => ({
+  ...variant,
+  images: uploadedVariantImages[i] || []
+}));
+
+formData.append("variant", JSON.stringify(variantsWithImages));
+
+
+      formData.append("product", JSON.stringify(cleanedProduct));
+      formData.append("category", product.category);
+      if (product.files && product.files.length > 0) {
+        product.files.forEach(file => formData.append("images", file));
       }
-      // formData.append("category", Array.from(selectedCategories)[0]);
-      formData.append("category", selectedCategory); 
-      console.log(product,selectedCategories);
-      variantImages.forEach((variantz, index) => {
-        variantz.images.forEach((imageFile, imgIndex) => {
-          formData.append(`variant_${index}_image_${imgIndex}`, imageFile);
-        });
-      });
-      formData.append("variant", JSON.stringify(variant.map(v => ({
-        ...v,
-        images: []
-      }))));
-      if(product.overviewImageFile && product.overviewImageFile.length > 0){
-        product.overviewImageFile.forEach((file) => formData.append("overviewImages", file));
-      }else{
-        formData.append("overviewImages", []);
+      if (product.overviewImageFile && product.overviewImageFile.length > 0) {
+        product.overviewImageFile.forEach(file => formData.append("overviewImages", file));
       }
       formData.append("highlights", JSON.stringify(product.product_highlights));
-      const response = await fetch("/api/product/add", {
-        method: "POST",
-        body: formData,
-      });
-      const responseData = await response.json();
-      if (response.ok) {
-       
-    toast.success("Product added successfully");
-    router.push('/admin/product');
-        // setProduct({ 
-        //   name: "",
-        //   slug: "",
-        //   item_code: "",
-        //   price: "",
-        //   special_price: "",
-        //   quantity: "",
-        //   description: "",
-        //   brand: "",
-        //   category: "",
-        //   stock_status: "In Stock",
-        //   related_products: [],
-        //   images: [],
-        //   key_specifications: "",
-        //   featured: false,
-        //   tags: [],
-        //   meta_title: "",
-        //   status: "Active",
-        //   variant_attribute: { name: "", options: [] },
-        //   variants: [],
-        //   filters: [],
-        //   hasVariants: false,
-        //   variantAttributes: [],
-        //  });
+      // formData.append("variant", JSON.stringify(variantsWithImages));
 
-        //  setVariant([{
-        //   variant_attribute_name: "",
-        //   options: "",
-        //   item_code: "",
-        //   price: "",
-        //   special_price: "",
-        //   quantity: "",
-        //   stock_status: "In Stock",
-        //   images: [],
-        //   status: "Active"
-        // }]);
+
+      const apiUrl = mode === "edit" ? `/api/product/update/${productId}` : "/api/product/add";
+      const method = mode === "edit" ? "PUT" : "POST";
+
+      const response = await fetch(apiUrl, { method, body: formData });
+      const responseData = await response.json();
+
+      if (response.ok) {
+        toast.success(`Product ${mode === "edit" ? "updated" : "added"} successfully`);
+        router.push('/admin/product');
       } else {
         toast.error(responseData.error || "Something went wrong");
       }
     } catch (error) {
-      toast.error(error.message || "An unexpected error occurred"); 
+      toast.error(error.message || "An unexpected error occurred");
     }
-
-
   };
 
   const handleAddVariantAttribute = () => {
@@ -1075,10 +1117,32 @@ export default function AddProductPage() {
         }
         break;
       case 3:
-        if ( product.hasVariants && !variant.every( (attr) => attr.variant_attribute_name.trim() !== '' && attr.options.trim() !== '' && attr.item_code.trim() !== '' && attr.price !== '' && attr.special_price !== '' && attr.quantity !== '' && attr.stock_status.trim() !== '' && attr.status.trim() !== '')) {
-          return 'Please fill in all required variant fields.';
-        }
-        break;
+  if (product.hasVariants) {
+  const allFilled = product.variants.every((v, i) => {
+    const hasAll =
+      v.variant_attribute_name?.trim() &&
+      v.options?.trim() &&
+      v.item_code?.trim() &&
+      v.price !== '' && v.price !== null &&
+      v.special_price !== '' && v.special_price !== null &&
+      v.quantity !== '' && v.quantity !== null &&
+      v.stock_status?.trim() &&
+      v.status?.trim();
+
+    if (!hasAll) {
+      console.log('Missing field in variant index:', i, v);
+    }
+
+    return hasAll;
+  });
+
+  if (!allFilled) {
+    return 'Please fill in all required variant fields.';
+  }
+}
+
+  break;
+
       case 4:
         if (!product.meta_title || !product.description) {
           return "Please fill in all required fields: Meta Title and Meta Description.";
@@ -1106,7 +1170,7 @@ export default function AddProductPage() {
   return (
     <div className="mx-auto p-6 bg-white shadow-md rounded-lg" >
     
-      <h2 className="text-2xl font-bold mb-4">Add Product</h2>
+      <h2 className="text-2xl font-bold mb-4">{mode === "edit" ? " " : "Add Product"}</h2>
       <ProgressStepper />
       <ToastContainer />
       {validationError && <ValidationModal message={validationError} onClose={closeModal} />}
@@ -1116,26 +1180,26 @@ export default function AddProductPage() {
            <div className="space-y-4">
            {/* <h3 className="text-xl font-semibold mb-4">Product Information</h3> */}
            <div className="grid grid-cols-2 gap-4">
-           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name* (Minimum 60 characters)</label>
-            <input
-              type="text"
-              name="name"
-              value={product.name}
-              onChange={handleChange}
-              className={`w-full border p-2 rounded ${
+              <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name*</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={product.name}
+                  onChange={handleChange}
+                 className={`w-full border p-2 rounded ${
                 product.name.length < 60 && product.name.length > 0 ? "border-red-500" : ""
               }`}
               required
               minLength={60}  // HTML5 validation (but may not show until form submission)
             />
-            {/* Show error message if less than 60 chars */}
-            {product.name.length > 0 && product.name.length < 60 && (
-              <p className="text-red-500 text-xs mt-1">
-                Minimum 60 characters required (currently: {product.name.length})
-              </p>
-            )}
-          </div>
+             {/* Show error message if less than 60 chars */}
+                        {product.name.length > 0 && product.name.length < 60 && (
+                          <p className="text-red-500 text-xs mt-1">
+                            Minimum 60 characters required (currently: {product.name.length})
+                          </p>
+                        )}
+              </div>
         
               <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Item Code</label>
@@ -1154,6 +1218,7 @@ export default function AddProductPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
               <Select
                 options={brand}
+                value={brand.find(b => b.value === product.brand)}
                 onChange={handleBrandChange}
                 placeholder="Select brand..."
                
@@ -1216,54 +1281,7 @@ export default function AddProductPage() {
                         </div>
                         
                         <div className="divide-y divide-gray-200">
-                          {/* {[0, 1, 2, 3].map((index) => (
-                            <div key={index} className="grid grid-cols-12 gap-4 items-center py-4 px-4">
-                              <div className="col-span-5">
-                                <input
-                                  type="file"
-                                  className="block w-full text-sm text-gray-500
-                                    file:mr-4 file:py-2 file:px-4
-                                    file:rounded-full file:border-0
-                                    file:text-sm file:font-semibold
-                                    file:bg-blue-50 file:text-blue-700
-                                    hover:file:bg-blue-100"
-                                  accept="image/*"
-                                  onChange={(e) => handleImageChange(index, e)}
-                                  required={index === 0}
-                                  key={`file-${index}-${product.images[index] ? 'filled' : 'empty'}`}
-                                />
-                              </div>
-                              
-                              <div className="col-span-5">
-                                <img
-                                  className="w-20 h-20 object-cover rounded border border-gray-200"
-                                  alt={`Preview ${index + 1}`}
-                                  src={product.images[index] || '/img/no-image.jpg'}
-                                />
-                              </div>
-                              
-                              <div className="col-span-2">
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveImage1(index)}
-                                  className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                >
-                                  <svg
-                                    className="h-5 w-5"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          ))} */}
+                         
                           {product.images.map((_, index) => (
                             <div key={index} className="grid grid-cols-12 gap-4 items-center py-4 px-4">
                               <div className="col-span-5">
@@ -1283,12 +1301,19 @@ export default function AddProductPage() {
                               </div>
                               
                               <div className="col-span-5">
-                                <img
-                                  className="w-20 h-20 object-cover rounded border border-gray-200"
-                                  alt={`Preview ${index + 1}`}
-                                  src={product.images[index] || '/img/no-image.jpg'}
-                                />
-                              </div>
+                                  <img
+                                    className="w-20 h-20 object-cover rounded border border-gray-200"
+                                    alt={`Preview ${index + 1}`}
+                                    src={
+                                      product.images[index]?.startsWith('http') ||
+                                      product.images[index]?.startsWith('blob:') ||
+                                      product.images[index]?.startsWith('data:')
+                                        ? product.images[index]
+                                        : `/uploads/products/${product.images[index] || 'no-image.jpg'}`
+                                    }
+                                  />
+                                </div>
+
                               
                               <div className="col-span-2">
                                 <div className="grid grid-cols-2 gap-4">
@@ -1443,349 +1468,240 @@ export default function AddProductPage() {
           <div className="space-y-4">
             <h3 className="text-xl font-semibold mb-4">Variants & Filters</h3>
     
-            {/* <div className="border p-4 rounded">
-                <div className="flex items-center space-x-2 mb-4">
-                  <input
-                    type="checkbox"
-                    checked={product.hasVariants}
-                    onChange={(e) => setProduct(prev => ({
-                      ...prev,
-                      hasVariants: e.target.checked,
-                      variants: e.target.checked ? prev.variants : []
-                    }))}
-                  />
-                  <label className="font-medium">This product has variants</label>
-                </div>
-              
-              {product.hasVariants && (
-                <>
-                  <div className="space-y-4 mb-4">
-                  {product.variantAttributes.map((attr, index) => (
-                      <div  className="border p-4 rounded" key={index}>
-                        <div className="flex gap-4 mb-2">
-                          <input
-                            type="text"
-                            placeholder="Attribute name"
-                            value={attr.name}
-                            onChange={(e) => handleVariantAttributeChange(index, 'name', e.target.value)}
-                            className="border p-2 rounded flex-1"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setProduct(prev => ({
-                              ...prev,
-                              variantAttributes: prev.variantAttributes.filter((_, i) => i !== index)
-                            }))}
-                            className="bg-red-500 text-white px-4 py-2 rounded"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="Option"
-                          value={attr.options.join(',')}
-                          onChange={(e) => handleVariantOptionChange(index, e.target.value)}
-                          className="w-full border p-2 rounded"
-                        />
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={handleAddVariantAttribute}
-                      className="bg-blue-200 px-4 py-2 rounded"
-                    >
-                      Add Variant Attribute
-                    </button>
-                  </div>
-    
-                  {product.variants.length > 0 && (
-                    <div className="border p-4 rounded" >
-                      <h3 className="font-medium mb-4">Variants</h3>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr>
-                              <th className="text-left p-2 border-b">Attribute</th>
-                              <th className="text-left p-2 border-b">Item Code</th>
-                              <th className="text-left p-2 border-b">Images</th>
-                              <th className="text-left p-2 border-b">Price</th>
-                              <th className="text-left p-2 border-b">Special Price</th>
-                              <th className="text-left p-2 border-b">Quantity</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {product.variants.map((variant, variantIndex) => (
-                                
-                                variant.attributes.map((attr, attrIndex) => (
-                              
-                                    <tr key={`${variantIndex}-${attrIndex}-${attr.name}-${attr.value}`}>
-                                    <td className="p-2 border-b">
-                                      <div  className="mb-2">
-                                        {attr.name}: {attr.value}
-                                      </div>
-                                    </td>
-                                    <td className="p-2 border-b">
-                                      <input
-                                        type="text"
-                                        value={attr.item_code || ""}
-                                        onChange={(e) => handleVariantFieldChange(variantIndex, attrIndex, 'item_code', e.target.value)}
-                                        className="w-full border p-1 rounded"
-                                      />
-                                    </td>
-                                    <td className="p-2 border-b">
-                                <input
-                                  type="file"
-                                  multiple
-                                  accept="image/*"
-                                  onChange={(e) => handleVariantFieldChange(variantIndex, attrIndex, 'images', e.target.files)}
-                                  className="w-full border p-1 rounded"
-                                />
-                                <div className="flex gap-2 mt-2">
-                                  {attr.images && attr.images.map((img, imgIndex) => (
-                                    <img key={imgIndex} src={img} alt={`Variant ${imgIndex}`} className="w-12 h-12 object-cover rounded border" />
-                                  ))}
-                                </div>
-                              </td>
-    
-                                    <td className="p-2 border-b">
-                                      <input
-                                        type="number"
-                                        value={attr.price|| ""}
-                                        onChange={(e) => handleVariantFieldChange(variantIndex, attrIndex, 'price', e.target.value)}
-                                        className="w-full border p-1 rounded"
-                                      />
-                                    </td>
-                                    <td className="p-2 border-b">
-                                      <input
-                                        type="number"
-                                        value={attr.special_price|| ""}
-                                        onChange={(e) => handleVariantFieldChange(variantIndex, attrIndex, 'special_price', e.target.value)}
-                                        className="w-full border p-1 rounded"
-                                      />
-                                    </td>
-                                    <td className="p-2 border-b">
-                                      <input
-                                        type="number"
-                                        value={attr.quantity|| ""}
-                                        onChange={(e) => handleVariantFieldChange(variantIndex, attrIndex, 'quantity', e.target.value)}
-                                        className="w-full border p-1 rounded"
-                                      />
-                                    </td>
-                                    </tr>
-                                  
-                                ))
-                          
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div> */}
+           
             <div className="border p-4 rounded">
               <div className="flex items-center space-x-2 mb-4">
-                <input type="checkbox" checked={product.hasVariants} onChange={(e) => setProduct(prev => ({ ...prev, hasVariants: e.target.checked }))} />
+                <input
+  type="checkbox"
+  checked={product.hasVariants}
+  onChange={(e) => {
+    const isChecked = e.target.checked;
+    setProduct(prev => ({
+      ...prev,
+      hasVariants: isChecked,
+      variants: isChecked && prev.variants.length === 0
+        ? [{
+            variant_attribute_name: "",
+            options: "",
+            item_code: "",
+            price: "",
+            special_price: "",
+            quantity: "",
+            stock_status: "In Stock",
+            images: [],
+            status: "Active"
+          }]
+        : prev.variants
+    }));
+
+    if (isChecked && variant.length === 0) {
+      setVariant([{
+        variant_attribute_name: "",
+        options: "",
+        item_code: "",
+        price: "",
+        special_price: "",
+        quantity: "",
+        stock_status: "In Stock",
+        images: [],
+        status: "Active"
+      }]);
+
+      setVariantImages([{ images: [] }]);
+    }
+  }}
+/>
+
                 <label className="block text-sm font-medium text-gray-700">This product has variants</label>
               </div>
 
               {product.hasVariants && (
-                <>
-                  {variant.map((varItem, index) => (
-                    <div key={index} className="border p-4 rounded mb-4">
-                      <div className="flex gap-4 mb-2">
-                        <input
-                          type="text"
-                          placeholder="Attribute name"
-                          value={varItem.variant_attribute_name}
-                          onChange={(e) => handleVariantFieldChange1(index, 'variant_attribute_name', e.target.value)}
-                          className="border p-2 rounded flex-1"
-                        />
-                        <button type="button" onClick={() => setVariant(prev => prev.filter((_, i) => i !== index))} className="bg-red-500 text-white px-4 py-2 rounded">Remove</button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Option"
-                        value={varItem.options}
-                        onChange={(e) => handleVariantFieldChange1(index, 'options', e.target.value)}
-                        className="w-full border p-2 rounded mb-2"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Item Code"
-                        value={varItem.item_code}
-                        onChange={(e) => handleVariantFieldChange1(index, 'item_code', e.target.value)}
-                        className="w-full border p-2 rounded mb-2"
-                      />
-                      <div className="flex gap-4 mb-2">
-                        <input
-                          type="number"
-                          placeholder="Price"
-                          value={varItem.price}
-                          onChange={(e) => handleVariantFieldChange1(index, 'price', e.target.value)}
-                          className="w-full border p-2 rounded mb-2"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Special Price"
-                          value={varItem.special_price}
-                          onChange={(e) => handleVariantFieldChange1(index, 'special_price', e.target.value)}
-                          className="w-full border p-2 rounded mb-2"
-                        />
-                      </div>
-                      <input
-                        type="number"
-                        placeholder="Quantity"
-                        value={varItem.quantity}
-                        onChange={(e) => handleVariantFieldChange1(index, 'quantity', e.target.value)}
-                        className="w-full border p-2 rounded mb-2"
-                      />
-                      <div className="flex gap-2">
-                        <Select
-                           options={[
-                            { value: 'In Stock', label: 'In Stock' },
-                            { value: 'Out of Stock', label: 'Out of Stock' }
-                          ]}
-                          placeholder="stock status"
-                          className="w-full rounded mb-2 varItem.stock_status"
-                          name="stock_status"
-                          value={{ 
-                            value: varItem.stock_status, 
-                            label: varItem.stock_status 
-                          }}  // Convert string to option object
-                          onChange={(selectedOption) => 
-                            handleVariantFieldChange1(index, 'stock_status', selectedOption.value)
-                          }
-                        />
-                        
-                        <Select
-                           options={[
-                            { value: 'Active', label: 'Active' },
-                            { value: 'Inactive', label: 'Inactive' }
-                          ]}
-                          placeholder="status"
-                          className="w-full rounded mb-2"
-                          name="status"
-                          value={{
-                            value: varItem.status,
-                            label: varItem.status
-                          }}  // Convert string to option object
-                          onChange={(selectedOption) => 
-                            handleVariantFieldChange1(index, 'status', selectedOption.value)
-                          }
-                        />
-                      </div>
-
-                      {/* <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => handleImageChange1(index, e.target.files)}
-                        className="w-full border p-2 rounded mb-2"
-                      />
-                      <div className="flex gap-2">
-                        {varItem.images && varItem.images.map((img, imgIndex) => (
-                          <div key={imgIndex} className="relative">
-                            <img src={img} alt={`Variant Image ${imgIndex}`} className="w-12 h-12 object-cover rounded border" />
-                            <button
-                              type="button"
-                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
-                              onClick={() => handleRemoveImage(index, imgIndex)}
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        ))}
-                      </div> */}
-                      <div className="flex flex-col gap-4 p-4 bg-white rounded-lg shadow-md mt-4">
-                        <div className="flex items-center">
-                          <label className="w-1/4 text-sm font-medium text-gray-700">Variant Images (679×679)</label>
-                          <div className="w-3/4 pl-4">
-                            <div className="overflow-x-auto">
-                              <div className="min-w-full divide-y divide-gray-200">
-                                <div className="bg-gray-50">
-                                  <div className="grid grid-cols-12 gap-4 py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <div className="col-span-5">Image upload</div>
-                                    <div className="col-span-5">Image</div>
-                                    <div className="col-span-2"></div>
-                                  </div>
+            <>
+              {product.variants.map((varItem, index) => (
+                <div key={index} className="border p-4 rounded mb-4">
+                                <div className="flex gap-4 mb-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Attribute name"
+                                    value={varItem.variant_attribute_name}
+                                    onChange={(e) => handleVariantFieldChange1(index, 'variant_attribute_name', e.target.value)}
+                                    className="border p-2 rounded flex-1"
+                                  />
+                                  <button type="button" onClick={() => setVariant(prev => prev.filter((_, i) => i !== index))} className="bg-red-500 text-white px-4 py-2 rounded">Remove</button>
                                 </div>
-                                <div className="divide-y divide-gray-200">
-                                  {[0, 1, 2, 3].map((imgIndex) => (
-                                    <div key={imgIndex} className="grid grid-cols-12 gap-4 items-center py-4 px-4">
-                                      <div className="col-span-5">
-                                        <input
-                                          type="file"
-                                          className="block w-full text-sm text-gray-500
-                                            file:mr-4 file:py-2 file:px-4
-                                            file:rounded-full file:border-0
-                                            file:text-sm file:font-semibold
-                                            file:bg-blue-50 file:text-blue-700
-                                            hover:file:bg-blue-100"
-                                          accept="image/*"
-                                          onChange={(e) => handleVariantImageChange(index, imgIndex, e.target.files)}
-                                          required={imgIndex === 0}
-                                          key={`variant-${index}-img-${imgIndex}-${varItem.images[imgIndex] ? 'filled' : 'empty'}`}
-                                        />
-                                      </div>
-                                      <div className="col-span-5">
-                                        <img
-                                          className="w-20 h-20 object-cover rounded border border-gray-200"
-                                          alt={`Variant Preview ${imgIndex + 1}`}
-                                          src={varItem.images[imgIndex] || '/img/no-image.jpg'}
-                                        />
-                                      </div>
-                                      <div className="col-span-2">
-                                        <button
-                                          type="button"
-                                          onClick={() => handleRemoveVariantImage(index, imgIndex)}
-                                          className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                        >
-                                          <svg
-                                            className="h-5 w-5"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                          >
-                                            <path
-                                              fillRule="evenodd"
-                                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                              clipRule="evenodd"
-                                            />
-                                          </svg>
-                                        </button>
+                                <input
+                                  type="text"
+                                  placeholder="Option"
+                                  value={varItem.options}
+                                  onChange={(e) => handleVariantFieldChange1(index, 'options', e.target.value)}
+                                  className="w-full border p-2 rounded mb-2"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Item Code"
+                                  value={varItem.item_code}
+                                  onChange={(e) => handleVariantFieldChange1(index, 'item_code', e.target.value)}
+                                  className="w-full border p-2 rounded mb-2"
+                                />
+                                <div className="flex gap-4 mb-2">
+                                  <input
+                                    type="number"
+                                    placeholder="Price"
+                                    value={varItem.price}
+                                    onChange={(e) => handleVariantFieldChange1(index, 'price', e.target.value)}
+                                    className="w-full border p-2 rounded mb-2"
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="Special Price"
+                                    value={varItem.special_price}
+                                    onChange={(e) => handleVariantFieldChange1(index, 'special_price', e.target.value)}
+                                    className="w-full border p-2 rounded mb-2"
+                                  />
+                                </div>
+                                <input
+                                  type="number"
+                                  placeholder="Quantity"
+                                  value={varItem.quantity}
+                                  onChange={(e) => handleVariantFieldChange1(index, 'quantity', e.target.value)}
+                                  className="w-full border p-2 rounded mb-2"
+                                />
+                                <div className="flex gap-2">
+                                  <Select
+                                    options={[
+                                      { value: 'In Stock', label: 'In Stock' },
+                                      { value: 'Out of Stock', label: 'Out of Stock' }
+                                    ]}
+                                    placeholder="stock status"
+                                    className="w-full rounded mb-2 varItem.stock_status"
+                                    name="stock_status"
+                                    value={{ 
+                                      value: varItem.stock_status, 
+                                      label: varItem.stock_status 
+                                    }}  // Convert string to option object
+                                    onChange={(selectedOption) => 
+                                      handleVariantFieldChange1(index, 'stock_status', selectedOption.value)
+                                    }
+                                  />
+                                  
+                                  <Select
+                                    options={[
+                                      { value: 'Active', label: 'Active' },
+                                      { value: 'Inactive', label: 'Inactive' }
+                                    ]}
+                                    placeholder="status"
+                                    className="w-full rounded mb-2"
+                                    name="status"
+                                    value={{
+                                      value: varItem.status,
+                                      label: varItem.status
+                                    }}  // Convert string to option object
+                                    onChange={(selectedOption) => 
+                                      handleVariantFieldChange1(index, 'status', selectedOption.value)
+                                    }
+                                  />
+                                </div>
+
+                                
+                                <div className="flex flex-col gap-4 p-4 bg-white rounded-lg shadow-md mt-4">
+                                  <div className="flex items-center">
+                                    <label className="w-1/4 text-sm font-medium text-gray-700">Variant Images (679×679)</label>
+                                    <div className="w-3/4 pl-4">
+                                      <div className="overflow-x-auto">
+                                        <div className="min-w-full divide-y divide-gray-200">
+                                          <div className="bg-gray-50">
+                                            <div className="grid grid-cols-12 gap-4 py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                              <div className="col-span-5">Image upload</div>
+                                              <div className="col-span-5">Image</div>
+                                              <div className="col-span-2"></div>
+                                            </div>
+                                          </div>
+                                          <div className="divide-y divide-gray-200">
+                                            {[0, 1, 2, 3].map((imgIndex) => (
+                                              <div key={imgIndex} className="grid grid-cols-12 gap-4 items-center py-4 px-4">
+                                                <div className="col-span-5">
+                                                  <input
+                                                    type="file"
+                                                    className="block w-full text-sm text-gray-500
+                                                      file:mr-4 file:py-2 file:px-4
+                                                      file:rounded-full file:border-0
+                                                      file:text-sm file:font-semibold
+                                                      file:bg-blue-50 file:text-blue-700
+                                                      hover:file:bg-blue-100"
+                                                    accept="image/*"
+                                                    onChange={(e) => handleVariantImageChange(index, imgIndex, e.target.files)}
+                                                    required={imgIndex === 0}
+                                                    key={`variant-${index}-img-${imgIndex}-${varItem.images[imgIndex] ? 'filled' : 'empty'}`}
+                                                  />
+                                                </div>
+                                                <div className="col-span-5">
+                                                 <img
+  className="w-20 h-20 object-cover rounded border border-gray-200"
+  alt={`Variant Preview ${imgIndex + 1}`}
+  src={
+    varItem.images[imgIndex]?.startsWith('blob:') || varItem.images[imgIndex]?.startsWith('data:')
+      ? varItem.images[imgIndex]
+      : `/uploads/products/${varItem.images[imgIndex] || 'no-image.jpg'}`
+  }
+/>
+
+                                                </div>
+                                                <div className="col-span-2">
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveVariantImage(index, imgIndex)}
+                                                    className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                                  >
+                                                    <svg
+                                                      className="h-5 w-5"
+                                                      xmlns="http://www.w3.org/2000/svg"
+                                                      viewBox="0 0 20 20"
+                                                      fill="currentColor"
+                                                    >
+                                                      <path
+                                                        fillRule="evenodd"
+                                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                        clipRule="evenodd"
+                                                      />
+                                                    </svg>
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
                                       </div>
                                     </div>
-                                  ))}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={handleAddVariant1}
-                    className="bg-blue-200 px-4 py-2 rounded"
-                  >
-                    Add Variant
-                  </button>
-                </>
-              )}
+              ))}
+              <button type="button" onClick={handleAddVariant1} className="bg-blue-200 px-4 py-2 rounded">
+                Add Variant
+              </button>
+            </>
+          )}
+
             </div>
-            <div className="border p-4 rounded">
+           <div className="border p-4 rounded">
             <label className="block text-sm font-medium text-gray-700 mb-1">Filter</label>
-              <Select
-                options={Filter}
-                isMulti
-                onChange={handleFilterChange}
-                placeholder="Select filters..."
-              />
-            </div>
+            <Select
+              options={Filter}
+              isMulti
+              value={
+                // Ensure value is always full `{ label, value }` array for react-select
+                Array.isArray(product.filters)
+                  ? product.filters.every(f => typeof f === 'string')
+                    ? Filter.filter(option => product.filters.includes(option.value))
+                    : product.filters
+                  : []
+              }
+              onChange={handleFilterChange}
+              placeholder="Select filters..."
+            />
+
+          </div>
+
           </div>
         )}
 
@@ -1798,7 +1714,7 @@ export default function AddProductPage() {
               <input
                 type="text"
                 name="meta_title"
-                value={product.meta_title}
+                value={product.meta_title || ''}
                 onChange={handleChange}
                 className="w-full border p-2 rounded"
               />
@@ -1815,7 +1731,7 @@ export default function AddProductPage() {
                 <div key={index} className="flex space-x-2 mb-2">
                   <input
                     type="text"
-                    value={highlight}
+                    value={highlight || ""}
                     onChange={(e) => handleHighlightChange(index, e.target.value)}
                     className="w-full border p-2 rounded"
                     placeholder={`Highlight #${index + 1}`}
@@ -1844,8 +1760,9 @@ export default function AddProductPage() {
                 options={allproducts}
                 onChange={handleFeaturedChange}
                 value={allproducts.filter(option => 
-                  product.featured_products.includes(option.value)
-                )}
+  Array.isArray(product.featured_products) && product.featured_products.includes(option.value)
+)}
+
                 placeholder="Select products for featured..."
                 closeMenuOnSelect={false}
               />

@@ -50,9 +50,9 @@ export default function AdminSider({ collapsed }) {
 
   return (
     <aside
-      className={`h-screen bg-white border-r border-gray-200 fixed top-0 left-0 shadow z-50 overflow-y-auto transition-all duration-300 ${
-        collapsed ? 'w-16' : 'w-52'
-      }`}
+      className={`h-screen bg-white border-r border-gray-200 fixed top-0 left-0 shadow z-50 overflow-y-scroll scrollbar-hide transition-all duration-300 ${
+    collapsed ? 'w-16' : 'w-52'
+  }`}
     >
       <div
         className={`flex items-center px-4 py-4 border-b border-gray-200 ${

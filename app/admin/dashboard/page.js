@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Line, Pie } from "react-chartjs-2";
+import RevenueChart from '@/components/RevenueChart';
+
 import {
   Chart as ChartJS,
   LineElement,
@@ -219,185 +221,313 @@ export default function DashboardPage() {
     ],
   };
 
+
+
+  var options = {
+    series: [{
+      name: "This month",
+      data: [10, 20, 12, 30, 14, 35, 16, 32, 14, 25, 13, 28]
+    }],
+    chart: {
+      height: 264,
+      type: 'line',
+      toolbar: {
+        show: false
+      },
+      zoom: {
+        enabled: false
+      },
+      dropShadow: {
+        enabled: true,
+        top: 6,
+        left: 0,
+        blur: 4,
+        color: "#000",
+        opacity: 0.1,
+      },
+    },
+    dataLabels: {
+      enabled: false
+    },
+    stroke: {
+      curve: 'smooth',
+      colors: ['#487FFF'], // Specify the line color here
+      width: 3
+    },
+    markers: {
+      size: 0,
+      strokeWidth: 3,
+      hover: {
+        size: 8
+      }
+    },
+    tooltip: {
+      enabled: true,
+      x: {
+        show: true,
+      },
+      y: {
+        show: false,
+      },
+      z: {
+        show: false,
+      }
+    },
+    grid: {
+      row: {
+        colors: ['transparent', 'transparent'], // takes an array which will be repeated on columns
+        opacity: 0.5
+      },
+      borderColor: '#D1D5DB',
+      strokeDashArray: 3,
+    },
+    yaxis: {
+      labels: {
+        formatter: function (value) {
+          return "$" + value + "k";
+        },
+        style: {
+          fontSize: "14px"
+        }
+      },
+    },
+    xaxis: {
+      categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      tooltip: {
+        enabled: false
+      },
+      labels: {
+        formatter: function (value) {
+          return value;
+        },
+        style: {
+          fontSize: "14px"
+        }
+      },
+      axisBorder: {
+        show: false
+      },
+      crosshairs: {
+        show: true,
+        width: 20,
+        stroke: {
+          width: 0
+        },
+        fill: {
+          type: 'solid',
+          color: '#487FFF40',
+          // gradient: {
+          //   colorFrom: '#D8E3F0',
+          //   // colorTo: '#BED1E6',
+          //   stops: [0, 100],
+          //   opacityFrom: 0.4,
+          //   opacityTo: 0.5,
+          // },
+        }
+      }
+    }
+  };
+
   return (
     <div className="">
       <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-6">
-        {/* Total Orders */}
-        <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-blue-600/10 to-white">
-          <div className="card-body p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-medium text-neutral-900 dark:text-white mb-1">
-                  Total Orders
-                </p>
-                <h6 className="mb-0 dark:text-white">{orders.length}</h6>
-              </div>
-              <div className="w-[50px] h-[50px] bg-blue-600 rounded-full flex justify-center items-center">
-                <iconify-icon
-                  icon="mdi:clipboard-list"
-                  style={{ color: "white" }}
-                  className="text-2xl mb-0"
-                />
-              </div>
-            </div>
-            <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-success-600 dark:text-success-400">
-                <iconify-icon
-                  icon="bxs:up-arrow"
-                  style={{ color: "white" }}
-                  className="text-xs"
-                />
-                +{Math.floor(orders.length * 0.1)}
-              </span>
-              Last 30 days orders
-            </p>
-          </div>
+{/* Summary Cards */}
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-6">
+  {/* Total Orders */}
+  <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-blue-600/10 to-white">
+    <div className="card-body p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-medium text-neutral-900 dark:text-white mb-1">
+            Total Orders
+          </p>
+          <h6 className="mb-0 dark:text-white">{orders.length}</h6>
         </div>
-
-        {/* Total Revenue */}
-        <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-green-600/10 to-white">
-          <div className="card-body p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-medium text-neutral-900 dark:text-white mb-1">
-                  Total Revenue
-                </p>
-                <h6 className="mb-0 dark:text-white">
-                  ₹
-                  {orders
-                    .reduce((acc, o) => acc + parseFloat(o.order_amount || 0), 0)
-                    .toFixed(2)}
-                </h6>
-              </div>
-              <div className="w-[50px] h-[50px] bg-green-600 rounded-full flex justify-center items-center">
-                <iconify-icon
-                  icon="mdi:currency-inr"
-                  style={{ color: "white" }}
-                  className="text-2xl mb-0"
-                />
-              </div>
-            </div>
-            <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-success-600 dark:text-success-400">
-                <iconify-icon
-                  icon="bxs:up-arrow"
-                  style={{ color: "white" }}
-                  className="text-xs"
-                />
-                +₹
-                {(
-                  orders.reduce((acc, o) => acc + parseFloat(o.order_amount || 0), 0) *
-                  0.1
-                ).toFixed(2)}
-              </span>
-              Last 30 days revenue
-            </p>
-          </div>
-        </div>
-
-        {/* Pending Orders */}
-        <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-yellow-600/10 to-white">
-          <div className="card-body p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-medium text-neutral-900 dark:text-white mb-1">
-                  Pending Orders
-                </p>
-                <h6 className="mb-0 dark:text-white">
-                  {orders.filter((o) => o.order_status === "pending").length}
-                </h6>
-              </div>
-              <div className="w-[50px] h-[50px] bg-yellow-600 rounded-full flex justify-center items-center">
-                <iconify-icon
-                  icon="mdi:timer-sand"
-                  style={{ color: "white" }}
-                  className="text-2xl mb-0"
-                />
-              </div>
-            </div>
-            <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-warning-600 dark:text-warning-400">
-                <iconify-icon
-                  icon="bxs:clock"
-                  style={{ color: "white" }}
-                  className="text-xs"
-                />
-                Pending orders to process
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* Total Products */}
-        <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-pink-600/10 to-white">
-          <div className="card-body p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-medium text-neutral-900 dark:text-white mb-1">
-                  Total Products
-                </p>
-                <h6 className="mb-0 dark:text-white">{productCount}</h6>
-              </div>
-              <div className="w-[50px] h-[50px] bg-pink-600 rounded-full flex justify-center items-center">
-                <iconify-icon
-                  icon="mdi:package-variant"
-                  style={{ color: "white" }}
-                  className="text-2xl mb-0"
-                />
-              </div>
-            </div>
-            <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-pink-600 dark:text-pink-400">
-                <iconify-icon
-                  icon="bxs:box"
-                  style={{ color: "white" }}
-                  className="text-xs"
-                />
-                Total products available
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* Total Customers */}
-        <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-purple-600/10 to-white">
-          <div className="card-body p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-medium text-neutral-900 dark:text-white mb-1">
-                  Total Customers
-                </p>
-                <h6 className="mb-0 dark:text-white">{customerCount}</h6>
-              </div>
-              <div className="w-[50px] h-[50px] bg-purple-600 rounded-full flex justify-center items-center">
-                <iconify-icon
-                  icon="mdi:account-group"
-                  style={{ color: "white" }}
-                  className="text-2xl mb-0"
-                />
-              </div>
-            </div>
-            <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400">
-                <iconify-icon
-                  icon="mdi:account-multiple-outline"
-                  style={{ color: "white" }}
-                  className="text-xs"
-                />
-                Total registered customers
-              </span>
-            </p>
-          </div>
+        <div className="w-[50px] h-[50px] bg-blue-600 rounded-full flex justify-center items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
         </div>
       </div>
+      <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
+        <span className="inline-flex items-center gap-1 text-success-600 dark:text-success-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+            <polyline points="16 7 22 7 22 13"></polyline>
+          </svg>
+          +{Math.floor(orders.length * 0.1)}
+        </span>
+        Last 30 days orders
+      </p>
+    </div>
+  </div>
+
+  {/* Total Revenue */}
+  <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-green-600/10 to-white">
+    <div className="card-body p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-medium text-neutral-900 dark:text-white mb-1">
+            Total Revenue
+          </p>
+          <h6 className="mb-0 dark:text-white">
+            ₹
+            {orders
+              .reduce((acc, o) => acc + parseFloat(o.order_amount || 0), 0)
+              .toFixed(2)}
+          </h6>
+        </div>
+        <div className="w-[50px] h-[50px] bg-green-600 rounded-full flex justify-center items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+      </div>
+      <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
+        <span className="inline-flex items-center gap-1 text-success-600 dark:text-success-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+            <polyline points="16 7 22 7 22 13"></polyline>
+          </svg>
+          +₹
+          {(
+            orders.reduce((acc, o) => acc + parseFloat(o.order_amount || 0), 0) *
+            0.1
+          ).toFixed(2)}
+        </span>
+        Last 30 days revenue
+      </p>
+    </div>
+  </div>
+
+  {/* Pending Orders */}
+  <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-yellow-600/10 to-white">
+    <div className="card-body p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-medium text-neutral-900 dark:text-white mb-1">
+            Pending Orders
+          </p>
+          <h6 className="mb-0 dark:text-white">
+            {orders.filter((o) => o.order_status === "pending").length}
+          </h6>
+        </div>
+        <div className="w-[50px] h-[50px] bg-yellow-600 rounded-full flex justify-center items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+      </div>
+      <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
+        <span className="inline-flex items-center gap-1 text-warning-600 dark:text-warning-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          Pending orders to process
+        </span>
+      </p>
+    </div>
+  </div>
+
+ 
+    {/* Total Products */}
+  <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-pink-600/10 to-white">
+    <div className="card-body p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-medium text-neutral-900 dark:text-white mb-1">
+            Total Products
+          </p>
+          <h6 className="mb-0 dark:text-white">{productCount}</h6>
+        </div>
+        <div className="w-[50px] h-[50px] bg-pink-600 rounded-full flex justify-center items-center">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="white" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+        </div>
+      </div>
+      <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
+        <span className="inline-flex items-center gap-1 text-pink-600 dark:text-pink-400">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M12 2v4"></path>
+            <path d="M5 10v4a7 7 0 0 0 14 0v-4"></path>
+            <path d="M5 10h14"></path>
+            <path d="M12 18a2 2 0 0 1-2-2v-2a2 2 0 0 1 4 0v2a2 2 0 0 1-2 2z"></path>
+          </svg>
+          Total products available
+        </span>
+      </p>
+    </div>
+  </div>
+
+  {/* Total Customers */}
+  <div className="card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-purple-600/10 to-white">
+    <div className="card-body p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-medium text-neutral-900 dark:text-white mb-1">
+            Total Customers
+          </p>
+          <h6 className="mb-0 dark:text-white">{customerCount}</h6>
+        </div>
+        <div className="w-[50px] h-[50px] bg-purple-600 rounded-full flex justify-center items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+      </div>
+      <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
+        <span className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="23" y1="11" x2="17" y2="11"></line>
+          </svg>
+          Total registered customers
+        </span>
+      </p>
+    </div>
+  </div>
+</div>
   {/* Line Chart */}
-     <div className="mt-12 bg-white p-5 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700">
+     <div className="mt-5 bg-white p-5 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700">
       <h3 className="mb-6 text-xl font-semibold">Order Analytics</h3>
       <div className="p-6">
         <Line data={lineData} height={200} width={600} />
+
+       {/* <RevenueChart /> */}
       </div>
     </div>
       
@@ -428,7 +558,7 @@ export default function DashboardPage() {
         </div>
       </div>
          {/* Recent Orders Table */}
-      <div className="mt-8 bg-white p-4 rounded-lg shadow">
+      <div className="mt-8 bg-white p-4 rounded-lg shadow mb-5">
         <h3 className="font-semibold mb-2">Recent Orders</h3>
         <table className="w-full text-sm">
           <thead>
