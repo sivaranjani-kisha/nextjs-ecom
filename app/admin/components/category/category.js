@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import { Icon } from '@iconify/react';
+import DateRangePicker from '@/components/DateRangePicker';
 
 export default function CategoryComponent() {
   const [categories, setCategories] = useState([]);
@@ -10,8 +11,8 @@ export default function CategoryComponent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState(""); // "active" | "inactive" | ""
+  const [searchQuery, setSearchQuery] = useState("");
   const [newCategory, setNewCategory] = useState({
     category_name: "",
     parentid: "none",
@@ -26,15 +27,27 @@ export default function CategoryComponent() {
     image: null,
     existingImage: null,
   });
+
+  const [dateFilter, setDateFilter] = useState({
+    startDate: null,
+    endDate: null
+  });
+  
+  const clearDateFilter = () => {
+    setDateFilter({
+      startDate: null,
+      endDate: null
+    });
+    setCurrentPage(0);
+  };
+
   const [imagePreview, setImagePreview] = useState(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
-
-  
+  const itemsPerPage = 5;
 
   // Fetch categories from API
   const fetchCategories = async () => {
@@ -273,108 +286,46 @@ export default function CategoryComponent() {
     return parentCategory ? parentCategory.category_name : "Unknown";
   };
 
-  // Render category rows with pagination
-  const renderCategoryRows = () => {
-    const flattenedCategories = flattenCategories(categories);
-    const filteredCategories = flattenedCategories.filter((category) => {
-  const matchesSearch =
-    category.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (category.category_slug && category.category_slug.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Filter categories based on search, status, and date
+  const filteredCategories = useMemo(() => {
+    const flattened = flattenCategories(categories);
+    return flattened.filter((category) => {
+      // Search filter
+      const matchesSearch = 
+        category.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (category.category_slug && category.category_slug.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      // Status filter
+      const matchesStatus = 
+        statusFilter === "" || category.status.toLowerCase() === statusFilter.toLowerCase();
+      
+      // Date filter
+      let matchesDate = true;
+      if (dateFilter.startDate && dateFilter.endDate && category.createdAt) {
+        const categoryDate = new Date(category.createdAt);
+        const startDate = new Date(dateFilter.startDate);
+        const endDate = new Date(dateFilter.endDate);
+        endDate.setHours(23, 59, 59, 999); // Include the entire end day
+        
+        matchesDate = categoryDate >= startDate && categoryDate <= endDate;
+      }
+      
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [categories, searchQuery, statusFilter, dateFilter.startDate, dateFilter.endDate, expandedCategories]);
 
-  const matchesStatus =
-    statusFilter === "" || category.status.toLowerCase() === statusFilter.toLowerCase();
-
-  return matchesSearch && matchesStatus;
-});
-
-
-    return filteredCategories
-      .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
-      .map((category) => (
-        <tr key={category._id} className="text-center border-b">
-          <td className="flex items-center p-2">
-            {categories.some((cat) => cat.parentid === category._id) && (
-              <button
-                type="button"
-                onClick={() => toggleCategory(category._id)}
-                className="mr-2 text-blue-500"
-                aria-label="Expand/Collapse"
-              >
-                {expandedCategories[category._id] ? <FaMinus /> : <FaPlus />}
-              </button>
-            )}
-            <span style={{ paddingLeft: `${category.level * 20}px` }} className="font-medium">
-              {category.category_name}
-            </span>
-          </td>
-          <td>
-            <span className="text-primary-600">
-              {category.category_slug || 'N/A'}
-            </span>
-          </td>
-          <td>{getParentCategoryName(category.parentid)}</td>
-          <td>
-            {category.image ? (
-              <img src={category.image} alt="Category" className="h-8 mx-auto rounded-lg" />
-            ) : (
-              'No Image'
-            )}
-          </td>
-          <td>
-            {category.status === 'Active' ? (
-              <span className="bg-green-100 text-green-600 px-6 py-1.5 rounded-full font-medium text-sm">
-                Active
-              </span>
-            ) : (
-              <span className="bg-red-100 text-red-600 px-6 py-1.5 rounded-full font-medium text-sm">
-                Inactive
-              </span>
-            )}
-          </td>
-          <td>
-            <div className="flex items-center gap-2 justify-center">
-              <button
-                onClick={() => {
-                  setCategoryToUpdate({
-                    ...category,
-                    existingImage: category.image || null
-                  });
-                  setIsUpdateModalOpen(true);
-                }}
-                className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
-                title="Edit"
-              >
-                <FaEdit className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => {
-                  setCategoryToDelete(category._id);
-                  setShowConfirmationModal(true);
-                }}
-                className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center"
-                title="Delete"
-              >
-                <Icon icon="mingcute:delete-2-line" />
-              </button>
-            </div>
-          </td>
-        </tr>
-      ));
+  // Handle date change
+  const handleDateChange = ({ startDate, endDate }) => {
+    setDateFilter({ startDate, endDate });
+    setCurrentPage(0);
   };
 
-  // Calculate pagination data
-  const flattenedCategories = flattenCategories(categories);
-  const filteredCategories = flattenedCategories.filter((category) => {
-  const matchesSearch =
-    category.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (category.category_slug && category.category_slug.toLowerCase().includes(searchQuery.toLowerCase()));
-
-  const matchesStatus =
-    statusFilter === "" || category.status.toLowerCase() === statusFilter.toLowerCase();
-
-  return matchesSearch && matchesStatus;
-});
+  // Pagination logic
   const pageCount = Math.ceil(filteredCategories.length / itemsPerPage);
+  const paginatedCategories = filteredCategories.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
 
   // Handle page change
   const paginate = (pageIndex) => {
@@ -383,29 +334,122 @@ export default function CategoryComponent() {
     }
   };
 
+  // Reset current page when filters change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchQuery, statusFilter, dateFilter]);
+
+  // Render category rows
+  const renderCategoryRows = () => {
+    if (paginatedCategories.length === 0) {
+      return (
+        <tr>
+          <td colSpan="6" className="text-center p-4">
+            No categories found
+          </td>
+        </tr>
+      );
+    }
+
+    return paginatedCategories.map((category) => (
+      <tr key={category._id} className="text-center border-b">
+        <td className="flex items-center p-2">
+          {categories.some((cat) => cat.parentid === category._id) && (
+            <button
+              type="button"
+              onClick={() => toggleCategory(category._id)}
+              className="mr-2 text-blue-500"
+              aria-label="Expand/Collapse"
+            >
+              {expandedCategories[category._id] ? <FaMinus /> : <FaPlus />}
+            </button>
+          )}
+          <span style={{ paddingLeft: `${category.level * 20}px` }} className="font-medium">
+            {category.category_name}
+          </span>
+        </td>
+        <td>
+          <span className="text-primary-600">
+            {category.category_slug || 'N/A'}
+          </span>
+        </td>
+        <td>{getParentCategoryName(category.parentid)}</td>
+        <td>
+          {category.image ? (
+            <img src={category.image} alt="Category" className="h-8 mx-auto rounded-lg" />
+          ) : (
+            'No Image'
+          )}
+        </td>
+        <td>
+          {category.status === 'Active' ? (
+            <span className="bg-green-100 text-green-600 px-6 py-1.5 rounded-full font-medium text-sm">
+              Active
+            </span>
+          ) : (
+            <span className="bg-red-100 text-red-600 px-6 py-1.5 rounded-full font-medium text-sm">
+              Inactive
+            </span>
+          )}
+        </td>
+        <td>
+          <div className="flex items-center gap-2 justify-center">
+            <button
+              onClick={() => {
+                setCategoryToUpdate({
+                  ...category,
+                  existingImage: category.image || null
+                });
+                setIsUpdateModalOpen(true);
+              }}
+              className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+              title="Edit"
+            >
+              <FaEdit className="w-3 h-3" />
+            </button>
+            <button
+              onClick={() => {
+                setCategoryToDelete(category._id);
+                setShowConfirmationModal(true);
+              }}
+              className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center"
+              title="Delete"
+            >
+              <Icon icon="mingcute:delete-2-line" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    ));
+  };
+
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto">
       {/* Alert Message */}
       {showAlert && (
-        <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4">
+        <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4 mt-5">
           {alertMessage}
         </div>
       )}
 
       <div className="flex justify-between items-center mb-5">
         <h2 className="text-2xl font-bold">Category List</h2>
+       
       </div>
 
       {isLoading ? (
         <p>Loading categories...</p>
       ) : (
         <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
-          {/* Search and Add Category */}
-          <div className="flex justify-between items-center bg-white mb-3">
-  {/* Search and Status Filter Grouped */}
-  <div className="flex items-center gap-4">
-    {/* Search Input */}
-    <div className="relative w-64">
+          {/* Search and Filter Section */}
+        {/* Search and Filter Section */}
+{/* Search and Filter Section */}
+<div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end mb-4">
+
+  {/* Search Input */}
+  <div className="w-full">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+    <div className="relative">
       <span className="absolute inset-y-0 left-0 flex items-center pl-3">
         <svg
           className="w-4 h-4 text-gray-500"
@@ -425,86 +469,76 @@ export default function CategoryComponent() {
         type="text"
         placeholder="Search Category..."
         value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setCurrentPage(0);
-        }}
+        onChange={(e) => setSearchQuery(e.target.value)}
         className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
       />
     </div>
-
-    {/* Status Filter Dropdown */}
-    <div className="relative w-48">
-      <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-        <svg
-          className="w-4 h-4 text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.5a7.5 7.5 0 010 15z"
-          />
-        </svg>
-      </span>
-      <select
-        value={statusFilter}
-        onChange={(e) => {
-          setStatusFilter(e.target.value);
-          setCurrentPage(0);
-        }}
-        className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-      >
-        <option value="">All Status</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-      </select>
-    </div>
   </div>
 
-  {/* Add Category Button */}
-  <button
-    onClick={() => setIsModalOpen(true)}
-    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
-  >
-    + Add Category
-  </button>
+  {/* Status Filter */}
+  <div className="w-full">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+    <select
+      value={statusFilter}
+      onChange={(e) => setStatusFilter(e.target.value)}
+      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+    >
+      <option value="">All Statuses</option>
+      <option value="Active">Active</option>
+      <option value="Inactive">Inactive</option>
+    </select>
+  </div>
+
+  {/* Date Range Picker */}
+  <div className="w-full col-span-1 md:col-span-1">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+    <div className="relative w-full max-w-sm">
+      <DateRangePicker onDateChange={handleDateChange} />
+      {/* {dateFilter.startDate && dateFilter.endDate && (
+        <button 
+          onClick={clearDateFilter}
+          className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+        >
+          Clear date filter
+        </button>
+      )} */}
+    </div>
+  </div>
+  <div>
+   <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
+        >
+          + Add Category
+        </button>
+</div>
 </div>
 
-          <hr className="border-t border-gray-200 mb-4" />
+
 
           {/* Categories Table */}
-          <table className="w-full border border-gray-300">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="p-2">Category Name</th>
-                <th className="p-2">Category Slug</th>
-                <th className="p-2">Parent</th>
-                <th className="p-2">Image</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCategories.length > 0 ? (
-                renderCategoryRows()
-              ) : (
-                <tr>
-                  <td colSpan="6" className="text-center p-4">
-                    No categories found
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full border border-gray-300">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="p-2">Category Name</th>
+                  <th className="p-2">Category Slug</th>
+                  <th className="p-2">Parent</th>
+                  <th className="p-2">Image</th>
+                  <th className="p-2">Status</th>
+                  <th className="p-2">Action</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {renderCategoryRows()}
+              </tbody>
+            </table>
+          </div>
 
           {/* Pagination */}
           <div className="flex justify-between items-center mt-6 flex-wrap gap-3">
             <div className="text-sm text-gray-600">
-              Showing {Math.min(currentPage * itemsPerPage + 1, filteredCategories.length)} to{" "}
+              Showing {filteredCategories.length === 0 ? 0 : currentPage * itemsPerPage + 1} to{" "}
               {Math.min((currentPage + 1) * itemsPerPage, filteredCategories.length)} of{" "}
               {filteredCategories.length} entries
             </div>
@@ -541,9 +575,9 @@ export default function CategoryComponent() {
 
               <button
                 onClick={() => paginate(currentPage + 1)}
-                disabled={currentPage === pageCount - 1}
+                disabled={currentPage === pageCount - 1 || pageCount === 0}
                 className={`px-3 py-1.5 border border-gray-300 rounded-md ${
-                  currentPage === pageCount - 1
+                  currentPage === pageCount - 1 || pageCount === 0
                     ? "text-gray-400 cursor-not-allowed"
                     : "text-black bg-white hover:bg-gray-100"
                 }`}

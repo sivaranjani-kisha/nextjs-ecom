@@ -158,7 +158,7 @@ export default function CancelledOrders() {
                                  startDate={dateFilter.startDate}
                                  endDate={dateFilter.endDate}
                                  placeholderText="Start Date"
-                                 className="w-full p-1 border-none focus:ring-0"
+                                 className="w-full p-2 pl-2 border-none focus:ring-0"
                                />
                                <span className="text-gray-400">to</span>
                                <DatePicker
@@ -172,12 +172,12 @@ export default function CancelledOrders() {
                                  endDate={dateFilter.endDate}
                                  minDate={dateFilter.startDate}
                                  placeholderText="End Date"
-                                 className="w-full p-1 border-none focus:ring-0"
+                                 className="w-full p-2 pl-2 border-none focus:ring-0"
                                />
                                {(dateFilter.startDate || dateFilter.endDate) && (
                                  <button
                                    onClick={clearDateFilter}
-                                   className=" right-2 p-1 text-gray-400 hover:text-red-500"
+                                   className=" right-2 p-2 text-gray-400 hover:text-red-500"
                                    title="Clear date filter"
                                  >
                                    <Icon icon="mdi:close-circle-outline" />

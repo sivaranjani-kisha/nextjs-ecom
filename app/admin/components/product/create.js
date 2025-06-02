@@ -15,7 +15,7 @@ const steps = [
   { title: "Others" },
 ];
 
-export default function AddProductPage({ mode = "add", productData = null, productId = null }) {
+export default function AddProductPage({ mode = "add", productData = null, productId = null,onSuccess }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [product, setProduct] = useState({
     name: "",
@@ -937,10 +937,14 @@ formData.append("variant", JSON.stringify(variantsWithImages));
       const response = await fetch(apiUrl, { method, body: formData });
       const responseData = await response.json();
 
-      if (response.ok) {
-        toast.success(`Product ${mode === "edit" ? "updated" : "added"} successfully`);
-        router.push('/admin/product');
+     if (response.ok) {
+      if (mode === "edit" && typeof onSuccess === "function") {
+        onSuccess(); // Let the modal handle toast and close
       } else {
+        toast.success("Product added successfully");
+        router.push("/admin/product");
+      }
+    } else {
         toast.error(responseData.error || "Something went wrong");
       }
     } catch (error) {

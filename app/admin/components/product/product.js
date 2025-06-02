@@ -3,9 +3,12 @@
 import React, { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import EditProductModal from "./EditProductModal";
 import { Icon } from '@iconify/react';
 import Link from 'next/link';
+
 export default function CategoryComponent() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +90,14 @@ const handleEditProduct = (product) => {
     }
   };
 
+   const clearDateFilter = () => {
+    setDateFilter({
+      startDate: null,
+      endDate: null
+    });
+    setCurrentPage(1);
+  };
+
    // Handle page change
   const paginate = (pageIndex) => {
     if (pageIndex >= 0 && pageIndex < pageCount) {
@@ -116,7 +127,14 @@ const handleEditProduct = (product) => {
       const matchesStatus =
         statusFilter === "" || product.status.toLowerCase() === statusFilter.toLowerCase();
 
-        const matchesDate = !dateFilter || new Date(product.createdAt).toISOString().slice(0, 10) === dateFilter;
+        // Apply date filter
+  let matchesDate = true;
+  if (dateFilter.startDate && dateFilter.endDate && product.createdAt) {
+    const orderDate = new Date(product.createdAt);
+    const startDate = new Date(dateFilter.startDate);
+    const endDate = new Date(dateFilter.endDate);
+    matchesDate = orderDate >= startDate && orderDate <= endDate;
+  }
 
       return matchesSearch && matchesStatus && matchesDate;
     });
@@ -190,7 +208,14 @@ const handleEditProduct = (product) => {
       const matchesStatus =
         statusFilter === "" || product.status.toLowerCase() === statusFilter.toLowerCase();
 
-        const matchesDate = !dateFilter || new Date(product.createdAt).toISOString().slice(0, 10) === dateFilter;
+       // Apply date filter
+  let matchesDate = true;
+  if (dateFilter.startDate && dateFilter.endDate && product.createdAt) {
+    const orderDate = new Date(product.createdAt);
+    const startDate = new Date(dateFilter.startDate);
+    const endDate = new Date(dateFilter.endDate);
+    matchesDate = orderDate >= startDate && orderDate <= endDate;
+  }
 
       return matchesSearch && matchesStatus && matchesDate;
     });
@@ -224,7 +249,7 @@ const handleEditProduct = (product) => {
   <div className="flex items-center gap-4">
     {/* Search Input */}
     <div className="relative w-64">
-      <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+      {/* <span className="absolute inset-y-0 left-0 flex items-center pl-3">
         <svg
           className="w-4 h-4 text-gray-500"
           fill="none"
@@ -238,7 +263,8 @@ const handleEditProduct = (product) => {
             d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.5a7.5 7.5 0 010 15z"
           />
         </svg>
-      </span>
+      </span> */}
+       <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
       <input
         type="text"
         placeholder="Search Product..."
@@ -250,46 +276,61 @@ const handleEditProduct = (product) => {
 
     {/* Status Filter Dropdown */}
     <div className="relative w-48">
-      <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-        <svg
-          className="w-4 h-4 text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.5a7.5 7.5 0 010 15z"
-          />
-        </svg>
-      </span>
-      <select
-        value={statusFilter}
-        onChange={(e) => {
+      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+        <select
+          value={statusFilter}
+           onChange={(e) => {
           setStatusFilter(e.target.value);
           setCurrentPage(0);
         }}
-        className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-      >
-        <option value="">All Status</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-      </select>
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">InActive</option>
+        </select>
     </div>
 
     {/* Date Filter */}
-  <div className="relative w-48">
-    <input
-      type="date"
-      value={dateFilter}
-      onChange={(e) => {
-        setDateFilter(e.target.value);
-        setCurrentPage(0);
-      }}
-      className="px-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-    />
+  <div className="relative w-64">
+   <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                      <div className="relative flex items-center border border-gray-300 rounded-md focus-within:ring-blue-500 focus-within:border-blue-500">
+                        <DatePicker
+                          selected={dateFilter.startDate}
+                          onChange={(date) => {
+                            setDateFilter(prev => ({ ...prev, startDate: date }));
+                            setCurrentPage(1);
+                          }}
+                          selectsStart
+                          startDate={dateFilter.startDate}
+                          endDate={dateFilter.endDate}
+                          placeholderText="Start Date"
+                          className="w-full p-2 border-none focus:ring-0"
+                        />
+                        <span className="text-gray-400">to</span>
+                        <DatePicker
+                          selected={dateFilter.endDate}
+                          onChange={(date) => {
+                            setDateFilter(prev => ({ ...prev, endDate: date }));
+                            setCurrentPage(1);
+                          }}
+                          selectsEnd
+                          startDate={dateFilter.startDate}
+                          endDate={dateFilter.endDate}
+                          minDate={dateFilter.startDate}
+                          placeholderText="End Date"
+                          className="w-full p-2 border-none focus:ring-0"
+                        />
+                        {(dateFilter.startDate || dateFilter.endDate) && (
+                          <button
+                            onClick={clearDateFilter}
+                            className=" right-2 p-1 text-gray-400 hover:text-red-500"
+                            title="Clear date filter"
+                          >
+                            <Icon icon="mdi:close-circle-outline" />
+                          </button>
+                        )}
+                      </div>
   </div>
   </div>
 </div>
