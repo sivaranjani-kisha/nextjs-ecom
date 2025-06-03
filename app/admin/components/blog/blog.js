@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
+import { FaPlus, FaMinus } from "react-icons/fa";
 import { Icon } from '@iconify/react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DateRangePicker from '@/components/DateRangePicker';
 
 export default function BlogComponent() {
+  // State declarations
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [blogData, setBlogData] = useState({
     name: "",
@@ -25,41 +25,13 @@ export default function BlogComponent() {
   const [itemsPerPage] = useState(5);
   const [blogToDelete, setBlogToDelete] = useState(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState({
     startDate: null,
     endDate: null
   });
-  
-  // Edit Modal
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editBlogData, setEditBlogData] = useState({
-    id: "",
-    name: "",
-    image: null,
-    existingImage: "",
-    description: "",
-    status: "Active",
-  });
-  const [editSelectedCategories, setEditSelectedCategories] = useState(new Set());
 
-  // Filter blogs based on search, status, and date range
-  const filteredBlogs = blogs.filter((blog) => {
-    const matchesSearch = blog.blog_name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "All" || blog.status === statusFilter;
-    
-    const blogDate = new Date(blog.createdAt);
-    const matchesDate = 
-      (!dateFilter.startDate || blogDate >= dateFilter.startDate) && 
-      (!dateFilter.endDate || blogDate <= dateFilter.endDate);
-    
-    return matchesSearch && matchesStatus && matchesDate;
-  });
-
-  const totalEntries = filteredBlogs.length;
-  const startEntry = (currentPage - 1) * itemsPerPage + 1;
-  const endEntry = Math.min(currentPage * itemsPerPage, totalEntries);
-
+  // Fetch categories and blogs on component mount
   useEffect(() => {
     fetchCategories();
     fetchBlogs();
@@ -102,73 +74,33 @@ export default function BlogComponent() {
     }
   };
 
-  const clearDateFilter = () => {
-    setDateFilter({
-      startDate: null,
-      endDate: null
-    });
-    setCurrentPage(1);
-  };
-
-  const handleEditInputChange = (e) => {
-    setEditBlogData({ ...editBlogData, [e.target.name]: e.target.value });
-  };
-
-  const handleEditImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setEditBlogData({ 
-        ...editBlogData, 
-        image: file,
-        existingImage: "" 
-      });
+  // Filter blogs based on search, status, and date
+  const filteredBlogs = blogs.filter((blog) => {
+    const matchesSearch = blog.blog_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = !statusFilter || blog.status === statusFilter;
+    
+    let matchesDate = true;
+    if (dateFilter.startDate && dateFilter.endDate && blog.createdAt) {
+      const blogDate = new Date(blog.createdAt);
+      const startDate = new Date(dateFilter.startDate);
+      const endDate = new Date(dateFilter.endDate);
+      
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      matchesDate = blogDate >= startDate && blogDate <= endDate;
     }
-  };
+    
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
-  const handleEditCategoryChange = (category, isChecked) => {
-    const updatedSelection = new Set(editSelectedCategories);
+  // Pagination variables
+  const totalEntries = filteredBlogs.length;
+  const startEntry = (currentPage - 1) * itemsPerPage + 1;
+  const endEntry = Math.min(currentPage * itemsPerPage, totalEntries);
+  const totalPages = Math.ceil(totalEntries / itemsPerPage);
 
-    const toggleChildren = (children, select) => {
-      children.forEach((child) => {
-        if (select) {
-          updatedSelection.add(child._id);
-        } else {
-          updatedSelection.delete(child._id);
-        }
-        if (child.children.length > 0) {
-          toggleChildren(child.children, select);
-        }
-      });
-    };
-
-    if (isChecked) {
-      updatedSelection.add(category._id);
-      toggleChildren(category.children, true);
-    } else {
-      updatedSelection.delete(category._id);
-      toggleChildren(category.children, false);
-    }
-
-    const toggleParents = (parentId) => {
-      if (!parentId || parentId === "none") return;
-      const parent = findCategoryById(categories, parentId);
-      if (parent) {
-        const allChildrenSelected = parent.children.every((child) =>
-          updatedSelection.has(child._id)
-        );
-        if (allChildrenSelected) {
-          updatedSelection.add(parent._id);
-        } else {
-          updatedSelection.delete(parent._id);
-        }
-        toggleParents(parent.parentid);
-      }
-    };
-
-    toggleParents(category.parentid);
-    setEditSelectedCategories(updatedSelection);
-  };
-
+  // Helper functions
   const buildCategoryTree = (categories, parentId = "none") => {
     return categories
       .filter((category) => category.parentid === parentId)
@@ -178,11 +110,14 @@ export default function BlogComponent() {
       }));
   };
 
-  const toggleCategory = (id) => {
-    setExpandedCategories((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+  const clearDateFilter = () => {
+    setDateFilter({ startDate: null, endDate: null });
+    setCurrentPage(1);
+  };
+
+  const handleDateChange = ({ startDate, endDate }) => {
+    setDateFilter({ startDate, endDate });
+    setCurrentPage(1);
   };
 
   const handleInputChange = (e) => {
@@ -195,6 +130,13 @@ export default function BlogComponent() {
       setBlogData({ ...blogData, image: file });
       setImagePreview(URL.createObjectURL(file));
     }
+  };
+
+  const toggleCategory = (id) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
   const handleCategoryChange = (category, isChecked) => {
@@ -250,7 +192,7 @@ export default function BlogComponent() {
     return null;
   };
 
-  const renderCategoryTree = (categories, level = 0, isEditMode = false) => {
+  const renderCategoryTree = (categories, level = 0) => {
     return categories.map((category) => (
       <div key={category._id} style={{ paddingLeft: `${level * 20}px` }}>
         <div className="flex items-center cursor-pointer p-2">
@@ -269,12 +211,8 @@ export default function BlogComponent() {
           <input
             type="checkbox"
             value={category._id}
-            checked={isEditMode 
-              ? editSelectedCategories.has(category._id) 
-              : selectedCategories.has(category._id)}
-            onChange={(e) => isEditMode 
-              ? handleEditCategoryChange(category, e.target.checked)
-              : handleCategoryChange(category, e.target.checked)}
+            checked={selectedCategories.has(category._id)}
+            onChange={(e) => handleCategoryChange(category, e.target.checked)}
             className="mr-2"
           />
           <span
@@ -288,84 +226,6 @@ export default function BlogComponent() {
         {expandedCategories[category._id] && renderCategoryTree(category.children, level + 1)}
       </div>
     ));
-  };
-
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData();
-    formData.append("id", editBlogData.id);
-    formData.append("name", editBlogData.name);
-    formData.append("description", editBlogData.description);
-    formData.append("category", Array.from(editSelectedCategories)[0]);
-    formData.append("status", editBlogData.status);
-    if (editBlogData.image) {
-      formData.append("image", editBlogData.image);
-    }
-    formData.append("existingImage", editBlogData.existingImage);
-
-    try {
-      const response = await fetch("/api/blogs/update", {
-        method: "PUT",
-        body: formData,
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        setAlertMessage("Blog updated successfully!");
-        setShowAlert(true);
-        setIsEditModalOpen(false);
-        setEditBlogData({ 
-          id: "",
-          name: "", 
-          image: null, 
-          existingImage: "",
-          description: "", 
-          status: "Active" 
-        });
-        setEditSelectedCategories(new Set());
-   
-        fetchBlogs();
-
-        setTimeout(() => {
-          setShowAlert(false);
-        }, 3000);
-      } else {
-        setAlertMessage("Error: " + result.error);
-        setShowAlert(true);
-
-        setTimeout(() => {
-          setShowAlert(false);
-        }, 3000);
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      setAlertMessage("Failed to update blog.");
-      setShowAlert(true);
-
-      setTimeout(() => {
-        setShowAlert(false);
-      }, 3000);
-    }
-  };
-
-  const handleEdit = (blog) => {
-    setEditBlogData({
-      id: blog._id,
-      name: blog.blog_name,
-      description: blog.description,
-      status: blog.status,
-      existingImage: blog.image || ""
-    });
-    
-    // Set selected categories for edit
-    const newSelected = new Set();
-    if (blog.category && blog.category._id) {
-      newSelected.add(blog.category._id);
-    }
-    setEditSelectedCategories(newSelected);
-    
-    setIsEditModalOpen(true);
   };
 
   const handleSubmit = async (e) => {
@@ -459,7 +319,7 @@ export default function BlogComponent() {
 
   const renderPagination = () => {
     const pageNumbers = [];
-    for (let i = 1; i <= Math.ceil(filteredBlogs.length / itemsPerPage); i++) {
+    for (let i = 1; i <= totalPages; i++) {
       pageNumbers.push(i);
     }
 
@@ -511,113 +371,93 @@ export default function BlogComponent() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Blog List</h2>
+    <div className="container mx-auto">
+      <div className="flex justify-between items-center mb-5 mt-5">
+        <h2 className="text-2xl font-bold">Blog List</h2>
       </div>
       
       {showAlert && (
-        <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4">
+        <div className={`fixed top-4 right-4 px-4 py-2 rounded-md shadow-lg z-50 ${
+          alertMessage.includes("Error") || alertMessage.includes("Failed") 
+            ? "bg-red-500 text-white" 
+            : "bg-green-500 text-white"
+        }`}>
           {alertMessage}
         </div>
       )}
 
-    
-
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <p>Loading...</p>
-          
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       ) : (
-        
         <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
-            {/* Filter Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
-        {/* Search Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-          <input
-            type="text"
-            placeholder="Search blogs..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end mb-5">
+            {/* Search Input */}
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Icon icon="ic:baseline-search" className="w-4 h-4 text-gray-500" />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search Blog..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
+            </div>
 
-        {/* Status Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="All">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-        </div>
-
-        {/* Date Range Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-          <div className="relative flex items-center border border-gray-300 rounded-md focus-within:ring-blue-500 focus-within:border-blue-500">
-            <DatePicker
-              selected={dateFilter.startDate}
-              onChange={(date) => {
-                setDateFilter(prev => ({ ...prev, startDate: date }));
-                setCurrentPage(1);
-              }}
-              selectsStart
-              startDate={dateFilter.startDate}
-              endDate={dateFilter.endDate}
-              placeholderText="Start Date"
-              className="w-full p-2 border-none focus:ring-0"
-            />
-            <span className="text-gray-400 px-1">to</span>
-            <DatePicker
-              selected={dateFilter.endDate}
-              onChange={(date) => {
-                setDateFilter(prev => ({ ...prev, endDate: date }));
-                setCurrentPage(1);
-              }}
-              selectsEnd
-              startDate={dateFilter.startDate}
-              endDate={dateFilter.endDate}
-              minDate={dateFilter.startDate}
-              placeholderText="End Date"
-              className="w-full p-2 border-none focus:ring-0"
-            />
-            {(dateFilter.startDate || dateFilter.endDate) && (
-              <button
-                onClick={clearDateFilter}
-                className=" right-2 p-1 text-gray-400 hover:text-red-500"
-                title="Clear date filter"
+            {/* Status Filter */}
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
-                <Icon icon="mdi:close-circle-outline" />
-              </button>
-            )}
-          </div>
-        </div>
+                <option value="">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
 
-        {/* Add Blog Button */}
-        <div className="flex justify-end">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition flex items-center gap-1"
-          >
-            <FaPlus /> Add Blog
-          </button>
-        </div>
-      </div>
+            {/* Date Range Picker */}
+            <div className="w-full col-span-1 md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <DateRangePicker onDateChange={handleDateChange} />
+                </div>
+                {/* {(dateFilter.startDate || dateFilter.endDate) && (
+                  <button
+                    onClick={clearDateFilter}
+                    className="p-2 text-sm text-red-600 hover:text-red-800 bg-red-50 rounded-md"
+                    title="Clear date filter"
+                  >
+                    <Icon icon="mdi:close-circle-outline" className="w-5 h-5" />
+                  </button>
+                )} */}
+              </div>
+            </div>
+
+            <div>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
+              >
+                + Add Blog
+              </button>
+            </div>
+          </div>
           <hr className="border-t border-gray-200 mb-4" />
           {filteredBlogs.length === 0 ? (
             <div className="text-center py-8">
@@ -629,13 +469,12 @@ export default function BlogComponent() {
                 <table className="w-full border border-gray-300">
                   <thead>
                     <tr className="bg-gray-200">
-                      <th className="p-3 text-left">Name</th>
-                      <th className="p-3 text-left">Description</th>
-                      <th className="p-3 text-left">Category</th>
-                      <th className="p-3 text-left">Status</th>
-                      {/* <th className="p-3 text-left">Created At</th> */}
-                      <th className="p-3 text-left">Image</th>
-                      <th className="p-3 text-left">Action</th>
+                      <th className="p-2 text-left">Name</th>
+                      <th className="p-2 text-left">Description</th>
+                      <th className="p-2 text-left">Category</th>
+                      <th className="p-2 text-left">Status</th>
+                      <th className="p-2 text-left">Image</th>
+                      <th className="p-2 text-left">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -643,52 +482,37 @@ export default function BlogComponent() {
                       .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                       .map((blog) => (
                         <tr key={blog._id} className="border-b hover:bg-gray-50">
-                          <td className="p-3 font-bold">{blog.blog_name}</td>
-                          <td className="p-3" title={blog.description}>
+                          <td className="p-2 font-bold">{blog.blog_name}</td>
+                          <td className="p-2" title={blog.description}>
                             {blog.description.length > 50 
                               ? `${blog.description.substring(0, 50)}...` 
                               : blog.description}
                           </td>
-                          <td className="p-3">
+                          <td className="p-2">
                             {blog.category ? blog.category.category_name : "No Category"}
                           </td>
-                          <td className="p-3 font-semibold">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          blog.status === "Active" ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {blog.status}
-                        </span>
-                            {/* <span className={blog.status === "Active" ? "text-green-500" : "text-red-500"}>
+                          <td className="p-2 font-semibold">
+                            <span className={blog.status === "Active" ? "text-green-500" : "text-red-500"}>
                               {blog.status}
-                            </span> */}
+                            </span>
                           </td>
-                          {/* <td className="p-3">
-                            {new Date(blog.createdAt).toLocaleDateString()}
-                          </td> */}
-                          <td className="p-3">
+                          <td className="p-2">
                             {blog.image && (
                               <img 
                                 src={blog.image} 
                                 alt="Blog" 
-                                className="h-10 object-contain" 
+                                className="h-8 object-contain" 
                               />
                             )}
                           </td>
-                          <td className="p-3">
+                          <td className="p-2">
                             <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleEdit(blog)}
-                                className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center hover:bg-blue-200 transition"
-                                title="Edit"
-                              >
-                                <FaEdit />
-                              </button>
                               <button
                                 onClick={() => {
                                   setBlogToDelete(blog._id);
                                   setShowConfirmationModal(true);
                                 }}
-                                className="w-8 h-8 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center hover:bg-pink-200 transition"
+                                className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center hover:bg-pink-200 transition"
                                 title="Delete"
                               >
                                 <Icon icon="mingcute:delete-2-line" />
@@ -811,154 +635,12 @@ export default function BlogComponent() {
                   </select>
                 </div>
 
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                  >
-                    Add Blog
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Blog Modal */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
-              <h2 className="text-xl font-semibold text-gray-900">Edit Blog</h2>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-700 focus:outline-none"
-                aria-label="Close modal"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+                <button
+                  type="submit"
+                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="px-6 py-6 overflow-y-auto flex-grow">
-              <form onSubmit={handleEditSubmit} className="space-y-5">
-                <div>
-                  <label htmlFor="edit_blog_name" className="block mb-1 text-sm font-semibold text-gray-700">
-                    Blog Name
-                  </label>
-                  <input
-                    name="name"
-                    value={editBlogData.name}
-                    onChange={handleEditInputChange}
-                    id="edit_blog_name"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
-                    placeholder="Enter Blog Name"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image</label>
-                  <input
-                    type="file"
-                    onChange={handleEditImageChange}
-                    accept="image/*"
-                    className="block w-full text-sm text-gray-600
-                      file:mr-3 file:py-1 file:px-3
-                      file:rounded-md file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
-                  />
-                  {editBlogData.existingImage && !editBlogData.image && (
-                    <img
-                      src={editBlogData.existingImage}
-                      alt="Current"
-                      className="mt-3 h-16 rounded-md object-contain mx-auto"
-                    />
-                  )}
-                  {editBlogData.image && (
-                    <img
-                      src={URL.createObjectURL(editBlogData.image)}
-                      alt="New"
-                      className="mt-3 h-16 rounded-md object-contain mx-auto"
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="edit_description" className="block mb-1 text-sm font-semibold text-gray-700">
-                    Blog Description
-                  </label>
-                  <textarea
-                    name="description"
-                    value={editBlogData.description}
-                    onChange={handleEditInputChange}
-                    id="edit_description"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
-                    placeholder="Enter Blog Description"
-                    rows={4}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-1 text-sm font-semibold text-gray-700">Select Categories</label>
-                  <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2">
-                    {categories.length > 0 ? (
-                      renderCategoryTree(categories, 0, true)
-                    ) : (
-                      <p className="text-gray-500">No categories available</p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="edit_status" className="block mb-1 text-sm font-semibold text-gray-700">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    id="edit_status"
-                    value={editBlogData.status}
-                    onChange={handleEditInputChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                  >
-                    Update Blog
-                  </button>
-                </div>
+                  Add Blog
+                </button>
               </form>
             </div>
           </div>

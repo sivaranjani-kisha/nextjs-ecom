@@ -47,7 +47,7 @@ export default function CategoryComponent() {
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   // Fetch categories from API
   const fetchCategories = async () => {
@@ -440,7 +440,7 @@ export default function CategoryComponent() {
       {isLoading ? (
         <p>Loading categories...</p>
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
+        <div className="bg-white shadow-md rounded-lg p-5 h-[500px] overflow-x-auto">
           {/* Search and Filter Section */}
         {/* Search and Filter Section */}
 {/* Search and Filter Section */}

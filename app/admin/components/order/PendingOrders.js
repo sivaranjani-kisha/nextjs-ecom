@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { MdCancel, MdLocalShipping } from "react-icons/md";
 import { Icon } from '@iconify/react';
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import DateRangePicker from '@/components/DateRangePicker';
 
 export default function PendingOrders() {
   const [activeTab, setActiveTab] = useState("pending");
@@ -15,8 +14,7 @@ export default function PendingOrders() {
   const [alertMessage, setAlertMessage] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-const [statusFilter, setStatusFilter] = useState("All");
-
+  const [statusFilter, setStatusFilter] = useState("All");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalType, setModalType] = useState("");
   const [cancellationReason, setCancellationReason] = useState("");
@@ -26,38 +24,58 @@ const [statusFilter, setStatusFilter] = useState("All");
   
   const itemsPerPage = 5;
   const [dateFilter, setDateFilter] = useState({
-      startDate: null,
-      endDate: null
-    });
-  // Filter orders based on search term
-  // const filteredOrders = orders.filter((order) =>
-  //   order.order_number.toLowerCase().includes(searchTerm.toLowerCase())
-  // );
-const filteredOrders = orders.filter((order) => {
-  const matchesSearch = order.order_number
-    ?.toLowerCase()
-    .includes(searchQuery.toLowerCase());
+    startDate: null,
+    endDate: null
+  });
 
-  const matchesStatus =
-    statusFilter === "All" ||
-    order.payment_status?.toLowerCase() === statusFilter.toLowerCase();
+  // Filter orders based on search term, status, and date range
+  const filteredOrders = orders.filter((order) => {
+    // Search filter
+    const matchesSearch = order.order_number
+      ?.toLowerCase()
+      .includes(searchQuery.toLowerCase());
 
-  // Apply date filter
-  let matchesDate = true;
-  if (dateFilter.startDate && dateFilter.endDate && order.createdAt) {
-    const orderDate = new Date(order.createdAt);
-    const startDate = new Date(dateFilter.startDate);
-    const endDate = new Date(dateFilter.endDate);
-    matchesDate = orderDate >= startDate && orderDate <= endDate;
-  }
+    // Status filter
+    const matchesStatus =
+      statusFilter === "All" ||
+      order.payment_status?.toLowerCase() === statusFilter.toLowerCase();
 
-  return matchesSearch && matchesStatus && matchesDate;
-});
+    // Date filter
+    let matchesDate = true;
+    if (dateFilter.startDate && dateFilter.endDate && order.createdAt) {
+      const orderDate = new Date(order.createdAt);
+      const startDate = new Date(dateFilter.startDate);
+      const endDate = new Date(dateFilter.endDate);
+      
+      // Set time to beginning and end of day for accurate comparison
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      matchesDate = orderDate >= startDate && orderDate <= endDate;
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
   // Calculate pagination variables
   const pageCount = Math.ceil(filteredOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+
+  // Handle date change
+  const handleDateChange = ({ startDate, endDate }) => {
+    setDateFilter({ startDate, endDate });
+    setCurrentPage(1); // Reset to first page when date changes
+  };
+
+  // Clear date filter
+  const clearDateFilter = () => {
+    setDateFilter({
+      startDate: null,
+      endDate: null
+    });
+    setCurrentPage(1);
+  };
 
   // Handle page change
   const paginate = (pageNumber) => {
@@ -72,7 +90,7 @@ const filteredOrders = orders.filter((order) => {
 
   useEffect(() => {
     setCurrentPage(1); // Reset to first page when search term changes
-  }, [searchTerm]);
+  }, [searchTerm, statusFilter, dateFilter]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -96,20 +114,15 @@ const filteredOrders = orders.filter((order) => {
     setLoading(false);
   };
 
-  const clearDateFilter = () => {
-    setDateFilter({
-      startDate: null,
-      endDate: null
-    });
-    setCurrentPage(1);
-  };
-
   const handleOrderUpdate = async (orderId, status, reason = "") => {
     try {
       const token = localStorage.getItem("token");
-    const response = await fetch(`/api/orders/update`, {
+      const response = await fetch(`/api/orders/update`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           order_id: selectedOrder,
           order_status: modalType === "cancel" ? "cancelled" : "shipped",
@@ -119,12 +132,11 @@ const filteredOrders = orders.filter((order) => {
 
       const data = await response.json();
       if (data.success) {
-         setShowModal(false);
+        setShowModal(false);
         setAlertMessage(`Order status updated to ${status}`);
         setCancellationReason("");
         fetchOrders();
-        setTimeout(() => setAlertMessage(null), 3000); // Refresh orders
-        // setShowModal(false);
+        setTimeout(() => setAlertMessage(null), 3000);
       } else {
         setError(data.error || "Failed to update order status");
       }
@@ -135,7 +147,6 @@ const filteredOrders = orders.filter((order) => {
   };
 
   const handleDownloadInvoice = (orderNumber) => {
-    // Implement invoice download logic
     console.log("Download invoice for order:", orderNumber);
   };
 
@@ -155,84 +166,63 @@ const filteredOrders = orders.filter((order) => {
       {loading ? (
         <p>Loading orders...</p>
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
-          {/* Search */}
+        <div className="bg-white shadow-md rounded-lg p-5  h-[500px] overflow-x-auto">
+          {/* Search and Filters */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
-  {/* Search Filter */}
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-    <input
-      type="text"
-      placeholder="Search orders..."
-      value={searchQuery}
-      onChange={(e) => {
-        setSearchQuery(e.target.value);
-        setCurrentPage(1);
-      }}
-      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-    />
-  </div>
+            {/* Search Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+              <input
+                type="text"
+                placeholder="Search orders..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
 
-      {/* Status Filter */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-        <select
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="All">All Statuses</option>
-          <option value="paid">Paid</option>
-          <option value="pending">Pending</option>
-          <option value="unpaid">Unpaid</option>
-        </select>
-      </div>
-       {/* Date Range Filter */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-                      <div className="relative flex items-center border border-gray-300 rounded-md focus-within:ring-blue-500 focus-within:border-blue-500">
-                        <DatePicker
-                          selected={dateFilter.startDate}
-                          onChange={(date) => {
-                            setDateFilter(prev => ({ ...prev, startDate: date }));
-                            setCurrentPage(1);
-                          }}
-                          selectsStart
-                          startDate={dateFilter.startDate}
-                          endDate={dateFilter.endDate}
-                          placeholderText="Start Date"
-                          className="w-full p-2 border-none focus:ring-0"
-                        />
-                        <span className="text-gray-400">to</span>
-                        <DatePicker
-                          selected={dateFilter.endDate}
-                          onChange={(date) => {
-                            setDateFilter(prev => ({ ...prev, endDate: date }));
-                            setCurrentPage(1);
-                          }}
-                          selectsEnd
-                          startDate={dateFilter.startDate}
-                          endDate={dateFilter.endDate}
-                          minDate={dateFilter.startDate}
-                          placeholderText="End Date"
-                          className="w-full p-2 border-none focus:ring-0"
-                        />
-                        {(dateFilter.startDate || dateFilter.endDate) && (
-                          <button
-                            onClick={clearDateFilter}
-                            className=" right-2 p-1 text-gray-400 hover:text-red-500"
-                            title="Clear date filter"
-                          >
-                            <Icon icon="mdi:close-circle-outline" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-    </div>
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="All">All Statuses</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="unpaid">Unpaid</option>
+              </select>
+            </div>
 
+            {/* Date Range Filter */}
+            <div>
+            <div className="w-full col-span-1 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <DateRangePicker onDateChange={handleDateChange} />
+                </div>
+                {/* {(dateFilter.startDate || dateFilter.endDate) && (
+                  <button
+                    onClick={clearDateFilter}
+                    className="p-2 text-sm text-red-600 hover:text-red-800 bg-red-50 rounded-md"
+                    title="Clear date filter"
+                  >
+                    <Icon icon="mdi:close-circle-outline" className="w-5 h-5" />
+                  </button>
+                )} */}
+              </div>
+            </div>
+            </div>
+          </div>
 
           <hr className="border-t border-gray-200 mb-4" />
 
@@ -245,6 +235,7 @@ const filteredOrders = orders.filter((order) => {
                 <th className="p-2">Mobile</th>
                 <th className="p-2">Price</th>
                 <th className="p-2">Order Status</th>
+                <th className="p-2">Created At</th>
                 <th className="p-2">Action</th>
               </tr>
             </thead>
@@ -257,6 +248,9 @@ const filteredOrders = orders.filter((order) => {
                     <td className="px-4 py-2">{order.order_phonenumber}</td>
                     <td className="px-4 py-2">{order.order_amount}</td>
                     <td className="px-4 py-2">{order.order_status}</td>
+                    <td className="px-4 py-2">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </td>
                     <td className="px-4 py-2 flex space-x-2 justify-center">
                       <button
                         className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center"
@@ -276,7 +270,7 @@ const filteredOrders = orders.filter((order) => {
                           setShowModal(true);
                         }}
                       >
-                       <MdLocalShipping className="w-5 h-5"/>
+                        <MdLocalShipping className="w-5 h-5"/>
                       </button>
                     </td>
                   </tr>
@@ -365,6 +359,7 @@ const filteredOrders = orders.filter((order) => {
                   className="w-full border rounded-md p-2"
                   rows="3"
                   placeholder="Enter reason for cancellation"
+                  required
                 />
               </div>
             )}
@@ -378,7 +373,7 @@ const filteredOrders = orders.filter((order) => {
                   setError("");
                   setCancellationReason("");
                 }}
-                className="bg-gray-300 px-4 py-2 rounded-md"
+                className="bg-gray-300 px-4 py-2 rounded-md hover:bg-gray-400"
               >
                 Cancel
               </button>
@@ -389,8 +384,9 @@ const filteredOrders = orders.filter((order) => {
                   cancellationReason
                 )}
                 className={`px-4 py-2 rounded-md text-white ${
-                  modalType === "cancel" ? "bg-red-500" : "bg-green-500"
+                  modalType === "cancel" ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
                 }`}
+                disabled={modalType === "cancel" && !cancellationReason}
               >
                 Confirm
               </button>
@@ -408,7 +404,7 @@ const filteredOrders = orders.filter((order) => {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowConfirmationModal(false)}
-                className="bg-gray-300 px-4 py-2 rounded-md"
+                className="bg-gray-300 px-4 py-2 rounded-md hover:bg-gray-400"
               >
                 Close
               </button>

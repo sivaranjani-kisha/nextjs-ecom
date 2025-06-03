@@ -17,8 +17,10 @@
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  /* color: var(--foreground);
+  background: var(--background); */
+  color : black;
+  background-color: white;
   /* font-family: Quicksand,sans-serif; */
   overflow-x: hidden;
   font-family: "Quicksand", sans-serif;

@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { MdCancel } from "react-icons/md";
 import { Icon } from '@iconify/react';
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import DateRangePicker from '@/components/DateRangePicker';
+// import DatePicker from "react-datepicker";
+// import "react-datepicker/dist/react-datepicker.css";
 export default function CancelledOrders() {
   const [activeTab, setActiveTab] = useState("cancelled");
   const [orders, setOrders] = useState([]);
@@ -49,6 +50,11 @@ export default function CancelledOrders() {
       setAlertMessage("Error fetching orders");
     }
     setLoading(false);
+  };
+ // Handle date change
+  const handleDateChange = ({ startDate, endDate }) => {
+    setDateFilter({ startDate, endDate });
+    setCurrentPage(1); // Reset to first page when date changes
   };
 
   // Filter orders based on search term
@@ -145,46 +151,25 @@ export default function CancelledOrders() {
                            </select>
                          </div>
                           {/* Date Range Filter */}
-                           <div>
-                             <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-                             <div className="relative flex items-center border border-gray-300 rounded-md focus-within:ring-blue-500 focus-within:border-blue-500">
-                               <DatePicker
-                                 selected={dateFilter.startDate}
-                                 onChange={(date) => {
-                                   setDateFilter(prev => ({ ...prev, startDate: date }));
-                                   setCurrentPage(1);
-                                 }}
-                                 selectsStart
-                                 startDate={dateFilter.startDate}
-                                 endDate={dateFilter.endDate}
-                                 placeholderText="Start Date"
-                                 className="w-full p-2 pl-2 border-none focus:ring-0"
-                               />
-                               <span className="text-gray-400">to</span>
-                               <DatePicker
-                                 selected={dateFilter.endDate}
-                                 onChange={(date) => {
-                                   setDateFilter(prev => ({ ...prev, endDate: date }));
-                                   setCurrentPage(1);
-                                 }}
-                                 selectsEnd
-                                 startDate={dateFilter.startDate}
-                                 endDate={dateFilter.endDate}
-                                 minDate={dateFilter.startDate}
-                                 placeholderText="End Date"
-                                 className="w-full p-2 pl-2 border-none focus:ring-0"
-                               />
-                               {(dateFilter.startDate || dateFilter.endDate) && (
-                                 <button
-                                   onClick={clearDateFilter}
-                                   className=" right-2 p-2 text-gray-400 hover:text-red-500"
-                                   title="Clear date filter"
-                                 >
-                                   <Icon icon="mdi:close-circle-outline" />
-                                 </button>
-                               )}
-                             </div>
-                           </div>
+                            <div>
+                                       <div className="w-full col-span-1 md:col-span-2">
+                                         <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                                         <div className="flex items-center gap-2">
+                                           <div className="flex-1">
+                                             <DateRangePicker onDateChange={handleDateChange} />
+                                           </div>
+                                           {/* {(dateFilter.startDate || dateFilter.endDate) && (
+                                             <button
+                                               onClick={clearDateFilter}
+                                               className="p-2 text-sm text-red-600 hover:text-red-800 bg-red-50 rounded-md"
+                                               title="Clear date filter"
+                                             >
+                                               <Icon icon="mdi:close-circle-outline" className="w-5 h-5" />
+                                             </button>
+                                           )} */}
+                                         </div>
+                                       </div>
+                                       </div>
                        </div>
 
           <hr className="border-t border-gray-200 mb-4" />
