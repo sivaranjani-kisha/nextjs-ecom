@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Icon } from '@iconify/react';
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import DateRangePicker from '@/components/DateRangePicker';
 
 export default function UserComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -109,25 +108,27 @@ export default function UserComponent() {
   };
 
   const filteredUsers = users.filter(user => {
-    const name = user.name || "";
-    const email = user.email || "";
-    const mobile = user.mobile || "";
-    const createdAt = user.createdAt ? new Date(user.createdAt) : null;
-    
     // Apply search filter
-    const matchesSearch = (
-      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mobile.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const matchesSearch = searchQuery === "" || 
+      (user.name && user.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.mobile && user.mobile.toLowerCase().includes(searchQuery.toLowerCase()));
     
     // Apply status filter
     const matchesStatus = statusFilter === "All" || user.status === statusFilter;
     
     // Apply date filter
     let matchesDate = true;
-    if (dateFilter.startDate && dateFilter.endDate && createdAt) {
-      matchesDate = createdAt >= dateFilter.startDate && createdAt <= dateFilter.endDate;
+    if (dateFilter.startDate && dateFilter.endDate && user.createdAt) {
+      const userDate = new Date(user.createdAt);
+      const startDate = new Date(dateFilter.startDate);
+      const endDate = new Date(dateFilter.endDate);
+      
+      // Set time to beginning and end of day for proper date comparison
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      matchesDate = userDate >= startDate && userDate <= endDate;
     }
     
     return matchesSearch && matchesStatus && matchesDate;
@@ -143,23 +144,30 @@ export default function UserComponent() {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  const handleDateChange = ({ startDate, endDate }) => {
+    setDateFilter({ startDate, endDate });
+    setCurrentPage(1); // Reset to first page when date changes
+  };
+
+  const clearDateFilter = () => {
+    setDateFilter({
+      startDate: null,
+      endDate: null
+    });
+    setCurrentPage(1);
+  };
+
   const renderPagination = () => {
-    const pageNumbers = [];
-    for (let i = 1; i <= Math.ceil(filteredUsers.length / itemsPerPage); i++) {
-      pageNumbers.push(i);
-    }
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    if (totalPages <= 1) return null;
 
     return (
       <div className="flex justify-between items-center mt-4">
-        {/* Left side: Entry text */}
         <div className="text-sm text-gray-600">
           Showing {startEntry} to {endEntry} of {filteredUsers.length} entries
         </div>
         
-
-        {/* Right side: Pagination */}
         <div className="pagination flex items-center space-x-1">
-          {/* Previous Button */}
           <button
             onClick={() => paginate(currentPage - 1)}
             disabled={currentPage === 1}
@@ -173,8 +181,7 @@ export default function UserComponent() {
             «
           </button>
 
-          {/* Page Number Buttons */}
-          {Array.from({ length: Math.ceil(filteredUsers.length / itemsPerPage) }, (_, i) => (
+          {Array.from({ length: totalPages }, (_, i) => (
             <button
               key={i + 1}
               onClick={() => paginate(i + 1)}
@@ -190,12 +197,11 @@ export default function UserComponent() {
             </button>
           ))}
 
-          {/* Next Button */}
           <button
             onClick={() => paginate(currentPage + 1)}
-            disabled={currentPage === Math.ceil(filteredUsers.length / itemsPerPage)}
+            disabled={currentPage === totalPages}
             className={`px-3 py-1.5 border border-gray-300 rounded-md ${
-              currentPage === Math.ceil(filteredUsers.length / itemsPerPage)
+              currentPage === totalPages
                 ? "text-gray-400 cursor-not-allowed"
                 : "text-black bg-white hover:bg-gray-100"
             }`}
@@ -208,25 +214,17 @@ export default function UserComponent() {
     );
   };
 
-  const clearDateFilter = () => {
-    setDateFilter({
-      startDate: null,
-      endDate: null
-    });
-    setCurrentPage(1);
-  };
-
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-5 mt-5">
         <h2 className="text-2xl font-bold">User List</h2>
       </div>
-      <hr className="border-t border-gray-200 mb-4" />
+  
       {isLoading ? (
         <p>Loading...</p>
       ) : (
         <>
-          <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
+          <div className="bg-white shadow-md rounded-lg p-5 h-[500px] overflow-x-auto">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
               {/* Search Filter */}
               <div>
@@ -259,49 +257,26 @@ export default function UserComponent() {
                   <option value="Inactive">Inactive</option>
                 </select>
               </div>
-
-              {/* Date Range Filter */}
-              <div>
+           {/* Date Range Picker */}
+              <div className="w-full col-span-1 md:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-                <div className="relative flex items-center border border-gray-300 rounded-md focus-within:ring-blue-500 focus-within:border-blue-500">
-                  <DatePicker
-                    selected={dateFilter.startDate}
-                    onChange={(date) => {
-                      setDateFilter(prev => ({ ...prev, startDate: date }));
-                      setCurrentPage(1);
-                    }}
-                    selectsStart
-                    startDate={dateFilter.startDate}
-                    endDate={dateFilter.endDate}
-                    placeholderText="Start Date"
-                    className="w-full p-1 border-none focus:ring-0"
-                  />
-                  <span className="text-gray-400">to</span>
-                  <DatePicker
-                    selected={dateFilter.endDate}
-                    onChange={(date) => {
-                      setDateFilter(prev => ({ ...prev, endDate: date }));
-                      setCurrentPage(1);
-                    }}
-                    selectsEnd
-                    startDate={dateFilter.startDate}
-                    endDate={dateFilter.endDate}
-                    minDate={dateFilter.startDate}
-                    placeholderText="End Date"
-                    className="w-full p-1 border-none focus:ring-0"
-                  />
-                  {(dateFilter.startDate || dateFilter.endDate) && (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <DateRangePicker onDateChange={handleDateChange} />
+                  </div>
+                  {/* {(dateFilter.startDate || dateFilter.endDate) && (
                     <button
                       onClick={clearDateFilter}
-                      className=" right-2 p-1 text-gray-400 hover:text-red-500"
+                      className="p-2 text-sm text-red-600 hover:text-red-800 bg-red-50 rounded-md"
                       title="Clear date filter"
                     >
-                      <Icon icon="mdi:close-circle-outline" />
+                      <Icon icon="mdi:close-circle-outline" className="w-5 h-5" />
                     </button>
-                  )}
+                  )} */}
                 </div>
               </div>
-
+      
+           
               {/* Add User Button */}
               <div className="flex justify-end">
                 <button
@@ -329,15 +304,15 @@ export default function UserComponent() {
                 {currentUsers.length > 0 ? (
                   currentUsers.map((user, index) => (
                     <tr key={index} className="text-center border-b">
-                      <td className="p-2 font-bold">{user.email}</td>
-                      <td className="p-2">{user.name}</td>
-                      <td className="p-2">{user.mobile}</td>
-                      <td className="p-2 font-semibold">{user.user_type}</td>
+                      <td className="p-2 font-bold">{user.email || '-'}</td>
+                      <td className="p-2">{user.name || '-'}</td>
+                      <td className="p-2">{user.mobile || '-'}</td>
+                      <td className="p-2 font-semibold">{user.user_type || '-'}</td>
                       <td className="p-2">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {user.status}
+                          {user.status || '-'}
                         </span>
                       </td>
                       <td className="p-2">

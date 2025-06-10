@@ -8,11 +8,15 @@ import DateRangePicker from '@/components/DateRangePicker';
 export default function CategoryComponent() {
   const [categories, setCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [showUpdateAlert, setShowUpdateAlert] = useState(false);
+const [updateAlertMessage, setUpdateAlertMessage] = useState('');
+
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState(""); // "active" | "inactive" | ""
   const [searchQuery, setSearchQuery] = useState("");
+  const [imageError, setImageError] = useState("");
   const [newCategory, setNewCategory] = useState({
     category_name: "",
     parentid: "none",
@@ -80,14 +84,41 @@ export default function CategoryComponent() {
   };
 
   // Handle image upload
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setNewCategory((prev) => ({ ...prev, image: file }));
-      setImagePreview(URL.createObjectURL(file));
+  // const handleImageChange = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setNewCategory((prev) => ({ ...prev, image: file }));
+  //     setImagePreview(URL.createObjectURL(file));
+  //   }
+  // };
+const handleImageChange = async (e) => {
+  const file = e.target.files[0];
+  setImageError("");
+  
+  if (!file) {
+    setImageError("Image is required");
+    return;
+  }
+
+  // Check image dimensions
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+  
+  img.onload = function() {
+    if (this.width !== 96 || this.height !== 89) {
+      setImageError("Image must be exactly 96px width and 89px height");
+      setNewCategory(prev => ({ ...prev, image: null }));
+      setImagePreview(null);
+    } else {
+      setNewCategory(prev => ({ ...prev, image: file }));
+      setImagePreview(img.src);
     }
   };
-
+  
+  img.onerror = function() {
+    setImageError("Invalid image file");
+  };
+};
   // Check if category name already exists
   const isCategoryNameExists = (categoryName) => {
     return categories.some(
@@ -98,6 +129,13 @@ export default function CategoryComponent() {
   // Handle category submission
   const handleAddCategory = async (e) => {
     e.preventDefault();
+      // Check if image is provided
+      if (!newCategory.image) {
+        setAlertMessage("Image is required and must be 96px width and 89px height");
+        setShowAlert(true);
+        setTimeout(() => setShowAlert(false), 3000);
+        return;
+      }
 
     // Check if category name already exists
     if (isCategoryNameExists(newCategory.category_name)) {
@@ -148,45 +186,137 @@ export default function CategoryComponent() {
   };
 
   // Handle category update
-  const handleUpdateCategory = async (e) => {
-    e.preventDefault();
+  // const handleUpdateCategory = async (e) => {
+  //   e.preventDefault();
 
-    const formData = new FormData();
-    formData.append("_id", categoryToUpdate._id);
-    formData.append("category_name", categoryToUpdate.category_name);
-    formData.append("parentid", categoryToUpdate.parentid);
-    formData.append("status", categoryToUpdate.status);
-    if (categoryToUpdate.image instanceof File) {
-      formData.append("image", categoryToUpdate.image);
-    }
-    formData.append("existingImage", categoryToUpdate.existingImage || "");
+  //   const formData = new FormData();
+  //   formData.append("_id", categoryToUpdate._id);
+  //   formData.append("category_name", categoryToUpdate.category_name);
+  //   formData.append("parentid", categoryToUpdate.parentid);
+  //   formData.append("status", categoryToUpdate.status);
+  //   // if (categoryToUpdate.image instanceof File) {
+  //   //   formData.append("image", categoryToUpdate.image);
+  //   // }
+  //    if (categoryToUpdate.image instanceof File) {
+  //   const img = new Image();
+  //   img.src = URL.createObjectURL(categoryToUpdate.image);
+    
+  //   await new Promise((resolve) => {
+  //     img.onload = function() {
+  //       if (this.width !== 96 || this.height !== 89) {
+  //         setAlertMessage("Image must be exactly 96px width and 89px height");
+  //         setShowAlert(true);
+  //         setTimeout(() => setShowAlert(false), 3000);
+  //         resolve(false);
+  //       } else {
+  //         resolve(true);
+  //       }
+  //     };
+      
+  //     img.onerror = function() {
+  //       setAlertMessage("Invalid image file");
+  //       setShowAlert(true);
+  //       setTimeout(() => setShowAlert(false), 3000);
+  //       resolve(false);
+  //     };
+  //   });
+  // }
 
-    try {
-      const response = await fetch("/api/categories/update", {
-        method: "PUT",
-        body: formData,
-      });
+  //   formData.append("existingImage", categoryToUpdate.existingImage || "");
 
-      const result = await response.json();
-      if (response.ok) {
-        setIsUpdateModalOpen(false);
-        fetchCategories();
-        setAlertMessage("Category updated successfully!");
+  //   try {
+  //     const response = await fetch("/api/categories/update", {
+  //       method: "PUT",
+  //       body: formData,
+  //     });
+
+  //     const result = await response.json();
+  //     if (response.ok) {
+  //       setIsUpdateModalOpen(false);
+  //       fetchCategories();
+  //       setAlertMessage("Category updated successfully!");
+  //       setShowAlert(true);
+  //       setTimeout(() => setShowAlert(false), 3000);
+  //     } else {
+  //       console.error("Error updating category:", result.error);
+  //       setAlertMessage(result.error || "Failed to update category");
+  //       setShowAlert(true);
+  //       setTimeout(() => setShowAlert(false), 3000);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //     setAlertMessage("Failed to update category");
+  //     setShowAlert(true);
+  //     setTimeout(() => setShowAlert(false), 3000);
+  //   }
+  // };
+const handleUpdateCategory = async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData();
+  formData.append("_id", categoryToUpdate._id);
+  formData.append("category_name", categoryToUpdate.category_name);
+  formData.append("parentid", categoryToUpdate.parentid);
+  formData.append("status", categoryToUpdate.status);
+
+  // Check image dimension if a new image is uploaded
+  if (categoryToUpdate.image instanceof File) {
+    const img = new Image();
+    img.src = URL.createObjectURL(categoryToUpdate.image);
+
+    const isValid = await new Promise((resolve) => {
+      img.onload = function () {
+        if (this.width !== 96 || this.height !== 89) {
+          setAlertMessage("Image must be exactly 96px width and 89px height");
+          setShowAlert(true);
+          setTimeout(() => setShowAlert(false), 3000);
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      };
+
+      img.onerror = function () {
+        setAlertMessage("Invalid image file");
         setShowAlert(true);
         setTimeout(() => setShowAlert(false), 3000);
-      } else {
-        console.error("Error updating category:", result.error);
-        setAlertMessage(result.error || "Failed to update category");
-        setShowAlert(true);
-        setTimeout(() => setShowAlert(false), 3000);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      setAlertMessage("Failed to update category");
+        resolve(false);
+      };
+    });
+
+    if (!isValid) return; // ❌ Block submission if image is invalid
+
+    formData.append("image", categoryToUpdate.image); // ✅ Add only after validation
+  }
+
+  formData.append("existingImage", categoryToUpdate.existingImage || "");
+
+  try {
+    const response = await fetch("/api/categories/update", {
+      method: "PUT",
+      body: formData,
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      setIsUpdateModalOpen(false);
+      fetchCategories();
+      setAlertMessage("Category updated successfully!");
+      setShowAlert(true);
+      setTimeout(() => setShowAlert(false), 3000);
+    } else {
+      console.error("Error updating category:", result.error);
+      setAlertMessage(result.error || "Failed to update category");
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 3000);
     }
-  };
+  } catch (error) {
+    console.error("Error:", error);
+    setAlertMessage("Failed to update category");
+    setShowAlert(true);
+    setTimeout(() => setShowAlert(false), 3000);
+  }
+};
 
   // Handle category deletion
   const handleDeleteCategory = async (categoryId) => {
@@ -426,11 +556,11 @@ export default function CategoryComponent() {
   return (
     <div className="container mx-auto">
       {/* Alert Message */}
-      {showAlert && (
+      {/* {showAlert && (
         <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4 mt-5">
           {alertMessage}
         </div>
-      )}
+      )} */}
 
       <div className="flex justify-between items-center mb-5">
         <h2 className="text-2xl font-bold">Category List</h2>
@@ -591,115 +721,123 @@ export default function CategoryComponent() {
       )}
 
       {/* Add Category Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
-              <h2 className="text-xl font-semibold text-gray-900">Add Category</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-700 focus:outline-none"
-                aria-label="Close modal"
+     {isModalOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+        <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+          <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
+            <h2 className="text-xl font-semibold text-gray-900">Add Category</h2>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="text-gray-400 hover:text-gray-700 focus:outline-none"
+              aria-label="Close modal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-            <div className="px-6 py-6 overflow-y-auto flex-grow">
-              <form onSubmit={handleAddCategory} className="space-y-5">
-                <div>
-                  <label htmlFor="category_name" className="block mb-1 text-sm font-semibold text-gray-700">
-                    Category Name
-                  </label>
-                  <input
-                    name="category_name"
-                    value={newCategory.category_name}
-                    onChange={handleInputChange}
-                    id="category_name"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
-                    placeholder="Enter Category Name"
-                    required
-                  />
+          <div className="px-6 py-6 overflow-y-auto flex-grow">
+            <form onSubmit={handleAddCategory} className="space-y-5">
+              {/* ALERT MESSAGE – moved here */}
+              {showAlert && (
+                <div className="bg-green-500 text-white px-4 py-2 rounded-md">
+                  {alertMessage}
                 </div>
+              )}
 
-                <div>
-                  <label className="block mb-1 text-sm font-semibold text-gray-700">Parent Category</label>
-                  <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2">
-                    <div>
-                      <div
-                        className={`p-2 cursor-pointer rounded-md font-semibold ${
-                          newCategory.parentid === "none"
-                            ? "bg-blue-100 text-blue-600"
-                            : "text-gray-800 hover:bg-gray-100"
-                        }`}
-                        onClick={() => setNewCategory({ ...newCategory, parentid: "none" })}
-                      >
-                        Category
-                      </div>
-                      {renderCategoryTree(buildCategoryTree(categories))}
+              <div>
+                <label htmlFor="category_name" className="block mb-1 text-sm font-semibold text-gray-700">
+                  Category Name
+                </label>
+                <input
+                  name="category_name"
+                  value={newCategory.category_name}
+                  onChange={handleInputChange}
+                  id="category_name"
+                  className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                  placeholder="Enter Category Name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 text-sm font-semibold text-gray-700">Parent Category</label>
+                <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2">
+                  <div>
+                    <div
+                      className={`p-2 cursor-pointer rounded-md font-semibold ${
+                        newCategory.parentid === "none"
+                          ? "bg-blue-100 text-blue-600"
+                          : "text-gray-800 hover:bg-gray-100"
+                      }`}
+                      onClick={() => setNewCategory({ ...newCategory, parentid: "none" })}
+                    >
+                      Category
                     </div>
+                    {renderCategoryTree(buildCategoryTree(categories))}
                   </div>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image</label>
-                  <input
-                    type="file"
-                    onChange={handleImageChange}
-                    className="block w-full text-sm text-gray-600
-                      file:mr-3 file:py-1 file:px-3
-                      file:rounded-md file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
+              <div>
+                <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image</label>
+                <input
+                  type="file"
+                  onChange={handleImageChange}
+                  className="block w-full text-sm text-gray-600
+                    file:mr-3 file:py-1 file:px-3
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100"
+                />
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="mt-3 h-16 rounded-md object-contain mx-auto"
                   />
-                  {imagePreview && (
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="mt-3 h-16 rounded-md object-contain mx-auto"
-                    />
-                  )}
-                </div>
+                )}
+              </div>
 
-                <div>
-                  <label htmlFor="status" className="block mb-1 text-sm font-semibold text-gray-700">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    id="status"
-                    value={newCategory.status}
-                    onChange={handleInputChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+              <div>
+                <label htmlFor="status" className="block mb-1 text-sm font-semibold text-gray-700">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  id="status"
+                  value={newCategory.status}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
                 >
-                  Add Category
-                </button>
-              </form>
-            </div>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+              >
+                Add Category
+              </button>
+            </form>
           </div>
         </div>
-      )}
+      </div>
+    )}
+
 
       {/* Update Category Modal */}
-      {isUpdateModalOpen && categoryToUpdate && (
+     {isUpdateModalOpen && categoryToUpdate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
@@ -709,20 +847,24 @@ export default function CategoryComponent() {
                 className="text-gray-400 hover:text-gray-700 focus:outline-none"
                 aria-label="Close modal"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             <div className="px-6 py-6 overflow-y-auto flex-grow">
               <form onSubmit={handleUpdateCategory} className="space-y-5">
+
+                {/* ✅ Alert Message Above Category Name */}
+                {showUpdateAlert && (
+                  <div className="bg-green-500 text-white px-4 py-2 rounded-md -mt-2">
+                    {updateAlertMessage}
+                  </div>
+                )}
+
                 <div>
                   <label htmlFor="update_category_name" className="block mb-1 text-sm font-semibold text-gray-700">
                     Category Name
@@ -730,7 +872,7 @@ export default function CategoryComponent() {
                   <input
                     name="category_name"
                     value={categoryToUpdate.category_name}
-                    onChange={(e) => setCategoryToUpdate({...categoryToUpdate, category_name: e.target.value})}
+                    onChange={(e) => setCategoryToUpdate({ ...categoryToUpdate, category_name: e.target.value })}
                     id="update_category_name"
                     className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
                     placeholder="Enter Category Name"
@@ -748,7 +890,7 @@ export default function CategoryComponent() {
                             ? "bg-blue-100 text-blue-600"
                             : "text-gray-800 hover:bg-gray-100"
                         }`}
-                        onClick={() => setCategoryToUpdate({...categoryToUpdate, parentid: "none"})}
+                        onClick={() => setCategoryToUpdate({ ...categoryToUpdate, parentid: "none" })}
                       >
                         Category
                       </div>
@@ -764,7 +906,7 @@ export default function CategoryComponent() {
                     onChange={(e) => {
                       const file = e.target.files[0];
                       if (file) {
-                        setCategoryToUpdate(prev => ({...prev, image: file}));
+                        setCategoryToUpdate((prev) => ({ ...prev, image: file }));
                         setImagePreview(URL.createObjectURL(file));
                       }
                     }}
@@ -796,7 +938,7 @@ export default function CategoryComponent() {
                     name="status"
                     id="update_status"
                     value={categoryToUpdate.status}
-                    onChange={(e) => setCategoryToUpdate({...categoryToUpdate, status: e.target.value})}
+                    onChange={(e) => setCategoryToUpdate({ ...categoryToUpdate, status: e.target.value })}
                     className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
                   >
                     <option value="Active">Active</option>
@@ -815,6 +957,7 @@ export default function CategoryComponent() {
           </div>
         </div>
       )}
+
 
       {/* Confirmation Modal */}
       {showConfirmationModal && (

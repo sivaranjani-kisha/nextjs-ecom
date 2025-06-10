@@ -160,82 +160,123 @@ const WishlistPage = () => {
         </div>
       </div>
 
-      <div className="max-w-9xl mx-auto flex flex-col gap-6 p-6">
-        {loading ? (
-          <div className="text-center text-gray-500">Loading wishlist...</div>
-        ) : wishlistItems.length === 0 ? (
-          <div className="text-center text-gray-600">Your wishlist is empty.</div>
-        ) : (
-          <div className="rounded-lg border overflow-x-auto mb-10">
-            <table className="w-full min-w-max mt-4 border-collapse">
-              <thead>
-                <tr className="text-left border-b bg-gray-50">
-                  <th className="py-3 px-6 text-center font-semibold">Delete</th>
-                  <th className="py-3 px-6 font-semibold">Product Name</th>
-                  <th className="py-3 px-6 text-center font-semibold">Unit Price</th>
-                  <th className="py-3 px-6 text-center font-semibold">Stock Status</th>
-                  <th className="py-3 px-6 text-center font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {wishlistItems.map((item, index) => (
-                  <motion.tr
-                    key={item.id}
-                    className="border-b hover:bg-gray-50"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
+     <div className="max-w-7xl mx-auto flex flex-col gap-6 p-4 sm:p-6">
+  {loading ? (
+    <div className="text-center text-gray-500">Loading wishlist...</div>
+  ) : wishlistItems.length === 0 ? (
+    <div className="text-center text-gray-600">Your wishlist is empty.</div>
+  ) : (
+    <>
+      {/* Desktop Table Layout */}
+      <div className="hidden sm:block rounded-lg border overflow-x-auto mb-10">
+        <table className="w-full mt-4 border-collapse">
+          <thead>
+            <tr className="text-left border-b bg-gray-50">
+              <th className="py-3 px-4 text-center font-semibold text-sm">Delete</th>
+              <th className="py-3 px-4 font-semibold text-sm">Product Name</th>
+              <th className="py-3 px-4 text-center font-semibold text-sm">Unit Price</th>
+              <th className="py-3 px-4 text-center font-semibold text-sm">Stock Status</th>
+              <th className="py-3 px-4 text-center font-semibold text-sm">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {wishlistItems.map((item, index) => (
+              <motion.tr
+                key={item.id}
+                className="border-b hover:bg-gray-50"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <td className="py-4 px-4 text-center">
+                  <button
+                    className="text-black hover:text-red-700 flex items-center gap-1 justify-center text-sm"
+                    onClick={() => confirmRemove(item.productId)}
                   >
-                    <td className="py-4 px-6 text-center">
-                      <button
-                        className="text-black hover:text-red-700 flex items-center gap-1"
-                        onClick={() => confirmRemove(item.productId)}
-                      >
-                        <CiCircleRemove /> Remove
-                      </button>
-                    </td>
-                    <td className="flex items-center py-4 px-6 space-x-4">
-                      <Image
-                        src={`/uploads/products/${item.image}`}
-                        alt={item.name}
-                        width={80}
-                        height={80}
-                        className="rounded-lg"
-                      />
-                      <div className="ml-4">
-                         {/* <Link href={`/product/${item.productId.slug}`}> */}
-                      <p className="font-semibold hover:text-orange-500 cursor-pointer">
-                      {item.name.length > 50 ? `${item.name.substring(0, 50)}...` : item.name}
+                    <CiCircleRemove size={18} /> Remove
+                  </button>
+                </td>
+                <td className="py-4 px-4">
+                  <div className="flex items-center space-x-4">
+                    <Image
+                      src={`/uploads/products/${item.image}`}
+                      alt={item.name}
+                      width={70}
+                      height={70}
+                      className="rounded-lg object-cover"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm hover:text-orange-500 cursor-pointer">
+                        {item.name.length > 50 ? `${item.name.substring(0, 50)}...` : item.name}
                       </p>
-                      {/* </Link> */}
-                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <span className="text-yellow-500">⭐ {item.rating}</span>
-                          <span className="ml-2">| {item.reviews} Reviews</span>
-                        </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        <span className="text-yellow-500">⭐ {item.rating}</span>
+                        <span className="ml-2">| {item.reviews} Reviews</span>
                       </div>
-                    </td>
-                    <td className="py-4 px-6 text-center font-semibold">Rs. {item.price.toFixed(2)}</td>
-                    <td className="py-4 px-6 text-center text-green-600 font-semibold">
-                      {item.stockStatus}
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      {/* <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="bg-orange-500 text-white px-3 py-1 rounded flex items-center space-x-2"
-                      >
-                        <span>Add To Cart</span>
-                        <FaShoppingCart />
-                      </motion.button> */}
-                       <Addtocart productId={item.productId} />
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                    </div>
+                  </div>
+                </td>
+                <td className="py-4 px-4 text-center font-semibold text-sm">
+                  Rs. {item.price.toFixed(2)}
+                </td>
+                <td className="py-4 px-4 text-center text-green-600 font-semibold text-sm">
+                  {item.stockStatus}
+                </td>
+                <td className="py-4 px-4 text-center">
+                  <Addtocart productId={item.productId} />
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+
+      {/* Mobile Card Layout */}
+      <div className="sm:hidden space-y-4">
+        {wishlistItems.map((item, index) => (
+          <motion.div
+            key={item.productId}
+            className="bg-white rounded-lg shadow p-4 flex flex-col"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+          >
+            <div className="flex gap-4">
+              <Image
+                src={`/uploads/products/${item.image}`}
+                alt={item.name}
+                width={90}
+                height={90}
+                className="rounded-md object-cover"
+              />
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-gray-900">
+                  {item.name.length > 40 ? `${item.name.slice(0, 40)}...` : item.name}
+                </h3>
+                {/* <p className="text-xs text-gray-500 mt-1">⭐ {item.rating} | {item.reviews} reviews</p> */}
+                <p className="text-sm font-semibold text-customBlue mt-1">Rs. {item.price.toFixed(2)}</p>
+              </div>
+            </div>
+            <div className="flex justify-between items-center mt-4">
+              <button
+                className="text-red-500 flex items-center gap-1 text-sm"
+                onClick={() => confirmRemove(item.productId)}
+              >
+                <CiCircleRemove size={18} /> Remove
+              </button>
+              <div className="text-green-600 text-sm font-medium">{item.stockStatus}</div>
+                  <div className="text-xs">
+                    <Addtocart productId={item.productId} />
+                  </div>
+                    
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </>
+  )}
+</div>
+
     </div>
   );
 };

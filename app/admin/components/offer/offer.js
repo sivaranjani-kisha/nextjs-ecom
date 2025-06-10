@@ -1,10 +1,11 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import Select from "react-select";
 import { Icon } from '@iconify/react';
-
+import DateRangePicker from '@/components/DateRangePicker';
 export default function OfferComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -16,6 +17,12 @@ export default function OfferComponent() {
   const [categories, setCategories] = useState([]);
   const [expanded, setExpanded] = useState({});
   const [offers, setOffers] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("");
+    const [dateFilter, setDateFilter] = useState({
+      startDate: null,
+      endDate: null
+    });
+  
   const [isLoading, setIsLoading] = useState(true);
   const [offerData, setOfferData] = useState({
     offer_code: "",
@@ -397,10 +404,38 @@ export default function OfferComponent() {
   };
 
   // Search functionality
-  const filteredOffers = offers.filter((offer) =>
-    offer.offer_code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+// Search functionality
+const filteredOffers = offers.filter((offer) => {
+  // Filter by offer code
+  const matchesSearch = offer.offer_code
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase());
 
+  // Filter by status
+ // const matchesStatus = statusFilter === "All" || offer.status === statusFilter;
+
+  // Filter by date
+  let matchesDate = true;
+  if (dateFilter.startDate && dateFilter.endDate && offer.createdAt) {
+    const offerDate = new Date(offer.createdAt);
+    const startDate = new Date(dateFilter.startDate);
+    const endDate = new Date(dateFilter.endDate);
+
+    // Normalize times for accurate comparison
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    matchesDate = offerDate >= startDate && offerDate <= endDate;
+  }
+
+  // Return true only if all filters match
+  return matchesSearch  && matchesDate;
+});
+
+  const handleDateChange = ({ startDate, endDate }) => {
+    setDateFilter({ startDate, endDate });
+    setCurrentPage(1); // Reset to first page when date changes
+  };
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -428,29 +463,59 @@ export default function OfferComponent() {
       {isLoading ? (
         <p>Loading offers...</p>
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
-          <div className="flex justify-between items-center mb-5">
-            {/* Search Box */}
-            <div>
-              <input
-                type="text"
-                placeholder="Search Offer..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="border px-3 py-2 rounded-md w-64"
-              />
-            </div>
+        <div className="bg-white shadow-md rounded-lg p-5 h-[500px] overflow-x-auto">
+          {/* Filters Section */}
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
+    {/* Search Filter */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+      <input
+        type="text"
+        placeholder="Search Offer..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+      />
+    </div>
 
-            {/* Add Offer Button */}
-            <div>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md"
-              >
-                + Add Offer
-              </button>
-            </div>
-          </div>
+    {/* Status Filter */}
+    {/* <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+      <select
+        value={statusFilter}
+        onChange={(e) => {
+          setStatusFilter(e.target.value);
+          setCurrentPage(1);
+        }}
+        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+      >
+        <option value="All">All Statuses</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+    </div> */}
+
+    {/* Date Range Picker */}
+    <div className="w-full col-span-1 md:col-span-1">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <DateRangePicker onDateChange={handleDateChange} />
+        </div>
+      </div>
+    </div>
+
+    {/* Add Offer Button */}
+    <div className="flex justify-end">
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
+      >
+        + Add Offer
+      </button>
+    </div>
+  </div>
+
           <hr className="border-t border-gray-200 mb-4" />
           <table className="w-full border border-gray-300">
             <thead>

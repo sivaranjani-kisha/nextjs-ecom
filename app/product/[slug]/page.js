@@ -616,7 +616,7 @@ useEffect(() => {
             <div className="border-b border-gray-400 mt-2"></div>
 
             {/* Product highlight section */}
-            <div className="mt-4 bg-gray-50 p-4 rounded-md">
+            {/* <div className="mt-4 bg-gray-50 p-4 rounded-md">
                 <div 
                   className="flex items-center justify-between cursor-pointer"
                   onClick={() => setShowHighlights(!showHighlights)}
@@ -648,7 +648,38 @@ useEffect(() => {
                       )}
                     </div>
                   )}
+            </div> */}
+            <div className="mt-4 bg-gray-50 p-4 rounded-md">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setShowHighlights(!showHighlights)}
+              >
+                <h3 className="text-sm font-semibold text-gray-900">PRODUCT HIGHLIGHTS</h3>
+                <svg 
+                  className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showHighlights ? 'transform rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+
+              {showHighlights && (
+                <div className="mt-3">
+                  {product.product_highlights && product.product_highlights.length > 0 ? (
+                    <ol className="list-decimal pl-5 space-y-1 text-xs text-gray-600">
+                      {product.product_highlights.map((item, index) => (
+                        <li key={index}>{item.trim()}</li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="text-xs text-gray-500">No highlights available.</p>
+                  )}
+                </div>
+              )}
             </div>
+
           <div className="border-b border-gray-400 mt-2"></div>
 
             {/* Coupons */}
@@ -670,172 +701,175 @@ useEffect(() => {
               </div>
             </div> */}
 
-<div className="mt-4">
-      {/* Horizontal 3 Boxes Section */}
-      <div className="mt-3 flex justify-between gap-2">
-        {/* Replacement Box */}
-        <div
-          className="flex items-start bg-blue-50 border border-blue-200 rounded-md p-4 w-1/3 shadow-sm cursor-pointer"
-          onClick={() => setShowReplacementModal(true)}
-        >
-          <span className="text-blue-500 text-xl mr-3 mt-1">🔁</span>
-          <div>
-            <div className="text-sm font-semibold text-blue-800">Replacement</div>
-            <div className="text-xs text-blue-600">in 7 days</div>
-          </div>
-        </div>
-
-        {/* Warranty Box */}
-        <div className="flex items-start bg-blue-50 border border-blue-200 rounded-md p-4 w-1/3 shadow-sm cursor-pointer"
-          onClick={() => setshowWarrantyModal(true)}>
-          <span className="text-green-500 text-xl mr-3 mt-1">🛡️</span>
-          <div>
-            <div className="text-sm font-semibold text-blue-800">Warranty</div>
-            <div className="text-xs text-blue-600">in 1 Year</div>
-          </div>
-        </div>
-
-        {/* GST Invoice Box */}
-        <div className="flex items-start bg-blue-50 border border-blue-200 rounded-md p-4 w-1/3 shadow-sm cursor-pointer"
-          onClick={() => setshowGstInvoiceModal(true)}>
-          <span className="text-yellow-500 text-xl mr-3 mt-1">📄</span>
-          <div>
-            <div className="text-sm font-semibold text-blue-800">GST Invoice</div>
-            <div className="text-xs text-blue-600">Available</div>
-          </div>
-        </div>
+       <div className="mt-4">
+  {/* Responsive 3 Boxes Section */}
+  <div className="mt-3 flex flex-col md:flex-row md:justify-between gap-2 space-y-2 md:space-y-0">
+    {/* Replacement Box */}
+    <div
+      className="flex items-start bg-blue-50 border border-blue-200 rounded-md p-4 w-full md:w-1/3 shadow-sm cursor-pointer"
+      onClick={() => setShowReplacementModal(true)}
+    >
+      <span className="text-blue-500 text-xl mr-3 mt-1">🔁</span>
+      <div>
+        <div className="text-sm font-semibold text-blue-800">Replacement</div>
+        <div className="text-xs text-blue-600">in 7 days</div>
       </div>
-
-      {/* Modal */}
-      {showReplacementModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl relative p-6">
-            {/* Modal Header */}
-            <div className="flex justify-between items-center border-b pb-2">
-              <h2 className="text-lg font-semibold text-blue-800">Replacement</h2>
-              <button
-                className="text-gray-500 hover:text-gray-700 text-xl"
-                onClick={() => setShowReplacementModal(false)}
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="mt-4 text-sm text-gray-700 space-y-2 max-h-[60vh] scrollbar-hide overflow-y-auto">
-              <p>Please go through the mentioned Replacement policy before placing an order.</p>
-              <p>
-                Should you receive an item with physical damages, please note that you should
-                contact us within 48 hours, (In the case of Brands like Apple, 24 hours), without
-                using the product and without breaching Poorvika's Online Replacement Policy. If
-                you fail to follow these, the replacement claim will become void.
-              </p>
-              <p>
-                Products you purchased from Poorvika Online are only eligible for Replacement, under
-                the following conditions during delivery:
-              </p>
-              <ul className="list-disc pl-6">
-                <li>Physical Damage to the Product</li>
-                <li>Defective Product</li>
-                <li>Wrong product received</li>
-                <li>Broken Seal</li>
-              </ul>
-              <p className="font-semibold">Replacement of Mobile Phone:</p>
-              <p>
-                In case you receive an item that is not in perfect condition, please contact us
-                immediately. Important - DO NOT INSERT THE SIM and DO NOT CONNECT TO WIFI (Adhering
-                to Poorvika's Online Replacement Policy).
-              </p>
-              <p className="font-semibold">Void Claim:</p>
-              <p>
-                Please note that if you do not abide by Poorvika Online's Replacement Policy and/or
-                on ignoring your duties as stated above, you agree that your claim for replacement
-                will become a VOID CLAIM.
-              </p>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="mt-6 flex justify-end border-t pt-3">
-              <a
-                href="/cancellation-refund-policy"
-                className="text-sm text-blue-600 font-medium hover:underline"
-              >
-                Know More
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal */}
-      {showWarrantyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl relative p-6">
-            {/* Modal Header */}
-            <div className="flex justify-between items-center border-b pb-2">
-              <h2 className="text-lg font-semibold text-blue-800">Warranty</h2>
-              <button
-                className="text-gray-500 hover:text-gray-700 text-xl"
-                onClick={() => setshowWarrantyModal(false)}
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="mt-4 text-sm text-gray-700 space-y-2 max-h-[60vh] scrollbar-hide overflow-y-auto">
-              <p>1 Year manufacturer warranty for device and 6 months manufacturer warranty for in-box accessories.</p>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="mt-6 flex justify-end border-t pt-3">
-              <a
-                href="/privacypolicy"
-                className="text-sm text-blue-600 font-medium hover:underline"
-              >
-                Know More
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal */}
-      {showGstInvoiceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl relative p-6">
-            {/* Modal Header */}
-            <div className="flex justify-between items-center border-b pb-2">
-              <h2 className="text-lg font-semibold text-blue-800">GST Invoice</h2>
-              <button
-                className="text-gray-500 hover:text-gray-700 text-xl"
-                onClick={() => setshowGstInvoiceModal(false)}
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="mt-4 text-sm text-gray-700 space-y-2 max-h-[60vh] scrollbar-hide overflow-y-auto">
-              <p>Click here to know more about our T & C</p>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="mt-6 flex justify-end border-t pt-3">
-              <a
-                href="/shipping"
-                className="text-sm text-blue-600 font-medium hover:underline"
-              >
-                Know More
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-
     </div>
+
+    {/* Warranty Box */}
+    <div
+      className="flex items-start bg-blue-50 border border-blue-200 rounded-md p-4 w-full md:w-1/3 shadow-sm cursor-pointer"
+      onClick={() => setshowWarrantyModal(true)}
+    >
+      <span className="text-green-500 text-xl mr-3 mt-1">🛡️</span>
+      <div>
+        <div className="text-sm font-semibold text-blue-800">Warranty</div>
+        <div className="text-xs text-blue-600">in 1 Year</div>
+      </div>
+    </div>
+
+    {/* GST Invoice Box */}
+    <div
+      className="flex items-start bg-blue-50 border border-blue-200 rounded-md p-4 w-full md:w-1/3 shadow-sm cursor-pointer"
+      onClick={() => setshowGstInvoiceModal(true)}
+    >
+      <span className="text-yellow-500 text-xl mr-3 mt-1">📄</span>
+      <div>
+        <div className="text-sm font-semibold text-blue-800">GST Invoice</div>
+        <div className="text-xs text-blue-600">Available</div>
+      </div>
+    </div>
+  </div>
+
+            {/* Modal */}
+            {showReplacementModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl relative p-6">
+                  {/* Modal Header */}
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <h2 className="text-lg font-semibold text-blue-800">Replacement</h2>
+                    <button
+                      className="text-gray-500 hover:text-gray-700 text-xl"
+                      onClick={() => setShowReplacementModal(false)}
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {/* Modal Content */}
+                  <div className="mt-4 text-sm text-gray-700 space-y-2 max-h-[60vh] scrollbar-hide overflow-y-auto">
+                    <p>Please go through the mentioned Replacement policy before placing an order.</p>
+                    <p>
+                      Should you receive an item with physical damages, please note that you should
+                      contact us within 48 hours, (In the case of Brands like Apple, 24 hours), without
+                      using the product and without breaching Poorvika's Online Replacement Policy. If
+                      you fail to follow these, the replacement claim will become void.
+                    </p>
+                    <p>
+                      Products you purchased from Poorvika Online are only eligible for Replacement, under
+                      the following conditions during delivery:
+                    </p>
+                    <ul className="list-disc pl-6">
+                      <li>Physical Damage to the Product</li>
+                      <li>Defective Product</li>
+                      <li>Wrong product received</li>
+                      <li>Broken Seal</li>
+                    </ul>
+                    <p className="font-semibold">Replacement of Mobile Phone:</p>
+                    <p>
+                      In case you receive an item that is not in perfect condition, please contact us
+                      immediately. Important - DO NOT INSERT THE SIM and DO NOT CONNECT TO WIFI (Adhering
+                      to Poorvika's Online Replacement Policy).
+                    </p>
+                    <p className="font-semibold">Void Claim:</p>
+                    <p>
+                      Please note that if you do not abide by Poorvika Online's Replacement Policy and/or
+                      on ignoring your duties as stated above, you agree that your claim for replacement
+                      will become a VOID CLAIM.
+                    </p>
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="mt-6 flex justify-end border-t pt-3">
+                    <a
+                      href="/cancellation-refund-policy"
+                      className="text-sm text-blue-600 font-medium hover:underline"
+                    >
+                      Know More
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal */}
+            {showWarrantyModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl relative p-6">
+                  {/* Modal Header */}
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <h2 className="text-lg font-semibold text-blue-800">Warranty</h2>
+                    <button
+                      className="text-gray-500 hover:text-gray-700 text-xl"
+                      onClick={() => setshowWarrantyModal(false)}
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {/* Modal Content */}
+                  <div className="mt-4 text-sm text-gray-700 space-y-2 max-h-[60vh] scrollbar-hide overflow-y-auto">
+                    <p>1 Year manufacturer warranty for device and 6 months manufacturer warranty for in-box accessories.</p>
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="mt-6 flex justify-end border-t pt-3">
+                    <a
+                      href="/privacypolicy"
+                      className="text-sm text-blue-600 font-medium hover:underline"
+                    >
+                      Know More
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal */}
+            {showGstInvoiceModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl relative p-6">
+                  {/* Modal Header */}
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <h2 className="text-lg font-semibold text-blue-800">GST Invoice</h2>
+                    <button
+                      className="text-gray-500 hover:text-gray-700 text-xl"
+                      onClick={() => setshowGstInvoiceModal(false)}
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {/* Modal Content */}
+                  <div className="mt-4 text-sm text-gray-700 space-y-2 max-h-[60vh] scrollbar-hide overflow-y-auto">
+                    <p>Click here to know more about our T & C</p>
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="mt-6 flex justify-end border-t pt-3">
+                    <a
+                      href="/shipping"
+                      className="text-sm text-blue-600 font-medium hover:underline"
+                    >
+                      Know More
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+  {/* Modals - Keep your existing code for modals */}
+</div>
+
 
 
 

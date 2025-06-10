@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -7,6 +7,7 @@ import "slick-carousel/slick/slick-theme.css";
 import { motion, useAnimation, useInView } from "framer-motion";
 import { ShoppingCartSimple, CaretDown } from "@phosphor-icons/react";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FiChevronLeft, FiChevronRight, FiShoppingCart } from 'react-icons/fi';
 import { Heart, ShoppingCart } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
@@ -29,11 +30,13 @@ export default function HomeComponent() {
     const [isLoading, setIsLoading] = useState(true);
     const [isBannerLoading, setIsBannerLoading] = useState(true);
     const [isFlashSalesLoading, setIsFlashSalesLoading] = useState(true);
+    const [navigating, setNavigating] = useState(false);
     const [bannerData, setBannerData] = useState({
         banner: {
         items: []
         }
     });
+    const router = useRouter();
     const [userData, setUserData] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [hasMounted, setHasMounted] = useState(false);
@@ -49,6 +52,18 @@ export default function HomeComponent() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [authMode, setAuthMode] = useState('login');
     const [categoryBanner, setCategoryBanner] = useState([]);
+
+    // Cateogry Scroll
+    const categoryScrollRef = useRef(null);
+
+const scrollCategories = (direction) => {
+  if (categoryScrollRef.current) {
+    categoryScrollRef.current.scrollBy({
+      left: direction === "left" ? -200 : 200,
+      behavior: "smooth",
+    });
+  }
+};
     // Fetch banner data
     useEffect(() => {
         const fetchBannerData = async () => {
@@ -314,17 +329,51 @@ export default function HomeComponent() {
             }
         ]
     };
+
     const brandSettings = {
-        infinite: true,
-        speed: 5000, // Higher speed for continuous effect
-        slidesToShow: 7, // Adjust according to your design
-        slidesToScroll: 1,
-        autoplay: true,
-        autoplaySpeed: 0, // 0ms delay between scrolls
-        cssEase: "linear", // Smooth continuous scroll
-        arrows: false, // Optional: hide arrows
-        pauseOnHover: false, // Optional: keep scrolling on hover
-    };
+  infinite: true,
+  speed: 5000, // Continuous effect
+  slidesToShow: 7, // Default for large screens
+  slidesToScroll: 1,
+  autoplay: true,
+  autoplaySpeed: 0,
+  cssEase: "linear",
+  arrows: false,
+  pauseOnHover: false,
+
+  responsive: [
+    {
+      breakpoint: 1024, // Tablets
+      settings: {
+        slidesToShow: 5,
+      },
+    },
+    {
+      breakpoint: 768, // Mobile
+      settings: {
+        slidesToShow: 3,
+      },
+    },
+    {
+      breakpoint: 480, // Extra-small devices
+      settings: {
+        slidesToShow: 2,
+      },
+    },
+  ],
+};
+
+    // const brandSettings = {
+    //     infinite: true,
+    //     speed: 5000, // Higher speed for continuous effect
+    //     slidesToShow: 7, // Adjust according to your design
+    //     slidesToScroll: 1,
+    //     autoplay: true,
+    //     autoplaySpeed: 0, // 0ms delay between scrolls
+    //     cssEase: "linear", // Smooth continuous scroll
+    //     arrows: false, // Optional: hide arrows
+    //     pauseOnHover: false, // Optional: keep scrolling on hover
+    // };
 
     // const brandSettings = {
     //     dots: false,
@@ -412,6 +461,9 @@ export default function HomeComponent() {
 
 
     const handleProductClick = (product) => {
+        if (navigating) return;
+
+        setNavigating(true);
         const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
 
         const alreadyViewed = stored.find((p) => p._id === product._id);
@@ -426,6 +478,41 @@ export default function HomeComponent() {
 
         localStorage.setItem('recentlyViewed', JSON.stringify(limited));
     };
+
+   // 1. Define the handler function with proper parameters
+const handleCategoryClick = useCallback((category) => (e) => {
+    if (navigating) {
+        e.preventDefault();
+        return;
+    }
+
+    setNavigating(true);
+
+    // Optional: Save to recently viewed categories
+    // const stored = JSON.parse(localStorage.getItem('recentlyViewedCategories')) || [];
+    // const updated = stored.filter(c => c._id !== category._id); // Remove if already exists
+    // updated.unshift(category);
+    // localStorage.setItem('recentlyViewedCategories', JSON.stringify(updated.slice(0, 10)));
+
+    router.push(`/category/${category.category_slug}`);
+}, [navigating, router]);
+
+
+
+    // Handle route events
+       useEffect(() => {
+        const handleRouteChange = () => setNavigating(false);
+    
+        if (!router?.events?.on) return;
+    
+        router.events.on('routeChangeComplete', handleRouteChange);
+        router.events.on('routeChangeError', handleRouteChange);
+    
+        return () => {
+            router.events.off('routeChangeComplete', handleRouteChange);
+            router.events.off('routeChangeError', handleRouteChange);
+        };
+    }, [router]);
 
 
     const featuredCategory = parentCategories[0];
@@ -456,6 +543,14 @@ export default function HomeComponent() {
  
     return (
         <>
+
+        {navigating && (
+        <div className="fixed inset-0 z-[9999] flex justify-center items-center bg-black bg-opacity-30">
+          <div className="p-4 rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
+          </div>
+        </div>
+      )}
             {isLoading && (
                 // <div className="preloader fixed inset-0 z-[9999] flex justify-center items-center bg-white">
                 //     <Image 
@@ -472,170 +567,201 @@ export default function HomeComponent() {
             )}
             {/* main div start */}
             <div className={`relative transition-opacity duration-300 ${isLoading ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`} ref={containerRef} >
-                
-        {hasMounted && categories.length > 0 && (
-           <div className="bg-white py-2 relative border-b border-gray-200 shadow">
-             <div className="max-w-7xl mx-auto px-2 sm:px-7 relative">
-               {/* Swiper arrows - hidden on mobile */}
-               <div className="absolute -left-2 sm:-left-2 top-1/2 z-10 -translate-y-1/2 custom-swiper-prev cursor-pointer hidden md:block">
-                 <div className="p-2 bg-customBlue rounded-full shadow">
-                   <FiChevronLeft size={20} className="text-white" />
-                 </div>
-               </div>
-               <div className="absolute -right-2 sm:-right-2 top-1/2 z-10 -translate-y-1/2 custom-swiper-next cursor-pointer hidden md:block">
-                 <div className="p-2 bg-customBlue rounded-full shadow">
-                   <FiChevronRight size={20} className="text-white" />
-                 </div>
-               </div>
-         
-               <Swiper
-                 modules={[Navigation]}
-                navigation={{
-                    prevEl: '.custom-swiper-prev',
-                    nextEl: '.custom-swiper-next',
-                }}
-           spaceBetween={12} 
-           breakpoints={{
-             320: { slidesPerView: 3, spaceBetween: 10 },
-             460: { slidesPerView: 4, spaceBetween: 12 },
-             640: { slidesPerView: 5, spaceBetween: 14 },
-             768: { slidesPerView: 6, spaceBetween: 16 },
-             900: { slidesPerView: 7, spaceBetween: 20 }, // Increased from 6 to 7
-             1024: { slidesPerView: 7, spaceBetween: 24 }, // Reduced from 9 to 7 and increased spaceBetween
-             1280: { slidesPerView: 9, spaceBetween: 18 } // Added a new breakpoint for wider screens
-           }}
-         >
-                 {categories.map((category) => (
-                   <SwiperSlide key={category._id}>
-                     <Link href={`/category/${category.category_slug}`}>
-                       <div className="flex flex-col items-center text-center w-full transition-transform duration-300 hover:scale-105 mt-3 sm:mt-4">
-                         {/* <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn">
-                           {category.image ? (
-                             <Image
-                               src={category.image}
-                               alt={category.category_name}
-                               width={80}
-                               height={80}
-                               className="object-contain"
-                             />
-                           ) : (
-                             <div className="w-10 h-10 bg-gray-300 rounded-full" />
-                           )}
-                         </div> */}
-                         <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn group">
-                {category.image ? (
-                    <Image
-                    src={category.image}
-                    alt={category.category_name}
-                    width={70}
-                    height={70}
-                    className="object-contain transition-transform duration-300 group-hover:scale-110"
-                    />
-                ) : (
-                    <div className="w-10 h-10 bg-gray-300 rounded-full" />
-                )}
-                </div>
+              
+              {/* category section   */}
+              {hasMounted && categories.length > 0 && (
+                <div className="bg-white py-2 relative border-b border-gray-200 shadow">
+                  <div className="w-full px-2 sm:px-7 relative">
+                    {/* Arrows */}
+                    {/* className="absolute -left-2 sm:-left-2 top-1/2 z-10 -translate-y-1/2 custom-swiper-prev cursor-pointer hidden md:block" */}
 
-                         <span className="mt-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-customBlue text-center px-1 whitespace-nowrap">
-                           {category.category_name}
-                         </span>
-                       </div>
-                     </Link>
-                   </SwiperSlide>
-                 ))}
-               </Swiper>
-             </div>
-           </div>
-        )}        
-                 {/* Banner Section start */}
-                <motion.section ref={refs.banner} initial="hidden" animate={isInView.banner ? "visible" : "hidden"} variants={containerVariants} className="overflow-hidden pt-0 m-0 ">
-                    <div className="relative">
-                        {isBannerLoading ? (
-                            <div className="p-6 flex justify-center items-center h-64">
-                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-                            </div>
-                        ) : bannerData.banner.items.length > 0 ? (
-                            bannerData.banner.items.length > 1 ? (
-                            <Slider {...settings} className="relative">
-                                {bannerData.banner.items.map((item) => (
-                                    <motion.div key={item.id} className="relative h-[2500px]" variants={itemVariants}>
-                                        <div className="absolute inset-0 overflow-hidden">
-                                            <Image src={item.bgImageUrl} alt="Background" layout="fill" objectFit="cover" priority />
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </Slider>
-                            ) : (
-                                <motion.div className="p-6 relative h-[500px]" variants={itemVariants} >
-                                    <div className="absolute inset-0 rounded-[30px] overflow-hidden">
-                                        <Image src={bannerData.banner.items[0].bgImageUrl} alt="Background" layout="fill" objectFit="cover" className="rounded-[30px]" priority/>
-                                        <div className="absolute inset-0 bg-opacity-20 rounded-[30px]"></div>
-                                    </div>
-                                </motion.div>
-                            )
-                        ) : (
-                            <div className="p-6 text-center">
-                            <p className="text-lg">No active banners available</p>
-                            </div>
-                        )}
-                        {/* Scroll Button */}
-                        
+                    <div className="absolute left-0 sm:-left-2 top-1/2 z-20 -translate-y-1/2 custom-swiper-prev cursor-pointer ">
+                      <div className="p-2 bg-customBlue rounded-full shadow">
+                        <FiChevronLeft size={20} className="text-white" />
+                      </div>
                     </div>
-                </motion.section>
+                    {/* className="absolute -right-2 sm:-right-2 top-1/2 z-10 -translate-y-1/2 custom-swiper-next cursor-pointer hidden md:block" */}
+                    <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2 custom-swiper-next cursor-pointer flex">
+                      <div className="p-2 bg-customBlue rounded-full shadow">
+                        <FiChevronRight size={20} className="text-white" />
+                      </div>
+                    </div>
 
-                {/* features code start */}
+                    {/* Swiper */}
+                    <Swiper
+                      modules={[Navigation]}
+                      navigation={{
+                        prevEl: '.custom-swiper-prev',
+                        nextEl: '.custom-swiper-next',
+                      }}
+                      spaceBetween={12}
+                      breakpoints={{
+                        320: { slidesPerView: 3, spaceBetween:10  },
+                        460: { slidesPerView: 4, spaceBetween: 12 },
+                        640: { slidesPerView: 5, spaceBetween: 14 },
+                        768: { slidesPerView: 6, spaceBetween: 16 },
+                        900: { slidesPerView: 7, spaceBetween: 20 },
+                        1024: { slidesPerView: 7, spaceBetween: 24 },
+                        1280: { slidesPerView: 9, spaceBetween: 18 },
+                        2296: { slidesPerView: 12, spaceBetween: 18 },
+
+                      }}
+                    >
+                      {categories.map((category) => (
+                                  <SwiperSlide key={category._id}>
+                                    <Link 
+                                            href={`/category/${category.category_slug}`}
+                                            className={`block ${navigating ? 'pointer-events-none' : ''}`}
+                                            onClick={handleCategoryClick(category)} // Pass the category here
+                                        >
+                {/* <Link href={`/category/${category.category_slug}`}> */}
+                                      <div className="flex flex-col items-center text-center w-full transition-transform duration-300 hover:scale-105 mt-3 sm:mt-4">
+                                        {/* <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn">
+                                          {category.image ? (
+                                            <Image
+                                              src={category.image}
+                                              alt={category.category_name}
+                                              width={80}
+                                              height={80}
+                                              className="object-contain"
+                                            />
+                                          ) : (
+                                            <div className="w-10 h-10 bg-gray-300 rounded-full" />
+                                          )}
+                                        </div> */}
+                                        <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-full border-2 border-blue-200 hover:border-blue-800 flex items-center justify-center overflow-hidden shadow-md animate-fadeIn group">
+                                {category.image ? (
+                                    <Image
+                                    src={category.image}
+                                    alt={category.category_name}
+                                    width={70}
+                                    height={70}
+                                    className="object-contain transition-transform duration-300 group-hover:scale-110"
+                                    />
+                                ) : (
+                                    <div className="w-10 h-10 bg-gray-300 rounded-full" />
+                                )}
+                                </div>
+
+                                        <span className="mt-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-customBlue text-center px-1 whitespace-nowrap">
+                                          {category.category_name}
+                                        </span>
+                                      </div>
+                                    </Link>
+                                  </SwiperSlide>
+                                ))}
+                    </Swiper>
+                  </div>
+                </div>
+
+              )}        
+                 {/* Banner Section start */}
+              <motion.section 
+                ref={refs.banner} 
+                initial="hidden" 
+                animate={isInView.banner ? "visible" : "hidden"} 
+                variants={containerVariants} 
+                className="relative w-full overflow-hidden pt-0 mx-auto"
+              >
+
+              <div className="relative w-full">
+                {isBannerLoading ? (
+                  <div className="p-6 flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : bannerData.banner.items.length > 0 ? (
+                  bannerData.banner.items.length > 1 ? (
+                    <div className="w-full overflow-hidden">
+                      <Slider 
+                        {...settings} 
+                        className="w-full"
+                      >
+                        {bannerData.banner.items.map((item) => (
+                          <motion.div 
+                            key={item.id} 
+                            className="relative w-full"
+                            variants={itemVariants}
+                          >
+                          <div className="relative w-full aspect-[16/9] sm:aspect-[16/7] md:aspect-[16/6] lg:aspect-[16/5]">
+  <Image 
+    src={item.bgImageUrl} 
+    alt="Banner" 
+    fill
+    priority 
+    className="object-contain w-full h-full" 
+    sizes="100vw"
+  />
+</div>
+
+
+
+                          </motion.div>
+                        ))}
+                      </Slider>
+                    </div>
+                  ) : (
+                    <motion.div 
+                      className="w-full" 
+                      variants={itemVariants}
+                    >
+                      <div className="relative w-full h-[300px] sm:h-[400px] md:h-[500px]">
+                        <Image 
+                          src={bannerData.banner.items[0].bgImageUrl} 
+                          alt="Banner" 
+                          fill
+                          priority
+                          className="object-contain w-full h-full"
+                          sizes="100vw"
+                        />
+                      </div>
+                    </motion.div>
+                  )
+                ) : (
+                  <div className="p-6 text-center w-full">
+                    <p className="text-lg">No active banners availablee</p>
+                  </div>
+                )}
+              </div>
+              </motion.section>
+    
+             
+
+                
        {/* features code start */}
-               <section className="p-2">
-    <div style={{
-        display: "flex",
-        flexWrap: "nowrap",
-        justifyContent: "center",
-        gap: "24px",
-        maxWidth: "1440px",
-        margin: "0 auto",
-    }}>
-        {features.map((feature, index) => (
-            <div key={index} style={{
-                display: "flex",
-                alignItems: "center",
-                flex: "1 1 0",
-                minWidth: "0",
-                padding: "24px",
-                borderRadius: "12px",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                background: "linear-gradient(135deg, #deb9b9, #73a0e0)"
-            }}>
-                <div style={{
-                    backgroundColor: "#ffffff",
-                    color: "white",
-                    padding: "12px",
-                    borderRadius: "9999px",
-                    fontSize: "24px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}>
-                    {feature.icon}
-                </div>
-                <div style={{ marginLeft: "16px" }}>
-                    <h3 style={{
-                        fontSize: "18px",
-                        fontWeight: "600",
-                        color: "#111827",
-                        marginBottom: "8px"
-                    }}>
-                        {feature.title}
-                    </h3>
-                    <p style={{ fontSize: "14px", color: "#374151" }}>{feature.description}</p>
-                </div>
-            </div>
-        ))}
-    </div>
+
+
+<section className="p-2">
+  <div
+    className="grid grid-cols-2 gap-4 
+               md:flex md:flex-nowrap md:justify-center md:gap-6 
+               w-full"
+  >
+    {features.map((feature, index) => (
+      <div
+        key={index}
+        className="flex flex-col md:flex-row 
+                   items-center md:items-start 
+                   p-6 rounded-xl shadow-md 
+                   bg-gradient-to-br from-[#deb9b9] to-[#73a0e0] 
+                   flex-1 min-w-0"
+      >
+        <div className="bg-white p-3 rounded-full text-2xl flex items-center justify-center shrink-0">
+          {feature.icon}
+        </div>
+        <div className="mt-4 md:mt-0 md:ml-4 text-center md:text-left min-w-0">
+          <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">
+            {feature.title}
+          </h3>
+          <p className="text-sm text-gray-700 break-words">
+            {feature.description}
+          </p>
+        </div>
+      </div>
+    ))}
+  </div>
 </section>
 
-
-
-                {/* Existing offer code start */}
+             {/* Existing offer code start */}
                 <div className="px-2 py-4">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold">Exciting Offers</h2>
@@ -650,64 +776,53 @@ export default function HomeComponent() {
                     {offerProducts.length === 0 && <p>No active offers found.</p>}
 
                     {/* If only 1 or 2 products, show static row */}
-                    {offerProducts.length > 0 && offerProducts.length <= 2 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {offerProducts.map((product, index) => (
-                            <div
+                   {offerProducts.length >= 3 && (
+                    <div className="grid grid-cols-2 gap-4 sm:hidden">
+                        {offerProducts.slice(0, 4).map((product, index) => (
+                        <div
                             key={product._id}
-                            className={`card rounded-lg shadow-sm ${bgClasses[index] || "bg-yellow-100"}`}
-                            >
+                           className={`card rounded-lg shadow-sm h-[140px] min-h-[140px] flex overflow-hidden ${bgClasses[index % bgClasses.length]}`}
+                        >
                             <div className="flex items-center">
-                                <div className="w-1/3 p-2">
+                            <div className="w-1/3 p-2">
                                 <Link href={`/product/${product.slug}`} className="block">
-                                    <img
-                                        src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"}
-                                        alt={product.item_code}
-                                        className="w-full object-contain pl-1"
-                                    />
+                               <div className="h-[100px] sm:h-[120px] md:h-[130px] bg-white flex items-center justify-center overflow-hidden rounded-md">
+                                <img
+                                  src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"}
+                                  alt={product.item_code}
+                                  className="object-contain w-full h-full"
+                                />
+                              </div>
+
                                 </Link>
-                                </div>
-                                <div className="w-2/3 p-4">
-                                <div className="flex items-center mb-2">
-                                    <svg
-                                    stroke="currentColor"
-                                    fill="none"
-                                    strokeWidth="2"
-                                    viewBox="0 0 24 24"
-                                    className="mr-1 h-3.5 w-3.5"
-                                    >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                    </svg>
-                                    {/* <span className="text-sm">04h : 43m : 59s</span> */}
-                                </div>
+                            </div>
+                            <div className="w-2/3 p-4">
                                 <Link href={`/product/${product.slug}`} className="block">
-                                     <div className="text-sm line-clamp-2">{product.name}</div>
+                                <div className="text-sm line-clamp-2">{product.name}</div>
                                 </Link>
                                 <div className="mt-1">
-                                    <span className="text-sm font-medium text-gray-700">Rs.</span>
-                                    <span className="ml-1 font-semibold">{product.price}</span>
+                                <span className="text-sm font-medium text-gray-700">Rs.</span>
+                                <span className="ml-1 font-semibold">{product.price}</span>
                                 </div>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <div className="text-sm font-medium text-gray-400 line-through whitespace-nowrap">
-                                    <span className="text-sm font-medium text-gray-400">Rs.</span>
-                                    {product.special_price ? product.price : product.price + 20}
-                                    </div>
-                                    <div className="text-sm font-semibold text-green-600 bg-white rounded px-2 whitespace-nowrap">
-                                    {product.special_price ? "Special Offer" : "Limited Time"}
-                                    </div>
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                <div className="text-sm font-medium text-gray-400 line-through whitespace-nowrap">
+                                  <span className="text-sm font-medium text-gray-400">Rs.</span>
+                                  {product.special_price ? product.price : product.price + 20}
                                 </div>
+                                <div className="text-xs font-semibold text-green-600 bg-white rounded px-2 py-0.5 whitespace-nowrap max-w-full overflow-hidden text-ellipsis">
+                                  {product.special_price ? "Special Offer" : "Limited Time"}
                                 </div>
+                              </div>
+
                             </div>
                             </div>
-                        ))}
                         </div>
+                        ))}
+                    </div>
                     )}
 
                     {/* If 3 or more products, show Swiper */}
+                    <div className="hidden sm:block">
                     {offerProducts.length >= 3 && (
                         <Swiper
                         modules={[Navigation, Autoplay]}
@@ -726,15 +841,19 @@ export default function HomeComponent() {
                     
                         {offerProducts.map((product, index) => (
                             <SwiperSlide key={product._id}>
-                            <div className={`card rounded-lg shadow-sm ${bgClasses[index % bgClasses.length]}`}>
+                           <div className={`card rounded-lg shadow-sm h-[140px] min-h-[140px] flex overflow-hidden ${bgClasses[index % bgClasses.length]}`}>
+
                                 <div className="flex items-center">
                                 <div className="w-1/3 p-2">
                                 <Link href={`/product/${product.slug}`} className="block">
-                                    <img
-                                    src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"}
-                                    alt={product.item_code}
-                                    className="w-full object-contain pl-1"
-                                    />
+                                     <div className="h-[100px] sm:h-[120px] md:h-[130px]  flex items-center justify-center overflow-hidden rounded-md">
+                                      <img
+                                        src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"}
+                                        alt={product.item_code}
+                                        className="object-contain w-full h-full"
+                                      />
+                                    </div>
+
                                     </Link>
                                 </div>
                                 <div className="w-2/3 p-4">
@@ -777,7 +896,9 @@ export default function HomeComponent() {
                         ))}
                         </Swiper>
                     )}
+                    </div>
                 </div>
+
 
                 {/* category banner code start */}
                 <div className="px-2 sm:px-2 lg:px-2 p-2">
@@ -933,7 +1054,7 @@ export default function HomeComponent() {
                             </div>
                         ) : (
                             <motion.div variants={itemVariants}>
-                             <Slider {...brandSettings} className="brand-slider px-[50px] relative">
+                             <Slider {...brandSettings} className="brand-slider px-2 sm:px-[50px] relative">
                                 {brands.map((brand) => (
                                 <motion.div
                                     key={brand.id}
@@ -962,162 +1083,174 @@ export default function HomeComponent() {
 
                 {/* recomended product sections */}
                 <motion.section className="mb-2 px-2 recommended-products pt-15 mb-10">
-                    <div className="bg-gray-100 rounded-[23px] px-2 py-4 p-2">
-                        {/* Section Header */}
-                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
-                            <h5 className="text-2xl font-bold">Recommended for you</h5>
-                            <div className="flex items-center gap-4">
-                                <a href="" className="text-sm font-medium text-gray-700 hover:text-blue-600 hover:underline">
-                                    View All Products
-                                </a>
-                                <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={scrollLeft} 
-                                        className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition"
-                                    >
-                                        <FiChevronLeft size={18} />
-                                    </button>
-                                    <button 
-                                        onClick={scrollRight} 
-                                        className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition"
-                                    >
-                                        <FiChevronRight size={18} />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Category Tabs */}
-                        <div className="flex mb-6 overflow-x-auto pb-2 hide-scrollbar">
-                            {parentCategories.map((category) => (
-                                <button
-                                    key={category._id}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap mr-2 transition-colors ${
-                                        selectedCategory?._id === category._id
-                                            ? "bg-blue-600 text-white"
-                                            : "bg-white text-gray-700 hover:bg-gray-200"
-                                    }`}
-                                    onClick={() => setSelectedCategory(category)}
-                                >
-                                    {category.category_name}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Product List with Horizontal Scrolling */}
-                        {filteredProducts.length === 0 ? (
-                            <div className="text-center font-bold text-gray-500 text-lg py-10">
-                                No Product Found for this Category..!
-                            </div>
-                        ) : (
-                            <div className="relative">
-                                <div 
-                                    ref={scrollContainerRef} 
-                                    className="flex gap-6 overflow-x-auto scroll-smooth pb-4 hide-scrollbar"
-                                >
-                                
-                                {/* Dynamic Category Banner Card */}
-                                    {selectedCategory && (
-                                    <div className="flex-shrink-0 w-[250px] snap-start">
-                                        <div className="bg-blue-900 text-white rounded-lg h-full flex flex-col justify-between p-4 shadow hover:shadow-lg transition">
-                                        <h3 className="text-xl font-bold mb-4">{selectedCategory.category_name}</h3>
-                                        <div className="flex-1 flex items-center justify-center">
-                                            <img 
-                                            src={selectedCategory.image || "/user/placeholder.png"} 
-                                            alt={selectedCategory.category_name} 
-                                            className="h-50 object-contain"
-                                            onError={(e) => { 
-                                                e.target.onerror = null; 
-                                                e.target.src = "/user/placeholder.png"; 
-                                            }}
-                                            />
-                                        </div>
-                                        <Link 
-                                            href={`/category/${selectedCategory.category_slug || selectedCategory._id}`}
-                                            className="mt-4 bg-white text-blue-700 font-semibold py-2 rounded hover:bg-gray-100 transition text-center"
-                                        >
-                                            Shop Now →
-                                        </Link>
-                                        </div>
-                                    </div>
-                                    )}
-
-                                    {/* 🔁 Product Cards */}
-                                   {filteredProducts.map((product) => (
-    <div key={product._id} className="flex-shrink-0 w-[250px] snap-start">
-        <motion.div 
-            whileHover={{ y: -5 }} 
-            className="relative border rounded-lg shadow p-4 transition-all duration-300 hover:border-blue-500 hover:shadow-lg group bg-white h-full flex flex-col justify-between"
-        >
-            {product.special_price && (
-                <div className="absolute top-3 left-3 z-10">
-                    <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
-                        {Math.round(
-                            ((product.price - product.special_price) / product.price) * 100
-                        )}% OFF
-                    </span>
-                </div>
-            )}
-
-            <div className="absolute top-2 right-2 z-10 hover:text-red-500">
-                <ProductCard productId={product._id} />
-            </div>
-
-            <div className="h-48 flex items-center justify-center mt-4">
-                <img 
-                    src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
-                    alt={product.images?.[0] || "Product image"} 
-                    className="max-h-full max-w-full object-contain" 
-                    onError={(e) => { 
-                        e.target.onerror = null; 
-                        e.target.src = "/uploads/products/placeholder.jpg";
-                    }} 
-                />
-            </div>
-
-            <Link href={`/product/${product.slug || product._id}`} onClick={() => handleProductClick(product)}>
-  <h3 className="mt-3 font-semibold group-hover:text-blue-600 line-clamp-2 min-h-[3rem] leading-snug">
-    {product.name}
-  </h3>
-</Link>
-
-
-            <div className="mt-2 text-lg font-bold text-blue-600">
-                Rs. {product.special_price || product.price}
-                {product.special_price && (
-                    <span className="line-through text-gray-400 text-sm ml-1">
-                        Rs. {product.price}
-                    </span>
-                )}
-            </div>
-
-            <div className="mt-3 flex items-center justify-between gap-2">
-                <Addtocart productId={product._id} className="flex-1" />
-                <a 
-                    href={`https://wa.me/?text=Check this out: ${product.name}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
-                >
-                    <svg 
-                        className="w-5 h-5" 
-                        viewBox="0 0 32 32" 
-                        fill="currentColor" 
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-                    </svg>
-                </a>
-            </div>
-        </motion.div>
-    </div>
-))}
-
-                                </div>
-                            </div>
-                        )}
+                  <div className="bg-gray-100 rounded-[23px] px-2 py-4 p-2">
+                    
+                    {/* Section Header */}
+                    <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                      <h5 className="text-2xl font-bold">Recommended for you</h5>
                     </div>
+
+                    {/* Category Tabs */}
+                    <div className="flex items-center gap-2 mb-6">
+                      <button 
+                        onClick={() => scrollCategories("left")} 
+                        className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition"
+                      >
+                        <FiChevronLeft size={18} />
+                      </button>
+
+                      <div
+                        ref={categoryScrollRef}
+                        className="flex overflow-x-auto overflow-hidden gap-2 scroll-smooth"
+                        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                      >
+                        {parentCategories.map((category) => (
+                          <button
+                            key={category._id}
+                            className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                              selectedCategory?._id === category._id
+                                ? "bg-blue-600 text-white"
+                                : "bg-white text-gray-700 hover:bg-gray-200"
+                            }`}
+                            onClick={() => setSelectedCategory(category)}
+                          >
+                            {category.category_name}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button 
+                        onClick={() => scrollCategories("right")} 
+                        className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition"
+                      >
+                        <FiChevronRight size={18} />
+                      </button>
+                    </div>
+
+                    {/* View All Products and Scroll Controls */}
+                    <div className="flex items-center justify-end gap-4 mb-4">
+                      <a href="" className="text-sm font-medium text-gray-700 hover:text-blue-600 hover:underline">
+                        View All Products
+                      </a>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={scrollLeft} 
+                          className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition"
+                        >
+                          <FiChevronLeft size={18} />
+                        </button>
+                        <button 
+                          onClick={scrollRight} 
+                          className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition"
+                        >
+                          <FiChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Product List */}
+                    {filteredProducts.length === 0 ? (
+                      <div className="text-center font-bold text-gray-500 text-lg py-10">
+                        No Product Found for this Category..!
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div 
+                          ref={scrollContainerRef} 
+                          className="flex gap-6 overflow-x-auto scroll-smooth pb-4 hide-scrollbar"
+                        >
+
+                          {/* Category Banner Card */}
+                          {selectedCategory && (
+                            <div className="flex-shrink-0 w-[250px] snap-start">
+                              <div className="bg-blue-900 text-white rounded-lg h-full flex flex-col justify-between p-4 shadow hover:shadow-lg transition">
+                                <h3 className="text-xl font-bold mb-4">{selectedCategory.category_name}</h3>
+                                <div className="flex-1 flex items-center justify-center">
+                                  <img 
+                                    src={selectedCategory.image} 
+                                    alt={selectedCategory.category_name} 
+                                    className="h-50 object-contain"
+                                  />
+                                </div>
+                                <Link 
+                                  href={`/category/${selectedCategory.category_slug || selectedCategory._id}`}
+                                  className="mt-4 bg-white text-blue-700 font-semibold py-2 rounded hover:bg-gray-100 transition text-center"
+                                >
+                                  Shop Now →
+                                </Link>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Product Cards */}
+                          {filteredProducts.map((product) => (
+                            <div key={product._id} className="flex-shrink-0 w-[250px] snap-start">
+                              <motion.div 
+                                whileHover={{ y: -5 }} 
+                                className="relative border rounded-lg shadow p-4 transition-all duration-300 hover:border-blue-500 hover:shadow-lg group bg-white h-full flex flex-col justify-between"
+                              >
+                                {product.special_price && (
+                                  <div className="absolute top-3 left-3 z-10">
+                                    <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
+                                      {Math.round(((product.price - product.special_price) / product.price) * 100)}% OFF
+                                    </span>
+                                  </div>
+                                )}
+
+                                <div className="absolute top-2 right-2 z-10 hover:text-red-500">
+                                  <ProductCard productId={product._id} />
+                                </div>
+
+                                <div className="h-48 flex items-center justify-center mt-4">
+                                  <img 
+                                    src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
+                                    alt={product.images?.[0] || "Product image"} 
+                                    className="max-h-full max-w-full object-contain" 
+                                    onError={(e) => { 
+                                      e.target.onerror = null; 
+                                      e.target.src = "/uploads/products/placeholder.jpg";
+                                    }} 
+                                  />
+                                </div>
+
+                                <Link href={`/product/${product.slug || product._id}`} onClick={() => handleProductClick(product)}>
+                                  <h3 className="mt-3 font-semibold group-hover:text-blue-600 line-clamp-2 min-h-[3rem] leading-snug">
+                                    {product.name}
+                                  </h3>
+                                </Link>
+
+                                <div className="mt-2 text-lg font-bold text-blue-600">
+                                  Rs. {product.special_price || product.price}
+                                  {product.special_price && (
+                                    <span className="line-through text-gray-400 text-sm ml-1">
+                                      Rs. {product.price}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="mt-3 flex items-center justify-between gap-2">
+                                  <Addtocart productId={product._id} className="flex-1" />
+                                  <a 
+                                    href={`https://wa.me/?text=Check this out: ${product.name}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
+                                  >
+                                    <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
+                                      <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
+                                    </svg>
+                                  </a>
+                                </div>
+                              </motion.div>
+                            </div>
+                          ))}
+
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </motion.section>
+
 <RecentlyViewedProducts />
                 {/* Hot deal section - showing only parent categories */}
                 

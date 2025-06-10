@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import DateRangePicker from '@/components/DateRangePicker';
 import EditProductModal from "./EditProductModal";
 import { Icon } from '@iconify/react';
 import Link from 'next/link';
@@ -61,6 +60,10 @@ const handleEditProduct = (product) => {
   // Handle page change
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
+  };
+ const handleDateChange = ({ startDate, endDate }) => {
+    setDateFilter({ startDate, endDate });
+    setCurrentPage(1); // Reset to first page when date changes
   };
 
   // Handle category deletion 
@@ -240,106 +243,72 @@ const handleEditProduct = (product) => {
       {isLoading ? (
         <p>Loading Products...</p>
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
+        <div className="bg-white shadow-md rounded-lg p-5 h-[500px] overflow-x-auto">
           {/* Search and Add Category */}
-          <div className="flex justify-between items-center bg-white mb-3">
-  {/* Search and Status Filter Grouped */}
-   <div className="flex justify-between items-center bg-white mb-3">
-  {/* Search and Status Filter Grouped */}
-  <div className="flex items-center gap-4">
-    {/* Search Input */}
-    <div className="relative w-64">
-      {/* <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-        <svg
-          className="w-4 h-4 text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.5a7.5 7.5 0 010 15z"
-          />
-        </svg>
-      </span> */}
-       <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-      <input
-        type="text"
-        placeholder="Search Product..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-      />
-    </div>
-
-    {/* Status Filter Dropdown */}
-    <div className="relative w-48">
-      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-        <select
-          value={statusFilter}
-           onChange={(e) => {
-          setStatusFilter(e.target.value);
-          setCurrentPage(0);
-        }}
-          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="">All Statuses</option>
-          <option value="Active">Active</option>
-          <option value="Inactive">InActive</option>
-        </select>
-    </div>
-
-    {/* Date Filter */}
-  <div className="relative w-64">
-   <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-                      <div className="relative flex items-center border border-gray-300 rounded-md focus-within:ring-blue-500 focus-within:border-blue-500">
-                        <DatePicker
-                          selected={dateFilter.startDate}
-                          onChange={(date) => {
-                            setDateFilter(prev => ({ ...prev, startDate: date }));
-                            setCurrentPage(1);
-                          }}
-                          selectsStart
-                          startDate={dateFilter.startDate}
-                          endDate={dateFilter.endDate}
-                          placeholderText="Start Date"
-                          className="w-full p-2 border-none focus:ring-0"
-                        />
-                        <span className="text-gray-400">to</span>
-                        <DatePicker
-                          selected={dateFilter.endDate}
-                          onChange={(date) => {
-                            setDateFilter(prev => ({ ...prev, endDate: date }));
-                            setCurrentPage(1);
-                          }}
-                          selectsEnd
-                          startDate={dateFilter.startDate}
-                          endDate={dateFilter.endDate}
-                          minDate={dateFilter.startDate}
-                          placeholderText="End Date"
-                          className="w-full p-2 border-none focus:ring-0"
-                        />
-                        {(dateFilter.startDate || dateFilter.endDate) && (
-                          <button
-                            onClick={clearDateFilter}
-                            className=" right-2 p-1 text-gray-400 hover:text-red-500"
-                            title="Clear date filter"
-                          >
-                            <Icon icon="mdi:close-circle-outline" />
-                          </button>
-                        )}
-                      </div>
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
+  {/* Search Filter */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+    <input
+      type="text"
+      placeholder="Search Product..."
+      value={searchQuery}
+      onChange={(e) => {
+        setSearchQuery(e.target.value);
+        setCurrentPage(1);
+      }}
+      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+    />
   </div>
+
+  {/* Status Filter */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+    <select
+      value={statusFilter}
+      onChange={(e) => {
+        setStatusFilter(e.target.value);
+        setCurrentPage(1);
+      }}
+      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+    >
+      <option value="">All Statuses</option>
+      <option value="Active">Active</option>
+      <option value="Inactive">Inactive</option>
+    </select>
+  </div>
+
+  {/* Date Range Picker */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+    <div className="flex items-center gap-2">
+      <div className="flex-1">
+        <DateRangePicker onDateChange={handleDateChange} />
+      </div>
+      {/* Optional clear button */}
+      {/* {(dateFilter.startDate || dateFilter.endDate) && (
+        <button
+          onClick={clearDateFilter}
+          className="p-2 text-sm text-red-600 hover:text-red-800 bg-red-50 rounded-md"
+          title="Clear date filter"
+        >
+          <Icon icon="mdi:close-circle-outline" className="w-5 h-5" />
+        </button>
+      )} */}
+    </div>
+  </div>
+
+  {/* Add Product Button */}
+  <div className="flex justify-end">
+    <Link
+      href="/admin/product/create"
+      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
+    >
+      + Add Product
+    </Link>
   </div>
 </div>
 
-  {/* Add Category Button */}
-  <div className="flex gap-4">
-       <Link href="/admin/product/create" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150">+ Add Product</Link>
-        </div>
-</div>
 
           <hr className="border-t border-gray-200 mb-4" />
 

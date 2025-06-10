@@ -20,7 +20,7 @@ import 'swiper/css/navigation';
 import { useRouter } from 'next/navigation';
 
 import { Navigation } from 'swiper/modules';
-
+import SideNavbar from '@/components/sideNavbar';
 
 const Header = () => {
 const [category, setCategory] = useState('All Categories');
@@ -229,31 +229,28 @@ useEffect(() => {
    
   
   return (
-   <header className="sticky top-0 z-50">
+     <header className="sticky top-0 z-50">
       {/* Top Announcement Bar */}
- <div className="bg-white text-orange-500 px-4 py-1 overflow-hidden relative w-full">
-      <div className="relative w-full overflow-hidden h-4 flex items-center">
-        <motion.div
-          key={current} // Important to reset animation when content changes
-          initial={{ x: '100%' }}
-          animate={{ x: '-100%' }}
-          transition={{
-            ease: 'linear',
-            duration: 20,
-          }}
-          className="absolute whitespace-nowrap flex items-center space-x-2 pr-4"
-        >
-          <img src="/user/bea.png" alt="Logo" className="h-4 w-auto" />
-          <p className="font-medium text-xs sm:text-sm whitespace-nowrap">
-            {messages[current]}
-          </p>
-        </motion.div>
+     <div className={`bg-white text-orange-500 px-4 py-1 overflow-hidden relative w-full ${isMobileMenuOpen ? 'hidden' : ''}`}>
+        <div className="relative w-full overflow-hidden h-4 flex items-center">
+          <motion.div
+            key={current}
+            initial={{ x: '100%' }}
+            animate={{ x: '-100%' }}
+            transition={{ ease: 'linear', duration: 20 }}
+            className="absolute whitespace-nowrap flex items-center space-x-2 pr-4"
+          >
+            <img src="/user/bea.png" alt="Logo" className="h-4 w-auto" />
+            <p className="font-medium text-xs sm:text-sm whitespace-nowrap">{messages[current]}</p>
+          </motion.div>
+        </div>
       </div>
-    </div>
-
-
+ 
+ 
       {/* Main Header */}
-      <div className="bg-customBlue px-4 sm:px-6 md:px-6 py-2 sticky top-0 z-40">
+      {/* <div className="bg-customBlue px-4 sm:px-6 md:px-6 py-2 sticky top-0 z-40"> */}
+         <div
+  className={`${isMobileMenuOpen ? "fixed inset-0 mt-0 pt-0 z-50 overflow-y-auto" : "bg-customBlue px-4 sm:px-6 md:px-6 py-2 sticky top-0 z-40"}`}>
         <div className="flex justify-between items-center">
           {/* Mobile Menu Button (Hidden on desktop) */}
           <div className="sm:hidden flex items-center justify-center w-full relative">
@@ -264,14 +261,14 @@ useEffect(() => {
               <img src="/user/bea.png" alt="Logo" className="h-auto" width={40} height={20} />
             </Link>
           </div>
-
+ 
           {/* Logo (Hidden on mobile) */}
           <div className="hidden sm:block mr-12 bg-white p-2 rounded-lg">
            <Link href="/index" className="mx-auto">
           <img src="/user/bea.png" alt="Logo" className="h-auto" width={60} height={30} />
           </Link>
           </div>
-
+ 
           {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
           <div className="hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden">
             <select
@@ -301,23 +298,23 @@ useEffect(() => {
               <FaSearch />
             </button>
           </div>
-
+ 
           {/* Icons Group */}
           <div className="flex items-center gap-[2rem] sm:gap-4">
             {/* Mobile Search Button (Hidden on desktop) */}
-            <button 
+            <button
               onClick={toggleMobileMenu}
               className="sm:hidden text-white"
             >
               <FiSearch size={20} />
             </button>
-
+ 
             {/* Location (Hidden on mobile) */}
             <Link href="/location" className="hidden sm:flex items-center relative">
               <FaLocationDot size={18} className="text-white" />
               <span className="ml-1 font-bold text-xs sm:text-sm text-white hidden lg:inline">Location</span>
             </Link>
-
+ 
             {/* Wishlist */}
             <Link href="/wishlist" className="flex items-center relative p-1 sm:p-0">
               <FaHeart size={18} className="text-white" />
@@ -328,7 +325,7 @@ useEffect(() => {
               )}
               <span className="ml-1 font-bold text-xs sm:text-sm text-white hidden lg:inline">Wishlist</span>
             </Link>
-
+ 
             {/* Cart */}
             <Link href="/cart" className="flex items-center relative p-1 sm:p-0 sm:px-2">
               <FaShoppingCart size={18} className="text-white" />
@@ -337,7 +334,7 @@ useEffect(() => {
               </span>
               <span className="ml-1 font-bold text-xs sm:text-sm text-white hidden lg:inline">Cart</span>
             </Link>
-
+ 
             {/* User Account */}
             <div className="relative" ref={dropdownRef}>
               {isLoggedIn ? (
@@ -351,7 +348,7 @@ useEffect(() => {
                       Hi, {userData?.username || userData?.name || "User"}
                     </span>
                   </button>
-
+ 
                   {dropdownOpen && (
                     <div className="absolute right-0 mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
                       <div className="py-2 px-2">
@@ -364,9 +361,9 @@ useEffect(() => {
                           </span>
                           My Orders
                         </Link>
-
+ 
                         <hr className="my-2 border-gray-200" />
-
+ 
                         <button
                           onClick={handleLogout}
                           className="flex items-center gap-2 sm:gap-3 w-full text-left px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-red-50 transition-colors"
@@ -392,10 +389,14 @@ useEffect(() => {
             </div>
           </div>
         </div>
-
+ 
         {/* Mobile Menu (Hidden on desktop) */}
         {isMobileMenuOpen && (
-          <div className="sm:hidden bg-white mt-2 p-4 rounded-lg shadow-lg">
+          <div
+            className={`sm:hidden bg-white mt-2 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+              isMobileMenuOpen ? "block h-full" : "hidden"
+            }`}
+          >
             {/* Mobile Search Bar */}
             <div className="flex items-center bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
               <select
@@ -425,7 +426,7 @@ useEffect(() => {
                 <FaSearch />
               </button>
             </div>
-
+ 
             {/* Mobile Menu Links */}
             <div className="space-y-3">
               <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
@@ -479,9 +480,8 @@ useEffect(() => {
             </div>
           </div>
         )}
-      </div>
 
-     {/* Auth Modal */}
+          {/* Auth Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
@@ -575,7 +575,11 @@ useEffect(() => {
           </div>
         </div>
       )}  
+      </div>
+ 
+ 
     </header>
+ 
   );
 };
 

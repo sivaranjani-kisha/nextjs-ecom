@@ -120,7 +120,8 @@ const Footer = () => {
     setIsLoggedIn(false);
     setUserData(null);
   };
-
+const capitalizeFirstLetter = (str) =>
+  str.charAt(0).toUpperCase() + str.slice(1);
   const groupCategories = (categories) => {
     const grouped = { main: [], subs: {} };
     
@@ -137,101 +138,101 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="bg-[#2e2a2a] text-gray-300 text-sm py-10">
-        <div className="w-full flex justify-center">
-          <div className="w-full max-w-6xl px-6 grid grid-cols-1 md:grid-cols-3 gap-16 justify-between">
-            {/* Corporate Office */}
-            <div className="space-y-3">
-              <h3 className="text-white font-semibold text-lg mb-4">Corporate Office</h3>
-              <p>26/1 Drr. Alagappa Chettiyar Rd, Tatabad, Near Kovai Scan Centre, Coimbatore-641012</p>
-              <hr className="border-gray-600 my-3" />
-              <div className="flex items-center gap-2">
-                <FiPhone /> <span>9842344323</span>
-              </div>
-              <hr className="border-gray-600 my-3" />
-              <div className="flex items-center gap-2">
-                <FiMail /> <span>customercare@bharatelectronics.in</span>
-              </div>
-              <hr className="border-gray-600 my-3" />
-              <p><strong>Business Hours:</strong> 09:30AM - 09:30 PM (Mon to Sun)</p>
-            </div>
+      <footer className="bg-[#2e2a2a] text-gray-300 text-sm py-5">
+       <div className="bg-[#2e2a2a] text-gray-400  border-white ">
+  <div className="w-full flex justify-center">
+    <div className="w-full container mx-auto px-3  grid grid-cols-1 md:grid-cols-3 gap-16 justify-between">
+      
+      {/* Corporate Office */}
+      <div className="space-y-3">
+        <h3 className="text-white font-semibold text-lg mb-4">Corporate Office</h3>
+        <p>26/1 Drr. Alagappa Chettiyar Rd, Tatabad, Near Kovai Scan Centre, Coimbatore-641012</p>
+        <hr className="border-gray-600 my-3" />
+        <div className="flex items-center gap-2">
+          <FiPhone /> <span>9842344323</span>
+        </div>
+        <hr className="border-gray-600 my-3" />
+        <div className="flex items-center gap-2">
+          <FiMail /> <span>customercare@bharatelectronics.in</span>
+        </div>
+        <hr className="border-gray-600 my-3" />
+        <p><strong>Business Hours:</strong> 09:30AM - 09:30 PM (Mon to Sun)</p>
+      </div>
 
-            {/* My Account & Policy */}
-            <div className="flex flex-col space-y-6 md:mx-auto">
-              <div>
-                <h3 className="text-white font-semibold text-lg mb-4">My Account</h3>
-                <ul className="space-y-2">
-                  {isLoggedIn ? (
-                    <>
-                      {/* <li>
-                        <Link href="/account" className="hover:underline hover:text-white flex items-center gap-2">
-                          <MdAccountCircle /> My Account
-                        </Link>
-                      </li> */}
-                      <li>
-                        <Link href="/order" className="hover:underline hover:text-white flex items-center gap-2">
-                          <FaShoppingBag /> My Orders
-                        </Link>
-                      </li>
-                      <li>
-                        <button 
-                          onClick={handleLogout}
-                          className="hover:underline hover:text-white flex items-center gap-2"
-                        >
-                          <IoLogOut /> Logout
-                        </button>
-                      </li>
-                    </>
-                  ) : (
-                    <li>
-                      <button 
-                        onClick={() => setShowAuthModal(true)}
-                        className="hover:underline hover:text-white"
-                      >
-                        Sign In / Register
-                      </button>
-                    </li>
-                  )}
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-lg mb-4">Policy</h3>
-                <ul className="space-y-2">
-                  <li><Link href="/privacypolicy" className="hover:underline hover:text-white">Privacy Policy</Link></li>
-                  <li><Link href="/shipping" className="hover:underline hover:text-white">Shipping Policy</Link></li>
-                  <li><Link href="/terms-and-condition" className="hover:underline hover:text-white">Terms and Conditions</Link></li>
-                  <li><Link href="/cancellation-refund-policy" className="hover:underline hover:text-white">Cancellation and Refund Policy</Link></li>
-                </ul>
-              </div>
-            </div>
+      {/* My Account & Policy */}
+      <div className="flex flex-col space-y-6 md:mx-auto">
+        <div>
+          <h3 className="text-white font-semibold text-lg mb-4">My Account</h3>
+          <ul className="space-y-2">
+            {isLoggedIn ? (
+              <>
+                <li>
+                  <Link href="/order" className="hover:underline hover:text-white flex items-center gap-2">
+                    <FaShoppingBag /> My Orders
+                  </Link>
+                </li>
+                <li>
+                  <button 
+                    onClick={handleLogout}
+                    className="hover:underline hover:text-white flex items-center gap-2"
+                  >
+                    <IoLogOut /> Logout
+                  </button>
+                </li>
+              </>
+            ) : (
+              <li>
+                <button 
+                  onClick={() => setShowAuthModal(true)}
+                  className="hover:underline hover:text-white"
+                >
+                  Sign In / Register
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-white font-semibold text-lg mb-4">Policy</h3>
+          <ul className="space-y-2">
+            <li><Link href="/privacypolicy" className="hover:underline hover:text-white">Privacy Policy</Link></li>
+            <li><Link href="/shipping" className="hover:underline hover:text-white">Shipping Policy</Link></li>
+            <li><Link href="/terms-and-condition" className="hover:underline hover:text-white">Terms and Conditions</Link></li>
+            <li><Link href="/cancellation-refund-policy" className="hover:underline hover:text-white">Cancellation and Refund Policy</Link></li>
+          </ul>
+        </div>
+      </div>
 
-            {/* Company & Social Media */}
-            <div className="md:ml-12">
-              <div className="mb-8">
-                <h3 className="text-white font-semibold text-lg mb-4">Company</h3>
-                <ul className="space-y-2">
-                  <li><Link href="/aboutus" className="hover:underline hover:text-white">About Us</Link></li>
-                  <li><Link href="/profile" className="hover:underline hover:text-white">Contact Us</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-lg mb-4">Connect With Us</h3>
-                <div className="flex space-x-4">
-                  <Link href="#"><FaWhatsapp className="text-xl text-green-500" /></Link>
-                  <Link href="#"><FaFacebookF className="text-xl text-customBlue" /></Link>
-                  <Link href="#"><FaInstagram className="text-xl text-pink-500" /></Link>
-                  <Link href="#"><FaYoutube className="text-xl text-red-500" /></Link>
-                  <Link href="#"><FaXTwitter className="text-xl text-black-500" /></Link>
-                  <Link href="#"><FaLinkedinIn className="text-xl text-customBlue" /></Link>
-                </div>
-              </div>
-            </div>
+      {/* Company & Social Media */}
+      <div className="md:ml-12">
+        <div className="mb-8">
+          <h3 className="text-white font-semibold text-lg mb-4">Company</h3>
+          <ul className="space-y-2">
+            <li><Link href="/aboutus" className="hover:underline hover:text-white">About Us</Link></li>
+            <li><Link href="/profile" className="hover:underline hover:text-white">Contact Us</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-white font-semibold text-lg mb-4">Connect With Us</h3>
+          <div className="flex space-x-4">
+            <Link href="#"><FaWhatsapp className="text-xl text-green-500" /></Link>
+            <Link href="#"><FaFacebookF className="text-xl text-customBlue" /></Link>
+            <Link href="#"><FaInstagram className="text-xl text-pink-500" /></Link>
+            <Link href="#"><FaYoutube className="text-xl text-red-500" /></Link>
+            <Link href="#"><FaXTwitter className="text-xl text-black-500" /></Link>
+            <Link href="#"><FaLinkedinIn className="text-xl text-customBlue" /></Link>
           </div>
         </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
         {/* Bottom Section */}
-        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-10 border-t border-white">
-          <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6 pb-6">
+        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white">
+          <div className="container mx-auto px-3 flex flex-col md:flex-row justify-between items-center gap-6 ">
             <div className="text-center md:text-left">
               <p>
                 <a href="#" className="hover:underline text-white">Bharath Electronics ©</a> 2025 All rights reserved.
@@ -247,17 +248,18 @@ const Footer = () => {
               </div>
             </div>
           </div>
-          <div className="bg-[#2e2a2a] py-6">
+          <div className="bg-[#2e2a2a] ">
             <div className="container mx-auto px-4 text-base font-medium space-y-4">
-              {groupedCategories.main.map((mainCat) => (
-                <div key={mainCat._id}>
-                  <Link
-                    href={`/category/${mainCat.category_slug}`}
-                    className="font-semibold text-white hover:underline whitespace-nowrap"
-                  >
-                    {mainCat.category_name} :
-                  </Link>
-                  {groupedCategories.subs[mainCat._id]?.length > 0 && (
+              {groupedCategories.main
+                .filter((mainCat) => groupedCategories.subs[mainCat._id]?.length > 0)
+                .map((mainCat) => (
+                  <div key={mainCat._id}>
+                    <Link
+                      href={`/category/${mainCat.category_slug}`}
+                      className="font-semibold text-white hover:underline whitespace-nowrap"
+                    >
+                      {capitalizeFirstLetter(mainCat.category_name)} :
+                    </Link>
                     <span className="text-gray-400 ml-2">
                       {groupedCategories.subs[mainCat._id].map((subcat, index) => (
                         <span key={subcat._id}>
@@ -265,17 +267,17 @@ const Footer = () => {
                             href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
                             className="hover:text-white hover:underline"
                           >
-                            {subcat.category_name}
+                            {capitalizeFirstLetter(subcat.category_name)}
                           </Link>
                           {index < groupedCategories.subs[mainCat._id].length - 1 && ' / '}
                         </span>
                       ))}
                     </span>
-                  )}
-                </div>
-              ))}
+                  </div>
+                ))}
             </div>
           </div>
+
         </div>
       </footer>
 

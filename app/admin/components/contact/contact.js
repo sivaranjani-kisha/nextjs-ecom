@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { Icon } from '@iconify/react';
+import DateRangePicker from '@/components/DateRangePicker';
 
 export default function ContactComponent() {
   const [contacts, setContacts] = useState([]);
@@ -11,20 +13,32 @@ export default function ContactComponent() {
   const [contactToDelete, setContactToDelete] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [contactToEdit, setContactToEdit] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [dateFilter, setDateFilter] = useState({
+    startDate: null,
+    endDate: null
+  });
 
   const contactsPerPage = 5;
 
   useEffect(() => {
-    fetch("/api/contact/get")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setContacts(data.data);
-        }
-      })
-      .catch((error) => console.error("Error fetching contacts:", error))
-      .finally(() => setLoading(false));
+    fetchContacts();
   }, []);
+
+  const fetchContacts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/contact/get");
+      const data = await response.json();
+      if (data.success) {
+        setContacts(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -94,12 +108,31 @@ export default function ContactComponent() {
   };
 
   const filteredContacts = contacts.filter((contact) => {
+    // Apply search filter
     const searchLower = searchTerm.toLowerCase();
-    return (
-      contact.email_address.toLowerCase().includes(searchLower) ||
-      contact.name.toLowerCase().includes(searchLower) ||
-      contact.mobile_number.toLowerCase().includes(searchLower)
-    );
+    const matchesSearch = searchTerm === "" || 
+      (contact.email_address && contact.email_address.toLowerCase().includes(searchLower)) ||
+      (contact.name && contact.name.toLowerCase().includes(searchLower)) ||
+      (contact.mobile_number && contact.mobile_number.toLowerCase().includes(searchLower));
+    
+    // Apply status filter
+    const matchesStatus = statusFilter === "All" || contact.status === statusFilter;
+    
+    // Apply date filter
+    let matchesDate = true;
+    if (dateFilter.startDate && dateFilter.endDate && contact.createdAt) {
+      const contactDate = new Date(contact.createdAt);
+      const startDate = new Date(dateFilter.startDate);
+      const endDate = new Date(dateFilter.endDate);
+      
+      // Set time to beginning and end of day for proper date comparison
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      matchesDate = contactDate >= startDate && contactDate <= endDate;
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   const indexOfLastContact = currentPage * contactsPerPage;
@@ -110,6 +143,19 @@ export default function ContactComponent() {
   const totalPages = Math.ceil(filteredContacts.length / contactsPerPage);
   const startEntry = indexOfFirstContact + 1;
   const endEntry = Math.min(indexOfLastContact, filteredContacts.length);
+
+  const handleDateChange = ({ startDate, endDate }) => {
+    setDateFilter({ startDate, endDate });
+    setCurrentPage(1);
+  };
+
+  const clearDateFilter = () => {
+    setDateFilter({
+      startDate: null,
+      endDate: null
+    });
+    setCurrentPage(1);
+  };
 
   return (
     <div className="container mx-auto">
@@ -130,17 +176,80 @@ export default function ContactComponent() {
       {loading ? (
         <p>Loading contacts...</p>
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
-          <div className="flex justify-start mb-5">
-            <input
-              type="text"
-              placeholder="Search Contact..."
-              className="border px-3 py-2 rounded-md w-64"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <div className="bg-white shadow-md rounded-lg p-5  h-[500px] overflow-x-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
+            {/* Search Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+              <input
+                type="text"
+                placeholder="Search contacts..."
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="All">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+
+            {/* Date Range Picker */}
+            <div className="w-full col-span-1 md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <DateRangePicker onDateChange={handleDateChange} />
+                </div>
+                {/* {(dateFilter.startDate || dateFilter.endDate) && (
+                  <button
+                    onClick={clearDateFilter}
+                    className="p-2 text-sm text-red-600 hover:text-red-800 bg-red-50 rounded-md"
+                    title="Clear date filter"
+                  >
+                    <Icon icon="mdi:close-circle-outline" className="w-5 h-5" />
+                  </button>
+                )} */}
+              </div>
+            </div>
+
+            {/* Add Contact Button (if needed) */}
+            {/* <div className="flex justify-end">
+              <button
+                className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
+                onClick={() => {
+                  setContactToEdit({
+                    email_address: "",
+                    name: "",
+                    mobile_number: "",
+                    message: "",
+                    status: "active"
+                  });
+                  setShowEditModal(true);
+                }}
+              >
+                + Add Contact
+              </button>
+            </div> */}
           </div>
           <hr className="border-t border-gray-200 mb-4" />
+
           {filteredContacts.length === 0 ? (
             <p className="text-center">No contacts found</p>
           ) : (
@@ -152,15 +261,52 @@ export default function ContactComponent() {
                     <th className="p-2">Name</th>
                     <th className="p-2">Mobile Number</th>
                     <th className="p-2">Message</th>
+                    <th className="p-2">Status</th>
+                    {/* <th className="p-2">Created At</th>
+                    <th className="p-2">Actions</th> */}
                   </tr>
                 </thead>
                 <tbody>
                   {currentContacts.map((contact) => (
                     <tr key={contact._id} className="text-center border-b">
-                      <td className="p-2 font-bold">{contact.email_address}</td>
-                      <td className="p-2">{contact.name}</td>
-                      <td className="p-2">{contact.mobile_number}</td>
-                      <td className="p-2">{contact.message}</td>
+                      <td className="p-2 font-bold">{contact.email_address || '-'}</td>
+                      <td className="p-2">{contact.name || '-'}</td>
+                      <td className="p-2">{contact.mobile_number || '-'}</td>
+                      <td className="p-2">{contact.message || '-'}</td>
+                      <td className="p-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          contact.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {contact.status || '-'}
+                        </span>
+                      </td>
+                      {/* <td className="p-2">
+                        {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2 justify-center">
+                          <button
+                            onClick={() => {
+                              setContactToEdit(contact);
+                              setShowEditModal(true);
+                            }}
+                            className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                            title="Edit"
+                          >
+                            <Icon icon="mingcute:edit-line" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setContactToDelete(contact._id);
+                              setShowConfirmationModal(true);
+                            }}
+                            className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center"
+                            title="Delete"
+                          >
+                            <Icon icon="mingcute:delete-2-line" />
+                          </button>
+                        </div>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>
@@ -239,73 +385,82 @@ export default function ContactComponent() {
       )}
 
       {/* Edit Modal */}
-      {showEditModal && contactToEdit && (
+      {showEditModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-bold mb-4">Edit Contact</h2>
+            <h2 className="text-xl font-bold mb-4">
+              {contactToEdit?._id ? "Edit Contact" : "Add Contact"}
+            </h2>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                handleEdit(contactToEdit._id);
+                if (contactToEdit?._id) {
+                  handleEdit(contactToEdit._id);
+                } else {
+                  // Handle add contact logic here
+                  // You'll need to implement this
+                }
               }}
             >
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Email Address</label>
                 <input
                   type="email"
-                  value={contactToEdit.email_address || ""}
+                  value={contactToEdit?.email_address || ""}
                   onChange={(e) =>
                     setContactToEdit({ ...contactToEdit, email_address: e.target.value })
                   }
                   className="border px-3 py-2 rounded-md w-full"
+                  required
                 />
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Name</label>
                 <input
                   type="text"
-                  value={contactToEdit.name || ""}
+                  value={contactToEdit?.name || ""}
                   onChange={(e) =>
                     setContactToEdit({ ...contactToEdit, name: e.target.value })
                   }
                   className="border px-3 py-2 rounded-md w-full"
+                  required
                 />
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Mobile Number</label>
                 <input
                   type="text"
-                  value={contactToEdit.mobile_number || ""}
+                  value={contactToEdit?.mobile_number || ""}
                   onChange={(e) =>
                     setContactToEdit({ ...contactToEdit, mobile_number: e.target.value })
                   }
                   className="border px-3 py-2 rounded-md w-full"
+                  required
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">User Type</label>
-                <select
-                  value={contactToEdit.user_type || ""}
+                <label className="block text-sm font-medium mb-2">Message</label>
+                <textarea
+                  value={contactToEdit?.message || ""}
                   onChange={(e) =>
-                    setContactToEdit({ ...contactToEdit, user_type: e.target.value })
+                    setContactToEdit({ ...contactToEdit, message: e.target.value })
                   }
                   className="border px-3 py-2 rounded-md w-full"
-                >
-                  <option value="">Select Type</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Customer">Customer</option>
-                </select>
+                  rows="3"
+                />
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Status</label>
-                <input
-                  type="text"
-                  value={contactToEdit.status || ""}
+                <select
+                  value={contactToEdit?.status || "active"}
                   onChange={(e) =>
                     setContactToEdit({ ...contactToEdit, status: e.target.value })
                   }
                   className="border px-3 py-2 rounded-md w-full"
-                />
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
               </div>
               <div className="flex justify-end space-x-3">
                 <button
@@ -319,7 +474,7 @@ export default function ContactComponent() {
                   type="submit"
                   className="bg-blue-500 px-4 py-2 rounded-md text-white"
                 >
-                  Save
+                  {contactToEdit?._id ? "Save" : "Add"}
                 </button>
               </div>
             </form>
