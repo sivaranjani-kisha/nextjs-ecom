@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaMinus } from "react-icons/fa";
+import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import { Icon } from '@iconify/react';
 import DateRangePicker from '@/components/DateRangePicker';
 
@@ -30,6 +30,18 @@ export default function BlogComponent() {
     startDate: null,
     endDate: null
   });
+  
+  // Edit modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editBlogData, setEditBlogData] = useState({
+    id: "",
+    name: "",
+    image: null,
+    existingImage: "",
+    description: "",
+    status: "Active",
+  });
+  const [editSelectedCategories, setEditSelectedCategories] = useState(new Set());
 
   // Fetch categories and blogs on component mount
   useEffect(() => {
@@ -192,7 +204,7 @@ export default function BlogComponent() {
     return null;
   };
 
-  const renderCategoryTree = (categories, level = 0) => {
+  const renderCategoryTree = (categories, level = 0, isEditMode = false) => {
     return categories.map((category) => (
       <div key={category._id} style={{ paddingLeft: `${level * 20}px` }}>
         <div className="flex items-center cursor-pointer p-2">
@@ -211,21 +223,162 @@ export default function BlogComponent() {
           <input
             type="checkbox"
             value={category._id}
-            checked={selectedCategories.has(category._id)}
-            onChange={(e) => handleCategoryChange(category, e.target.checked)}
+            checked={isEditMode 
+              ? editSelectedCategories.has(category._id) 
+              : selectedCategories.has(category._id)}
+            onChange={(e) => isEditMode 
+              ? handleEditCategoryChange(category, e.target.checked)
+              : handleCategoryChange(category, e.target.checked)}
             className="mr-2"
           />
           <span
             className={`font-semibold ${
-              selectedCategories.has(category._id) ? "text-blue-500" : "text-black"
+              (isEditMode ? editSelectedCategories.has(category._id) : selectedCategories.has(category._id)) 
+                ? "text-blue-500" 
+                : "text-black"
             }`}
           >
             {category.category_name}
           </span>
         </div>
-        {expandedCategories[category._id] && renderCategoryTree(category.children, level + 1)}
+        {expandedCategories[category._id] && renderCategoryTree(category.children, level + 1, isEditMode)}
       </div>
     ));
+  };
+
+  // Edit functions
+  const handleEdit = (blog) => {
+    setEditBlogData({
+      id: blog._id,
+      name: blog.blog_name,
+      description: blog.description,
+      status: blog.status,
+      existingImage: blog.image || ""
+    });
+    
+    // Set selected categories for edit
+    const newSelected = new Set();
+    if (blog.category && blog.category._id) {
+      newSelected.add(blog.category._id);
+    }
+    setEditSelectedCategories(newSelected);
+    
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditInputChange = (e) => {
+    setEditBlogData({ ...editBlogData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setEditBlogData({ 
+        ...editBlogData, 
+        image: file,
+        existingImage: "" 
+      });
+    }
+  };
+
+  const handleEditCategoryChange = (category, isChecked) => {
+    const updatedSelection = new Set(editSelectedCategories);
+
+    const toggleChildren = (children, select) => {
+      children.forEach((child) => {
+        if (select) {
+          updatedSelection.add(child._id);
+        } else {
+          updatedSelection.delete(child._id);
+        }
+        if (child.children.length > 0) {
+          toggleChildren(child.children, select);
+        }
+      });
+    };
+
+    if (isChecked) {
+      updatedSelection.add(category._id);
+      toggleChildren(category.children, true);
+    } else {
+      updatedSelection.delete(category._id);
+      toggleChildren(category.children, false);
+    }
+
+    const toggleParents = (parentId) => {
+      if (!parentId || parentId === "none") return;
+      const parent = findCategoryById(categories, parentId);
+      if (parent) {
+        const allChildrenSelected = parent.children.every((child) =>
+          updatedSelection.has(child._id)
+        );
+        if (allChildrenSelected) {
+          updatedSelection.add(parent._id);
+        } else {
+          updatedSelection.delete(parent._id);
+        }
+        toggleParents(parent.parentid);
+      }
+    };
+
+    toggleParents(category.parentid);
+    setEditSelectedCategories(updatedSelection);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("id", editBlogData.id);
+    formData.append("name", editBlogData.name);
+    formData.append("description", editBlogData.description);
+    formData.append("category", Array.from(editSelectedCategories)[0]);
+    formData.append("status", editBlogData.status);
+    if (editBlogData.image) {
+      formData.append("image", editBlogData.image);
+    }
+    formData.append("existingImage", editBlogData.existingImage);
+
+    try {
+      const response = await fetch("/api/blogs/update", {
+        method: "PUT",
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setAlertMessage("Blog updated successfully!");
+        setShowAlert(true);
+        setIsEditModalOpen(false);
+        setEditBlogData({ 
+          id: "",
+          name: "", 
+          image: null, 
+          existingImage: "",
+          description: "", 
+          status: "Active" 
+        });
+        setEditSelectedCategories(new Set());
+        fetchBlogs();
+
+        setTimeout(() => {
+          setShowAlert(false);
+        }, 3000);
+      } else {
+        setAlertMessage("Error: " + result.error);
+        setShowAlert(true);
+        setTimeout(() => {
+          setShowAlert(false);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setAlertMessage("Failed to update blog.");
+      setShowAlert(true);
+      setTimeout(() => {
+        setShowAlert(false);
+      }, 3000);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -437,7 +590,7 @@ export default function BlogComponent() {
                 <div className="flex-1">
                   <DateRangePicker onDateChange={handleDateChange} />
                 </div>
-                {/* {(dateFilter.startDate || dateFilter.endDate) && (
+                {(dateFilter.startDate || dateFilter.endDate) && (
                   <button
                     onClick={clearDateFilter}
                     className="p-2 text-sm text-red-600 hover:text-red-800 bg-red-50 rounded-md"
@@ -445,7 +598,7 @@ export default function BlogComponent() {
                   >
                     <Icon icon="mdi:close-circle-outline" className="w-5 h-5" />
                   </button>
-                )} */}
+                )}
               </div>
             </div>
 
@@ -507,6 +660,13 @@ export default function BlogComponent() {
                           </td>
                           <td className="p-2">
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleEdit(blog)}
+                                className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center hover:bg-blue-200 transition"
+                                title="Edit"
+                              >
+                                <FaEdit className="mr-1" />
+                              </button>
                               <button
                                 onClick={() => {
                                   setBlogToDelete(blog._id);
@@ -640,6 +800,130 @@ export default function BlogComponent() {
                   className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
                 >
                   Add Blog
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Blog Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Update Blog</h2>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-700 focus:outline-none"
+                aria-label="Close modal"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-6 py-6 overflow-y-auto flex-grow">
+              <form onSubmit={handleEditSubmit} className="space-y-5">
+                <div>
+                  <label htmlFor="edit_blog_name" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Blog Name
+                  </label>
+                  <input
+                    name="name"
+                    value={editBlogData.name}
+                    onChange={handleEditInputChange}
+                    id="edit_blog_name"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    placeholder="Enter Blog Name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image</label>
+                  <input
+                    type="file"
+                    onChange={handleEditImageChange}
+                    accept="image/*"
+                    className="block w-full text-sm text-gray-600
+                      file:mr-3 file:py-1 file:px-3
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                  {editBlogData.existingImage && !editBlogData.image && (
+                    <img 
+                      src={editBlogData.existingImage} 
+                      alt="Current" 
+                      className="mt-3 h-16 rounded-md object-contain mx-auto" 
+                    />
+                  )}
+                  {editBlogData.image && (
+                    <img 
+                      src={URL.createObjectURL(editBlogData.image)} 
+                      alt="New" 
+                      className="mt-3 h-16 rounded-md object-contain mx-auto" 
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="edit_description" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Blog Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={editBlogData.description}
+                    onChange={handleEditInputChange}
+                    id="edit_description"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    placeholder="Enter Blog Description"
+                    rows={4}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Select Categories</label>
+                  <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2">
+                    {categories.length > 0 ? (
+                      renderCategoryTree(categories, 0, true)
+                    ) : (
+                      <p className="text-gray-500">No categories available</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="edit_status" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    id="edit_status"
+                    value={editBlogData.status}
+                    onChange={handleEditInputChange}
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                >
+                  Update Blog
                 </button>
               </form>
             </div>
