@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DateRangePicker from '@/components/DateRangePicker';
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import { Icon } from '@iconify/react';
 
@@ -129,105 +130,167 @@ const handleDeleteBanner = async () => {
     setCategoryRedirectUrls(prev => ({ ...prev, [index]: value }));
   };
 
+   const [dateFilter, setDateFilter] = useState({
+    startDate: null,
+    endDate: null
+  });
+  
+  const clearDateFilter = () => {
+    setDateFilter({
+      startDate: null,
+      endDate: null
+    });
+    setCurrentPage(0);
+  };
+
+
+    // Handle date change
+  const handleDateChange = ({ startDate, endDate }) => {
+    setDateFilter({ startDate, endDate });
+    setCurrentPage(0);
+  };
+
 
   
     // Add function to handle edit click
     const handleEditClick = (banner) => {
-      setEditingBanner(banner);
-      setBannerType(banner.bannerType);
-      setTitle(banner.title);
-      setRedirectUrl(banner.redirectUrl);
-      setStartDate(banner.startDate.split('T')[0]);
-      setEndDate(banner.endDate.split('T')[0]);
-      setStatus(banner.status);
-      setExistingBgImage(banner.bgImageUrl);
-      setExistingBannerImage(banner.bannerImageUrl);
-      
-      // Set image sizes based on banner type
-      const selectedOption = bannerOptions.find(option => option.value === banner.bannerType);
-      if (selectedOption) {
-        if (selectedOption.bgSize) setBgImageSize(selectedOption.bgSize);
+  setEditingBanner(banner);
+  setBannerType(banner.bannerType);
+  setTitle(banner.title);
+  setRedirectUrl(banner.redirectUrl);
+  setStartDate(banner.startDate.split('T')[0]);
+  setEndDate(banner.endDate.split('T')[0]);
+  setStatus(banner.status);
+  
+  // Handle images based on banner type
+  if (banner.bannerType === 'categorybanner') {
+    // For category banners, we need to handle multiple images
+    const images = banner.images || [];
+    const redirectUrls = banner.redirectUrls || [];
+    const newCategoryImages = {};
+    const newCategoryRedirectUrls = {};
+    
+    images.forEach((img, index) => {
+      newCategoryImages[index + 1] = img;
+    });
+    
+    redirectUrls.forEach((url, index) => {
+      newCategoryRedirectUrls[index + 1] = url;
+    });
+    
+    setCategoryImages(newCategoryImages);
+    setCategoryRedirectUrls(newCategoryRedirectUrls);
+  } else {
+    // For other banner types
+    setExistingBgImage(banner.bgImageUrl);
+    setExistingBannerImage(banner.bannerImageUrl);
+  }
+  
+  // Set image sizes based on banner type
+  const selectedOption = bannerOptions.find(option => option.value === banner.bannerType);
+  if (selectedOption) {
+    if (selectedOption.bgSize) setBgImageSize(selectedOption.bgSize);
     if (selectedOption.bannerSize) setBannerImageSize(selectedOption.bannerSize);
-    if (selectedOption.categorySize) {
-      // For category banners, we might not need bannerImageSize
-      setBgImageSize(selectedOption.categorySize);
-    }
-      }
-      
-      setIsEditModalOpen(true);
-    };
+  }
+  
+  setIsEditModalOpen(true);
+};
   
     // Add function to handle edit submission
     const handleEditSubmit = async () => {
-      const newErrors = {};
-    
-      if (!title) newErrors.title = "Title is required";
-      if (!existingBgImage && !bgImage) newErrors.bgImage = "Background image is required";
-      if (!existingBannerImage && !bannerImage) newErrors.bannerImage = "Banner image is required";
-      if (!redirectUrl) newErrors.redirectUrl = "Redirect URL is required";
-      if (!startDate) newErrors.startDate = "Start date is required";
-      if (!endDate) newErrors.endDate = "End date is required";
-      if (endDate && startDate && endDate < startDate) newErrors.endDate = "End date must be after the start date";
-    
-      const validBannerTypes = bannerOptions.map(option => option.value);
-      if (!validBannerTypes.includes(bannerType)) {
-        newErrors.bannerType = "Invalid banner type";
+  const newErrors = {};
+  
+  // Common validations
+  if (!title) newErrors.title = "Title is required";
+  if (!startDate) newErrors.startDate = "Start date is required";
+  if (!endDate) newErrors.endDate = "End date is required";
+  if (endDate && startDate && endDate < startDate) newErrors.endDate = "End date must be after the start date";
+
+  // Banner type specific validations
+  if (bannerType === 'categorybanner') {
+    for (let i = 1; i <= 4; i++) {
+      if (!categoryImages[i] && !editingBanner.images?.[i-1]) {
+        newErrors[`image${i}`] = `Image ${i} is required`;
       }
-    
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
+      if (!categoryRedirectUrls[i]) {
+        newErrors[`redirectUrl${i}`] = `Redirect URL ${i} is required`;
       }
-    
-      try {
-        setLoading(true);
-        const formData = new FormData();
-        formData.append("id", editingBanner._id);
-        formData.append("title", title);
-        formData.append("bannerType", bannerType);
-        formData.append("redirectUrl", redirectUrl);
-        formData.append("startDate", startDate);
-        formData.append("endDate", endDate);
-        formData.append("status", status);
-        
-        if (bgImage) {
-          formData.append("bgImage", bgImage);
-        }else {
-  formData.append("bgImage", new Blob()); // Send empty blob if no new image
-}
-        if (bannerImage) {
-          formData.append("bannerImage", bannerImage);
-        }else {
-  formData.append("bannerImage", new Blob()); // Send empty blob if no new image
-}
-        formData.append("existingBgImage", existingBgImage || "");
-        formData.append("existingBannerImage", existingBannerImage || "");
-  
-        const res = await fetch("/api/design/update", {
-          method: "PUT",
-          body: formData,
-        });
-  
-        const data = await res.json();
-        console.log(data);
-  
-        if (res.ok) {
-          setMessage(data.message || "Banner updated successfully");
-          resetForm();
-          setIsEditModalOpen(false);
-          setEditingBanner(null);
-          setErrors({});
-          fetchBanners(); // Refresh the table after successful update
+    }
+  } else {
+    if (!existingBgImage && !bgImage) newErrors.bgImage = "Background image is required";
+    if (bannerType !== 'categorybanner' && !existingBannerImage && !bannerImage) {
+      newErrors.bannerImage = "Banner image is required";
+    }
+    if (!redirectUrl) newErrors.redirectUrl = "Redirect URL is required";
+  }
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  try {
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("id", editingBanner._id);
+    formData.append("title", title);
+    formData.append("bannerType", bannerType);
+    formData.append("startDate", startDate);
+    formData.append("endDate", endDate);
+    formData.append("status", status);
+
+    if (bannerType === 'categorybanner') {
+      // Handle category banner images and URLs
+      for (let i = 1; i <= 4; i++) {
+        if (categoryImages[i]) {
+          formData.append(`image${i}`, categoryImages[i]);
         } else {
-          setErrors(data.errors || { error: data.message || "Failed to update banner" });
+          // If no new image, send the existing URL
+          formData.append(`existingImage${i}`, editingBanner.images?.[i-1] || "");
         }
-      } catch (err) {
-        setErrors({ error: "Something went wrong, please try again." });
-        console.error(err);
-      } finally {
-        setLoading(false);
+        formData.append(`redirectUrl${i}`, categoryRedirectUrls[i]);
       }
-    };
+    } else {
+      // Handle regular banner images
+      formData.append("redirectUrl", redirectUrl);
+      
+      if (bgImage) {
+        formData.append("bgImage", bgImage);
+      } else {
+        formData.append("existingBgImage", existingBgImage || "");
+      }
+      
+      if (bannerImage) {
+        formData.append("bannerImage", bannerImage);
+      } else {
+        formData.append("existingBannerImage", existingBannerImage || "");
+      }
+    }
+
+    const res = await fetch("/api/design/update", {
+      method: "PUT",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setMessage(data.message || "Banner updated successfully");
+      resetForm();
+      setIsEditModalOpen(false);
+      setEditingBanner(null);
+      setErrors({});
+      fetchBanners(); // Refresh the table
+    } else {
+      setErrors(data.errors || { error: data.message || "Failed to update banner" });
+    }
+  } catch (err) {
+    setErrors({ error: "Something went wrong, please try again." });
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
   
   // Load banners on component mount and when filters change
   useEffect(() => {
@@ -398,8 +461,9 @@ const handleDeleteBanner = async () => {
       {/* Banners Table */}
       <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
         {/* Search and Filter Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-4">
-        {/* Banner Type */}
+       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end mb-4">
+
+  {/* Banner Type */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Banner Type</label>
           <select
@@ -419,33 +483,47 @@ const handleDeleteBanner = async () => {
           </select>
         </div>
 
-        {/* Status */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select
-            value={filterStatus}
-            onChange={(e) => {
+        {/* Status Filter */}
+  <div className="w-full">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+    <select
+      value={filterStatus}
+      onChange={(e) => {
               setFilterStatus(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
+      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+    >
+      <option value="">All Statuses</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+  </div>
 
-        {/* Add Design Banner Button */}
-        <div className="flex justify-end">
-          <button
-            onClick={openModal}
-            className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
-          >
-            + Add Design Banner
-          </button>
-        </div>
-      </div>
+  {/* Date Range Picker */}
+  <div className="w-full col-span-1 md:col-span-1">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+    <div className="relative w-full max-w-sm">
+      <DateRangePicker onDateChange={handleDateChange} />
+      {/* {dateFilter.startDate && dateFilter.endDate && (
+        <button 
+          onClick={clearDateFilter}
+          className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+        >
+          Clear date filter
+        </button>
+      )} */}
+    </div>
+  </div>
+  <div>
+   <button
+          onClick={openModal}
+          className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
+        >
+          + Add Design Banner
+        </button>
+</div>
+</div>
 
         <hr className="border-t border-gray-200 mb-4" />
 
@@ -786,7 +864,291 @@ const handleDeleteBanner = async () => {
 )}
 
  {/* Edit Banner Modal */}
-      {isEditModalOpen && (
+
+{isEditModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+    <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+      
+      {/* Header */}
+      <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
+        <h2 className="text-xl font-semibold text-gray-900">Update Design Banner</h2>
+        {/* <button
+          onClick={() => {
+            setisEditModalOpen(false);
+            setErrors({});
+          }}
+          className="text-gray-400 hover:text-gray-700 focus:outline-none"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button> */}
+      </div>
+
+      {/* Scrollable Body */}
+      <div className="px-6 py-6 overflow-y-auto flex-grow">
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Banner Type */}
+          <div>
+            <label className="block mb-1 text-sm font-semibold text-gray-700">Type of Banner*</label>
+            <select
+              value={bannerType}
+              onChange={handleBannerChange}
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+            >
+              {bannerOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+            </select>
+            {errors.bannerType && <span className="text-red-500 text-sm">{errors.bannerType}</span>}
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="block mb-1 text-sm font-semibold text-gray-700">Title*</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter banner title"
+            />
+            {errors.title && <span className="text-red-500 text-sm">{errors.title}</span>}
+          </div>
+        </div>
+
+       {bannerType === 'categorybanner' ? (
+  <div className="space-y-5">
+    {[1, 2, 3, 4].map((num) => (
+      <div key={num} className="grid grid-cols-2 gap-4 border p-4 rounded-lg">
+        {/* Image Upload */}
+        <div>
+          <label className="block mb-1 text-sm font-semibold text-gray-700">
+            Image {num}* (Size: 400x400)
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleCategoryImageChange(e, num)}
+            className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+          {errors[`image${num}`] && <span className="text-red-500 text-sm">{errors[`image${num}`]}</span>}
+          
+          {/* Show existing image if no new image selected */}
+          {editingBanner?.images?.[num-1] && !categoryImages[num] && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">Current Image:</p>
+              <img 
+                src={editingBanner.images[num-1]} 
+                alt={`Current Category ${num}`} 
+                className="h-20 mt-1 object-contain"
+              />
+            </div>
+          )}
+          
+          {/* Show new image preview if selected */}
+          {categoryImages[num] && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">New Image:</p>
+              <img
+                src={URL.createObjectURL(categoryImages[num])}
+                alt={`New Category ${num} Preview`}
+                className="h-20 mt-1 object-contain"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Redirect URL */}
+        <div>
+          <label className="block mb-1 text-sm font-semibold text-gray-700">Redirect URL {num}*</label>
+          <input
+            type="text"
+            value={categoryRedirectUrls[num] || editingBanner?.redirectUrls?.[num-1] || ""}
+            onChange={(e) => handleCategoryRedirectUrlChange(e, num)}
+            className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+            placeholder="https://example.com"
+          />
+          {errors[`redirectUrl${num}`] && <span className="text-red-500 text-sm">{errors[`redirectUrl${num}`]}</span>}
+        </div>
+      </div>
+    ))}
+  </div>
+): (
+          <>
+            {/* Background Image */}
+            <div className="mb-5">
+              <label className="block mb-1 text-sm font-semibold text-gray-700">
+                Banner Background Image* (Size: {bgImageSize.width}x{bgImageSize.height})
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              setBgImage(file);
+              setExistingBgImage(null); // Clear existing image when new one is selected
+            }
+          }}
+                className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              {errors.bgImage && <span className="text-red-500 text-sm">{errors.bgImage}</span>}
+              {existingBgImage && !bgImage && (
+          <div className="mt-2">
+            <p className="text-sm text-gray-500">Current Image:</p>
+            <img 
+              src={`${existingBgImage}`} 
+              alt="Current Background" 
+              className="h-20 mt-1 object-contain"
+            />
+          </div>
+        )} 
+
+        {/* Show preview of newly selected image */}
+        {bgImage && (
+          <div className="mt-2">
+            <p className="text-sm text-gray-500">New Image:</p>
+            <img
+              src={URL.createObjectURL(bgImage)}
+              alt="New Background Preview"
+              className="h-20 mt-1 object-contain"
+            />
+          </div>
+        )}
+            </div>
+
+            {/* Banner Image */}
+            {bannerType !== 'categorybanner' && (
+              <div className="mb-5">
+                <label className="block mb-1 text-sm font-semibold text-gray-700">
+                  Banner Image* (Size: {bannerImageSize.width}x{bannerImageSize.height})
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerImageChange}
+                  className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                {errors.bannerImage && <span className="text-red-500 text-sm">{errors.bannerImage}</span>}
+                {existingBannerImage && !bannerImage && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">Current Image:</p>
+                  <img src={existingBannerImage} alt="Current Banner" className="h-20 mt-1" />
+                </div>
+              )}
+
+              {bannerImage && (
+            <img
+              src={
+                typeof bannerImage === "string"
+                  ? `/uploads/banners/${bannerImage}`
+                  : URL.createObjectURL(bannerImage)
+              }
+              alt="Banner Preview"
+              className="w-32 h-auto mt-2"
+            />
+          )}
+              </div>
+            )}
+
+            {/* Redirect URL */}
+            <div className="mb-5">
+              <label className="block mb-1 text-sm font-semibold text-gray-700">Redirect URL*</label>
+              <input
+                type="text"
+                value={redirectUrl}
+                onChange={(e) => setRedirectUrl(e.target.value)}
+                className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                placeholder="https://example.com"
+              />
+              {errors.redirectUrl && <span className="text-red-500 text-sm">{errors.redirectUrl}</span>}
+            </div>
+          </>
+        )}
+
+        {/* Start & End Dates */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block mb-1 text-sm font-semibold text-gray-700">Start Date*</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+            />
+            {errors.startDate && <span className="text-red-500 text-sm">{errors.startDate}</span>}
+          </div>
+          <div>
+            <label className="block mb-1 text-sm font-semibold text-gray-700">End Date*</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate || new Date().toISOString().split("T")[0]}
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+            />
+            {errors.endDate && <span className="text-red-500 text-sm">{errors.endDate}</span>}
+          </div>
+        </div>
+
+        {/* Status */}
+        <div className="mb-5">
+          <label className="block mb-1 text-sm font-semibold text-gray-700">Status</label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        {/* Submit Buttons */}
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingBanner(null);
+                  setErrors({});
+                }}
+            className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-md text-sm transition"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button
+              onClick={handleEditSubmit}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Updating...
+              </span>
+            ) : (
+              "Update"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
+
+      {/* {isEditModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg w-[600px] max-w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4 text-center">Edit Design Banner</h3>
@@ -830,8 +1192,8 @@ const handleDeleteBanner = async () => {
                 onChange={(e) => {
             const file = e.target.files[0];
             if (file) {
-              setBgImage(file);
-              setExistingBgImage(null); // Clear existing image when new one is selected
+              setBgImage(file); */}
+              {/* setExistingBgImage(null); 
             }
           }}
                 className="border p-2 rounded w-full"
@@ -846,9 +1208,9 @@ const handleDeleteBanner = async () => {
               className="h-20 mt-1 object-contain"
             />
           </div>
-        )} 
+        )}  */}
         
-        {/* Show preview of newly selected image */}
+        {/* Show preview of newly selected image
         {bgImage && (
           <div className="mt-2">
             <p className="text-sm text-gray-500">New Image:</p>
@@ -973,7 +1335,7 @@ const handleDeleteBanner = async () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
 
 {/* Confirmation Modal for Delete */}
