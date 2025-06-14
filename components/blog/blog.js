@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 export default function BlogComponent() {
   const [blogs, setBlogs] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(3);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,23 @@ export default function BlogComponent() {
     fetchBlogs();
   }, []);
 
+  // Scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.innerHeight + window.scrollY;
+    
+      const fullHeight = document.getElementById('shiv').offsetHeight;
+      // When user scrolls near the bottom (100px remaining)
+      if (scrollTop >= fullHeight - 100) {
+        // Load 3 more blogs
+        setVisibleCount((prev) => prev + 3);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -33,6 +51,8 @@ export default function BlogComponent() {
       </div>
     );
   }
+
+  const visibleBlogs = blogs.slice(0, visibleCount);
 
   return (
     <>
@@ -45,9 +65,9 @@ export default function BlogComponent() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-4 sm:p-6">
-        {blogs.length > 0 ? (
-          blogs.map((blog) => (
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-4 sm:p-6 " id="shiv">
+        {visibleBlogs.length > 0 ? (
+          visibleBlogs.map((blog) => (
             <div key={blog._id} className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
               <img
                 src={blog.image || "/default-blog.jpg"}

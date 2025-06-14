@@ -15,15 +15,15 @@ const DateRangePicker = ({ onDateChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedPreset, setSelectedPreset] = useState('');
-  const pickerRef = useRef(null); // 🔁 Step 1: Create a ref
+  const [selectedPreset, setSelectedPreset] = useState('custom'); // Set default to 'custom'
+  const pickerRef = useRef(null);
 
   const selectPreset = (preset) => {
     const today = new Date();
     let start, end;
 
     if (preset === 'custom') {
-      setSelectedPreset((prev) => (prev === 'custom' ? '' : 'custom'));
+      setSelectedPreset('custom');
       return;
     }
 
@@ -58,7 +58,6 @@ const DateRangePicker = ({ onDateChange }) => {
     }
   };
 
-  // 🔁 Step 2–4: Add click outside handler
   useEffect(() => {
     function handleClickOutside(event) {
       if (pickerRef.current && !pickerRef.current.contains(event.target)) {
@@ -69,9 +68,13 @@ const DateRangePicker = ({ onDateChange }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Set default dates when component mounts
   useEffect(() => {
     if (!startDate && !endDate) {
-      selectPreset('last30days'); // fallback since last90days is commented out
+      const today = new Date();
+      const thirtyDaysAgo = subDays(today, 29);
+      setStartDate(format(thirtyDaysAgo, 'yyyy-MM-dd'));
+      setEndDate(format(today, 'yyyy-MM-dd'));
     }
   }, []);
 
@@ -99,36 +102,37 @@ const DateRangePicker = ({ onDateChange }) => {
               </button>
             ))}
 
-            {selectedPreset === 'custom' && (
-              <>
-                <div className="flex items-center space-x-2">
-                  <label className="text-sm w-24">Start Date:</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
-                      if (onDateChange) onDateChange({ startDate: e.target.value, endDate });
-                    }}
-                    className="border px-2 py-1 rounded w-full text-sm"
-                  />
-                </div>
+            {/* Always show custom date inputs, not just when 'custom' is selected */}
+            <div className="mt-4">
+              <div className="flex items-center space-x-2">
+                <label className="text-sm w-24">Start Date:</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setSelectedPreset('custom');
+                    if (onDateChange) onDateChange({ startDate: e.target.value, endDate });
+                  }}
+                  className="border px-2 py-1 rounded w-full text-sm"
+                />
+              </div>
 
-                <div className="flex items-center space-x-2">
-                  <label className="text-sm w-24">End Date:</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    min={startDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
-                      if (onDateChange) onDateChange({ startDate, endDate: e.target.value });
-                    }}
-                    className="border px-2 py-1 rounded w-full text-sm"
-                  />
-                </div>
-              </>
-            )}
+              <div className="flex items-center space-x-2 mt-2">
+                <label className="text-sm w-24">End Date:</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setSelectedPreset('custom');
+                    if (onDateChange) onDateChange({ startDate, endDate: e.target.value });
+                  }}
+                  className="border px-2 py-1 rounded w-full text-sm"
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
