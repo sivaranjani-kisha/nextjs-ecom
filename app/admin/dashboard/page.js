@@ -125,67 +125,134 @@ export default function DashboardPage() {
       });
 
     // Fetch category-product count
+    // fetch("/api/dashboard/category-product-count")
+    //   .then((res) => res.json())
+    //   .then((data) => {
+    //     if (data.success) {
+    //       // set pie chart data
+    //       setPieData({
+    //         labels: data.data.map((item) => item.category),
+    //         datasets: [
+    //           {
+    //             label: "Number of Products",
+    //             data: data.data.map((item) => item.count),
+    //             backgroundColor: [
+    //               "#6366f1",
+    //               "#3b82f6",
+    //               "#10b981",
+    //               "#ef4444",
+    //               "#f59e0b",
+    //               "#ec4899",
+    //               "#d97706",
+    //               "#0f172a",
+    //               "#14b8a6",
+    //               "#e11d48",
+    //             ],
+    //             borderColor: "#fff",
+    //             borderWidth: 2,
+    //             hoverOffset: 8,
+    //           },
+    //         ],
+    //       });
+
+    //       setPieOptions({
+    //         plugins: {
+    //           legend: {
+    //             position: "right",
+    //             labels: {
+    //               boxWidth: 20,
+    //               padding: 15,
+    //               font: {
+    //                 size: 14,
+    //                 weight: "500",
+    //               },
+    //             },
+    //           },
+    //           tooltip: {
+    //             enabled: true,
+    //             callbacks: {
+    //               label: function (context) {
+    //                 const label = context.label || "";
+    //                 const value = context.raw || 0;
+    //                 return `${label}: ${value}`;
+    //               },
+    //             },
+    //           },
+    //         },
+    //         maintainAspectRatio: false,
+    //       });
+
+    //       // set total product count for summary card
+    //       setProductCount(data.totalProductCount);
+    //     }
+    //   });
     fetch("/api/dashboard/category-product-count")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          // set pie chart data
-          setPieData({
-            labels: data.data.map((item) => item.category),
-            datasets: [
-              {
-                label: "Number of Products",
-                data: data.data.map((item) => item.count),
-                backgroundColor: [
-                  "#6366f1",
-                  "#3b82f6",
-                  "#10b981",
-                  "#ef4444",
-                  "#f59e0b",
-                  "#ec4899",
-                  "#d97706",
-                  "#0f172a",
-                  "#14b8a6",
-                  "#e11d48",
-                ],
-                borderColor: "#fff",
-                borderWidth: 2,
-                hoverOffset: 8,
-              },
-            ],
-          });
+  .then((res) => res.json())
+  .then((data) => {
+    if (data.success) {
+      // Extended color palette with more unique colors
+      const colorPalette = [
+        "#6366f1", "#3b82f6", "#10b981", "#ef4444", "#f59e0b",
+        "#ec4899", "#d97706", "#0f172a", "#14b8a6", "#e11d48",
+        "#8b5cf6", "#64748b", "#84cc16", "#f97316", "#06b6d4",
+        "#a855f7", "#d946ef", "#f43f5e", "#22d3ee", "#4ade80",
+        "#f472b6", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa"
+      ];
 
-          setPieOptions({
-            plugins: {
-              legend: {
-                position: "right",
-                labels: {
-                  boxWidth: 20,
-                  padding: 15,
-                  font: {
-                    size: 14,
-                    weight: "500",
-                  },
-                },
-              },
-              tooltip: {
-                enabled: true,
-                callbacks: {
-                  label: function (context) {
-                    const label = context.label || "";
-                    const value = context.raw || 0;
-                    return `${label}: ${value}`;
-                  },
-                },
-              },
-            },
-            maintainAspectRatio: false,
-          });
-
-          // set total product count for summary card
-          setProductCount(data.totalProductCount);
+      // Create a color map to ensure consistent colors for categories
+      const categoryColorMap = {};
+      data.data.forEach((item, index) => {
+        if (!categoryColorMap[item.category]) {
+          categoryColorMap[item.category] = colorPalette[index % colorPalette.length];
         }
       });
+
+      // set pie chart data with unique colors
+      setPieData({
+        labels: data.data.map((item) => item.category),
+        datasets: [
+          {
+            label: "Number of Products",
+            data: data.data.map((item) => item.count),
+            backgroundColor: data.data.map(item => categoryColorMap[item.category]),
+            borderColor: "#fff",
+            borderWidth: 2,
+            hoverOffset: 8,
+          },
+        ],
+      });
+
+      setPieOptions({
+        plugins: {
+          legend: {
+            position: "right",
+            labels: {
+              boxWidth: 20,
+              padding: 15,
+              font: {
+                size: 14,
+                weight: "500",
+              },
+            },
+          },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: function (context) {
+                const label = context.label || "";
+                const value = context.raw || 0;
+                return `${label}: ${value}`;
+              },
+            },
+          },
+        },
+        maintainAspectRatio: false,
+      });
+
+      // set total product count for summary card
+      setProductCount(data.totalProductCount);
+    }
+  });
 
     // Fetch customer count
     fetch("/api/users/getcount")

@@ -122,7 +122,7 @@ export default function BrandComponent() {
       image: brand.image,
       existingImage: brand.image
     });
-    setEditImagePreview(brand.image ? `/uploads/brands/${brand.image}` : null);
+    setEditImagePreview(brand.image ? `${brand.image}` : null);
     setIsEditModalOpen(true);
   };
 
@@ -211,7 +211,7 @@ export default function BrandComponent() {
           <td className="p-2">{brand.brand_slug}</td>
           <td className="p-2">
             {brand.image ? (
-              <img src={`${brand.image}`} alt="brand" className="h-7 mx-auto" />
+              <img src={`/uploads/brands/${brand.image}`} alt="brand" className="h-7 mx-auto" />
             ) : (
               "No Image"
             )}

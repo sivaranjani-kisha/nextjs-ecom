@@ -105,8 +105,8 @@ const handleImageChange = async (e) => {
   img.src = URL.createObjectURL(file);
   
   img.onload = function() {
-    if (this.width !== 96 || this.height !== 89) {
-      setImageError("Image must be exactly 96px width and 89px height");
+    if (this.width !== 260 || this.height !== 240) {
+      setImageError("Image must be exactly 260px width and 240px height");
       setNewCategory(prev => ({ ...prev, image: null }));
       setImagePreview(null);
     } else {
@@ -131,7 +131,7 @@ const handleImageChange = async (e) => {
     e.preventDefault();
       // Check if image is provided
       if (!newCategory.image) {
-        setAlertMessage("Image is required and must be 96px width and 89px height");
+        setAlertMessage("Image is required and must be 260px width and 240px height");
         setShowAlert(true);
         setTimeout(() => setShowAlert(false), 3000);
         return;
@@ -266,8 +266,8 @@ const handleUpdateCategory = async (e) => {
 
     const isValid = await new Promise((resolve) => {
       img.onload = function () {
-        if (this.width !== 96 || this.height !== 89) {
-          setAlertMessage("Image must be exactly 96px width and 89px height");
+        if (this.width !== 260 || this.height !== 240) {
+          setAlertMessage("Image must be exactly 260px width and 240px height");
           setShowAlert(true);
           setTimeout(() => setShowAlert(false), 3000);
           resolve(false);
@@ -787,7 +787,7 @@ const handleUpdateCategory = async (e) => {
               </div>
 
               <div>
-                <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image</label>
+                <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image (260px X 240px)</label>
                 <input
                   type="file"
                   onChange={handleImageChange}
@@ -900,7 +900,7 @@ const handleUpdateCategory = async (e) => {
                 </div>
 
                 <div>
-                  <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image</label>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image (260px X 240px)</label>
                   <input
                     type="file"
                     onChange={(e) => {
