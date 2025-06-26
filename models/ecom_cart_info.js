@@ -22,7 +22,16 @@ const cartItemSchema = new mongoose.Schema({
   },
   image: {
     type: String
-  }
+  },
+   warranty: { type: Number, default: 0 }, // ✅ Add this
+  extendedWarranty: { type: Number, default: 0 }, // ✅ Add this
+  upsells: [
+    {
+      name: String,
+      price: Number,
+    },
+  ],
+
 }, { _id: false });
 
 const cartSchema = new mongoose.Schema({

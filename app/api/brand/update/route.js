@@ -53,7 +53,7 @@ export async function PUT(req) {
       const filePath = path.join(process.cwd(), "public/uploads/brands", fileName);
 
       await writeFile(filePath, buffer);
-      imagePath = `/uploads/brands/${fileName}`;
+      imagePath = `${fileName}`;
     }
 
     // Update the brand

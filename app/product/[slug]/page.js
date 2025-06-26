@@ -79,6 +79,15 @@ useEffect(() => {
   fetchFeaturedProducts();
 }, [product]);
 
+useEffect(() => {
+  const savedIds = JSON.parse(localStorage.getItem("selectedFrequentProductIds") || "[]");
+  if (savedIds.length && featuredProducts.length > 0) {
+    const matchedProducts = featuredProducts.filter(p => savedIds.includes(p._id));
+    setSelectedFrequentProducts(matchedProducts);
+  }
+}, [featuredProducts]);
+
+
   const [selectedImage, setSelectedImage] = useState(null);
 
       useEffect(() => {
@@ -137,8 +146,30 @@ useEffect(() => {
     }
   }, [slug]);
 
+  useEffect(() => {
+  if (selectedFrequentProducts.length > 0) {
+    localStorage.setItem("selectedFrequentProducts", JSON.stringify(selectedFrequentProducts));
+  } else {
+    localStorage.removeItem("selectedFrequentProducts");
+  }
+}, [selectedFrequentProducts]);
+
+
   
-  
+  useEffect(() => {
+  if (featuredProducts?.length > 0) {
+    const stored = localStorage.getItem("selectedFrequentProducts");
+    if (stored) {
+      const storedProducts = JSON.parse(stored);
+      // Match only products still in the featured list
+      const validSelected = featuredProducts.filter(fp =>
+        storedProducts.some(sp => sp._id === fp._id)
+      );
+      setSelectedFrequentProducts(validSelected);
+    }
+  }
+}, [featuredProducts]);
+
 
   const handleThumbnailClick = (index) => {
     const imagePath = product.images?.[index];
@@ -885,7 +916,7 @@ useEffect(() => {
 {featuredProducts?.length > 0 && (
   <div className="px-4 py-4"> 
     <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
-      Frequently Bought Together:
+      Frequently Bought Togetherr:
     </h3>
 
     {featuredProducts.map((item) => (
@@ -935,7 +966,18 @@ useEffect(() => {
         </p>
         <div className="text-sm text-gray-800 space-y-2 mb-4">
           <div className="flex items-center">
-            <input type="radio" name="protection" className="mr-2" onChange={() => setSelectedWarranty(product.warranty)} />
+             <input
+              type="radio"
+              name="protection"
+              className="mr-2"
+              checked={selectedWarranty === product.warranty}
+              onClick={() =>
+                setSelectedWarranty(prev =>
+                  prev === product.warranty ? null : product.warranty
+                )
+              }
+              readOnly
+            />
             <label>
               1 Year Accidental And Liquid Damage
               <span className="text-green-600 font-bold ml-2">
@@ -954,9 +996,20 @@ useEffect(() => {
         </p>
         <div className="text-sm text-gray-800">
           <div className="flex items-center">
-            <input type="radio" name="warranty" className="mr-2" onChange={() => setSelectedExtendedWarranty(product.extended_warranty)} />
+            <input
+              type="radio"
+              name="extended"
+              className="mr-2"
+              checked={selectedExtendedWarranty === product.extended_warranty}
+              onClick={() =>
+                setSelectedExtendedWarranty(prev =>
+                  prev === product.extended_warranty ? null : product.extended_warranty
+                )
+              }
+              readOnly
+            />
             <label>
-              1 Year Extended Warranty Protection
+              1 Year Extended Warranty Protectionnnn
               <span className="text-green-600 font-bold ml-2">
                 ₹ {product.extended_warranty}
               </span>

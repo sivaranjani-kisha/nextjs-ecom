@@ -135,8 +135,21 @@ export default function AddProductPage({ mode = "add", productData = null, produ
 
     useEffect(() => {
      if (mode === "edit" && productData) {
+      console.log(productData);
     setProduct(productData);
 
+
+    if (productData.filterDetails && productData.filterDetails.length > 0) {
+      const filters = productData.filterDetails.map(item => ({
+        name: item.filter_name,
+        label: item.filter_name
+      }));
+
+      setProduct(prevProduct => ({
+        ...prevProduct,
+        filters: filters
+      }));
+    }
     if (productData.hasVariants && Array.isArray(productData.variants)) {
       setVariant(productData.variants);
 

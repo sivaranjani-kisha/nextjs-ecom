@@ -16,18 +16,20 @@ export async function PUT(req, { params }) {
     const category = formData.get("category");
     const highlights = JSON.parse(formData.get("highlights") || "[]");
     let variants = JSON.parse(formData.get("variant") || "[]");
+console.log(productData);
+console.log("..............................................................");
 
     const slug = productData.slug;
     const md5_cat_name = md5(slug);
 
     await connectDB();
-
+console.log(imageFiles);
     const uploadDir = path.join(process.cwd(), "public/uploads/products");
     if (!fs.existsSync(uploadDir)) {
       await fs.promises.mkdir(uploadDir, { recursive: true });
     }
 
-    const savedImages = [];
+    let savedImages = [];
     for (const file of imageFiles) {
       if (!file || typeof file.name !== "string") continue;
       const filename = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
@@ -80,6 +82,9 @@ export async function PUT(req, { params }) {
       productData.stock_status = "Out of Stock";
     }
 
+    if(savedImages.length == 0){
+      savedImages = productData.images;
+    }
     const updatedProduct = await Product.findByIdAndUpdate(
       params.productId,
       {

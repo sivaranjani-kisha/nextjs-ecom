@@ -6,7 +6,7 @@ import { useModal } from '@/context/ModalContext';
 // import {AuthModal} from '@/components/AuthModal';
 import { FaShoppingCart} from "react-icons/fa";
 
-const AddToCartButton = ({ productId, quantity = 1 }) => {
+const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts = [],extendedWarranty, selectedFrequentProducts = [] }) => {
   const { openAuthModal } = useModal();
   const [isLoading, setIsLoading] = useState(false);
   // const [showAuthModal, setShowAuthModal] = useState(false);
@@ -14,59 +14,84 @@ const AddToCartButton = ({ productId, quantity = 1 }) => {
   const [cartSuccess, setCartSuccess] = useState(false);
   const { cartCount, updateCartCount } = useCart();
   const handleAddToCart = async () => {
-    setIsLoading(true);
-    // setAuthError('');
-    setCartSuccess(false);
-    
-    try {
-      const token = localStorage.getItem('token');
-    
-      // Check authentication
-      const response = await fetch('/api/auth/check', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
+      setIsLoading(true);
+      // setAuthError('');
+      setCartSuccess(false);
+      
+      try {
+        const token = localStorage.getItem('token');
+      
+        // Check authentication
+        const response = await fetch('/api/auth/check', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : '',
+          }
+        });
+        
+        const data = await response.json();
+        
+         if (!data.loggedIn) {
+          openAuthModal({
+            error: 'Please log in to continue.',
+            onSuccess: () => handleAddToCart(), // retry on success
+          });
+          return;
         }
-      });
-      
-      const data = await response.json();
-      
-      if (!data.loggedIn) {
-  openAuthModal({
-    error: 'Please log in to continue.',
-    onSuccess: () => handleAddToCart(), // retry on success
-  });
-  return;
+  
+        // Add main product to cart
+        const cartResponse = await fetch('/api/cart', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ productId, quantity, 
+          selectedWarranty: warranty,
+          selectedExtendedWarranty: extendedWarranty,}),
+        });
+  
+        if (!cartResponse.ok) {
+          throw new Error('Failed to add to cart');
+        }
+  
+        // Add additional products if any
+        if (additionalProducts.length > 0) {
+          await Promise.all(
+            additionalProducts.map(async (additionalId) => {
+              const res = await fetch('/api/cart', {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ productId: additionalId, quantity: 1 }),
+              });
+              if (!res.ok) throw new Error('Failed to add additional product');
+            })
+          );
+        }
+  
+        const responseData = await cartResponse.json();
+        updateCartCount(responseData.cart.totalItems + additionalProducts.length);
+
+        // ✅ Store selected product IDs for persistence
+if (selectedFrequentProducts?.length > 0) {
+  const ids = selectedFrequentProducts.map(p => p._id);
+  localStorage.setItem("selectedFrequentProductIds", JSON.stringify(ids));
+} else {
+  localStorage.removeItem("selectedFrequentProductIds");
 }
-
-
-      // Add to cart API call
-      const cartResponse = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ productId, quantity }),
-      });
-
-      if (!cartResponse.ok) {
-        throw new Error('Failed to add to cart');
+  
+        setCartSuccess(true);
+      } catch (error) {
+        console.error('Add to cart error:', error);
+        setAuthError(error.message);
+      } finally {
+        setIsLoading(false);
       }
-      const responseData = await cartResponse.json();
-      updateCartCount(responseData.cart.totalItems);
-
-      setCartSuccess(true);
-      console.log('Added to cart successfully');
-    } catch (error) {
-      console.error('Add to cart error:', error);
-      setAuthError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+    };
   return (
     <>
       <button 

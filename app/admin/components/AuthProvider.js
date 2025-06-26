@@ -14,7 +14,7 @@ export default function AuthProvider({ children }) {
     const verifyAuth = async () => {
       try {
         const token = localStorage.getItem('token');
-        
+        console.log(token);
         // Public routes that don't require authentication
         const publicRoutes = ['/admin/login', '/admin/register'];
         

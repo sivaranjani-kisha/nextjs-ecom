@@ -1,7 +1,7 @@
 // api/cart/count/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
-import Cart from "@/models/ecom_cart_info";
+import Cart from "@/models/ecom_cart_info_old_jun20";
 import jwt from "jsonwebtoken";
 
 export async function GET(req) {

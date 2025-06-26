@@ -5,7 +5,7 @@ import Addtocart from "@/components/AddToCart";
 import { useRouter } from 'next/navigation';
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "react-feather";
-
+import ProductCard from "@/components/ProductCard";
 const RecentlyViewedProducts = () => {
   const [recentProducts, setRecentProducts] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
@@ -13,20 +13,53 @@ const RecentlyViewedProducts = () => {
   const [navigating, setNavigating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('recentlyViewed');
-    if (stored) {
-      setRecentProducts(JSON.parse(stored));
-    }
+  // useEffect(() => {
+  //   const stored = localStorage.getItem('recentlyViewed');
+  //   if (stored) {
+  //     setRecentProducts(JSON.parse(stored));
+  //   }
 
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+  //   const checkIfMobile = () => {
+  //     setIsMobile(window.innerWidth < 768);
+  //   };
 
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
+  //   checkIfMobile();
+  //   window.addEventListener('resize', checkIfMobile);
+  //   return () => window.removeEventListener('resize', checkIfMobile);
+  // }, []);
+useEffect(() => {
+  const stored = localStorage.getItem('recentlyViewed');
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    setRecentProducts(parsed);
+  }
+
+  const checkIfMobile = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
+
+  checkIfMobile();
+  window.addEventListener('resize', checkIfMobile);
+
+  // Fetch brand names if only ObjectIds exist
+  fetch('/api/brand/get')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        setRecentProducts(prev =>
+          prev.map(product => {
+            const brandMatch = data.brands.find(b => b.id === product.brand);
+            return {
+              ...product,
+              brand: brandMatch?.brand_name || product.brand // overwrite ObjectId with name if matched
+            };
+          })
+        );
+      }
+    });
+
+  return () => window.removeEventListener('resize', checkIfMobile);
+}, []);
 
   const visibleCount = isMobile ? 3 : 5;
   const visibleProducts = recentProducts.slice(startIndex, startIndex + visibleCount);
@@ -106,12 +139,14 @@ const RecentlyViewedProducts = () => {
             {/* Discount badge */}
             {product.special_price && (
               <div className="absolute top-3 left-3 z-10">
-                <span className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded-full">
+                <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
                   {Math.round(((product.price - product.special_price) / product.price) * 100)}% OFF
                 </span>
               </div>
             )}
-
+ <div className="absolute top-2 right-2 z-10 hover:text-red-500">
+                                  <ProductCard productId={product._id} />
+                                </div>
             {/* Product Image */}
             <Link
               href={`/product/${product.slug || product._id}`}
@@ -136,7 +171,11 @@ const RecentlyViewedProducts = () => {
               <h3 className="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2 mb-1">
                 {product.name}
               </h3>
-
+  {product.brand && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Brand: <span className="font-medium text-gray-700">{product.brand}</span>
+                          </p>
+                        )}
               <p className="text-sm sm:text-base font-bold text-blue-600">
                 Rs. {product.special_price || product.price}
                 {product.special_price && (

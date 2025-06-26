@@ -6,33 +6,65 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    console.log("req", req);
-
     const { email, password } = await req.json();
 
-    await connectDB();
-    console.log("dfd");
-
-    const existingUser = await User.findOne({ email });
-    console.log("existingUser", existingUser);
-
-    if (!existingUser) {
-      return NextResponse.json({ error: "Admin not found" }, { status: 400 });
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Email is invalid", errorType: "email" }, 
+        { status: 400 }
+      );
     }
 
-    const isPassword = await bcrypt.compare(password, existingUser.password);
-    console.log(isPassword);
+    await connectDB();
 
-    if (!isPassword) return NextResponse.json({ error: "Incorrect Password" }, { status: 400 });
+    const existingUser = await User.findOne({ email });
+
+    if (!existingUser) {
+      return NextResponse.json(
+        { error: "Email is incorrect or not registered", errorType: "email" }, 
+        { status: 400 }
+      );
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(password, existingUser.password);
+
+    if (!isPasswordCorrect) {
+      return NextResponse.json(
+        { error: "Password is incorrect", errorType: "password" }, 
+        { status: 400 }
+      );
+    }
 
     // Create a JWT token
-    const token = jwt.sign({ userId: existingUser._id, email: existingUser.email,name: existingUser.name }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign(
+      { 
+        userId: existingUser._id, 
+        email: existingUser.email,
+        name: existingUser.name 
+      }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: "1h" }
+    );
 
-    // Send the token back to the client
-    return NextResponse.json({ message: "User Login", token }, { status: 200 });
+    return NextResponse.json(
+      { 
+        message: "Login successful", 
+        token,
+        user: {
+          name: existingUser.name,
+          email: existingUser.email
+        }
+      }, 
+      { status: 200 }
+    );
 
   } catch (error) {
     console.error("API Error:", error);
-    return NextResponse.json({ error: "Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" }, 
+      { status: 500 }
+    );
   }
 }

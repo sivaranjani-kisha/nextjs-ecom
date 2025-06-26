@@ -470,16 +470,24 @@ const exportToExcel = () => {
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-5">
-        <h2 className="text-2xl font-bold">Product List</h2>
-        <button
-          onClick={exportToExcel}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
-        >
-          <Icon icon="mdi:microsoft-excel" className="text-lg" />
-          Export to Excel
-        </button>
-      </div>
+  <div className="flex justify-between items-center mb-5">
+  <h2 className="text-2xl font-bold">Product List</h2>
+  
+  <div className="flex items-center gap-4">
+    <button
+      onClick={exportToExcel}
+      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+    >
+      <Icon icon="mdi:microsoft-excel" className="text-lg" />
+      Export to Excel
+    </button>
+
+    <Link href="/admin/product/create" className="bg-blue-500 text-white px-4 py-2 rounded-md">
+      + Add Product
+    </Link>
+  </div>
+</div>
+
 
       {isLoading ? (
         <p>Loading Products...</p>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Product from '@/models/product';
+import Filter from '@/models/ecom_filter_infos';
 import dbConnect from '@/lib/db';
 
 export const dynamic = 'force-dynamic'; // Important for dynamic fetching
@@ -26,16 +27,21 @@ export async function GET(request, { params }) {
         { status: 404 }
       );
     }
+    let filters= [];
 
     // 4. Convert MongoDB ObjectId to string
     if (product._id) {
       product._id = product._id.toString();
+      filters = await Filter.findOne({
+      proudct_id: product._id
+    });
     }
 
     // 5. Return product data
     return NextResponse.json({
       success: true,
-      data: product
+      data: product,
+      filters: filters
     });
 
   } catch (error) {

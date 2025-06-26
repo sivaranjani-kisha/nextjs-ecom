@@ -550,7 +550,7 @@ useEffect(() => {
               )}
               <input
                 type="password"
-                placeholder="Password"
+                placeholder="Passwordx"
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"

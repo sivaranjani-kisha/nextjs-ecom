@@ -8,13 +8,25 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
   const [formData, setFormData] = useState({ email: '', password: '', name: '', mobile: '' });
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({
+    email: '',
+    password: ''
+  });
   const { updateCartCount } = useCart();
   const { updateWishlist } = useWishlist();
- 
+
+  const clearErrors = () => {
+    setFormError('');
+    setFieldErrors({
+      email: '',
+      password: ''
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setFormError('');
+    clearErrors();
 
     try {
       const endpoint = activeTab === 'login' ? '/api/login' : '/api/register';
@@ -34,7 +46,17 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
 
       const data = await response.json();
       
-      if (!response.ok) throw new Error(data.message || 'Authentication failed');
+      if (!response.ok) {
+        // Handle field-specific errors
+        if (data.errorType === 'email') {
+          setFieldErrors(prev => ({ ...prev, email: data.error }));
+        } else if (data.errorType === 'password') {
+          setFieldErrors(prev => ({ ...prev, password: data.error }));
+        } else {
+          throw new Error(data.error || 'Authentication failed');
+        }
+        return;
+      }
       
       if (data.token) {
         localStorage.setItem('token', data.token);
@@ -86,7 +108,10 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
                 ? 'border-b-2 border-blue-500 text-blue-600' 
                 : 'text-gray-500 hover:text-gray-700'
             }`}
-            onClick={() => setActiveTab('login')}
+            onClick={() => {
+              setActiveTab('login');
+              clearErrors();
+            }}
           >
             Login
           </button>
@@ -96,7 +121,10 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
                 ? 'border-b-2 border-blue-500 text-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
-            onClick={() => setActiveTab('register')}
+            onClick={() => {
+              setActiveTab('register');
+              clearErrors();
+            }}
           >
             Register
           </button>
@@ -104,41 +132,68 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {activeTab === 'register' && (
+            <div>
+              <input
+                type="text"
+                placeholder="Name"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          )}
+          
+          <div>
             <input
-              type="text"
-              placeholder="Name"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={(e) => {
+                setFormData({...formData, email: e.target.value});
+                if (fieldErrors.email) clearErrors();
+              }}
+              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                fieldErrors.email ? 'border-red-500' : ''
+              }`}
               required
             />
-          )}
-          <input
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+            {fieldErrors.email && (
+              <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
+            )}
+          </div>
+          
           {activeTab === 'register' && (
+            <div>
+              <input
+                type="mobile"
+                placeholder="Mobile"
+                value={formData.mobile}
+                onChange={(e) => setFormData({...formData, mobile: e.target.value})}
+                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          )}
+          
+          <div>
             <input
-              type="mobile"
-              placeholder="Mobile"
-              value={formData.mobile}
-              onChange={(e) => setFormData({...formData, mobile: e.target.value})}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="password"
+              placeholder="Passwordbc"
+              value={formData.password}
+              onChange={(e) => {
+                setFormData({...formData, password: e.target.value});
+                if (fieldErrors.password) clearErrors();
+              }}
+              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                fieldErrors.password ? 'border-red-500' : ''
+              }`}
               required
             />
-          )}
-          <input
-            type="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={(e) => setFormData({...formData, password: e.target.value})}
-            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+            {fieldErrors.password && (
+              <p className="mt-1 text-sm text-red-500">{fieldErrors.password}</p>
+            )}
+          </div>
           
           {(formError || error) && (
             <div className="text-red-500 text-sm">

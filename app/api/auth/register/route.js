@@ -6,32 +6,59 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   try {
     const body = await req.json();
-    console.log("Received body:", body); // Debug log
-
     const { name, mobile, email, password } = body;
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+
+    // Validate required fields
+    if (!name || !email || !mobile || !password) {
+      return NextResponse.json(
+        { message: "All fields are required" },
+        { status: 400 }
+      );
     }
 
     await connectDB();
-    console.log("Database connected successfully"); // Debug log
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+    // Check if email already exists
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return NextResponse.json(
+        { message: "Email already exists" },
+        { status: 400 }
+      );
     }
 
+    // Check if mobile already exists
+    const existingMobile = await User.findOne({ mobile });
+    if (existingMobile) {
+      return NextResponse.json(
+        { message: "Mobile number already exists" },
+        { status: 400 }
+      );
+    }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("Password hashed successfully"); // Debug log
 
-    const newUser = new User({ name, mobile, email, password: hashedPassword });
+    // Save new user
+    const newUser = new User({
+      name,
+      mobile,
+      email,
+      password: hashedPassword,
+    });
+
     await newUser.save();
-    console.log("User saved successfully"); // Debug log
 
-    return NextResponse.json({ message: "User registered successfully" }, { status: 201 });
+    return NextResponse.json(
+      { message: "User registered successfully" },
+      { status: 201 }
+    );
 
   } catch (error) {
-    console.error("API Error:", error.message);
-    return NextResponse.json({ error: error.message || "Server Error" }, { status: 500 });
+    console.error("Registration API Error:", error.message);
+    return NextResponse.json(
+      { message: error.message || "Server Error" },
+      { status: 500 }
+    );
   }
 }
