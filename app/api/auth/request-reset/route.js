@@ -34,12 +34,13 @@ export async function POST(req) {
     await Otp.deleteMany({ email });
 
     // Save OTP
-    await Otp.create({
+    const otpinsert = await Otp.create({
       email,
       otp: otpValue,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min expiry
     });
 
+    console.log(otpinsert);
     // Send Email
    const transporter = nodemailer.createTransport({
   service: "Gmail",
@@ -57,6 +58,7 @@ export async function POST(req) {
       subject: "Your Password Reset OTP",
       text: `Your OTP is ${otpValue}. It expires in 10 minutes.`,
     });
+
 
     return NextResponse.json(
       { message: "OTP sent to your email." },

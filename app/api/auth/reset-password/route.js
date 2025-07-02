@@ -6,51 +6,42 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    const { email, otp, newPassword } = await req.json();
-
-    if (!email || !otp || !newPassword) {
-      return NextResponse.json(
-        { error: "All fields are required." },
-        { status: 400 }
-      );
-    }
-
     await connectDB();
 
+    const body = await req.json();
+    const { email, otp, newPassword } = body;
+
+    if (!email || !otp || !newPassword) {
+      return NextResponse.json({ message: "All fields are required." }, { status: 400 });
+    }
+
+    // Check OTP
     const otpRecord = await Otp.findOne({ email, otp });
     if (!otpRecord) {
-      return NextResponse.json(
-        { error: "Invalid OTP." },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "Invalid OTP." }, { status: 400 });
     }
 
     if (otpRecord.expiresAt < new Date()) {
-      return NextResponse.json(
-        { error: "OTP has expired." },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "OTP expired." }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return NextResponse.json({ message: "User not found." }, { status: 400 });
+    }
 
-    await User.updateOne(
-      { email },
-      { $set: { password: hashedPassword } }
-    );
+    // Hash password
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    await user.save();
 
+    // Remove OTP
     await Otp.deleteOne({ _id: otpRecord._id });
 
-    return NextResponse.json(
-      { message: "Password has been reset successfully." },
-      { status: 200 }
-    );
-
+    return NextResponse.json({ message: "Password reset successfully." });
   } catch (error) {
-    console.error("reset-password Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error." },
-      { status: 500 }
-    );
+    console.error("Reset password error:", error);
+    return NextResponse.json({ message: "Server error." }, { status: 500 });
   }
 }

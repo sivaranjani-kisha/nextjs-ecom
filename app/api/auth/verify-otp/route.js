@@ -1,41 +1,36 @@
-// app/api/auth/verify-otp/route.js
-
+import connectDB from "@/lib/db";
+import Otp from "@/models/Otp";
 import { NextResponse } from "next/server";
 
-export async function POST(request) {
+export async function POST(req) {
   try {
-    const body = await request.json();
-    const { email, mobile, otp } = body;
+    await connectDB();
 
-    if (!email && !mobile) {
-      return NextResponse.json(
-        { error: "Email or mobile is required" },
-        { status: 400 }
-      );
+    const body = await req.json();
+    const { email, otp } = body;
+
+    if (!email || !otp) {
+      return NextResponse.json({ message: "Email and OTP are required." }, { status: 400 });
     }
 
-    if (!otp || otp.length !== 6) {
-      return NextResponse.json(
-        { error: "Invalid OTP format" },
-        { status: 400 }
-      );
+    // Find the OTP record
+    const otpRecord = await Otp.findOne({ email, otp });
+
+    if (!otpRecord) {
+      return NextResponse.json({ message: "Invalid OTP." }, { status: 400 });
     }
 
-    // 🚀 Here you would look up stored OTP in your DB or Redis
-    // For now, we accept "123456" as valid
-    if (otp !== "123456") {
-      return NextResponse.json(
-        { error: "Incorrect OTP" },
-        { status: 400 }
-      );
+    // Check if expired
+    if (otpRecord.expiresAt < new Date()) {
+      return NextResponse.json({ message: "OTP expired." }, { status: 400 });
     }
 
-    return NextResponse.json({ message: "OTP verified successfully" });
+    // Optionally delete OTP after verification to prevent reuse
+  
+
+    return NextResponse.json({ message: "OTP verified successfully." });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Failed to verify OTP" },
-      { status: 500 }
-    );
+    console.error("Error verifying OTP:", error);
+    return NextResponse.json({ message: "Server error." }, { status: 500 });
   }
 }
