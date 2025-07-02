@@ -42,7 +42,15 @@ const [showAuthModal, setShowAuthModal] = useState(false);
  const toggleMobileMenu = () => {
   setIsMobileMenuOpen(!isMobileMenuOpen);
 };
+// Track step
+const [forgotStep, setForgotStep] = useState(1); // 1: enter email, 2: enter OTP and new password
 
+// OTP input
+const [forgotOTP, setForgotOTP] = useState('');
+
+// New password inputs
+const [newPassword, setNewPassword] = useState('');
+const [confirmPassword, setConfirmPassword] = useState('');
 // Close mobile menu when clicking outside
 useEffect(() => {
   const handleClickOutside = (event) => {
@@ -226,7 +234,42 @@ useEffect(() => {
     updateCartCount(0); // Reset cart count on logout
   };
   
-   
+ 
+const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
+const [forgotPasswordError, setForgotPasswordError] = useState('');
+const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+
+// Add this function to handle forgot password submission
+const handleForgotPassword = async (e) => {
+  e.preventDefault();
+  setForgotPasswordError('');
+  setForgotPasswordMessage('');
+  setForgotPasswordLoading(true);
+
+  try {
+    const response = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: forgotPasswordEmail }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to send reset link');
+    }
+
+    setForgotPasswordMessage(data.message || 'Password reset link sent to your email');
+  } catch (err) {
+    setForgotPasswordError(err.message);
+  } finally {
+    setForgotPasswordLoading(false);
+  }
+};
   
   return (
      <header className="sticky top-0 z-50">
@@ -517,6 +560,24 @@ useEffect(() => {
               >
                 Register
               </button>
+              <button
+  type="button"
+  onClick={() => {
+    setShowAuthModal(false);
+    setShowForgotPasswordModal(true);
+    setForgotStep(1);
+    setForgotPasswordEmail(formData.email || '');
+    // setForgotPasswordEmail('');
+    setForgotOTP('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setForgotPasswordMessage('');
+    setForgotPasswordError('');
+  }}
+  className="text-xs text-blue-500 hover:underline mt-1"
+>
+  Forgot Password?
+</button>
             </div>
 
             <form onSubmit={handleAuthSubmit} className="space-y-4">
@@ -575,6 +636,161 @@ useEffect(() => {
           </div>
         </div>
       )}  
+      {showForgotPasswordModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg p-6 w-96 max-w-full relative">
+      <button
+        onClick={() => setShowForgotPasswordModal(false)}
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+      >
+        &times;
+      </button>
+
+      {forgotStep === 1 && (
+        <>
+          <h2 className="text-lg font-semibold mb-4">Reset Password</h2>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setForgotPasswordError('');
+              setForgotPasswordMessage('');
+              setForgotPasswordLoading(true);
+
+              try {
+                const res = await fetch('/api/auth/request-reset', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: forgotPasswordEmail }),
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.message || 'Error sending OTP');
+
+                setForgotPasswordMessage('OTP sent to your email.');
+                setForgotStep(2);
+              } catch (err) {
+                setForgotPasswordError(err.message);
+              } finally {
+                setForgotPasswordLoading(false);
+              }
+            }}
+            className="space-y-4"
+          >
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={forgotPasswordEmail}
+              onChange={(e) => setForgotPasswordEmail(e.target.value)}
+              required
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {forgotPasswordError && (
+              <p className="text-red-500 text-sm">{forgotPasswordError}</p>
+            )}
+            {forgotPasswordMessage && (
+              <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
+            )}
+            <button
+              type="submit"
+              disabled={forgotPasswordLoading}
+              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+            >
+              {forgotPasswordLoading ? 'Sending...' : 'Send OTP'}
+            </button>
+          </form>
+        </>
+      )}
+
+      {forgotStep === 2 && (
+        <>
+          <h2 className="text-lg font-semibold mb-4">Enter OTP and New Password</h2>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setForgotPasswordError('');
+              setForgotPasswordMessage('');
+              setForgotPasswordLoading(true);
+
+              if (newPassword !== confirmPassword) {
+                setForgotPasswordError('Passwords do not match.');
+                setForgotPasswordLoading(false);
+                return;
+              }
+
+              try {
+                const res = await fetch('/api/auth/reset-password', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    email: forgotPasswordEmail,
+                    otp: forgotOTP,
+                    newPassword,
+                  }),
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.message || 'Error resetting password');
+
+                setForgotPasswordMessage('Password reset successful.');
+                // Optionally auto-close modal
+                setTimeout(() => {
+                  setShowForgotPasswordModal(false);
+                  setShowAuthModal(true); // Open login again
+                }, 1500);
+              } catch (err) {
+                setForgotPasswordError(err.message);
+              } finally {
+                setForgotPasswordLoading(false);
+              }
+            }}
+            className="space-y-4"
+          >
+            <input
+        type="email"
+        placeholder="Enter your email"
+        value={forgotPasswordEmail}
+        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+        required
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="password"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="password"
+              placeholder="Confirm New Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {forgotPasswordError && (
+              <p className="text-red-500 text-sm">{forgotPasswordError}</p>
+            )}
+            {forgotPasswordMessage && (
+              <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
+            )}
+            <button
+              type="submit"
+              disabled={forgotPasswordLoading}
+              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+            >
+              {forgotPasswordLoading ? 'Resetting...' : 'Reset Password'}
+            </button>
+          </form>
+        </>
+      )}
+    </div>
+  </div>
+)}
+
       </div>
  
  

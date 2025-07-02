@@ -52,20 +52,20 @@ const DesignBannerSchema = new mongoose.Schema({
   },
 
   // Common fields
-  // startDate: {
-  //   type: Date,
-  //   required: [true, "Start date is required"]
-  // },
-  // endDate: {
-  //   type: Date,
-  //   required: [true, "End date is required"],
-  //   validate: {
-  //     validator: function(value) {
-  //       return value > this.startDate;
-  //     },
-  //     message: "End date must be after start date"
-  //   }
-  // },
+  startDate: {
+    type: Date,
+    required: [true, "Start date is required"]
+  },
+  endDate: {
+    type: Date,
+    required: [true, "End date is required"],
+    validate: {
+      validator: function(value) {
+        return value > this.startDate;
+      },
+      message: "End date must be after start date"
+    }
+  },
   status: {
     type: String,
     required: true,
@@ -100,12 +100,12 @@ DesignBannerSchema.index({ bannerType: 1, status: 1 });
 
 // Middleware to validate dates before saving
 DesignBannerSchema.pre('save', function(next) {
-  // if (this.endDate <= this.startDate) {
-  //   const err = new Error("End date must be after start date");
-  //   next(err);
-  // } else {
-  //   next();
-  // }
+  if (this.endDate <= this.startDate) {
+    const err = new Error("End date must be after start date");
+    next(err);
+  } else {
+    next();
+  }
 });
 
 let DesignBanner;

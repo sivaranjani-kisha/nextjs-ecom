@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-import FilterComponent from "../../../app/admin/components/filter/filter";
+import FilterComponent from "../components/filter/filter_july1";
 
 
 export default function Dashboard() {

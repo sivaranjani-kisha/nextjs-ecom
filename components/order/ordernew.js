@@ -57,8 +57,8 @@ export default function Order() {
             <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-customBlue shadow-sm">
               <h3 className="text-lg font-semibold text-customBlue mb-6 border-b pb-2">My Account</h3>
               <nav className="space-y-2">
-                <Link href="/profile" className="nav-link"><RiAccountCircleFill className="icon" />Profile</Link>
-                <Link href="/address" className="nav-link"><FaAddressBook className="icon" />Addresses</Link>
+                {/* <Link href="/profile" className="nav-link"><RiAccountCircleFill className="icon" />Profile</Link>
+                <Link href="/address" className="nav-link"><FaAddressBook className="icon" />Addresses</Link> */}
                 <Link href="/order" className="nav-link"><HiShoppingBag className="icon" />Orders</Link>
                 <Link href="/wishlist" className="nav-link"><FaHeart className="icon" />Wishlist</Link>
               </nav>

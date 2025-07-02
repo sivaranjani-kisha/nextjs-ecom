@@ -1207,11 +1207,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                     {product.name}
                                   </h3>
                                 </Link>
-                        {product.brand && (
+                        {/* {product.brand && (
                           <p className="text-sm text-gray-500 mt-1">
                             Brand: <span className="font-medium text-gray-700">{product.brand}</span>
                           </p>
-                        )}
+                        )} */}
                                 <div className="mt-2 text-lg font-bold text-blue-600">
                                   Rs. {product.special_price || product.price}
                                   {product.special_price && (

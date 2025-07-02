@@ -171,11 +171,11 @@ useEffect(() => {
               <h3 className="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2 mb-1">
                 {product.name}
               </h3>
-  {product.brand && (
+  {/* {product.brand && (
                           <p className="text-sm text-gray-500 mt-1">
                             Brand: <span className="font-medium text-gray-700">{product.brand}</span>
                           </p>
-                        )}
+                        )} */}
               <p className="text-sm sm:text-base font-bold text-blue-600">
                 Rs. {product.special_price || product.price}
                 {product.special_price && (

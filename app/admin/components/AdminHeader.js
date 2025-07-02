@@ -16,11 +16,13 @@ const AdminHeader = ({ toggleSidebar }) => {
       // Here you would typically call your sign-out API
       // For example, if using NextAuth:
       // const res = await signOut({ redirect: false });
+      
       // For demo purposes, we'll just clear any auth token and redirect
       localStorage.removeItem('authToken'); // Remove if you store tokens
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('authToken'); // Remove if you store tokens
+      
       // Redirect to login page
-      //router.push('/admin/login');
+      router.push('/admin/login');
     } catch (error) {
       console.error('Error during sign out:', error);
     }

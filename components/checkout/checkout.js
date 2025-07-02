@@ -413,6 +413,38 @@ export default function CheckoutPage() {
         return;
       }
 
+      if (cartdelte.status === 200) {
+          const orderData = await orderRes.json()
+          // Prepare email data
+          const emailData = {
+            orderDetails: {
+              order_number: orderData.order_number || "ORD" + Date.now(),
+              order_amount: totalAmount,
+              payment_method: paymentMethod === 'cash' ? 'Cash on Delivery' : 'Online Payment',
+              order_item: cartItems,
+              order_username: `${addressData.firstName} ${addressData.lastName}`,
+              order_phonenumber: addressData.phonenumber,
+              order_deliveryaddress: deliveryAddress
+            },
+            customerEmail: addressData.email,
+            adminEmail: 'msivaranjani2036@gmail.com' // Replace with your admin email
+          };
+          console.log(emailData);
+          alert("fgg");
+          // Send confirmation emails
+          const emailResponse = await fetch('/api/send-order-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(emailData)
+          });
+
+          if (!emailResponse.ok) {
+            const errorData = await emailResponse.json();
+            console.error('Email sending failed:', errorData.error);
+            // Don't fail the order if email fails, just log it
+          }
+        }
+
       toast.success("Order placed successfully!");
       router.push('/order');
       

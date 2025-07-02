@@ -238,46 +238,114 @@ export async function PUT(req) {
 }
 
 /** DELETE - Remove Item **/
+// export async function DELETE(req) {
+//   try {
+//     await connectDB();
+//     const token = extractToken(req);
+//     const decoded = verifyToken(token);
+//     const userId = decoded.userId;
+
+//     const { productId } = await req.json();
+//     if (!productId) {
+//       return NextResponse.json({ error: "Product ID required" }, { status: 400 });
+//     }
+
+//     const cart = await Cart.findOne({ userId });
+//     if (!cart) {
+//       return NextResponse.json({ error: "Cart not found" }, { status: 404 });
+//     }
+
+//     cart.items = cart.items.filter(
+//       (item) => item.productId.toString() !== productId
+//     );
+
+//     const totals = calculateCartTotals(cart.items);
+//     cart.totalItems = totals.totalItems;
+//     cart.totalPrice = totals.totalPrice;
+
+//     await cart.save();
+
+//     return NextResponse.json(
+//       {
+//         message: "Item removed from cart",
+//         cart: {
+//           id: cart._id,
+//           ...totals,
+//           items: cart.items,
+//         },
+//       },
+//       { status: 200 }
+//     );
+//   } catch (error) {
+//     console.error("DELETE cart error:", error);
+//     return NextResponse.json({ error: error.message }, { status: 500 });
+//   }
+// }
+
 export async function DELETE(req) {
   try {
     await connectDB();
-    const token = extractToken(req);
-    const decoded = verifyToken(token);
-    const userId = decoded.userId;
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.split(' ')[1];
 
-    const { productId } = await req.json();
-    if (!productId) {
-      return NextResponse.json({ error: "Product ID required" }, { status: 400 });
+    if (!token) {
+      return NextResponse.json(
+        { error: "Authorization token required" },
+        { status: 401 }
+      );
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+    const { productId, clearAll } = await req.json();
 
     const cart = await Cart.findOne({ userId });
     if (!cart) {
       return NextResponse.json({ error: "Cart not found" }, { status: 404 });
     }
 
-    cart.items = cart.items.filter(
-      (item) => item.productId.toString() !== productId
-    );
+    if (clearAll) {
+      // Clear the entire cart
+      cart.items = [];
+      cart.totalItems = 0;
+      cart.totalPrice = 0;
+    } else {
+      // Remove a specific item
+      const existingItemIndex = cart.items.findIndex(
+        item => item.productId.toString() === productId
+      );
 
-    const totals = calculateCartTotals(cart.items);
-    cart.totalItems = totals.totalItems;
-    cart.totalPrice = totals.totalPrice;
+      if (existingItemIndex === -1) {
+        return NextResponse.json({ error: "Item not found in cart" }, { status: 404 });
+      }
+
+      cart.items.splice(existingItemIndex, 1);
+
+      // Recalculate totals
+      cart.totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+      cart.totalPrice = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    }
 
     await cart.save();
 
     return NextResponse.json(
       {
-        message: "Item removed from cart",
+        message: clearAll ? "Cart cleared" : "Item removed from cart",
         cart: {
           id: cart._id,
-          ...totals,
-          items: cart.items,
-        },
+          totalItems: cart.totalItems,
+          totalPrice: cart.totalPrice,
+          items: cart.items
+        }
       },
       { status: 200 }
     );
+
   } catch (error) {
-    console.error("DELETE cart error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Remove from cart error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to update cart" },
+      { status: 500 }
+    );
   }
 }

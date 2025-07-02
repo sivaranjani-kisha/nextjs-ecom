@@ -79,14 +79,13 @@ export default function FilterComponent() {
   const handleAddFilter = async (e) => {
   e.preventDefault();
 
-  const payload = {
-    filter_name: newFilter.filter_name,
-    status: newFilter.status,
-    filter_group: newFilter.filter_group,
-  };
+  const formData = new FormData();
+formData.append("filter_name", newFilter.filter_name);
+formData.append("status", newFilter.status);
+formData.append("filter_group", newFilter.filter_group);
 
   if (newFilter._id) {
-    payload.filterId = newFilter._id;
+    formData.filterId = newFilter._id;
   }
 
   try {
@@ -94,13 +93,11 @@ export default function FilterComponent() {
       ? "/api/filter/update" 
       : "/api/filter/add";
       
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+   const response = await fetch("/api/filter/add", {
+  method: "POST",
+  body: formData,
+  headers: { "Content-Type": "application/x-www-form-urlencoded" },
+});
 
     const result = await response.json();
     if (response.ok) {
