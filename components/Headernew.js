@@ -44,7 +44,17 @@ const [showAuthModal, setShowAuthModal] = useState(false);
 };
 // Track step
 const [forgotStep, setForgotStep] = useState(1); // 1: enter email, 2: enter OTP and new password
+const [resetStep, setResetStep] = useState(1); 
+// 1: enter email, 2: enter OTP, 3: new password
 
+const [resetEmail, setResetEmail] = useState('');
+const [resetOtp, setResetOtp] = useState('');
+const [resetPassword, setResetPassword] = useState('');
+const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+const [resetError, setResetError] = useState('');
+const [resetMessage, setResetMessage] = useState('');
+const [resetLoading, setResetLoading] = useState(false);
+const [showResetModal, setShowResetModal] = useState(false);
 // OTP input
 const [forgotOTP, setForgotOTP] = useState('');
 
@@ -527,116 +537,121 @@ const handleForgotPassword = async (e) => {
           {/* Auth Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
-            <button 
-              onClick={() => {
-                setShowAuthModal(false);
-                setFormError('');
-                setError('');
-              }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
-            >
-              &times;
-            </button>
+  <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
+    <button 
+      onClick={() => {
+        setShowAuthModal(false);
+        setFormError('');
+        setError('');
+      }}
+      className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+    >
+      &times;
+    </button>
 
-            <div className="flex gap-4 mb-6 border-b">
-              <button
-                className={`pb-2 px-1 ${
-                  activeTab === 'login' 
-                    ? 'border-b-2 border-blue-500 text-blue-600' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setActiveTab('login')}
-              >
-                Login
-              </button>
-              <button
-                className={`pb-2 px-1 ${
-                  activeTab === 'register'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setActiveTab('register')}
-              >
-                Register
-              </button>
-              <button
-  type="button"
-  onClick={() => {
-    setShowAuthModal(false);
-    setShowForgotPasswordModal(true);
-    setForgotStep(1);
-    setForgotPasswordEmail(formData.email || '');
-    // setForgotPasswordEmail('');
-    setForgotOTP('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setForgotPasswordMessage('');
-    setForgotPasswordError('');
-  }}
-  className="text-xs text-blue-500 hover:underline mt-1"
->
-  Forgot Password?
-</button>
-            </div>
+    <div className="flex gap-4 mb-6 border-b">
+      <button
+        className={`pb-2 px-1 ${
+          activeTab === 'login' 
+            ? 'border-b-2 border-blue-500 text-blue-600' 
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+        onClick={() => setActiveTab('login')}
+      >
+        Login
+      </button>
+      <button
+        className={`pb-2 px-1 ${
+          activeTab === 'register'
+            ? 'border-b-2 border-blue-500 text-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+        onClick={() => setActiveTab('register')}
+      >
+        Register
+      </button>
+    </div>
 
-            <form onSubmit={handleAuthSubmit} className="space-y-4">
-              {activeTab === 'register' && (
-                <input
-                  type="text"
-                  placeholder="Name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              )}
-              <input
-                type="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              {activeTab === 'register' && (
-                <input
-                  type="tel"
-                  placeholder="Mobile"
-                  value={formData.mobile}
-                  onChange={(e) => setFormData({...formData, mobile: e.target.value})}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              )}
-              <input
-                type="password"
-                placeholder="Passwordx"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                minLength={6}
-              />
-              
-              {(formError || error) && (
-                <div className="text-red-500 text-sm">
-                  {formError || error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loadingAuth}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200"
-              >
-                {loadingAuth ? 'Processing...' : activeTab === 'login' ? 'Login' : 'Register'}
-              </button>
-            </form>
-          </div>
+    <form onSubmit={handleAuthSubmit} className="space-y-4">
+      {activeTab === 'register' && (
+        <input
+          type="text"
+          placeholder="Name"
+          value={formData.name}
+          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      )}
+      <input
+        type="email"
+        placeholder="Email"
+        value={formData.email}
+        onChange={(e) => setFormData({...formData, email: e.target.value})}
+        className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+      />
+      {activeTab === 'register' && (
+        <input
+          type="tel"
+          placeholder="Mobile"
+          value={formData.mobile}
+          onChange={(e) => setFormData({...formData, mobile: e.target.value})}
+          className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      )}
+      <input
+        type="password"
+        placeholder="Password"
+        value={formData.password}
+        onChange={(e) => setFormData({...formData, password: e.target.value})}
+        className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+        minLength={6}
+      />
+      
+      {(formError || error) && (
+        <div className="text-red-500 text-sm">
+          {formError || error}
         </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={loadingAuth}
+        className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200"
+      >
+        {loadingAuth ? 'Processing...' : activeTab === 'login' ? 'Login' : 'Register'}
+      </button>
+
+      {/* Moved Forgot Password button here - better placement */}
+      {activeTab === 'login' && (
+        <div className="text-center mt-2">
+          <button
+            type="button"
+            onClick={() => {
+              setShowAuthModal(false);
+              setShowForgotPasswordModal(true);
+              setForgotStep(1);
+              setForgotPasswordEmail(formData.email || '');
+              setForgotOTP('');
+              setNewPassword('');
+              setConfirmPassword('');
+              setForgotPasswordMessage('');
+              setForgotPasswordError('');
+            }}
+            className="text-sm text-blue-500 hover:underline"
+          >
+            Forgot Password?
+          </button>
+        </div>
+      )}
+    </form>
+  </div>
+</div>
       )}  
-      {showForgotPasswordModal && (
+{showForgotPasswordModal && (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div className="bg-white rounded-lg p-6 w-96 max-w-full relative">
       <button
@@ -646,6 +661,7 @@ const handleForgotPassword = async (e) => {
         &times;
       </button>
 
+      {/* STEP 1: Enter Email */}
       {forgotStep === 1 && (
         <>
           <h2 className="text-lg font-semibold mb-4">Reset Password</h2>
@@ -663,7 +679,6 @@ const handleForgotPassword = async (e) => {
                   body: JSON.stringify({ email: forgotPasswordEmail }),
                 });
                 const data = await res.json();
-
                 if (!res.ok) throw new Error(data.message || 'Error sending OTP');
 
                 setForgotPasswordMessage('OTP sent to your email.');
@@ -701,21 +716,84 @@ const handleForgotPassword = async (e) => {
         </>
       )}
 
+      {/* STEP 2: Enter OTP */}
       {forgotStep === 2 && (
         <>
-          <h2 className="text-lg font-semibold mb-4">Enter OTP and New Password</h2>
+          <h2 className="text-lg font-semibold mb-4">Enter OTP</h2>
+          <p className="text-sm mb-2">Email: <strong>{forgotPasswordEmail}</strong></p>
           <form
             onSubmit={async (e) => {
               e.preventDefault();
               setForgotPasswordError('');
               setForgotPasswordMessage('');
-              setForgotPasswordLoading(true);
-
-              if (newPassword !== confirmPassword) {
-                setForgotPasswordError('Passwords do not match.');
-                setForgotPasswordLoading(false);
+              if (!forgotOTP.trim()) {
+                setForgotPasswordError('Please enter OTP.');
                 return;
               }
+              setForgotPasswordLoading(true);
+
+              try {
+                const res = await fetch('/api/auth/verify-otp', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    email: forgotPasswordEmail,
+                    otp: forgotOTP,
+                  }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Invalid OTP');
+
+                setForgotPasswordMessage('OTP verified. Please set your new password.');
+                setForgotStep(3);
+              } catch (err) {
+                setForgotPasswordError(err.message);
+              } finally {
+                setForgotPasswordLoading(false);
+              }
+            }}
+            className="space-y-4"
+          >
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={forgotOTP}
+              onChange={(e) => setForgotOTP(e.target.value)}
+              required
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {forgotPasswordError && (
+              <p className="text-red-500 text-sm">{forgotPasswordError}</p>
+            )}
+            {forgotPasswordMessage && (
+              <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
+            )}
+            <button
+              type="submit"
+              disabled={forgotPasswordLoading}
+              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+            >
+              {forgotPasswordLoading ? 'Validating...' : 'Validate OTP'}
+            </button>
+          </form>
+        </>
+      )}
+
+      {/* STEP 3: New Password */}
+      {forgotStep === 3 && (
+        <>
+          <h2 className="text-lg font-semibold mb-4">Set New Password</h2>
+          <p className="text-sm mb-2">Email: <strong>{forgotPasswordEmail}</strong></p>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setForgotPasswordError('');
+              setForgotPasswordMessage('');
+              if (newPassword !== confirmPassword) {
+                setForgotPasswordError('Passwords do not match.');
+                return;
+              }
+              setForgotPasswordLoading(true);
 
               try {
                 const res = await fetch('/api/auth/reset-password', {
@@ -728,14 +806,12 @@ const handleForgotPassword = async (e) => {
                   }),
                 });
                 const data = await res.json();
-
                 if (!res.ok) throw new Error(data.message || 'Error resetting password');
 
                 setForgotPasswordMessage('Password reset successful.');
-                // Optionally auto-close modal
                 setTimeout(() => {
                   setShowForgotPasswordModal(false);
-                  setShowAuthModal(true); // Open login again
+                  setShowAuthModal(true); // reopen login
                 }, 1500);
               } catch (err) {
                 setForgotPasswordError(err.message);
@@ -745,14 +821,6 @@ const handleForgotPassword = async (e) => {
             }}
             className="space-y-4"
           >
-            <input
-        type="email"
-        placeholder="Enter your email"
-        value={forgotPasswordEmail}
-        onChange={(e) => setForgotPasswordEmail(e.target.value)}
-        required
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
             <input
               type="password"
               placeholder="New Password"
@@ -790,6 +858,7 @@ const handleForgotPassword = async (e) => {
     </div>
   </div>
 )}
+
 
       </div>
  

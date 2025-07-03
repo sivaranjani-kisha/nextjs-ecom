@@ -26,6 +26,8 @@ export default function UserComponent() {
     user_type: "user",
     status: "Active",
   });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -45,6 +47,21 @@ export default function UserComponent() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleEdit = (user) => {
+    setFormData({
+      name: user.name,
+      mobile: user.mobile,
+      email: user.email,
+      password: "",
+      confirmPassword: "",
+      user_type: user.user_type,
+      status: user.status,
+    });
+    setCurrentUserId(user._id);
+    setIsEditMode(true);
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (userId) => {
@@ -72,39 +89,62 @@ export default function UserComponent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
+    
+    if (!isEditMode && formData.password !== formData.confirmPassword) {
       setAlertMessage("⚠️ Passwords do not match");
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 3000);
       return;
     }
+
     try {
-      await axios.post("/api/users/add", {
-        ...formData,
-        user_type: "user",
-        status: formData.status,
-      });
-      setAlertMessage("✅ User added successfully!");
+      if (isEditMode) {
+        // Edit existing user
+        await axios.put("/api/users/edit", {
+          userId: currentUserId,
+          name: formData.name,
+          mobile: formData.mobile,
+          email: formData.email,
+          status: formData.status,
+        });
+        setAlertMessage("✅ User updated successfully!");
+      } else {
+        // Add new user
+        await axios.post("/api/users/add", {
+          ...formData,
+          user_type: "user",
+          status: formData.status,
+        });
+        setAlertMessage("✅ User added successfully!");
+      }
+
       setShowAlert(true);
       setTimeout(() => {
         setShowAlert(false);
         setIsModalOpen(false);
       }, 3000);
+      
       fetchUsers();
-      setFormData({
-        name: "",
-        mobile: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        user_type: "user",
-        status: "Active",
-      });
+     // resetForm();
     } catch (error) {
-      setAlertMessage(error.response?.data?.message || "❌ Error adding user");
+      setAlertMessage(error.response?.data?.message || "❌ Error processing request");
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 3000);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      mobile: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      user_type: "user",
+      status: "Active",
+    });
+    //setIsEditMode(false);
+   // setCurrentUserId(null);
   };
 
   const filteredUsers = users.filter(user => {
@@ -214,6 +254,9 @@ export default function UserComponent() {
     );
   };
 
+  const modalTitle = isEditMode ? "Edit User" : "Add User";
+  const submitButtonText = isEditMode ? "Update User" : "Add User";
+
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-5 mt-5">
@@ -257,30 +300,24 @@ export default function UserComponent() {
                   <option value="Inactive">Inactive</option>
                 </select>
               </div>
-           {/* Date Range Picker */}
+
+              {/* Date Range Picker */}
               <div className="w-full col-span-1 md:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
                 <div className="flex items-center gap-2">
                   <div className="flex-1">
                     <DateRangePicker onDateChange={handleDateChange} />
                   </div>
-                  {/* {(dateFilter.startDate || dateFilter.endDate) && (
-                    <button
-                      onClick={clearDateFilter}
-                      className="p-2 text-sm text-red-600 hover:text-red-800 bg-red-50 rounded-md"
-                      title="Clear date filter"
-                    >
-                      <Icon icon="mdi:close-circle-outline" className="w-5 h-5" />
-                    </button>
-                  )} */}
                 </div>
               </div>
       
-           
               {/* Add User Button */}
               <div className="flex justify-end">
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => {
+                    resetForm();
+                    setIsModalOpen(true);
+                  }}
                   className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
                 >
                   + Add User
@@ -321,6 +358,13 @@ export default function UserComponent() {
                       <td className="p-2">
                         <div className="flex items-center gap-2 justify-center">
                           <button
+                            onClick={() => handleEdit(user)}
+                            className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                            title="Edit"
+                          >
+                            <Icon icon="mingcute:edit-line" />
+                          </button>
+                          <button
                             onClick={() => handleDelete(user._id)}
                             className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center"
                             title="Delete"
@@ -346,20 +390,36 @@ export default function UserComponent() {
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-5 rounded-lg w-96 relative max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-center">Add User</h2>
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-3 right-3 text-red-500 text-xl">×</button>
+            <h2 className="text-lg font-bold text-center">{modalTitle}</h2>
+            <button 
+              onClick={() => {
+                setIsModalOpen(false);
+                resetForm();
+              }} 
+              className="absolute top-3 right-3 text-red-500 text-xl"
+            >
+              ×
+            </button>
             {showAlert && <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4 text-center">{alertMessage}</div>}
             <form onSubmit={handleSubmit} className="mt-4">
               <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
               <input type="text" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
               <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
-              <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
-              <input type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
+              
+              {!isEditMode && (
+                <>
+                  <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
+                  <input type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
+                </>
+              )}
+              
               <select name="status" value={formData.status} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
-              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded w-full mt-2">Add User</button>
+              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded w-full mt-2">
+                {submitButtonText}
+              </button>
             </form>
           </div>
         </div>
