@@ -125,7 +125,7 @@ export default function UserComponent() {
       }, 3000);
       
       fetchUsers();
-     // resetForm();
+      resetForm();
     } catch (error) {
       setAlertMessage(error.response?.data?.message || "❌ Error processing request");
       setShowAlert(true);
@@ -144,7 +144,7 @@ export default function UserComponent() {
       status: "Active",
     });
     //setIsEditMode(false);
-   // setCurrentUserId(null);
+    setCurrentUserId(null);
   };
 
   const filteredUsers = users.filter(user => {

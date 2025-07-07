@@ -15,11 +15,20 @@ export default function FilterComponent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const customStyles = {
+  menu: (provided) => ({
+    ...provided,
+    maxHeight: "200px",       // limit height
+    overflowY: "auto",        // add vertical scroll
+    zIndex: 100,              // ensure it's above other elements
+  }),
+};
   const [newFilter, setNewFilter] = useState({
     filter_name: "",
     status: "Active",
     filter_group: "",
-    _id: null
+    _id: null,
+    filterGroupOption: null
   });
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [filterToDelete, setFilterToDelete] = useState(null);
@@ -72,20 +81,23 @@ export default function FilterComponent() {
   const handleFilterGroupChange = (selectedOption) => {
     setNewFilter({
       ...newFilter,
-      filter_group: selectedOption.value
+      filter_group: selectedOption.value,
+      filterGroupOption: selectedOption
     });
   };
 
-  const handleAddFilter = async (e) => {
+ const handleAddFilter = async (e) => {
   e.preventDefault();
 
-  const formData = new FormData();
-formData.append("filter_name", newFilter.filter_name);
-formData.append("status", newFilter.status);
-formData.append("filter_group", newFilter.filter_group);
+  // Create a regular object instead of FormData
+  const requestBody = {
+    filter_name: newFilter.filter_name,
+    status: newFilter.status,
+    filter_group: newFilter.filter_group
+  };
 
   if (newFilter._id) {
-    formData.filterId = newFilter._id;
+    requestBody.filterId = newFilter._id;
   }
 
   try {
@@ -93,13 +105,29 @@ formData.append("filter_group", newFilter.filter_group);
       ? "/api/filter/update" 
       : "/api/filter/add";
       
-   const response = await fetch("/api/filter/add", {
-  method: "POST",
-  body: formData,
-  headers: { "Content-Type": "application/x-www-form-urlencoded" },
-});
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    // First check if response exists
+    if (!response) {
+      throw new Error('No response from server');
+    }
+
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('Expected JSON, got:', text);
+      throw new Error('Response was not JSON');
+    }
 
     const result = await response.json();
+
     if (response.ok) {
       setIsModalOpen(false);
       fetchFilters();
@@ -107,7 +135,8 @@ formData.append("filter_group", newFilter.filter_group);
         filter_name: "",
         status: "Active",
         filter_group: "",
-        _id: null
+        _id: null,
+        filterGroupOption: null
       });
       setSuccessMessage(newFilter._id 
         ? "Filter updated successfully" 
@@ -115,11 +144,11 @@ formData.append("filter_group", newFilter.filter_group);
       setShowSuccessModal(true);
     } else {
       console.error("Error:", result.error);
-      toast.error(result.error);
+      toast.error(result.error || "Unknown error occurred");
     }
   } catch (error) {
-    console.error("Error:", error);
-    toast.error("An error occurred");
+    console.error("Network/parsing error:", error);
+    toast.error(`Request failed: ${error.message}`);
   }
 };
 // Add this useEffect hook near your other hooks
@@ -178,6 +207,16 @@ useEffect(() => {
   //   }
   // };
 
+  const Modelopen =(status) => {
+     setIsModalOpen(status);
+     setNewFilter({
+        filter_name: "",
+        status: "Active",
+        filter_group: "",
+        _id: null,
+        filterGroupOption: null
+      });
+  }
   const handleDeleteFilter = async (filterId) => {
     try {
       const response = await fetch("/api/filter/delete", {
@@ -204,15 +243,28 @@ useEffect(() => {
     }
   };
 
-  const handleEditFilter = (filter) => {
-    setNewFilter({
-      filter_name: filter.filter_name,
-      status: filter.status,
-      filter_group: filter.filter_group?._id || filter.filter_group,
-      _id: filter._id
-    });
-    setIsModalOpen(true);
-  };
+ const handleEditFilter = (filter) => {
+  let groupId = filter.filter_group?._id || filter.filter_group;
+  
+  // If groupId is still not found, try to match by name
+  if (!groupId && filter.filter_group_name) {
+    const matchedGroup = filterGroups.find(
+      g => g.label.toLowerCase() === filter.filter_group_name.toLowerCase()
+    );
+    groupId = matchedGroup?.value;
+  }
+
+  const selectedGroup = filterGroups.find(g => g.value === groupId);
+
+  setNewFilter({
+    filter_name: filter.filter_name,
+    status: filter.status,
+    filter_group: groupId, // Make sure this is set
+    _id: filter._id,
+    filterGroupOption: selectedGroup
+  });
+  setIsModalOpen(true);
+};
 
   const flattenFilters = (filters, parentId = "none", level = 0, result = []) => {
     filters.forEach((filter) => {
@@ -298,7 +350,7 @@ useEffect(() => {
               className="border px-3 py-2 rounded-md w-64"
             />
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => Modelopen(true)}
               className="bg-blue-500 text-white px-4 py-2 rounded-md"
             >
               + Add Filter
@@ -364,7 +416,7 @@ useEffect(() => {
                 {newFilter._id ? "Edit Filter" : "Add Filter"}
               </h2>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() =>  setIsModalOpen(false)}
                 className="text-gray-400 hover:text-gray-700 focus:outline-none"
                 aria-label="Close modal"
               >
@@ -407,10 +459,11 @@ useEffect(() => {
                   <Select
                     options={filterGroups}
                     onChange={handleFilterGroupChange}
-                    value={filterGroups.find(option => option.value === newFilter.filter_group)}
+                   value={newFilter.filterGroupOption || null}
                     placeholder="Select Filter Group..."
                     className="w-full"
                     required
+                    styles={customStyles}
                     id="filter_group"
                   />
                 </div>
