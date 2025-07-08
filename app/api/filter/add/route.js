@@ -5,13 +5,14 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   try {
     await dbConnect();
-        console.log(req.formData());
-
-    const formData = await req.formData();
+    // console.log(req.json());
+    const formData = await req.json();
     console.log(formData);
-    const filter_name = formData.get("filter_name");
-    const status = formData.get("status") || "Active";
-    const filter_group =formData.get('filter_group');
+    const {filter_name,status,filter_group } = formData;
+    // const formData = await req.formData();
+    // const filter_name = formData.get("filter_name");
+    // const status = formData.get("status") || "Active";
+    // const filter_group =formData.get('filter_group');
  
     if (!filter_name) {
       return NextResponse.json({ error: "filter name is required" }, { status: 400 });
