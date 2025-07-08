@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
+import { useHeaderdetails } from '@/context/HeaderContext';
 
 export const AuthModal = ({ onClose, onSuccess, error }) => {
   const [activeTab, setActiveTab] = useState('login');
+    const { updateHeaderdetails, setIsLoggedIn, setUserData,setIsAdmin } = useHeaderdetails();
   const [formData, setFormData] = useState({ email: '', password: '', name: '', mobile: '' });
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState('');
@@ -29,7 +31,7 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
     clearErrors();
 
     try {
-      const endpoint = activeTab === 'login' ? '/api/login' : '/api/register';
+      const endpoint = activeTab === 'login' ? '/api/auth/login' : '/api/auth/register';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,6 +63,29 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
       if (data.token) {
         localStorage.setItem('token', data.token);
         
+         const response = await fetch('/api/auth/check', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': data.token ? `Bearer ${data.token}` : '',
+          }
+        });
+        
+        const details = await response.json();
+
+              
+        if (details.loggedIn) {
+          updateHeaderdetails({ user: details.user });
+            setIsLoggedIn(true);
+          const role = details.role;
+          if(role == 'admin'){
+            setIsAdmin(true);
+          }
+        }else{
+          setIsLoggedIn(false);
+          return;
+        }
+
         // Fetch both cart and wishlist counts after login
         const [cartResponse, wishlistResponse] = await Promise.all([
           fetch('/api/cart/count', {

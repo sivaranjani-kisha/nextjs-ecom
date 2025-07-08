@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from 'next/image';
 
 import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX } from "react-icons/fi";
-import { FaBars, FaShoppingBag } from "react-icons/fa";
+import { FaBars, FaShoppingBag,FaUserShield  } from "react-icons/fa";
 import { FaHeart, FaShoppingCart, FaSearch } from 'react-icons/fa';
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { useState, useRef, useEffect } from 'react';
@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation';
 
 import { Navigation } from 'swiper/modules';
 import SideNavbar from '@/components/sideNavbar';
+import { useHeaderdetails } from "@/context/HeaderContext";
 
 const Header = () => {
 const [category, setCategory] = useState('All Categories');
@@ -29,15 +30,17 @@ const { wishlistCount } = useWishlist();
 const { cartCount, updateCartCount } = useCart();
 const dropdownRef = useRef(null);
 const [activeTab, setActiveTab] = useState('login');
-const [isLoggedIn, setIsLoggedIn] = useState(false);
+// const [isLoggedIn, setIsLoggedIn] = useState(false);
 const [showMenu, setShowMenu] = useState(false);
-const [userData, setUserData] = useState(null);
+// const [userData, setUserData] = useState(null);
 const [hasMounted, setHasMounted] = useState(false);
+const { userData,isLoggedIn, setIsLoggedIn, setUserData,isAdmin,setIsAdmin } = useHeaderdetails();
 const [dropdownOpen, setDropdownOpen] = useState(false);
 const [selectedCategory, setSelectedCategory] = useState("All Categories");
 const [searchQuery, setSearchQuery] = useState("");
 const [categories, setCategories] = useState([]);
 const [showAuthModal, setShowAuthModal] = useState(false);
+  const { headerdetails, updateHeaderdetails } = useHeaderdetails();
  // Toggle mobile menu
  const toggleMobileMenu = () => {
   setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -91,7 +94,12 @@ useEffect(() => {
       if (response.ok) {
         const data = await response.json();
         setIsLoggedIn(true);
-        setUserData(data.user);
+        if(data.role == "admin") {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
+         setUserData(data.user);
       } else {
         localStorage.removeItem('token');
         setIsLoggedIn(false);
@@ -179,26 +187,36 @@ useEffect(() => {
         throw new Error(data.message || 'Something went wrong');
       }
 
-      localStorage.setItem('token', data.token);
-      setIsLoggedIn(true);
-      setUserData(data.user);
-      setShowAuthModal(false);
-      setFormData({
-        name: '',
-        email: '',
-        mobile: '',
-        password: ''
-      });
-      
-      // Update cart count after login
-      const cartResponse = await fetch('/api/cart/count', {
-        headers: {
-          'Authorization': `Bearer ${data.token}`
+      if(data.token){
+        localStorage.setItem('token', data.token);
+        setIsLoggedIn(true);
+        if(data.user.role == "admin"){
+          setIsAdmin(true);
+        }else{
+          setIsAdmin(false);
         }
-      });
-      if (cartResponse.ok) {
-        const cartData = await cartResponse.json();
-        updateCartCount(cartData.count);
+        setUserData(data.user);
+        setShowAuthModal(false);
+        setFormData({
+          name: '',
+          email: '',
+          mobile: '',
+          password: ''
+        });
+        
+        // Update cart count after login
+        const cartResponse = await fetch('/api/cart/count', {
+          headers: {
+            'Authorization': `Bearer ${data.token}`
+          }
+        });
+        if (cartResponse.ok) {
+          const cartData = await cartResponse.json();
+          updateCartCount(cartData.count);
+        }
+      }else{
+        setShowAuthModal(true);
+        setActiveTab('login');
       }
     } catch (err) {
       setError(err.message);
@@ -398,13 +416,26 @@ const handleForgotPassword = async (e) => {
                   >
                     <FiUser size={18} className="text-white" />
                     <span className="ml-1 font-bold text-xs sm:text-sm text-white hidden lg:inline">
-                      Hi, {userData?.username || userData?.name || "User"}
+                    
+                      Hi, {userData?.name || userData?.username || "User"}
                     </span>
                   </button>
  
                   {dropdownOpen && (
                     <div className="absolute right-0 mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
                       <div className="py-2 px-2">
+                        {isAdmin && (
+                          <>
+                            <Link
+                              href="/admin/dashboard"
+                              className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
+                              <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
+                                <FaUserShield className="w-3 h-3 sm:w-4 sm:h-4" />
+                              </span>
+                              Admin Panel
+                            </Link>
+                          </>
+                        )}
                         <Link
                           href="/order"
                           className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors"
@@ -504,6 +535,11 @@ const handleForgotPassword = async (e) => {
                   </span>
                 )}
               </Link>
+              {isLoggedIn && isAdmin &&  (
+                <>
+                  <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100"><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
+                </>
+              )}
               {isLoggedIn ? (
                 <>
                   <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">

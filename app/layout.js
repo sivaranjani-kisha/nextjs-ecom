@@ -14,6 +14,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { ModalProvider } from '@/context/ModalContext';
 import { WishlistProvider } from "@/context/WishlistContext";
 import { CartProvider } from '@/context/CartContext';
+import { HeaderProvider } from '@/context/HeaderContext';
  
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,8 +28,8 @@ const geistMono = Geist_Mono({
  
 export default function RootLayout({ children }) {
   const pathname = usePathname();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authError, setAuthError] = useState('');
+  // const [showAuthModal, setShowAuthModal] = useState(false);
+  // const [authError, setAuthError] = useState('');
  
   return (
     <html lang="en">
@@ -65,6 +66,7 @@ export default function RootLayout({ children }) {
       </Head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <div id="modal-root"></div>
+        <HeaderProvider>
         <ModalProvider>
           <WishlistProvider>
             <CartProvider>
@@ -79,6 +81,7 @@ export default function RootLayout({ children }) {
             </CartProvider>
           </WishlistProvider>
         </ModalProvider>
+        </HeaderProvider>
       </body>
     </html>
   );

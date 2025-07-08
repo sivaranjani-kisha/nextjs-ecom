@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useModal } from '@/context/ModalContext';
-// import {AuthModal} from '@/components/AuthModal';
+import { useHeaderdetails } from '@/context/HeaderContext';
+
 import { FaShoppingCart} from "react-icons/fa";
 
 const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts = [],extendedWarranty, selectedFrequentProducts = [] }) => {
   const { openAuthModal } = useModal();
+  const { updateHeaderdetails, setIsLoggedIn, setUserData,setIsAdmin } = useHeaderdetails();
   const [isLoading, setIsLoading] = useState(false);
   // const [showAuthModal, setShowAuthModal] = useState(false);
   // const [authError, setAuthError] = useState('');
@@ -20,7 +22,6 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
       
       try {
         const token = localStorage.getItem('token');
-      
         // Check authentication
         const response = await fetch('/api/auth/check', {
           method: 'GET',
@@ -38,6 +39,16 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
             onSuccess: () => handleAddToCart(), // retry on success
           });
           return;
+        }
+
+      
+        if (data.loggedIn) {
+          updateHeaderdetails({ user: data.user });
+            setIsLoggedIn(true);
+            const role = data.role;
+          if(role == 'admin'){
+            setIsAdmin(true);
+          }
         }
   
         // Add main product to cart

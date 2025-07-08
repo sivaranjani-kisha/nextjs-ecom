@@ -9,32 +9,31 @@ export default function AuthProvider({ children }) {
   const [authStatus, setAuthStatus] = useState('checking');
   const router = useRouter();
   const pathname = usePathname();
-
+  const [userrole, setUserrole] = useState('user');
   useEffect(() => {
     const verifyAuth = async () => {
       try {
         const token = localStorage.getItem('token');
-        console.log(token);
+
         // Public routes that don't require authentication
         const publicRoutes = ['/admin/login', '/admin/register'];
-        
+
         // If on a public route, allow access
         if (publicRoutes.includes(pathname)) {
           setAuthStatus('authenticated');
           return;
         }
 
-        // If no token and not on public route, redirect to login
+        // If no token, redirect to login
         if (!token) {
           router.replace('/admin/login');
           setAuthStatus('unauthenticated');
           return;
         }
 
-        // Verify token
+        // Decode and check token expiration
         const decoded = jwtDecode(token);
         const isExpired = decoded.exp * 1000 < Date.now();
-
         if (isExpired) {
           localStorage.removeItem('token');
           router.replace('/admin/login');
@@ -42,8 +41,27 @@ export default function AuthProvider({ children }) {
           return;
         }
 
-        // If everything checks out
-        setAuthStatus('authenticated');
+        // Fetch user role to validate admin
+        const response = await fetch('/api/auth/check', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.role !== 'admin') {
+            router.replace('/admin/unauthorized');
+            setAuthStatus('unauthenticated');
+            return;
+          }
+          setAuthStatus('authenticated');
+        } else {
+          router.replace('/admin/login');
+          setAuthStatus('unauthenticated');
+        }
       } catch (error) {
         console.error('Authentication error:', error);
         router.replace('/admin/login');

@@ -54,7 +54,10 @@ export async function POST(req) {
         token,
         user: {
           name: existingUser.name,
-          email: existingUser.email
+          email: existingUser.email,
+          userId: existingUser._id, 
+          role : existingUser.user_type, 
+
         }
       }, 
       { status: 200 }

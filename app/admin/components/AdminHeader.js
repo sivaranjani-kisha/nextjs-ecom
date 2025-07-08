@@ -20,7 +20,7 @@ const AdminHeader = ({ toggleSidebar }) => {
       // For demo purposes, we'll just clear any auth token and redirect
       localStorage.removeItem('authToken'); // Remove if you store tokens
       sessionStorage.removeItem('authToken'); // Remove if you store tokens
-      
+      localStorage.removeItem('token');
       // Redirect to login page
       router.push('/admin/login');
     } catch (error) {

@@ -50,7 +50,8 @@ export async function POST(req) {
     await newUser.save();
 
     return NextResponse.json(
-      { message: "User registered successfully" },
+      {data: newUser, message: "User registered successfully" },
+      // { message: "User registered successfully" },
       { status: 201 }
     );
 
