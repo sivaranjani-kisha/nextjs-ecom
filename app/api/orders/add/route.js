@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/db";
 import EcomOrderInfo from "@/models/ecom_order_info";
+import Product from "@/models/product";
 
 export async function POST(req) {
   await dbConnect();
@@ -51,6 +52,19 @@ export async function POST(req) {
     });
 
     await newOrder.save();
+    if(newOrder){
+        for(const item of  order_item){
+          if(item.productId){
+            const productId = item.productId;
+              const product = await Product.findById(item.productId);
+              console.log(product);
+              if (product) {
+                product.quantity = product.quantity - item.quantity;
+                await product.save();
+              }
+          }
+        }
+    }
     return Response.json({ success: true, message: "Order added successfully", order: newOrder }, { status: 201 });
 
   } catch (error) {

@@ -47,6 +47,6 @@ const OrderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.ecom_order_info || mongoose.model("ecom_order_info", OrderSchema);
+export default mongoose.models.ecom_order_infos || mongoose.model("ecom_order_infos", OrderSchema);
 
 

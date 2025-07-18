@@ -96,7 +96,7 @@ export default function PendingOrders() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/orders/get?status=${activeTab}`, {
+      const response = await fetch(`/api/orders/getorder?status=${activeTab}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

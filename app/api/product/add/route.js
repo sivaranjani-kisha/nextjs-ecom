@@ -119,7 +119,7 @@ export async function POST(req) {
 
     const highlights = JSON.parse(formData.get("highlights") || "[]");
     productData.product_highlights = highlights;
-console.log(productData);
+    console.log(productData);
     const newProduct = new Product({
       ...productData,
       images: savedImages,

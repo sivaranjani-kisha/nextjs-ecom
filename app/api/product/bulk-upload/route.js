@@ -133,7 +133,32 @@ console.log("Actual product count:", validProducts.length);
           variants = [];
         }
       }
+ // ✅ Price & Special Price with validation
+      const rawPrice = row[9]?.toString().replace(/,/g, '') || '0';
+      const rawSpecialPrice = row[10]?.toString().replace(/,/g, '') || '';
 
+      const price = parseFloat(rawPrice);
+      const specialPrice = parseFloat(rawSpecialPrice);
+
+      if (isNaN(price) || price < 0) {
+        return NextResponse.json(
+          { error: `Invalid price at row ${i + 2}. Must be a positive number.` },
+          { status: 400 }
+        );
+      }
+
+      if (rawSpecialPrice !== '') {
+        if (isNaN(specialPrice) || specialPrice < 0) {
+          return NextResponse.json(
+            { error: `Invalid special price at row ${i + 2}. It must be a positive number less than price.` },
+            { status: 400 }
+          );
+        }
+      }
+      let highlights = [];
+        if (row[20] && typeof row[20] === 'string') {
+          highlights = row[20].split(',').map(item => item.trim()).filter(Boolean);
+        }
       // Prepare product data
       const productData = {
         item_code: row[0],
@@ -153,6 +178,7 @@ console.log("Actual product count:", validProducts.length);
         variants: variants,
         status: row[19],
         stock_status: row[2] > 0 ? "In Stock" : "Out of Stock",
+         product_highlights: highlights,
       };
 console.log(productData);
       // Check for existing product

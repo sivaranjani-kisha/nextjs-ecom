@@ -51,7 +51,7 @@ export default function OrderComponent() {
        const decoded = jwtDecode(token);
         const userId = decoded.userId;
 
-      const response = await fetch(`/api/orders/get?status=${activeTab}`, {
+      const response = await fetch(`/api/orders/getorder?status=${activeTab}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

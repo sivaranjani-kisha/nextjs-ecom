@@ -25,6 +25,18 @@ export default function ProductPage() {
   const [showEMIModal, setShowEMIModal] = useState(false);
   const [featuredProducts, setFeaturedProducts] = useState([]);
 
+const handleDecrease = () => {
+  setQuantity(Math.max(1, quantity - 1));
+  setQuantityWarning(false); // clear warning when decreasing
+};
+const handleIncrease = () => {
+  if (quantity < product.quantity) {
+    setQuantity(quantity + 1);
+    setQuantityWarning(false); // clear warning if under limit
+  } else {
+    setQuantityWarning(true); // show warning if exceeding
+  }
+};
 
   // In your ProductPage component, add these state variables near the top:
 const [selectedFrequentProducts, setSelectedFrequentProducts] = useState([]);
@@ -32,7 +44,7 @@ const [cartTotal, setCartTotal] = useState(0);
 const [selectedWarranty, setSelectedWarranty] = useState(null);
 const [selectedExtendedWarranty, setSelectedExtendedWarranty] = useState(null);
 
-
+  const [quantityWarning, setQuantityWarning] = useState(false);
 
 // Add this function to handle frequent product selection
 const toggleFrequentProduct = (product) => {
@@ -203,7 +215,7 @@ useEffect(() => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-500">{error}</h2>
+          <h2 className="text-2xl font-bold text-blue-500">{error}</h2>
           <Link href="/" className="mt-4 inline-flex items-center text-blue-600">
             ← Back to Home
           </Link>
@@ -320,70 +332,83 @@ useEffect(() => {
           {/* Middle Section */}
           <div className="md:col-span-5">
             <h1 className="text-1xl font-semibold">{product.name}</h1>
-            <div className="mt-2 pb-3 border-b border-gray-400">
-            {/* Top Row - Item Code and Quantity Label */}
-            <div className="flex items-center space-x-2 text-sm mb-1">
-              <span className="text-gray-500 text-xs">{product.item_code}</span>
-              <p className="text-gray-700 font-semibold">Quantity:</p>
+           <div className="mt-2 pb-3 border-b border-gray-400">
+                 {/* Top Row - Item Code and Quantity Label */}
+                <div className="flex items-center space-x-2 text-sm mb-1">
+                  <span className="text-gray-500 text-xs">{product.item_code}</span>
+                </div>
+
+                {/* Bottom Row - All elements in one line */}
+                <div className="flex items-center gap-2">
+                  {/* Price Section */}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-blue-800">
+                      Rs.{product.special_price || product.price}
+                    </span>
+                    {product.special_price && (
+                      <span className="text-gray-800 line-through text-sm">
+                        Rs.{product.price}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Quantity Selector */}
+                  <div className="flex items-center border border-gray-300 rounded-full h-8 w-max">
+                    <button 
+                      onClick={handleDecrease} 
+                      className="px-2 py-1 border-r text-xs"
+                    >
+                      -
+                    </button>
+                    <span className="px-2 py-1 text-xs w-6 text-center">{quantity}</span>
+                    <button 
+                      onClick={handleIncrease} 
+                      className="px-2 py-1 border-l text-xs"
+                    >
+                      +
+                    </button>
+                  </div>
+
+      
+                  {/* Add to Cart Button */}
+                  <div className="flex gap-4 flex-wrap items-start">
+                    <div className="flex-shrink-0">
+                      <Addtocart
+                        productId={product._id}
+                        quantity={quantity}
+                        additionalProducts={selectedFrequentProducts.map(p => p._id)}
+                        warranty={selectedWarranty}
+                        extendedWarranty={selectedExtendedWarranty}
+                        selectedFrequentProducts={selectedFrequentProducts}
+                      />
+                    </div>
+
+                    <div className="flex-grow mt-2">
+                      <ProductCard productId={product._id} />
+                    </div>
+                  </div>
+
+
+                  
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-1" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: ${product.slug}`)}`, '_blank')}>
+                    <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-blue-200 hover:bg-red-600 text-red-500 hover:text-white">
+
+                      <FaShareAlt size={10} />
+                    </button>
+
+                    {/* <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
+                      <FaBell size={10} />
+                    </button> */}
+                  </div>
+                </div>
+                {quantityWarning && (
+                <p className="text-red-600 text-xs font-medium"> 
+                  ⚠ You can't order more than {product.quantity} item{product.quantity > 1 ? "s" : ""}.(Stock only {product.quantity} items)
+                </p>
+                )} 
             </div>
-
-            {/* Bottom Row - All elements in one line */}
-            <div className="flex items-center gap-4">
-              {/* Price Section */}
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-customBlue">
-                  Rs.{product.special_price || product.price}
-                </span>
-                {product.special_price && (
-                  <span className="text-gray-500 line-through text-sm">
-                    Rs.{product.price}
-                  </span>
-                )}
-              </div>
-
-              {/* Quantity Selector */}
-              <div className="flex items-center border border-gray-300 rounded-full h-8">
-                <button 
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))} 
-                  className="px-2 py-1 border-r text-xs"
-                >
-                  -
-                </button>
-                <span className="px-2 py-1 text-xs w-6 text-center">{quantity}</span>
-                <button 
-                  onClick={() => setQuantity(quantity + 1)} 
-                  className="px-2 py-1 border-l text-xs"
-                >
-                  +
-                </button>
-              </div>
-
-              {/* Add to Cart Button */}
-              <div className="flex-shrink-0">
-                <Addtocart
-  productId={product._id}
-  quantity={quantity}
-  additionalProducts={selectedFrequentProducts.map(p => p._id)}
-  warranty={selectedWarranty}
-  extendedWarranty={selectedExtendedWarranty}
-  selectedFrequentProducts={selectedFrequentProducts}
-/>
-
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-1" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: ${product.slug}`)}`, '_blank')}>
-              <ProductCard productId={product._id} />
-                <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
-
-                  <FaShareAlt size={10} />
-                </button>
-                {/* <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
-                  <FaBell size={10} />
-                </button> */}
-              </div>
-            </div>
-          </div>
             {/* <p className="text-gray-700 text-sm mt-3 font-medium">
               {product.sku || "N/A"}
             </p> */}

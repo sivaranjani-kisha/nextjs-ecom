@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import connectDB from "@/lib/db";
 import Product from "@/models/product";
+import Product_filter from "@/models/ecom_productfilter_info";
 import md5 from "md5";
 
 export async function PUT(req, { params }) {
@@ -16,6 +17,8 @@ export async function PUT(req, { params }) {
     const category = formData.get("category");
     const highlights = JSON.parse(formData.get("highlights") || "[]");
     let variants = JSON.parse(formData.get("variant") || "[]");
+    const Filters    = productData.filters;
+
 console.log(productData);
 console.log("..............................................................");
 
@@ -86,7 +89,7 @@ console.log(imageFiles);
       savedImages = productData.images;
     }
     const updatedProduct = await Product.findByIdAndUpdate(
-      params.productId,
+      productId,
       {
         ...productData,
         category,
@@ -96,6 +99,34 @@ console.log(imageFiles);
       { new: true }
       
     );
+
+
+const filterIds = (Filters ?? []).filter(Boolean); // Filters = array of strings
+
+const product_id = updatedProduct?._id;
+if (product_id){
+
+  if (filterIds.length != 0) {
+
+    await Product_filter.deleteMany({
+      product_id,
+      filter_id: { $nin: filterIds },
+    });
+
+    const bulkOps = filterIds.map(filter_id => ({
+      updateOne: {
+        filter: { product_id, filter_id },
+        update: { $setOnInsert: { product_id, filter_id } },
+        upsert: true,
+      },
+    }));
+
+    await Product_filter.bulkWrite(bulkOps);
+
+  }else{
+  await Product_filter.deleteMany({ product_id });
+  }
+}
 
     if (!updatedProduct) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });

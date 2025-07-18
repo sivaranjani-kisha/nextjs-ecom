@@ -32,7 +32,7 @@ export default function CancelledOrders() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/orders/get?status=${activeTab}`, {
+      const response = await fetch(`/api/orders/getorder?status=${activeTab}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -129,7 +129,7 @@ export default function CancelledOrders() {
                            setSearchQuery(e.target.value);
                            setCurrentPage(1);
                          }}
-                         className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                         className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
                        />
                      </div>
                    
@@ -142,7 +142,7 @@ export default function CancelledOrders() {
                                setStatusFilter(e.target.value);
                                setCurrentPage(1);
                              }}
-                             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                             className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
                            >
                              <option value="All">All Statuses</option>
                              <option value="paid">Paid</option>
@@ -250,7 +250,7 @@ export default function CancelledOrders() {
                     onClick={() => paginate(page)}
                     className={`px-3 py-1.5 border border-gray-300 rounded-md ${
                       currentPage === page
-                        ? "bg-blue-500 text-white"
+                        ? "bg-red-500 text-white"
                         : "text-black bg-white hover:bg-gray-100"
                     }`}
                     aria-label={`Page ${page}`}
