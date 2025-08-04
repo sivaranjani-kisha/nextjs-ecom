@@ -632,7 +632,7 @@ if (bannerType === "topbanner" && bgImage) {
               setFilterBannerType(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
           >
             <option value="">All Types</option>
             {bannerOptions.map((option) => (
@@ -652,7 +652,7 @@ if (bannerType === "topbanner" && bgImage) {
               setFilterStatus(e.target.value);
               setCurrentPage(1);
             }}
-      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+      className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm"
     >
       <option value="">All Statuses</option>
       <option value="active">Active</option>
@@ -670,7 +670,7 @@ if (bannerType === "topbanner" && bgImage) {
    {/* {dateFilter.createdAfter && dateFilter.createdBefore && (
   <button 
     onClick={clearDateFilter}
-    className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+    className="mt-2 text-sm text-red-600 hover:text-red-800"
   >
     Clear date filter
   </button>
@@ -681,7 +681,7 @@ if (bannerType === "topbanner" && bgImage) {
   <div>
    <button
           onClick={openModal}
-          className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
+          className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition"
         >
           + Add Design Banner
         </button>
@@ -727,7 +727,7 @@ if (bannerType === "topbanner" && bgImage) {
                     </td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                         <button onClick={() => handleEditClick(banner)} className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"  title="Edit">
+                         <button onClick={() => handleEditClick(banner)} className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"  title="Edit">
                             <FaEdit className="w-3 h-3" />
                          </button>
                         <button
@@ -781,7 +781,7 @@ if (bannerType === "topbanner" && bgImage) {
                 onClick={() => paginate(i + 1)}
                 className={`px-3 py-1.5 border border-gray-300 rounded-md ${
                   currentPage === i + 1
-                    ? "bg-blue-600 text-white"
+                    ? "bg-red-600 text-white"
                     : "text-black bg-white hover:bg-gray-100"
                 }`}
               >
@@ -833,7 +833,7 @@ if (bannerType === "topbanner" && bgImage) {
             <select
               value={bannerType}
               onChange={handleBannerChange}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
             >
               {bannerOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -849,7 +849,7 @@ if (bannerType === "topbanner" && bgImage) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
               placeholder="Enter banner title"
             />
             {errors.title && <span className="text-red-500 text-sm">{errors.title}</span>}
@@ -874,7 +874,7 @@ if (bannerType === "topbanner" && bgImage) {
               type="file"
               accept="image/*"
               onChange={(e) => handleCategoryImageChange(e, num)}
-              className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
             />
             {errors[`image${num}`] && <span className="text-red-500 text-sm">{errors[`image${num}`]}</span>}
             
@@ -909,7 +909,7 @@ if (bannerType === "topbanner" && bgImage) {
               type="text"
               value={categoryRedirectUrls[num] || editingBanner?.images?.[index]?.redirectUrl || ""}
               onChange={(e) => handleCategoryRedirectUrlChange(e, num)}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
               placeholder="https://example.com"
             />
             {errors[`redirectUrl${num}`] && <span className="text-red-500 text-sm">{errors[`redirectUrl${num}`]}</span>}
@@ -934,7 +934,7 @@ if (bannerType === "topbanner" && bgImage) {
     type="file"
     accept="image/*"
     onChange={handleBgImageChange}
-    className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+    className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
   />
   {errors.bgImage && (
     <span className="text-red-500 text-sm">{errors.bgImage}</span>
@@ -957,7 +957,7 @@ if (bannerType === "topbanner" && bgImage) {
       type="file"
       accept="image/*"
       onChange={handleBannerImageChange}
-      className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+      className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
     />
     {errors.bannerImage && <span className="text-red-500 text-sm">{errors.bannerImage}</span>}
     {bannerImage && (
@@ -976,7 +976,7 @@ if (bannerType === "topbanner" && bgImage) {
                 type="text"
                 value={redirectUrl}
                 onChange={(e) => setRedirectUrl(e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                 placeholder="https://example.com"
               />
               {errors.redirectUrl && <span className="text-red-500 text-sm">{errors.redirectUrl}</span>}
@@ -993,7 +993,7 @@ if (bannerType === "topbanner" && bgImage) {
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
             />
             {errors.startDate && <span className="text-red-500 text-sm">{errors.startDate}</span>}
           </div>
@@ -1004,7 +1004,7 @@ if (bannerType === "topbanner" && bgImage) {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               min={startDate || new Date().toISOString().split("T")[0]}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
             />
             {errors.endDate && <span className="text-red-500 text-sm">{errors.endDate}</span>}
           </div>
@@ -1016,7 +1016,7 @@ if (bannerType === "topbanner" && bgImage) {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+            className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
           >
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -1037,7 +1037,7 @@ if (bannerType === "topbanner" && bgImage) {
           </button>
           <button
             onClick={handleSubmit}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition"
             disabled={loading}
           >
             {loading ? (
@@ -1089,7 +1089,7 @@ if (bannerType === "topbanner" && bgImage) {
             <select
               value={bannerType}
               onChange={handleBannerChange}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
             >
               {bannerOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -1107,7 +1107,7 @@ if (bannerType === "topbanner" && bgImage) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
               placeholder="Enter banner title"
             />
             {errors.title && <span className="text-red-500 text-sm">{errors.title}</span>}
@@ -1138,7 +1138,7 @@ console.log(`newImage for ${num}:`, newImage);
               type="file"
               accept="image/*"
               onChange={(e) => handleCategoryImageChange(e, num)}
-              className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
             />
             {errors[`image${num}`] && <span className="text-red-500 text-sm">{errors[`image${num}`]}</span>}
             
@@ -1183,7 +1183,7 @@ console.log(`newImage for ${num}:`, newImage);
           }
 
               onChange={(e) => handleCategoryRedirectUrlChange(e, num)}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
               placeholder="https://example.com"
             />
             {errors[`redirectUrl${num}`] && <span className="text-red-500 text-sm">{errors[`redirectUrl${num}`]}</span>}
@@ -1208,7 +1208,7 @@ console.log(`newImage for ${num}:`, newImage);
                 type="file"
                 accept="image/*"
                 onChange={handleBgImageChange}
-                className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               />
               {errors.bgImage && <span className="text-red-500 text-sm">{errors.bgImage}</span>}
               {existingBgImage && !bgImage && (
@@ -1247,7 +1247,7 @@ console.log(`newImage for ${num}:`, newImage);
                   type="file"
                   accept="image/*"
                   onChange={handleBannerImageChange}
-                  className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
                 />
                 {errors.bannerImage && <span className="text-red-500 text-sm">{errors.bannerImage}</span>}
                 {existingBannerImage && !bannerImage && (
@@ -1278,7 +1278,7 @@ console.log(`newImage for ${num}:`, newImage);
                 type="text"
                 value={redirectUrl}
                 onChange={(e) => setRedirectUrl(e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                 placeholder="https://example.com"
               />
               {errors.redirectUrl && <span className="text-red-500 text-sm">{errors.redirectUrl}</span>}
@@ -1295,7 +1295,7 @@ console.log(`newImage for ${num}:`, newImage);
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
             />
             {errors.startDate && <span className="text-red-500 text-sm">{errors.startDate}</span>}
           </div>
@@ -1306,7 +1306,7 @@ console.log(`newImage for ${num}:`, newImage);
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               min={startDate || new Date().toISOString().split("T")[0]}
-              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
             />
             {errors.endDate && <span className="text-red-500 text-sm">{errors.endDate}</span>}
           </div>
@@ -1318,7 +1318,7 @@ console.log(`newImage for ${num}:`, newImage);
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+            className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
           >
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -1340,7 +1340,7 @@ console.log(`newImage for ${num}:`, newImage);
           </button>
           <button
               onClick={handleEditSubmit}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition"
             disabled={loading}
           >
             {loading ? (

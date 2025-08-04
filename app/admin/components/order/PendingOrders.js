@@ -180,7 +180,7 @@ export default function PendingOrders() {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -193,7 +193,7 @@ export default function PendingOrders() {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
               >
                 <option value="All">All Statuses</option>
                 <option value="paid">Paid</option>
@@ -263,7 +263,7 @@ export default function PendingOrders() {
                         <MdCancel className="w-5 h-5" />
                       </button>
                       <button
-                        className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                        className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"
                         onClick={() => {
                           setSelectedOrder(order._id);
                           setModalType("ship");
@@ -313,7 +313,7 @@ export default function PendingOrders() {
                   onClick={() => paginate(page)}
                   className={`px-3 py-1.5 border border-gray-300 rounded-md ${
                     currentPage === page
-                      ? "bg-blue-500 text-white"
+                      ? "bg-red-500 text-white"
                       : "text-black bg-white hover:bg-gray-100"
                   }`}
                   aria-label={`Page ${page}`}

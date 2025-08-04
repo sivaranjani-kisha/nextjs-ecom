@@ -84,7 +84,7 @@ export default function OfferComponent() {
                   e.stopPropagation();
                   toggleCategory(category._id);
                 }}
-                className="mr-2 text-blue-500"
+                className="mr-2 text-red-500"
               >
                 {expandedCategories[category._id] ? <FaMinus /> : <FaPlus />}
               </button>
@@ -474,7 +474,7 @@ const filteredOffers = offers.filter((offer) => {
         placeholder="Search Offer..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
       />
     </div>
 
@@ -487,7 +487,7 @@ const filteredOffers = offers.filter((offer) => {
           setStatusFilter(e.target.value);
           setCurrentPage(1);
         }}
-        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
       >
         <option value="All">All Statuses</option>
         <option value="Active">Active</option>
@@ -509,7 +509,7 @@ const filteredOffers = offers.filter((offer) => {
     <div className="flex justify-end">
       <button
         onClick={() => setIsModalOpen(true)}
-        className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
+        className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition"
       >
         + Add Offer
       </button>
@@ -553,7 +553,7 @@ const filteredOffers = offers.filter((offer) => {
                       <div className="flex items-center gap-2 justify-center">
                         <button
                           onClick={() => handleEdit(offer)}
-                          className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                          className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"
                           title="Edit"
                         >
                           <FaEdit className="w-3 h-3" />
@@ -607,7 +607,7 @@ const filteredOffers = offers.filter((offer) => {
                     onClick={() => paginate(i + 1)}
                     className={`px-3 py-1.5 border border-gray-300 rounded-md ${
                       currentPage === i + 1
-                        ? "bg-blue-500 text-white"
+                        ? "bg-red-500 text-white"
                         : "text-black bg-white hover:bg-gray-100"
                     }`}
                     aria-label={`Page ${i + 1}`}
@@ -673,7 +673,7 @@ const filteredOffers = offers.filter((offer) => {
                     id="offer_code"
                     value={offerData.offer_code}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                   />
                 </div>
@@ -688,7 +688,7 @@ const filteredOffers = offers.filter((offer) => {
                     id="fest_offer_status"
                     value={offerData.fest_offer_status}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                   >
                     <option value="">Select Your Offer Status</option>
@@ -708,7 +708,7 @@ const filteredOffers = offers.filter((offer) => {
                     id="notes"
                     value={offerData.notes}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                   />
                 </div>
@@ -725,7 +725,7 @@ const filteredOffers = offers.filter((offer) => {
                       id="from_date"
                       value={offerData.from_date}
                       onChange={handleChange}
-                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                     />
                   </div>
@@ -739,7 +739,7 @@ const filteredOffers = offers.filter((offer) => {
                       id="to_date"
                       value={offerData.to_date}
                       onChange={handleChange}
-                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                     />
                   </div>
@@ -763,7 +763,7 @@ const filteredOffers = offers.filter((offer) => {
                         [e.target.name]: e.target.value
                       }));
                     }}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                   >
                     <option value="">Select Apply To</option>
@@ -843,7 +843,7 @@ const filteredOffers = offers.filter((offer) => {
                       handleChange(e);
                       setSelectedOfferType(e.target.value);
                     }}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                   >
                     <option value="">Select Offer Type</option>
@@ -864,7 +864,7 @@ const filteredOffers = offers.filter((offer) => {
                       id="percentage"
                       value={offerData.percentage}
                       onChange={handleChange}
-                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                       min="1"
                       max="100"
@@ -884,7 +884,7 @@ const filteredOffers = offers.filter((offer) => {
                       id="fixed_price"
                       value={offerData.fixed_price}
                       onChange={handleChange}
-                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                       min="1"
                     />
@@ -895,7 +895,7 @@ const filteredOffers = offers.filter((offer) => {
                 <div className="pt-4">
                   <button
                     type="submit"
-                    className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                    className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
                   >
                     Save Offer
                   </button>
@@ -944,7 +944,7 @@ const filteredOffers = offers.filter((offer) => {
                     id="offer_code"
                     value={offerData.offer_code}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                   />
                 </div>
@@ -959,7 +959,7 @@ const filteredOffers = offers.filter((offer) => {
                     id="fest_offer_status"
                     value={offerData.fest_offer_status}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                   >
                     <option value="">Select Your Offer Status</option>
@@ -979,7 +979,7 @@ const filteredOffers = offers.filter((offer) => {
                     id="notes"
                     value={offerData.notes}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                   />
                 </div>
@@ -996,7 +996,7 @@ const filteredOffers = offers.filter((offer) => {
                       id="from_date"
                       value={offerData.from_date}
                       onChange={handleChange}
-                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                     />
                   </div>
@@ -1010,7 +1010,7 @@ const filteredOffers = offers.filter((offer) => {
                       id="to_date"
                       value={offerData.to_date}
                       onChange={handleChange}
-                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                     />
                   </div>
@@ -1034,7 +1034,7 @@ const filteredOffers = offers.filter((offer) => {
                         [e.target.name]: e.target.value
                       }));
                     }}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                     disabled
                   >
@@ -1115,7 +1115,7 @@ const filteredOffers = offers.filter((offer) => {
                       handleChange(e);
                       setSelectedOfferType(e.target.value);
                     }}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
                   >
                     <option value="">Select Offer Type</option>
@@ -1136,7 +1136,7 @@ const filteredOffers = offers.filter((offer) => {
                       id="percentage"
                       value={offerData.percentage}
                       onChange={handleChange}
-                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                       min="1"
                       max="100"
@@ -1156,7 +1156,7 @@ const filteredOffers = offers.filter((offer) => {
                       id="fixed_price"
                       value={offerData.fixed_price}
                       onChange={handleChange}
-                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                      className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                       min="1"
                     />
@@ -1167,7 +1167,7 @@ const filteredOffers = offers.filter((offer) => {
                 <div className="pt-4">
                   <button
                     type="submit"
-                    className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                    className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
                   >
                     Update Offer
                   </button>

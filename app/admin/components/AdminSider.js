@@ -17,14 +17,14 @@ export default function AdminSider({ collapsed }) {
       label: 'Product',
       // submenu: [
       //   { icon: 'mdi:format-list-bulleted', label: 'Product List', link: 'product', dotColor: 'bg-green-500' },
-      //   { icon: 'mdi:tag-outline', label: 'Brand', link: 'brand', dotColor: 'bg-red-500' },
+      //   { icon: 'mdi:tag-outline', label: 'Brand', link: 'brand', dotColor: 'bg-blue-500' },
       //   { icon: 'mdi:upload', label: 'Bulk Upload', link: 'product/bulk_upload', dotColor: 'bg-yellow-500' },
       //    { icon: 'mdi:upload', label: 'Filter Group', link: 'filter_group', dotColor: 'bg-yellow-500' },
       //    { icon: 'mdi:upload', label: 'Filter', link: 'filter', dotColor: 'bg-yellow-500' }
       // ]
       submenu: [
         { icon: 'mdi:format-list-bulleted', label: 'Product List', link: 'product', dotColor: 'bg-green-500' },
-        { icon: 'mdi:tag-outline', label: 'Brand', link: 'brand', dotColor: 'bg-red-500' },
+        { icon: 'mdi:tag-outline', label: 'Brand', link: 'brand', dotColor: 'bg-blue-500' },
         { icon: 'mdi:upload', label: 'Bulk Upload', link: 'product/bulk_upload', dotColor: 'bg-yellow-500' },
         { icon: 'mdi:filter-variant', label: 'Filter Group', link: 'filter_group', dotColor: 'bg-yellow-500' },
         { icon: 'mdi:filter-outline', label: 'Filter', link: 'filter', dotColor: 'bg-yellow-500' }
@@ -34,18 +34,30 @@ export default function AdminSider({ collapsed }) {
     { icon: 'mdi:image-outline', label: 'Banner', link: 'design' },
     {
     icon: 'material-symbols:receipt-long',
-    label: 'Order',
+    label: 'Sales',
     submenu: [
-      { icon: 'mdi:clock-outline', label: 'Pending Order', link: 'order/pending-order', dotColor: 'bg-yellow-500' },
-      { icon: 'mdi:cancel', label: 'Cancel Order', link: 'order/cancel-order', dotColor: 'bg-red-500' },
-      { icon: 'mdi:truck-delivery-outline', label: 'Shipped Order', link: 'order/shipping-order', dotColor: 'bg-green-500' }
+      { icon: 'mdi:clock-outline', label: 'All Orders', link: 'Allorder', dotColor: 'bg-yellow-500' },
+      { icon: 'mdi:clock-outline', label: 'Home Delivery', link: 'homedelivery', dotColor: 'bg-yellow-500' },
+      // { icon: 'mdi:clock-outline', label: 'Home Delivery', link: 'order/home-delivery', dotColor: 'bg-yellow-500' },
+      // { icon: 'mdi:clock-outline', label: 'Pending Order', link: 'order/pending-order', dotColor: 'bg-yellow-500' },
+      { icon: 'mdi:cancel', label: 'Cancel Order', link: 'order/cancel-order', dotColor: 'bg-blue-500' },
+      // { icon: 'mdi:truck-delivery-outline', label: 'Shipped Order', link: 'order/shipping-order', dotColor: 'bg-green-500' }
     ]
   },
    
     { icon: 'mdi:tag-outline', label: 'Offer', link: 'offer' },
     { icon: 'mdi:note-text-outline', label: 'Blog', link: 'blog' },
     { icon: 'mdi:account-outline', label: 'User', link: 'user' },
-    { icon: 'mdi:phone-outline', label: 'Contact', link: 'contact' }
+    { icon: 'mdi:phone-outline', label: 'Contact', link: 'contact' },
+     {
+  icon: 'mdi:map-marker-outline',
+  label: 'Store Location',
+  submenu: [
+    { icon: 'mdi:store-outline', label: 'Store', link: 'store', dotColor: 'bg-yellow-500' },
+    { icon: 'mdi:map-marker-radius-outline', label: 'Zone', link: 'zone', dotColor: 'bg-blue-500' },
+  ]
+}
+
   ];
 
   return (
@@ -59,14 +71,14 @@ export default function AdminSider({ collapsed }) {
           collapsed ? 'justify-center' : 'justify-between'
         }`}
       >
-        {!collapsed ? (
-          <a href="/" className="flex items-center space-x-2">
-            <img src="/admin/assets/images/bea.png" alt="Site Logo" className="h-9" />
-            <span className="text-sm font-bold text-gray-700">Bharath Electronics</span>
-          </a>
-        ) : (
-          <img src="/admin/assets/images/bea.png" alt="Site Logo" className="h-9" />
-        )}
+       {!collapsed ? (
+                 <a href="/" className="flex items-center space-x-2">
+                   <img src="/admin/assets/images/bea.png" alt="Site Logo" className="h-9" />
+                   <span className="text-sm font-bold text-gray-700">Bharath Electronics</span>
+                 </a>
+               ) : (
+                 <img src="/admin/assets/images/bea.png" alt="Site Logo" className="h-9" />
+               )}
       </div>
 
       <nav className="mt-4">
@@ -153,7 +165,7 @@ function SidebarItemWithSubmenu({
           ${collapsed ? 'justify-center' : 'space-x-3'}`}
       >
         <Icon icon={item.icon} className={collapsed ? "text-2xl" : "text-xl"} />
-        {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
+        {!collapsed && <span className="flex-1 text-left whitespace-nowrap">{item.label}</span>}
         {!collapsed && (
           <Icon
             icon={isOpen ? 'mdi:chevron-down' : 'mdi:chevron-right'}
@@ -189,7 +201,7 @@ function SidebarItemWithSubmenu({
                 {subItem.icon && <Icon icon={subItem.icon} className="text-lg" />}
                 
                 {/* Submenu Label */}
-                <span>{subItem.label}</span>
+                <span className="whitespace-nowrap">{subItem.label}</span>
               </button>
             </li>
           ))}

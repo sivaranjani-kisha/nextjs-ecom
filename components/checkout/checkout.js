@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ToastContainer, toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'next/navigation';
-import {AuthModal} from '@/components/AuthModal';
+import { AuthModal } from '@/components/AuthModal';
 
 // Dynamically load Razorpay script
 const loadRazorpay = () => {
@@ -17,11 +17,130 @@ const loadRazorpay = () => {
   });
 };
 
+const DeliveryOptions = ({ formData, handleChange, isDeliverySaved, setIsDeliverySaved, stores }) => {
+  const [fetchedStores, setFetchedStores] = useState(stores || []);
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const res = await fetch("/api/store/get");
+        const json = await res.json();
+        if (json.success) {
+          setFetchedStores(json.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch stores", error);
+      }
+    };
+    
+    if (!stores || stores.length === 0) {
+      fetchStores();
+    }
+  }, [stores]);
+
+  return (
+    <div className="mt-6 border rounded-md shadow-sm">
+      {/* Header */}
+      <div className="flex justify-between items-center bg-gray-100 px-4 py-2 border-b">
+        <div className="text-sm font-semibold uppercase text-gray-700">Delivery Type</div>
+        {isDeliverySaved && (
+          <button
+            className="text-red-600 text-sm"
+            onClick={() => setIsDeliverySaved(false)}
+          >
+            Change
+          </button>
+        )}
+      </div>
+
+      {!isDeliverySaved ? (
+        // Editable Form
+        <div className="p-4 space-y-4">
+          {/* Store Pickup */}
+          <div className="flex items-center space-x-3">
+            <input
+              type="radio"
+              id="storePickup"
+              name="deliveryType"
+              value="store"
+              checked={formData.deliveryType === "store"}
+              onChange={handleChange}
+              className="w-5 h-5 text-red-600"
+            />
+            <label htmlFor="storePickup" className="text-gray-700 font-medium">Store Pickup</label>
+          </div>
+
+          {formData.deliveryType === "store" && (
+            <select
+              name="selectedStore"
+              value={formData.selectedStore}
+              onChange={handleChange}
+              className="border border-gray-300 rounded-md p-2 w-full"
+              required
+            >
+              <option value="">Select store</option>
+              {fetchedStores.map((store) => (
+                <option key={store._id} value={store._id}>
+                  {store.organisation_name} - {store.city}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Home Delivery */}
+          <div className="flex items-center space-x-3">
+            <input
+              type="radio"
+              id="homeDelivery"
+              name="deliveryType"
+              value="home"
+              checked={formData.deliveryType === "home"}
+              onChange={handleChange}
+              className="w-5 h-5 text-red-600"
+            />
+            <label htmlFor="homeDelivery" className="text-gray-700 font-medium">Home Delivery</label>
+          </div>
+
+          {/* Save and Continue */}
+          <button
+            type="button"
+            onClick={() => {
+              if (formData.deliveryType === "store" && !formData.selectedStore) {
+                toast.error("Please select a store for pickup");
+                return;
+              }
+              toast.success("Delivery method saved");
+              setIsDeliverySaved(true);
+            }}
+            className="bg-red-600 text-white px-6 py-2 rounded-md mt-4 hover:bg-red-700 transition"
+          >
+            Save And Continue
+          </button>
+        </div>
+      ) : (
+        // Collapsed Summary View
+        <div className="p-4 flex items-start gap-4">
+          <div className="text-2xl">🚚</div>
+          <div>
+            <div className="text-sm font-semibold text-gray-700 uppercase">
+              {formData.deliveryType === 'store' ? 'STORE PICKUP' : 'HOME DELIVERY'}
+            </div>
+            {formData.deliveryType === 'store' && (
+              <div className="text-gray-600 text-sm">
+                {fetchedStores.find(s => s._id === formData.selectedStore)?.city} (
+                {fetchedStores.find(s => s._id === formData.selectedStore)?.organisation_name})
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
-  
-  // Form State
+  const [stores, setStores] = useState([]);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -35,8 +154,10 @@ export default function CheckoutPage() {
     phonenumber: "",
     email: "",
     additionalInfo: "",
+    deliveryType: "home",
+    selectedStore: ""
   });
-
+  const [isDeliverySaved, setIsDeliverySaved] = useState(false);
   const [useraddress, setUseraddress] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [useSavedAddress, setUseSavedAddress] = useState(false);
@@ -47,172 +168,181 @@ export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch cart data and user address
   useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setShowAuthModal(true);
-        setLoading(false);
-        return;
-      }
-
+    const fetchStores = async () => {
       try {
-        const decoded = jwtDecode(token);
-        const userId = decoded.userId;
-
-        // Fetch cart data
-        const cartResponse = await fetch('/api/cart', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!cartResponse.ok) {
-          throw new Error('Failed to fetch cart data');
+        const res = await fetch("/api/store/get");
+        const result = await res.json();
+        if (result.success) {
+          setStores(result.data);
+        } else {
+          console.error("Error fetching stores:", result.error);
         }
-
-        const cartData = await cartResponse.json();
-        setCartItems(cartData.cart.items);
-
-        // Fetch user address
-        const addressResponse = await fetch(`/api/useraddress?user_id=${userId}`);
-        if (!addressResponse.ok) {
-          throw new Error('Failed to fetch address data');
-        }
-
-        const addressData = await addressResponse.json();
-        setUseraddress(addressData.userAddress);
-
-        // Pre-fill form with first address if available
-        if (addressData.userAddress.length > 0) {
-          const addr = addressData.userAddress[0];
-          setFormData(prev => ({
-            ...prev,
-            firstName: addr.firstName || "",
-            lastName: addr.lastName || "",
-            country: addr.country || "",
-            address: addr.address || "",
-            city: addr.city || "",
-            state: addr.state || "",
-            postCode: addr.postCode || "",
-            phonenumber: addr.phonenumber || "",
-            landmark: addr.landmark || "",
-            email: addr.email || "",
-            businessName: addr.businessName || "",
-            additionalInfo: addr.additionalInfo || ""
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load checkout data");
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        console.error("Fetch error:", err);
       }
     };
+    fetchStores();
+  }, []);
 
+  const fetchData = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setShowAuthModal(true);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      const userId = decoded.userId;
+
+      // Fetch cart data
+      const cartResponse = await fetch('/api/cart', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!cartResponse.ok) {
+        throw new Error('Failed to fetch cart data');
+      }
+
+      const cartData = await cartResponse.json();
+      setCartItems(cartData.cart.items);
+
+      // Fetch user address
+      const addressResponse = await fetch(`/api/useraddress?user_id=${userId}`);
+      if (!addressResponse.ok) {
+        throw new Error('Failed to fetch address data');
+      }
+
+      const addressData = await addressResponse.json();
+      setUseraddress(addressData.userAddress);
+
+      // Pre-fill form with first address if available
+      if (addressData.userAddress.length > 0) {
+        const addr = addressData.userAddress[0];
+        setFormData(prev => ({
+          ...prev,
+          firstName: addr.firstName || "",
+          lastName: addr.lastName || "",
+          country: addr.country || "",
+          address: addr.address || "",
+          city: addr.city || "",
+          state: addr.state || "",
+          postCode: addr.postCode || "",
+          phonenumber: addr.phonenumber || "",
+          landmark: addr.landmark || "",
+          email: addr.email || "",
+          businessName: addr.businessName || "",
+          additionalInfo: addr.additionalInfo || ""
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load checkout data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
-  // Handle Form Change
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Payment Selection
   const handlePaymentChange = (e) => {
     setPaymentMethod(e.target.value);
   };
 
-    // Initialize Razorpay
-    const initializeRazorpay = async () => {
-      return await loadRazorpay();
-    };
-  
-    // Create Razorpay Order
-    const createRazorpayOrder = async (amount) => {
-      try {
-        const res = await fetch('/api/create-razorpay-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: amount * 100 }) // Convert to paise
-        });
-        return await res.json();
-      } catch (error) {
-        throw new Error('Failed to create Razorpay order');
+  const initializeRazorpay = async () => {
+    return await loadRazorpay();
+  };
+
+  const createRazorpayOrder = async (amount) => {
+    try {
+      const res = await fetch('/api/create-razorpay-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amount * 100 }) // Convert to paise
+      });
+      return await res.json();
+    } catch (error) {
+      throw new Error('Failed to create Razorpay order');
+    }
+  };
+
+  const handleOnlinePayment = async (totalAmount) => {
+    try {
+      const razorpayLoaded = await initializeRazorpay();
+      if (!razorpayLoaded) {
+        toast.error('Razorpay SDK failed to load');
+        return;
       }
-    };
   
-    // Handle Online Payment
-    const handleOnlinePayment = async (totalAmount) => {
-      try {
-        const razorpayLoaded = await initializeRazorpay();
-        if (!razorpayLoaded) {
-          toast.error('Razorpay SDK failed to load');
-          return;
-        }
-    
-        const orderResponse = await createRazorpayOrder(totalAmount);
-        const { order } = orderResponse;
-    
-        return new Promise((resolve, reject) => {
-          const options = {
-            key: process.env.NEXT_PUBLIC_RAZORPAY_TEST_KEY,
-            amount: order.amount,
-            currency: "INR",
-            name: "BEA",
-            description: "Product Purchase",
-            order_id: order.id,
-            handler: async function (response) {
-              try {
-                const verificationRes = await fetch('/api/verify-payment', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_signature: response.razorpay_signature
-                  })
+      const orderResponse = await createRazorpayOrder(totalAmount);
+      const { order } = orderResponse;
+  
+      return new Promise((resolve, reject) => {
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_TEST_KEY,
+          amount: order.amount,
+          currency: "INR",
+          name: "BEA",
+          description: "Product Purchase",
+          order_id: order.id,
+          handler: async function (response) {
+            try {
+              const verificationRes = await fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+  
+              if (verificationRes.ok) {
+                resolve({
+                  paymentId: response.razorpay_payment_id,
+                  status: "paid",
+                  mode: "online"
                 });
-    
-                if (verificationRes.ok) {
-                  resolve({
-                    paymentId: response.razorpay_payment_id,
-                    status: "paid",
-                    mode: "online"
-                  });
-                } else {
-                  reject(new Error('Payment verification failed'));
-                }
-              } catch (err) {
-                reject(err);
+              } else {
+                reject(new Error('Payment verification failed'));
               }
-            },
-            prefill: {
-              name: `${formData.firstName} ${formData.lastName}`,
-              email: formData.email,
-              contact: formData.phonenumber
-            },
-            theme: {
-              color: "#F37254"
+            } catch (err) {
+              reject(err);
             }
-          };
-    
-          const razorpay = new window.Razorpay(options);
-          razorpay.open();
-    
-          razorpay.on('payment.failed', function (response) {
-            reject(new Error(response.error.description));
-          });
+          },
+          prefill: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            contact: formData.phonenumber
+          },
+          theme: {
+            color: "#F37254"
+          }
+        };
+  
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+  
+        razorpay.on('payment.failed', function (response) {
+          reject(new Error(response.error.description));
         });
-    
-      } catch (error) {
-        console.error('Razorpay error:', error);
-        toast.error('Payment processing failed');
-        throw error;
-      }
-    };
-    
+      });
+    } catch (error) {
+      console.error('Razorpay error:', error);
+      toast.error('Payment processing failed');
+      throw error;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -233,11 +363,8 @@ export default function CheckoutPage() {
   
       // Validation Checks (only if not using saved address)
       if (!useSavedAddress || selectedAddress === null) {
-        // Email Validation Regex
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        // Phone Validation (10-digit number)
         const phoneRegex = /^[0-9]{10}$/;
-        // Postal Code Validation (4 to 6 digits)
         const postCodeRegex = /^[0-9]{4,6}$/;
   
         if (!addressData.firstName || !addressData.lastName || !addressData.email || 
@@ -271,15 +398,6 @@ export default function CheckoutPage() {
         paymentStatus = "pending";
         paymentMode = "cash";
       } else if (paymentMethod === 'online') {
-        console.log("Online Payment");
-        // const paymentResult = await handleOnlinePayment(totalAmount);
-        // if (!paymentResult.ok) {
-        //   throw new Error('Online payment processing failed');
-        // }
-        // paymentId = paymentResult.paymentId;
-        // paymentStatus = paymentResult.status;
-        // paymentMode = paymentResult.mode;
-
         try {
           const result = await handleOnlinePayment(totalAmount);
           paymentId = result.paymentId;
@@ -323,7 +441,6 @@ export default function CheckoutPage() {
           throw new Error('Failed to save address');
         }
         const newAddressData = await addressRes.json();
-
         setUseraddress(prev => [...prev, newAddressData.userAddress]);
       }
   
@@ -347,15 +464,13 @@ export default function CheckoutPage() {
   
       const res = await paymentRes.json();
       const paymentData = res.paymentData;
+      
       // Prepare delivery address string
       const deliveryAddress = useSavedAddress && selectedAddress !== null
         ? `${useraddress[selectedAddress].address}, ${useraddress[selectedAddress].city}, ${useraddress[selectedAddress].state}, ${useraddress[selectedAddress].country}, ${useraddress[selectedAddress].postCode}`
         : `${addressData.address}, ${addressData.city}, ${addressData.state}, ${addressData.country}, ${addressData.postCode}`;
   
       // Save Order
-      console.log(addressData,paymentData);
-      console.log(useSavedAddress,selectedAddress,useraddress);
-
       const orderRes = await fetch('/api/orders/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -363,7 +478,7 @@ export default function CheckoutPage() {
           user_id: userId,
           user_adddeliveryid: useSavedAddress && selectedAddress !== null 
             ? useraddress[selectedAddress]._id 
-            :  useraddress[0]?._id,
+            : useraddress[0]?._id,
           order_username: `${addressData.firstName} ${addressData.lastName}`,
           order_phonenumber: addressData.phonenumber,
           email_address: addressData.email,
@@ -373,7 +488,10 @@ export default function CheckoutPage() {
           payment_method: paymentMethod,
           payment_type: paymentMode,
           order_status: "pending",
-          delivery_type: "standard",
+         delivery_type: formData.deliveryType === "store" ? "store_pickup" : "home",
+         pickup_store: formData.deliveryType === "store" 
+      ? stores.find(s => s._id === formData.selectedStore)?.organisation_name 
+      : undefined,
           payment_id: paymentData._id,
           payment_status: paymentData.status,
           order_number: "ORD" + Date.now(),
@@ -388,14 +506,45 @@ export default function CheckoutPage() {
             created_at: new Date(),
             updated_at: new Date(),
             quantity: 1,
-            store_id: "STORE01",
+            //store_id: formData.deliveryType === "store" ? formData.selectedStore : "STORE01",
             orderNumber: "ORD" + Date.now(),
           })),
         }),
       });
+      
       if (!orderRes.ok) {
         throw new Error('Order creation failed');
       }
+
+
+      // if(orderRes.ok){
+        // const responsedata = await orderRes.json();
+        // const order_id = responsedata.order._id.toString();
+        // const orderhistory1 = await fetch('/api/orderhistory',{
+        //   method:'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({orderId : order_id})
+        // });
+
+        // if(formData.deliveryType == 'store'){
+        //  const storeorderid = await fetch('/api/sender_orderid',{
+        //   method:'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({orderId : order_id})
+        //  });
+
+        //  if(storeorderid.ok){
+        //     const storeresponsedata = await storeorderid.json();
+        //   const storeorderid_status = storeresponsedata.status;
+        //     const orderhistory = await fetch('/api/orderhistory',{
+        //       method:'PUT',
+        //       headers: { 'Content-Type': 'application/json' },
+        //       body: JSON.stringify({orderId : order_id,status:storeorderid_status})
+        //     });
+        //  }
+
+        // }
+      // }
 
       // Clear cart after successful order
       const cartdelte = await fetch('/api/cart', {
@@ -414,36 +563,34 @@ export default function CheckoutPage() {
       }
 
       if (cartdelte.status === 200) {
-          const orderData = await orderRes.json()
-          // Prepare email data
-          const emailData = {
-            orderDetails: {
-              order_number: orderData.order_number || "ORD" + Date.now(),
-              order_amount: totalAmount,
-              payment_method: paymentMethod === 'cash' ? 'Cash on Delivery' : 'Online Payment',
-              order_item: cartItems,
-              order_username: `${addressData.firstName} ${addressData.lastName}`,
-              order_phonenumber: addressData.phonenumber,
-              order_deliveryaddress: deliveryAddress
-            },
-            customerEmail: addressData.email,
-            adminEmail: 'msivaranjani2036@gmail.com' // Replace with your admin email
-          };
-          console.log(emailData);
-          alert("fgg");
-          // Send confirmation emails
-          const emailResponse = await fetch('/api/send-order-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(emailData)
-          });
+        const orderData = await orderRes.json()
+        // Prepare email data
+        const emailData = {
+          orderDetails: {
+            order_number: orderData.order_number || "ORD" + Date.now(),
+            order_amount: totalAmount,
+            payment_method: paymentMethod === 'cash' ? 'Cash on Delivery' : 'Online Payment',
+            order_item: cartItems,
+            order_username: `${addressData.firstName} ${addressData.lastName}`,
+            order_phonenumber: addressData.phonenumber,
+            order_deliveryaddress: deliveryAddress
+          },
+          customerEmail: addressData.email,
+          adminEmail: 'msivaranjani2036@gmail.com'
+        };
+        
+        // Send confirmation emails
+        const emailResponse = await fetch('/api/send-order-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(emailData)
+        });
 
-          if (!emailResponse.ok) {
-            const errorData = await emailResponse.json();
-            console.error('Email sending failed:', errorData.error);
-            // Don't fail the order if email fails, just log it
-          }
+        if (!emailResponse.ok) {
+          const errorData = await emailResponse.json();
+          console.error('Email sending failed:', errorData.error);
         }
+      }
 
       toast.success("Order placed successfully!");
       router.push('/order');
@@ -469,8 +616,8 @@ export default function CheckoutPage() {
     <div className="bg-white min-h-screen">
       <ToastContainer position="top-right" autoClose={5000} />
       
-      {/* 🟠 Checkout Header Bar */}
-      <div className="bg-blue-50 py-6 px-8 flex justify-between items-center">
+      {/* Checkout Header Bar */}
+      <div className="bg-red-50 py-6 px-8 flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-800">Checkout</h2>
         <div className="flex items-center space-x-2">
           <span className="text-gray-600">🏠 Home</span>
@@ -545,19 +692,27 @@ export default function CheckoutPage() {
                 </div>
 
                 <input type="text" name="businessName" placeholder="Business Name (Optional)" value={formData.businessName} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
-                <input type="text" name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
-                <input type="text" name="address" placeholder="House number and street name" value={formData.address} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
+                <input type="text" name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
+                <input type="text" name="address" placeholder="House number and street name" value={formData.address} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
                 <input type="text" name="landmark" placeholder="landmark, suite, unit, etc. (Optional)" value={formData.landmark} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
 
                 <div className="grid grid-cols-2 gap-4 mt-3">
-                  <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
-                  <input type="text" name="state" placeholder="State/Province" value={formData.state} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
+                  <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
+                  <input type="text" name="state" placeholder="State/Province" value={formData.state} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
                 </div>
 
-                <input type="text" name="postCode" placeholder="Post Code" value={formData.postCode} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
-                <input type="text" name="phonenumber" placeholder="phonenumber" value={formData.phonenumber} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" />
-                <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" />
-
+                <input type="text" name="postCode" placeholder="Post Code" value={formData.postCode} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
+                <input type="text" name="phonenumber" placeholder="Phone Number" value={formData.phonenumber} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required />
+                <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required />
+                
+                <DeliveryOptions
+                  formData={formData}
+                  handleChange={handleChange}
+                  isDeliverySaved={isDeliverySaved}
+                  setIsDeliverySaved={setIsDeliverySaved}
+                  stores={stores}
+                />
+                
                 <h3 className="text-lg font-semibold text-gray-700 mt-6 mb-2">Additional Information</h3>
                 <textarea name="additionalInfo" placeholder="Notes about your order" value={formData.additionalInfo} onChange={handleChange} className="border p-2 rounded-md w-full h-20 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"></textarea>
               </form>
@@ -593,29 +748,38 @@ export default function CheckoutPage() {
             <div className="mt-6">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">Payment Method</h3>
               <div className="space-y-2">
-                {["bank", "online", "cash"].map((method) => (
-                  <label key={`payment-method-${method}`} className="flex items-center space-x-2">
-                    <input 
-                      type="radio" 
-                      name="payment" 
-                      value={method} 
-                      checked={paymentMethod === method} 
-                      onChange={handlePaymentChange} 
-                      className="w-4 h-4 text-orange-500"
-                    />
-                    <span>{method === "bank" ? "Direct Bank Transfer" : method === "online" ? "Check Payment" : "Cash on Delivery"}</span>
-                  </label>
-                ))}
+                <label className="flex items-center space-x-2">
+                  <input 
+                    type="radio" 
+                    name="payment" 
+                    value="online" 
+                    checked={paymentMethod === "online"} 
+                    onChange={handlePaymentChange} 
+                    className="w-4 h-4 text-orange-500"
+                  />
+                  <span>Online Payment</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input 
+                    type="radio" 
+                    name="payment" 
+                    value="cash" 
+                    checked={paymentMethod === "cash"} 
+                    onChange={handlePaymentChange} 
+                    className="w-4 h-4 text-orange-500"
+                  />
+                  <span>Cash on Delivery</span>
+                </label>
               </div>
             </div>
 
             <button 
               onClick={handleSubmit} 
-              disabled={loading || cartItems.length === 0}
+              disabled={loading || cartItems.length === 0 || !isDeliverySaved}
               className={`mt-6 w-full text-white font-semibold py-3 rounded-lg transition ${
-                loading || cartItems.length === 0 
+                loading || cartItems.length === 0 || !isDeliverySaved
                   ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-orange-500 hover:bg-orange-600'
+                  : 'bg-red-500 hover:bg-red-600'
               }`}
             >
               {loading ? 'Processing...' : 'Place Order'}
@@ -629,7 +793,7 @@ export default function CheckoutPage() {
           onClose={() => setShowAuthModal(false)}
           onSuccess={() => {
             setShowAuthModal(false);
-            window.location.reload(); // Refresh to load cart data
+            window.location.reload();
           }}
           error={authError}
         />

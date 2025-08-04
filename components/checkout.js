@@ -412,7 +412,7 @@ export default function CheckoutPage() {
             adminEmail: 'msivaranjani2036@gmail.com' // Replace with your admin email
           };
           console.log(emailData);
-          alert("fgg");
+          // alert("fgg");
           // Send confirmation emails
           const emailResponse = await fetch('/api/send-order-email', {
             method: 'POST',

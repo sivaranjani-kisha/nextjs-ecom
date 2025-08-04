@@ -374,7 +374,7 @@ const handleUpdateCategory = async (e) => {
         <div
           className={`p-2 cursor-pointer ${
             (newCategory.parentid === category._id || categoryToUpdate.parentid === category._id) 
-              ? "text-blue-500 font-semibold" 
+              ? "text-red-500 font-semibold" 
               : "text-black"
           }`}
           onClick={() => {
@@ -392,14 +392,14 @@ const handleUpdateCategory = async (e) => {
                 e.stopPropagation();
                 toggleCategory(category._id);
               }}
-              className="mr-2 text-blue-500"
+              className="mr-2 text-red-500"
             >
               {expandedCategories[category._id] ? <FaMinus /> : <FaPlus />}
             </button>
           )}
           <span className={`font-semibold ${
             (newCategory.parentid === category._id || categoryToUpdate.parentid === category._id) 
-              ? "text-blue-500" 
+              ? "text-red-500" 
               : ""
           }`}>
             {category.category_name}
@@ -488,7 +488,7 @@ const handleUpdateCategory = async (e) => {
             <button
               type="button"
               onClick={() => toggleCategory(category._id)}
-              className="mr-2 text-blue-500"
+              className="mr-2 text-red-500"
               aria-label="Expand/Collapse"
             >
               {expandedCategories[category._id] ? <FaMinus /> : <FaPlus />}
@@ -532,7 +532,7 @@ const handleUpdateCategory = async (e) => {
                 });
                 setIsUpdateModalOpen(true);
               }}
-              className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+              className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"
               title="Edit"
             >
               <FaEdit className="w-3 h-3" />
@@ -600,7 +600,7 @@ const handleUpdateCategory = async (e) => {
         placeholder="Search Category..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+        className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
       />
     </div>
   </div>
@@ -611,7 +611,7 @@ const handleUpdateCategory = async (e) => {
     <select
       value={statusFilter}
       onChange={(e) => setStatusFilter(e.target.value)}
-      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+      className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm"
     >
       <option value="">All Statuses</option>
       <option value="Active">Active</option>
@@ -627,7 +627,7 @@ const handleUpdateCategory = async (e) => {
       {/* {dateFilter.startDate && dateFilter.endDate && (
         <button 
           onClick={clearDateFilter}
-          className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+          className="mt-2 text-sm text-red-600 hover:text-red-800"
         >
           Clear date filter
         </button>
@@ -637,7 +637,7 @@ const handleUpdateCategory = async (e) => {
   <div>
    <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
+          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
         >
           + Add Category
         </button>
@@ -693,7 +693,7 @@ const handleUpdateCategory = async (e) => {
                   onClick={() => paginate(i)}
                   className={`px-3 py-1.5 border border-gray-300 rounded-md ${
                     currentPage === i
-                      ? "bg-blue-500 text-white"
+                      ? "bg-red-500 text-white"
                       : "text-black bg-white hover:bg-gray-100"
                   }`}
                   aria-label={`Page ${i + 1}`}
@@ -761,7 +761,7 @@ const handleUpdateCategory = async (e) => {
                   value={newCategory.category_name}
                   onChange={handleInputChange}
                   id="category_name"
-                  className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                  className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
                   placeholder="Enter Category Name"
                   required
                 />
@@ -774,7 +774,7 @@ const handleUpdateCategory = async (e) => {
                     <div
                       className={`p-2 cursor-pointer rounded-md font-semibold ${
                         newCategory.parentid === "none"
-                          ? "bg-blue-100 text-blue-600"
+                          ? "bg-red-100 text-red-600"
                           : "text-gray-800 hover:bg-gray-100"
                       }`}
                       onClick={() => setNewCategory({ ...newCategory, parentid: "none" })}
@@ -795,8 +795,8 @@ const handleUpdateCategory = async (e) => {
                     file:mr-3 file:py-1 file:px-3
                     file:rounded-md file:border-0
                     file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100"
+                    file:bg-red-50 file:text-red-700
+                    hover:file:bg-red-100"
                 />
                 {imagePreview && (
                   <img
@@ -816,7 +816,7 @@ const handleUpdateCategory = async (e) => {
                   id="status"
                   value={newCategory.status}
                   onChange={handleInputChange}
-                  className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                  className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                 >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
@@ -825,7 +825,7 @@ const handleUpdateCategory = async (e) => {
 
               <button
                 type="submit"
-                className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
               >
                 Add Category
               </button>
@@ -874,7 +874,7 @@ const handleUpdateCategory = async (e) => {
                     value={categoryToUpdate.category_name}
                     onChange={(e) => setCategoryToUpdate({ ...categoryToUpdate, category_name: e.target.value })}
                     id="update_category_name"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
                     placeholder="Enter Category Name"
                     required
                   />
@@ -887,7 +887,7 @@ const handleUpdateCategory = async (e) => {
                       <div
                         className={`p-2 cursor-pointer rounded-md font-semibold ${
                           categoryToUpdate.parentid === "none"
-                            ? "bg-blue-100 text-blue-600"
+                            ? "bg-red-100 text-red-600"
                             : "text-gray-800 hover:bg-gray-100"
                         }`}
                         onClick={() => setCategoryToUpdate({ ...categoryToUpdate, parentid: "none" })}
@@ -914,8 +914,8 @@ const handleUpdateCategory = async (e) => {
                       file:mr-3 file:py-1 file:px-3
                       file:rounded-md file:border-0
                       file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
+                      file:bg-red-50 file:text-red-700
+                      hover:file:bg-red-100"
                   />
                   {categoryToUpdate.image && (
                     <img
@@ -939,7 +939,7 @@ const handleUpdateCategory = async (e) => {
                     id="update_status"
                     value={categoryToUpdate.status}
                     onChange={(e) => setCategoryToUpdate({ ...categoryToUpdate, status: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -948,7 +948,7 @@ const handleUpdateCategory = async (e) => {
 
                 <button
                   type="submit"
-                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                  className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
                 >
                   Update Category
                 </button>

@@ -375,6 +375,7 @@ useEffect(() => {
                     <div className="flex-shrink-0">
                       <Addtocart
                         productId={product._id}
+                        stockQuantity={product.quantity}
                         quantity={quantity}
                         additionalProducts={selectedFrequentProducts.map(p => p._id)}
                         warranty={selectedWarranty}

@@ -7,15 +7,18 @@ import { useHeaderdetails } from '@/context/HeaderContext';
 
 import { FaShoppingCart} from "react-icons/fa";
 
-const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts = [],extendedWarranty, selectedFrequentProducts = [] }) => {
+const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts = [],extendedWarranty, selectedFrequentProducts = [], stockQuantity = 1, }) => {
   const { openAuthModal } = useModal();
   const { updateHeaderdetails, setIsLoggedIn, setUserData,setIsAdmin } = useHeaderdetails();
   const [isLoading, setIsLoading] = useState(false);
   // const [showAuthModal, setShowAuthModal] = useState(false);
   // const [authError, setAuthError] = useState('');
   const [cartSuccess, setCartSuccess] = useState(false);
+  const isOutOfStock = stockQuantity <= 0;
   const { cartCount, updateCartCount } = useCart();
   const handleAddToCart = async () => {
+     if (isOutOfStock) return;
+
       setIsLoading(true);
       // setAuthError('');
       setCartSuccess(false);
@@ -107,9 +110,11 @@ if (selectedFrequentProducts?.length > 0) {
     <>
       <button 
   onClick={handleAddToCart}
-  disabled={isLoading}
-  className={`w-full sm:w-auto px-2 py-2 md:px-3 md:py-2 rounded-md shadow-md  transition duration-300 text-md flex items-center justify-center gap-x-3
-    ${
+  disabled={isLoading || isOutOfStock}
+  className={`w-full sm:w-auto px-2 py-2 md:px-3 md:py-2 rounded-md shadow-md  transition duration-300 text-md flex items-center justify-center gap-x-3 
+    ${isOutOfStock
+          ? 'bg-gray-400 cursor-not-allowed text-white'
+          :
       isLoading 
         ? 'bg-blue-700 cursor-not-allowed opacity-75' 
         : cartSuccess 
@@ -118,7 +123,9 @@ if (selectedFrequentProducts?.length > 0) {
     }
     active:scale-95 disabled:active:scale-100`}
 >
-  {isLoading ? (
+  {isOutOfStock ? (
+        <span>Out of Stock</span>
+      ) : isLoading ? (
     <>
       <svg 
         className="animate-spin h-5 w-5" 

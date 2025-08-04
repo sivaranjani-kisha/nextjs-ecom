@@ -482,7 +482,7 @@ const exportToExcel = () => {
       Export to Excel
     </button>
 
-    <Link href="/admin/product/create" className="bg-blue-500 text-white px-4 py-2 rounded-md">
+    <Link href="/admin/product/create" className="bg-red-500 text-white px-4 py-2 rounded-md">
       + Add Product
     </Link>
   </div>
@@ -503,7 +503,7 @@ const exportToExcel = () => {
                 placeholder="Search Product..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -516,7 +516,7 @@ const exportToExcel = () => {
                   setStatusFilter(e.target.value);
                   setCurrentPage(0);
                 }}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
               >
                 <option value="">All Statuses</option>
                 <option value="Active">Active</option>
@@ -533,7 +533,7 @@ const exportToExcel = () => {
                   setCategoryFilter(e.target.value);
                   setCurrentPage(0);
                 }}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
               >
                 {renderCategoryOptions()}
               </select>
@@ -548,7 +548,7 @@ const exportToExcel = () => {
                   setBrandFilter(e.target.value);
                   setCurrentPage(0);
                 }}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
               >
                 {renderBrandOptions()}
               </select>
@@ -598,7 +598,7 @@ const exportToExcel = () => {
                           className="w-12 h-12 object-contain mx-auto"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = '/path-to-fallback-image.jpg';
+                            e.target.src = '/no-image.jpg';
                           }}
                         />
                       ) : (
@@ -642,7 +642,7 @@ const exportToExcel = () => {
                       <div className="flex items-center gap-2 justify-center">
                         <button
                           onClick={() => handleEditProduct(product)}
-                          className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                          className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"
                           title="Edit"
                         >
                           <FaEdit className="w-3 h-3" />
@@ -705,7 +705,7 @@ const exportToExcel = () => {
                       onClick={() => setCurrentPage(i)}
                       className={`px-3 py-1.5 border border-gray-300 rounded-md ${
                         currentPage === i
-                          ? "bg-blue-500 text-white"
+                          ? "bg-red-500 text-white"
                           : "text-black bg-white hover:bg-gray-100"
                       }`}
                       aria-label={`Page ${i + 1}`}
@@ -781,7 +781,7 @@ const exportToExcel = () => {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="bg-blue-500 px-4 py-2 rounded-md text-white"
+                className="bg-red-500 px-4 py-2 rounded-md text-white"
               >
                 Close
               </button>

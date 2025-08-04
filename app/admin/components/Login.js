@@ -84,7 +84,7 @@ export default function Login() {
             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
           </div>
 
-          <button type="submit" disabled={loading} className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg">
+          <button type="submit" disabled={loading} className="w-full px-4 py-2 text-white bg-red-500 rounded-lg">
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>

@@ -162,7 +162,7 @@ useEffect(() => {
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => handleEditFiltergroup(group)}
-                className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-200"
+                className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200"
                 title="Edit"
               >
                 <FaEdit className="w-4 h-4" />
@@ -212,7 +212,7 @@ useEffect(() => {
             />
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md"
+              className="bg-red-500 text-white px-4 py-2 rounded-md"
             >
               + Add Filter Group
             </button>
@@ -259,7 +259,7 @@ useEffect(() => {
               nextLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md ${
                 currentPage === pageCount - 1 ? "text-gray-400 cursor-not-allowed" : "text-black bg-white hover:bg-gray-100"
               }`}
-              activeLinkClassName={"bg-blue-500 text-black"}
+              activeLinkClassName={"bg-red-500 text-black"}
               breakLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md text-black bg-white hover:bg-gray-100`}
             />
           </div>
@@ -313,7 +313,7 @@ useEffect(() => {
               name="filtergroup_name"
               value={newFiltergroup.filtergroup_name}
               onChange={handleInputChange}
-              className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
               placeholder="Enter Filter Group Name"
               required
             />
@@ -329,7 +329,7 @@ useEffect(() => {
               id="status"
               value={newFiltergroup.status}
               onChange={handleInputChange}
-              className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
               required
             >
               <option value="Active">Active</option>
@@ -340,7 +340,7 @@ useEffect(() => {
           {/* Submit */}
           <button
             type="submit"
-            className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+            className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
           >
             {newFiltergroup._id ? "Update" : "Add"} Filter Group
           </button>
@@ -383,7 +383,7 @@ useEffect(() => {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="bg-blue-500 px-4 py-2 rounded-md text-white"
+                className="bg-red-500 px-4 py-2 rounded-md text-white"
               >
                 Close
               </button>

@@ -14,9 +14,6 @@ export default function AdminLayout({ children }) {
     return <>{children}</>;
   }
 
-    if (pathname === "/admin/unauthorized") {
-    return <>{children}</>;
-  }
   return (
     <AuthProvider>
       <div className="flex min-h-screen bg-gray-100">

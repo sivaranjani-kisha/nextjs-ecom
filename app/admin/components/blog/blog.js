@@ -215,7 +215,7 @@ export default function BlogComponent() {
                 e.stopPropagation();
                 toggleCategory(category._id);
               }}
-              className="mr-2 text-blue-500"
+              className="mr-2 text-red-500"
             >
               {expandedCategories[category._id] ? <FaMinus /> : <FaPlus />}
             </button>
@@ -234,7 +234,7 @@ export default function BlogComponent() {
           <span
             className={`font-semibold ${
               (isEditMode ? editSelectedCategories.has(category._id) : selectedCategories.has(category._id)) 
-                ? "text-blue-500" 
+                ? "text-red-500" 
                 : "text-black"
             }`}
           >
@@ -497,7 +497,7 @@ export default function BlogComponent() {
           </li>
           
           {pageNumbers.map((number) => (
-            <li key={number} className={`page-item ${currentPage === number ? 'bg-blue-500 text-white' : ''}`}>
+            <li key={number} className={`page-item ${currentPage === number ? 'bg-red-500 text-white' : ''}`}>
               <button
                 onClick={() => paginate(number)}
                 className="px-3 py-1.5 border border-gray-300 rounded-md bg-white text-black hover:bg-gray-100"
@@ -541,7 +541,7 @@ export default function BlogComponent() {
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
         </div>
       ) : (
         <div className="bg-white shadow-md rounded-lg p-5 h-[500px] overflow-x-auto">
@@ -561,7 +561,7 @@ export default function BlogComponent() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
                 />
               </div>
             </div>
@@ -575,7 +575,7 @@ export default function BlogComponent() {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm"
               >
                 <option value="">All Statuses</option>
                 <option value="Active">Active</option>
@@ -605,7 +605,7 @@ export default function BlogComponent() {
             <div>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150"
               >
                 + Add Blog
               </button>
@@ -662,7 +662,7 @@ export default function BlogComponent() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => handleEdit(blog)}
-                                className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center hover:bg-blue-200 transition"
+                                className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center hover:bg-red-200 transition"
                                 title="Edit"
                               >
                                 <FaEdit className="mr-1" />
@@ -724,7 +724,7 @@ export default function BlogComponent() {
                     value={blogData.name}
                     onChange={handleInputChange}
                     id="blog_name"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
                     placeholder="Enter Blog Name"
                     required
                   />
@@ -740,8 +740,8 @@ export default function BlogComponent() {
                       file:mr-3 file:py-1 file:px-3
                       file:rounded-md file:border-0
                       file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
+                      file:bg-red-50 file:text-red-700
+                      hover:file:bg-red-100"
                   />
                   {imagePreview && (
                     <img
@@ -761,7 +761,7 @@ export default function BlogComponent() {
                     value={blogData.description}
                     onChange={handleInputChange}
                     id="description"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
                     placeholder="Enter Blog Description"
                     rows={4}
                     required
@@ -788,7 +788,7 @@ export default function BlogComponent() {
                     id="status"
                     value={blogData.status}
                     onChange={handleInputChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -797,7 +797,7 @@ export default function BlogComponent() {
 
                 <button
                   type="submit"
-                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                  className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
                 >
                   Add Blog
                 </button>
@@ -841,7 +841,7 @@ export default function BlogComponent() {
                     value={editBlogData.name}
                     onChange={handleEditInputChange}
                     id="edit_blog_name"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
                     placeholder="Enter Blog Name"
                     required
                   />
@@ -857,8 +857,8 @@ export default function BlogComponent() {
                       file:mr-3 file:py-1 file:px-3
                       file:rounded-md file:border-0
                       file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
+                      file:bg-red-50 file:text-red-700
+                      hover:file:bg-red-100"
                   />
                   {editBlogData.existingImage && !editBlogData.image && (
                     <img 
@@ -885,7 +885,7 @@ export default function BlogComponent() {
                     value={editBlogData.description}
                     onChange={handleEditInputChange}
                     id="edit_description"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
                     placeholder="Enter Blog Description"
                     rows={4}
                     required
@@ -912,7 +912,7 @@ export default function BlogComponent() {
                     id="edit_status"
                     value={editBlogData.status}
                     onChange={handleEditInputChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -921,7 +921,7 @@ export default function BlogComponent() {
 
                 <button
                   type="submit"
-                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                  className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
                 >
                   Update Blog
                 </button>

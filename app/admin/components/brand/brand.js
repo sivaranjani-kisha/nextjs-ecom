@@ -465,7 +465,7 @@ const handleDeleteBrand = async (brandId) => {
             <div className="flex items-center gap-2 justify-center">
               <button
                 onClick={() => handleEditBrand(brand)}
-                className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"
                 title="Edit"
               >
                <FaEdit className="w-3 h-3" />
@@ -520,7 +520,7 @@ const handleDeleteBrand = async (brandId) => {
             <div>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md"
+                className="bg-red-500 text-white px-4 py-2 rounded-md"
               >
                 + Add brand
               </button>
@@ -567,7 +567,7 @@ const handleDeleteBrand = async (brandId) => {
               pageRangeDisplayed={5}
               onPageChange={handlePageClick}
               containerClassName={"flex items-center space-x-1"}
-              activeClassName={"bg-blue-500 text-white"}
+              activeClassName={"bg-red-500 text-white"}
               pageClassName={"page-item"}
               pageLinkClassName={
                 "px-3 py-1.5 border border-gray-300 rounded-md bg-white text-black hover:bg-gray-100"
@@ -626,7 +626,7 @@ const handleDeleteBrand = async (brandId) => {
                     value={newBrand.brand_name}
                     onChange={handleInputChange}
                     id="brand_name"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
                     placeholder="Enter Brand Name"
                     required
                   />
@@ -645,8 +645,8 @@ const handleDeleteBrand = async (brandId) => {
                       file:mr-3 file:py-1 file:px-3
                       file:rounded-md file:border-0
                       file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100
+                      file:bg-red-50 file:text-red-700
+                      hover:file:bg-red-100
                     "
                     required
                   />
@@ -675,7 +675,7 @@ const handleDeleteBrand = async (brandId) => {
                     id="status"
                     value={newBrand.status}
                     onChange={handleInputChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -685,7 +685,7 @@ const handleDeleteBrand = async (brandId) => {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                  className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
                 >
                   Add Brand
                 </button>
@@ -732,7 +732,7 @@ const handleDeleteBrand = async (brandId) => {
                     value={editingBrand.brand_name}
                     onChange={handleEditInputChange}
                     id="edit_brand_name"
-                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
                     placeholder="Enter Brand Name"
                     required
                   />
@@ -751,8 +751,8 @@ const handleDeleteBrand = async (brandId) => {
                       file:mr-3 file:py-1 file:px-3
                       file:rounded-md file:border-0
                       file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100
+                      file:bg-red-50 file:text-red-700
+                      hover:file:bg-red-100
                     "
                   />
                   {imageError && (
@@ -780,7 +780,7 @@ const handleDeleteBrand = async (brandId) => {
                     id="edit_status"
                     value={editingBrand.status}
                     onChange={handleEditInputChange}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -790,7 +790,7 @@ const handleDeleteBrand = async (brandId) => {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 transition"
+                  className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
                 >
                   Update Brand
                 </button>
@@ -863,7 +863,7 @@ const handleDeleteBrand = async (brandId) => {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="bg-blue-500 px-4 py-2 rounded-md text-white"
+                className="bg-red-500 px-4 py-2 rounded-md text-white"
               >
                 Close
               </button>

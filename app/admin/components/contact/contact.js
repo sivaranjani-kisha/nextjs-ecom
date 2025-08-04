@@ -184,7 +184,7 @@ export default function ContactComponent() {
               <input
                 type="text"
                 placeholder="Search contacts..."
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -202,7 +202,7 @@ export default function ContactComponent() {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
               >
                 <option value="All">All Statuses</option>
                 <option value="active">Active</option>
@@ -232,7 +232,7 @@ export default function ContactComponent() {
             {/* Add Contact Button (if needed) */}
             {/* <div className="flex justify-end">
               <button
-                className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
+                className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition"
                 onClick={() => {
                   setContactToEdit({
                     email_address: "",
@@ -257,8 +257,9 @@ export default function ContactComponent() {
               <table className="w-full border border-gray-300">
                 <thead>
                   <tr className="bg-gray-200 text-center">
-                    <th className="p-2">Email Address</th>
+                   
                     <th className="p-2">Name</th>
+                     <th className="p-2">Subject</th>
                     <th className="p-2">Mobile Number</th>
                     <th className="p-2">Message</th>
                     <th className="p-2">Status</th>
@@ -269,8 +270,9 @@ export default function ContactComponent() {
                 <tbody>
                   {currentContacts.map((contact) => (
                     <tr key={contact._id} className="text-center border-b">
-                      <td className="p-2 font-bold">{contact.email_address || '-'}</td>
+                      {/* <td className="p-2 font-bold">{contact.email_address || '-'}</td> */}
                       <td className="p-2">{contact.name || '-'}</td>
+                      <td className="p-2">{contact.subject || '-'}</td>
                       <td className="p-2">{contact.mobile_number || '-'}</td>
                       <td className="p-2">{contact.message || '-'}</td>
                       <td className="p-2">
@@ -290,7 +292,7 @@ export default function ContactComponent() {
                               setContactToEdit(contact);
                               setShowEditModal(true);
                             }}
-                            className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                            className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"
                             title="Edit"
                           >
                             <Icon icon="mingcute:edit-line" />
@@ -335,7 +337,7 @@ export default function ContactComponent() {
                       onClick={() => paginate(i + 1)}
                       className={`px-3 py-1.5 border rounded-md ${
                         currentPage === i + 1
-                          ? "bg-blue-500 text-white"
+                          ? "bg-red-500 text-white"
                           : "text-black bg-white hover:bg-gray-100"
                       }`}
                     >
@@ -472,7 +474,7 @@ export default function ContactComponent() {
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 px-4 py-2 rounded-md text-white"
+                  className="bg-red-500 px-4 py-2 rounded-md text-white"
                 >
                   {contactToEdit?._id ? "Save" : "Add"}
                 </button>

@@ -632,7 +632,7 @@ const handleProductClick = (product) => {
                                       {/* Bottom Buttons */}
                                       <div className="mt-auto flex items-center justify-between gap-2">
                                         <Addtocart
-                                          productId={product._id}
+                                          productId={product._id} stockQuantity={product.quantity}
                                           className="w-full text-xs sm:text-sm py-1.5"
                                         />
                                         <a

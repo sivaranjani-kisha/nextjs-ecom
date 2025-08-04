@@ -202,7 +202,7 @@ export default function OrderComponent() {
               setCurrentPage(1); // Reset to first page when tab changes
             }}
             className={`py-3 px-6 text-lg font-semibold rounded-t-lg ${
-              activeTab === tab.id ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              activeTab === tab.id ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             {tab.label}
@@ -217,7 +217,7 @@ export default function OrderComponent() {
           placeholder="Search Order..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="border-2 border-gray-200 px-4 py-2 rounded-lg w-64 focus:outline-none focus:border-blue-500"
+          className="border-2 border-gray-200 px-4 py-2 rounded-lg w-64 focus:outline-none focus:border-red-500"
         />
       </div>
 
@@ -317,7 +317,7 @@ export default function OrderComponent() {
                   <button
                     onClick={() => setCurrentPage(index + 1)}
                     className={`page-link px-3 py-2 border rounded mx-1 ${
-                      currentPage === index + 1 ? "bg-blue-600 text-white" : "bg-gray-100"
+                      currentPage === index + 1 ? "bg-red-600 text-white" : "bg-gray-100"
                     }`}
                     role="button"
                     aria-current={currentPage === index + 1 ? "page" : undefined}
@@ -391,7 +391,7 @@ export default function OrderComponent() {
               <button onClick={() => handleConfirmation(false)} className="bg-gray-300 px-4 py-2 rounded-md">
                 No
               </button>
-              <button onClick={() => handleConfirmation(true)} className="bg-blue-500 text-white px-4 py-2 rounded-md">
+              <button onClick={() => handleConfirmation(true)} className="bg-red-500 text-white px-4 py-2 rounded-md">
                 Yes
               </button>
             </div>

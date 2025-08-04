@@ -188,7 +188,7 @@ useEffect(() => {
 
             {/* Cart and Share Buttons */}
             <div className="mt-3 flex items-center justify-between gap-2">
-              <Addtocart 
+              <Addtocart stockQuantity={product.quantity}
                 productId={product._id} 
                 className="flex-1 py-2 text-xs" 
               />

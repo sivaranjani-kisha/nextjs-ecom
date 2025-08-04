@@ -227,7 +227,7 @@ export default function UserComponent() {
               onClick={() => paginate(i + 1)}
               className={`px-3 py-1.5 border border-gray-300 rounded-md ${
                 currentPage === i + 1
-                  ? "bg-blue-500 text-white"
+                  ? "bg-red-500 text-white"
                   : "text-black bg-white hover:bg-gray-100"
               }`}
               aria-label={`Page ${i + 1}`}
@@ -280,7 +280,7 @@ export default function UserComponent() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -293,7 +293,7 @@ export default function UserComponent() {
                     setStatusFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="All">All Statuses</option>
                   <option value="Active">Active</option>
@@ -318,7 +318,7 @@ export default function UserComponent() {
                     resetForm();
                     setIsModalOpen(true);
                   }}
-                  className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
+                  className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition"
                 >
                   + Add User
                 </button>
@@ -359,7 +359,7 @@ export default function UserComponent() {
                         <div className="flex items-center gap-2 justify-center">
                           <button
                             onClick={() => handleEdit(user)}
-                            className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+                            className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"
                             title="Edit"
                           >
                             <Icon icon="mingcute:edit-line" />
@@ -417,7 +417,7 @@ export default function UserComponent() {
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
-              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded w-full mt-2">
+              <button type="submit" className="bg-red-500 text-white px-4 py-2 rounded w-full mt-2">
                 {submitButtonText}
               </button>
             </form>

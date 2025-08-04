@@ -54,7 +54,7 @@ const ConfirmModal = ({ show, onClose, onConfirm }) => (
               Cancel
             </button>
             <button
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               onClick={onConfirm}
             >
               Yes, Delete
@@ -143,8 +143,19 @@ export default function CartComponent() {
         fetchCartData();
     }, [router]);
 
-    const updateQuantity = async (productId, newQuantity) => {
+    const updateQuantity = async (productId, newQuantity,original_quantity = null) => {
+      console.log(productId, newQuantity,original_quantity);
+      alert(productId, newQuantity,original_quantity);
         try {
+          if (original_quantity !== null) {
+            if (newQuantity > original_quantity) {
+              setSuccessMessage("Requested quantity exceeds available stock.");
+              setShowSuccessModal(true);
+              return;
+            }
+          }
+
+
             const token = localStorage.getItem('token');
             const response = await fetch('/api/cart', {
                 method: 'PUT',
@@ -166,6 +177,7 @@ export default function CartComponent() {
             // Show success message
             setSuccessMessage("Quantity updated successfully");
             setShowSuccessModal(true);
+          
         } catch (err) {
             console.error('Update quantity error:', err);
             setError(err.message);
@@ -223,8 +235,8 @@ export default function CartComponent() {
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center p-6 bg-red-50 rounded-lg max-w-md mx-4">
-                    <p className="text-red-500 font-medium">{error}</p>
+                <div className="text-center p-6 bg-blue-50 rounded-lg max-w-md mx-4">
+                    <p className="text-blue-500 font-medium">{error}</p>
                     <button 
                         onClick={() => window.location.reload()}
                         className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
@@ -279,7 +291,7 @@ export default function CartComponent() {
                 <div className="flex items-center space-x-1 text-sm">
                     <span className="text-gray-600">🏠 Home</span>
                     <span className="text-gray-500">›</span>
-                    <span className="text-orange-500 font-semibold">Product Cart</span>
+                    <span className="text-blue-500 font-semibold">Product Cart</span>
                 </div>
             </div>
 
@@ -305,7 +317,7 @@ export default function CartComponent() {
                                     <tr className="border-b align-top">
                                         <td className="py-4 px-4 text-center">
                                         <button
-                                            className="text-red-500 hover:text-red-600 font-medium"
+                                            className="text-blue-500 hover:text-blue-600 font-medium"
                                             onClick={() => confirmRemoveItem(item.productId)}
                                         >
                                             ✖
@@ -323,7 +335,7 @@ export default function CartComponent() {
   {/* Name with tooltip */}
   <div className="relative group w-fit">
     <Link href={`/product/${slugify(item.name)}`}>
-      <p className="font-semibold hover:text-orange-500 transition-colors duration-300">
+      <p className="font-semibold hover:text-blue-500 transition-colors duration-300">
         {item.name.length > 50 ? item.name.slice(0, 50) + "..." : item.name}
       </p>
     </Link>
@@ -341,18 +353,21 @@ export default function CartComponent() {
                                         <div className="flex justify-center items-center gap-2 mb-1">
                                             <button
                                             className="px-2 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-                                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                                            onClick={() => updateQuantity(item.productId, item.quantity - 1,null)}
                                             disabled={item.quantity <= 1}
                                             >
                                             −
                                             </button>
                                             <span>{item.quantity}</span>
+                                           
                                             <button
-                                            className="px-2 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-                                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                                            className="px-2 py-1 border rounded bg-gray-200 hover:bg-gray-300  "
+                                            disabled={item.quantity >= item.original_quantity}
+                                            onClick={() => updateQuantity(item.productId, item.quantity + 1,item.original_quantity)}
                                             >
                                             +
                                             </button>
+                                           
                                         </div>
                                         </td>
                                         <td className="py-4 px-4 text-center font-semibold align-top">
@@ -420,7 +435,7 @@ export default function CartComponent() {
           />
           <div>
             <Link href={`/product/${item.name}`}>
-              <p className="font-semibold hover:text-orange-500 transition-colors duration-300">
+              <p className="font-semibold hover:text-blue-500 transition-colors duration-300">
                 {item.name}
               </p>
             </Link>
@@ -428,7 +443,7 @@ export default function CartComponent() {
           </div>
         </div>
         <button
-          className="text-red-500 hover:text-red-600"
+          className="text-blue-500 hover:text-blue-600"
           onClick={() => confirmRemoveItem(item.productId)}
         >
           ✖
@@ -440,7 +455,7 @@ export default function CartComponent() {
         <div className="flex items-center gap-2">
           <button
             className="px-3 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+            onClick={() => updateQuantity(item.productId, item.quantity - 1,null)}
             disabled={item.quantity <= 1}
           >
             −
@@ -448,7 +463,8 @@ export default function CartComponent() {
           <span>{item.quantity}</span>
           <button
             className="px-3 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+            onClick={() => updateQuantity(item.productId, item.quantity + 1,item.original_quantity)}
+             disabled={item.quantity >= item.original_quantity}
           >
             +
           </button>
@@ -541,10 +557,10 @@ export default function CartComponent() {
                
                
                  <button
-                   className="mt-4 bg-orange-500 text-white w-full py-3 rounded-md hover:bg-orange-600 transition-all"
+                   className="mt-4 bg-blue-500 text-white w-full py-3 rounded-md hover:bg-blue-600 transition-all"
                    onClick={() => router.push('/checkout')}
                  >
-                   Proceed to Checkoutt
+                   Proceed to Checkout
                  </button>
                </div>
             </div>

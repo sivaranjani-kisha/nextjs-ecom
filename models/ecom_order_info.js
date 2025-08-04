@@ -9,7 +9,8 @@ const OrderSchema = new mongoose.Schema(
   order_item: [{
     id: Number,
     name: String,
-    price: Number
+    price: Number,
+    item_code : String,
   }],
   order_details: [{
     item_code: String,
@@ -29,24 +30,38 @@ const OrderSchema = new mongoose.Schema(
   order_deliveryaddress:{ type: String},
   payment_method:{ type: String},
   payment_type:{ type: String},
-  delivery_type:{ type: String},
+  delivery_type: { 
+      type: String,
+      enum: ["home", "store_pickup"],
+      default: "standard"
+    },
+    pickup_store: { type: String },  // Store name for pickup
+    store_id: { type: String },   
+  //delivery_type:{ type: String},
   payment_id:{ type: String},
   order_number:{ type: String, required: true},
   user_adddeliveryid:{ type: String},
   order_status: {
     type: String,
-    enum: ["pending", "cancelled", "shipped"],
+    enum: ["pending", "cancelled", "shipped","Order Placed","Failure"],
     default: "pending",
   },
   payment_status: {
     type: String,
     enum: ["paid", "pending"],
     default: "unpaid",
-  }
+  },
+  api_status: {
+    type: String,
+  },
+  api_reason: {
+    type: String,
+  },
 },
+
   { timestamps: true }
 );
 
-export default mongoose.models.ecom_order_infos || mongoose.model("ecom_order_infos", OrderSchema);
+export default mongoose.models.ecom_order_info || mongoose.model("ecom_order_info", OrderSchema);
 
 

@@ -15,8 +15,9 @@ const steps = [
   { title: "Others" },
 ];
 
-export default function AddProductPage({ mode = "add", productData = null, productId = null,onSuccess }) {
+export default function AddProductPage({ mode = "add", productData = null, productId = null,onSuccess, initialProductData}) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [jsonHighlightsInput, setJsonHighlightsInput] = useState('');
   const [product, setProduct] = useState({
     name: "",
     slug: "",
@@ -49,7 +50,7 @@ export default function AddProductPage({ mode = "add", productData = null, produ
     featured_products:[],
     warranty: "",
     extended_warranty: "",
-    product_highlights: [''],
+    product_highlights: [],
   });
 
     const [variant, setVariant] = useState([{
@@ -72,6 +73,24 @@ export default function AddProductPage({ mode = "add", productData = null, produ
     { value: "Best Seller", label: "Best Seller" },
     { value: "Limited Edition", label: "Limited Edition" },
   ]);
+  const applyJsonHighlights = () => {
+  try {
+    const parsedHighlights = JSON.parse(jsonHighlightsInput);
+    
+    // Check if the parsed data is an object.
+    if (typeof parsedHighlights === 'object' && parsedHighlights !== null) {
+      setProduct({
+        ...product,
+        product_highlights: parsedHighlights, // Set the parsed object as the new highlights
+      });
+      alert('JSON highlights applied successfully!');
+    } else {
+      alert('Please enter a valid JSON object.');
+    }
+  } catch (error) {
+    alert(`Invalid JSON format: ${error.message}`);
+  }
+};
   const [selectedCategories, setSelectedCategories] = useState(new Set());
   const [categories, setCategories] = useState([]);
   const [brand, setBrand] = useState([]);
@@ -133,40 +152,55 @@ export default function AddProductPage({ mode = "add", productData = null, produ
     }
   };
 
-    useEffect(() => {
-     if (mode === "edit" && productData) {
-      console.log(productData);
-    setProduct(productData);
+   useEffect(() => {
+    if (mode === "edit" && productData) {
+        console.log(productData);
 
+        // This code sets the state for the 'product' object
+        setProduct(prevProduct => ({
+            ...productData,
+            // Ensure product_highlights is an array when setting productData
+            product_highlights: Array.isArray(productData.product_highlights) 
+                ? productData.product_highlights 
+                : [],
+            // Ensure filters are in the correct format for react-select if they are just IDs
+            filters: productData.filterDetails && productData.filterDetails.length > 0
+                ? productData.filterDetails.map(item => ({ value: item._id, label: item.filter_name }))
+                : [],
+            hasVariants: productData.hasVariants || false, // Ensure hasVariants is a boolean
+            variants: productData.variants || [], // Ensure variants is an array
+            images: productData.images || ['', '', '', ''], // Ensure images is an array with placeholders
+            files: productData.files || [],
+            overviewImage: productData.overviewImage || [null],
+            overviewImageFile: productData.overviewImageFile || [null],
+            featured_products: productData.featured_products || [],
+        }));
 
-    if (productData.filterDetails && productData.filterDetails.length > 0) {
-      const filters = productData.filterDetails.map(item => ({
-        name: item.filter_name,
-        label: item.filter_name
-      }));
-
-      setProduct(prevProduct => ({
-        ...prevProduct,
-        filters: filters
-      }));
+        // This code now correctly runs after the setProduct call, setting the JSON input field
+        if (!Array.isArray(productData.product_highlights) && typeof productData.product_highlights === 'object') {
+            setJsonHighlightsInput(JSON.stringify(productData.product_highlights, null, 2));
+        }
     }
-    if (productData.hasVariants && Array.isArray(productData.variants)) {
-      setVariant(productData.variants);
-
-      // Initialize variantImages with placeholder for File objects
-      const images = productData.variants.map(v => ({
-        images: (v.images || []).map(img => img)  // keep original image names
-      }));
-      setVariantImages(images);
-    }
-  }
-  }, [mode, productData]);
-  useEffect(() => {
+}, [mode, productData, setJsonHighlightsInput]);
+useEffect(() => {
     fetchCategories();
     fetchFilter();
     fetchBrand();
     fetchallproducts();
   }, []);
+
+
+  useEffect(() => {
+    if (initialProductData) {
+      setProduct({
+        ...initialProductData,
+        // Ensure product_highlights is an array, even if it's null/undefined from backend
+        product_highlights: initialProductData.product_highlights || [],
+        // Ensure featured_products is an array or object, depending on your schema
+        featured_products: initialProductData.featured_products || [], // Adjust based on actual data type
+      });
+    }
+  }, [initialProductData]);
 
    const handleVariantFieldChange1 = (index, field, value) => {
   const updatedVariants = variant.map((v, i) =>
@@ -877,6 +911,7 @@ setProduct(prev => ({
    }
 
   const handleFilterChange = (selectedOptions) => {
+    console.log(selectedOptions);
     setProduct((prev) => ({
       ...prev,
       filters: selectedOptions,
@@ -884,25 +919,38 @@ setProduct(prev => ({
   };
 
   const handleHighlightChange = (index, value) => {
-    const updatedHighlights = [...product.product_highlights];
+  setProduct((prevProduct) => {
+    const updatedHighlights = [...prevProduct.product_highlights];
     updatedHighlights[index] = value;
-    setProduct({ ...product, product_highlights: updatedHighlights });
-  };
+    return {
+      ...prevProduct,
+      product_highlights: updatedHighlights,
+    };
+  });
+};
   
   const addHighlight = () => {
-    setProduct({ ...product, product_highlights: [...product.product_highlights, ''] });
-  };
+  setProduct((prevProduct) => ({
+    ...prevProduct,
+    product_highlights: [...prevProduct.product_highlights, ""], // Add an empty string for a new highlight input
+  }));
+};
   
-  const removeHighlight = (index) => {
-    const updatedHighlights = product.product_highlights.filter((_, i) => i !== index);
-    setProduct({ ...product, product_highlights: updatedHighlights });
-  };
-
+  const removeHighlight = (indexToRemove) => {
+  setProduct((prevProduct) => ({
+    ...prevProduct,
+    product_highlights: prevProduct.product_highlights.filter(
+      (_, index) => index !== indexToRemove
+    ),
+  }));
+};
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const formData = new FormData();
       // ✅ Clean the product object before sending
+      console.log(product.filters.map(f => f.value));
+      
     const cleanedProduct = {
       ...product,
       filters: product.filters.map(f => f.value), // ✅ FIXED here
@@ -1124,7 +1172,7 @@ formData.append("variant", JSON.stringify(variantsWithImages));
   const validateStep = (step) => {
     switch (step) {
       case 1:
-        if (!product.name || !product.item_code || !product.price || !product.special_price || !product.quantity || !selectedCategory || !brand) {
+        if (!product.name || !product.item_code || !product.price || !product.special_price || product.quantity === "" || product.quantity === null || product.quantity === undefined || !selectedCategory || !brand) {
           return "Please fill in all required fields: Product Name, Item Code, ,Category,Price,Special Price and brand.";
         }
         break;
@@ -1202,18 +1250,18 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                 <input
                   type="text"
                   name="name"
-                  value={product.name}
+                  value={product.name || ''}
                   onChange={handleChange}
                  className={`w-full border p-2 rounded ${
-                product.name.length < 60 && product.name.length > 0 ? "border-red-500" : ""
+                product.name.length < 20 && product.name.length > 0 ? "border-red-500" : ""
               }`}
               required
-              minLength={60}  // HTML5 validation (but may not show until form submission)
+              minLength={20}  // HTML5 validation (but may not show until form submission)
             />
-             {/* Show error message if less than 60 chars */}
-                        {product.name.length > 0 && product.name.length < 60 && (
+             {/* Show error message if less than 20 chars */}
+                        {product.name.length > 0 && product.name.length < 20 && (
                           <p className="text-red-500 text-xs mt-1">
-                            Minimum 60 characters required (currently: {product.name.length})
+                            Minimum 20 characters required (currently: {product.name.length})
                           </p>
                         )}
               </div>
@@ -1375,7 +1423,7 @@ formData.append("variant", JSON.stringify(variantsWithImages));
         
               <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea name="description" value={product.description} onChange={handleChange} className="w-full border p-2 rounded" rows="4"></textarea>
+                <textarea name="description" value={product.description || ''} onChange={handleChange} className="w-full border p-2 rounded" rows="4"></textarea>
               </div>
             <div className="space-y-6">
               {/* Overview Image */}
@@ -1473,7 +1521,7 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                 <label className="block text-sm font-medium text-gray-700 mb-1 ">
                 Overview Description
                 </label>
-                  <textarea name="overviewdescription" value={product.overviewdescription} onChange={handleChange} className="w-full border p-2 pt-0 rounded" rows="4"></textarea>
+                  <textarea name="overviewdescription" value={product.overviewdescription || ''}onChange={handleChange} className="w-full border p-2 pt-0 rounded" rows="4"></textarea>
               </div>
             </div>
              
@@ -1540,7 +1588,7 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                                   <input
                                     type="text"
                                     placeholder="Attribute name"
-                                    value={varItem.variant_attribute_name}
+                                    value={varItem.variant_attribute_name || ''}
                                     onChange={(e) => handleVariantFieldChange1(index, 'variant_attribute_name', e.target.value)}
                                     className="border p-2 rounded flex-1"
                                   />
@@ -1549,14 +1597,14 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                                 <input
                                   type="text"
                                   placeholder="Option"
-                                  value={varItem.options}
+                                  value={varItem.options || ''}
                                   onChange={(e) => handleVariantFieldChange1(index, 'options', e.target.value)}
                                   className="w-full border p-2 rounded mb-2"
                                 />
                                 <input
                                   type="text"
                                   placeholder="Item Code"
-                                  value={varItem.item_code}
+                                  value={varItem.item_code|| ''}
                                   onChange={(e) => handleVariantFieldChange1(index, 'item_code', e.target.value)}
                                   className="w-full border p-2 rounded mb-2"
                                 />
@@ -1564,14 +1612,14 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                                   <input
                                     type="number"
                                     placeholder="Price"
-                                    value={varItem.price}
+                                    value={varItem.price || ''}
                                     onChange={(e) => handleVariantFieldChange1(index, 'price', e.target.value)}
                                     className="w-full border p-2 rounded mb-2"
                                   />
                                   <input
                                     type="number"
                                     placeholder="Special Price"
-                                    value={varItem.special_price}
+                                    value={varItem.special_price || ''}
                                     onChange={(e) => handleVariantFieldChange1(index, 'special_price', e.target.value)}
                                     className="w-full border p-2 rounded mb-2"
                                   />
@@ -1579,7 +1627,7 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                                 <input
                                   type="number"
                                   placeholder="Quantity"
-                                  value={varItem.quantity}
+                                  value={varItem.quantity || ''}
                                   onChange={(e) => handleVariantFieldChange1(index, 'quantity', e.target.value)}
                                   className="w-full border p-2 rounded mb-2"
                                 />
@@ -1738,13 +1786,16 @@ formData.append("variant", JSON.stringify(variantsWithImages));
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Key Specifications</label>
-              <textarea name="key_specifications" value={product.key_specifications} onChange={handleChange} className="w-full border p-2 rounded" rows="3"></textarea>
+              <textarea name="key_specifications" value={product.key_specifications|| ''} onChange={handleChange} className="w-full border p-2 rounded" rows="3"></textarea>
             </div>
 
-            <div>
+            
+
+
+           <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Highlights</label>
 
-              {product.product_highlights.map((highlight, index) => (
+              {(product.product_highlights && product.product_highlights.length > 0 ? product.product_highlights : [""]).map((highlight, index) => (
                 <div key={index} className="flex space-x-2 mb-2">
                   <input
                     type="text"
@@ -1760,9 +1811,11 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                       </button>
                     </div>
                     <div>
-                      <button type="button" onClick={() => removeHighlight(index)} className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/></svg>
-                      </button>
+                       {product.product_highlights && product.product_highlights.length > 0 && (
+         <button type="button" onClick={() => removeHighlight(index)} className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+           <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/></svg>
+         </button>
+      )}
                     </div>
                   </div>
                 </div>
@@ -1793,7 +1846,7 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                 type="number"
                 name= "warranty"
                 placeholder="Warranty"
-                value={product.warranty}
+                value={product.warranty || ''}
                 onChange={handleChange}
                 className="w-full border p-2 rounded mb-2"
               />
@@ -1805,7 +1858,7 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                 type="number"
                 name="extended_warranty"
                 placeholder="Extended Warranty"
-                value={product.extended_warranty}
+                value={product.extended_warranty || ''}
                 onChange={handleChange}
                 className="w-full border p-2 rounded mb-2"
               />
@@ -1814,7 +1867,7 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   name="status"
-                  value={product.status}
+                  value={product.status|| 'Active'}
                   onChange={handleChange}
                   className="w-full border p-2 rounded"
                 >

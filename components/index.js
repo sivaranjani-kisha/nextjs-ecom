@@ -1222,7 +1222,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                 </div>
 
                                 <div className="mt-3 flex items-center justify-between gap-2">
-                                  <Addtocart productId={product._id} className="flex-1" />
+                                  <Addtocart productId={product._id} stockQuantity={product.quantity} className="flex-1" />
                                   <a 
                                     href={`https://wa.me/?text=Check this out: ${product.name}`} 
                                     target="_blank" 
