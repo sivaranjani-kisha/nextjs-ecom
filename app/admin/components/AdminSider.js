@@ -49,6 +49,7 @@ export default function AdminSider({ collapsed }) {
     { icon: 'mdi:note-text-outline', label: 'Blog', link: 'blog' },
     { icon: 'mdi:account-outline', label: 'User', link: 'user' },
     { icon: 'mdi:phone-outline', label: 'Contact', link: 'contact' },
+    { icon: 'mdi:phone-outline', label: 'Setting', link: 'settings' },
      {
   icon: 'mdi:map-marker-outline',
   label: 'Store Location',
