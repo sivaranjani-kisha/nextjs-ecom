@@ -81,7 +81,7 @@ export async function POST(req) {
       overviewZipInstance.extractAllTo(overviewPath, true);
     }
 console.log("products.length ",products.length );
-const validProducts = products.slice(1).filter(row => row && row.length > 0 && row[0]); // Skip header and empty rows
+const validProducts = products.slice(0).filter(row => row && row.length > 0 && row[0]); // Skip header and empty rows
 console.log("Actual product count:", validProducts.length);
     if (!validProducts || validProducts.length === 0) {
       return NextResponse.json(
@@ -159,6 +159,10 @@ console.log("Actual product count:", validProducts.length);
         if (row[20] && typeof row[20] === 'string') {
           highlights = row[20].split(',').map(item => item.trim()).filter(Boolean);
         }
+      let key_specifications = [];
+      if(row[12] && typeof row[12] === 'string'){
+        key_specifications = row[12].split(',');
+      }
       // Prepare product data
       const productData = {
         item_code: row[0],
@@ -170,7 +174,7 @@ console.log("Actual product count:", validProducts.length);
         price: row[9],
         special_price: row[10],
         description: row[11],
-        key_specifications: row[12],
+        key_specifications: key_specifications,
         images: images,
         overview_image: overviewImage,
         overview_description: row[17],

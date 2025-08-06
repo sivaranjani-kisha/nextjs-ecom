@@ -13,7 +13,7 @@ const ProductSchema = new mongoose.Schema({
   sub_category: String,
   brand: String,
   category: String,
-  key_specifications : String,
+  key_specifications : { type: [String], default: [] },
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   stock_status: { type: String, enum: ["In Stock", "Out of Stock"], default: "In Stock" },
   hasVariants: { type: Boolean, default: false },

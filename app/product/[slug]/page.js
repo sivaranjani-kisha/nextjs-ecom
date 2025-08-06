@@ -639,7 +639,7 @@ useEffect(() => {
 
             {/* Product feature section */}
 
-            <div className="mt-4 bg-gray-50 p-4 rounded-md">
+             <div className="mt-4 bg-gray-50 p-4 rounded-md">
               <div 
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => setShowFeatures(!showFeatures)}
@@ -654,20 +654,51 @@ useEffect(() => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
-    
-                {showFeatures && (
-                <div className="mt-3">
-                  <div className="flex flex-row gap-4">
-                      {/* Product Description */}
-                      <p className="text-gray-700 text-sm text-justify">
-                        {product.key_specifications ? 
-                          product.key_specifications.split(' ').slice(0, 50).join(' ') + (product.description.split(' ').length > 50 ? '...' : '') 
-                          : "No Features available"
-                        }
-                      </p>
-                    </div>
-                </div>
-              )}
+
+              {showFeatures && (
+  <div className="mt-3">
+    {
+      (() => {
+        let features = [];
+
+        // Parse key_specifications based on its type
+        if (typeof product.key_specifications === 'string') {
+          try {
+            const parsed = JSON.parse(product.key_specifications);
+            if (Array.isArray(parsed)) {
+              features = parsed;
+            } else {
+              features = [product.key_specifications];
+            }
+          } catch (error) {
+            features = [product.key_specifications];
+          }
+        } else if (Array.isArray(product.key_specifications)) {
+          features = product.key_specifications;
+        }
+
+        return features.length > 0 ? (
+          <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+            {features.map((feature, index) => {
+              const cleanedFeature = feature
+                .replace(/[{}\[\]"]/g, '') // Remove {}, [], and " characters
+                .trim();
+
+              return (
+                <li key={index}>
+                  {cleanedFeature.charAt(0).toUpperCase() + cleanedFeature.slice(1)}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <span className="text-sm text-gray-500">No features available.</span>
+        );
+      })()
+    }
+  </div>
+)}
+
             </div>
 
             <div className="border-b border-gray-400 mt-2"></div>
