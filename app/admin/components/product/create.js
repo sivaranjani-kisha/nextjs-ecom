@@ -313,23 +313,29 @@ setProduct(prev => ({
     // };
   
 
-    const handleImageChange = (index, e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-    
-      const newImages = [...product.images];
-      const newFiles = [...product.files];
-    
-      // Create preview URL
-      newImages[index] = URL.createObjectURL(file);
-      newFiles[index] = file;
-    
-      setProduct(prev => ({
-        ...prev,
-        images: newImages,
-        files: newFiles
-      }));
+   const handleImageChange = (index, e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  setProduct(prev => {
+    const newImages = [...prev.images];
+    const newFiles = [...prev.files];
+
+    // Ensure the array is long enough
+    while (newImages.length <= index) newImages.push(null);
+    while (newFiles.length <= index) newFiles.push(null);
+
+    newImages[index] = URL.createObjectURL(file);
+    newFiles[index] = file;
+
+    return {
+      ...prev,
+      images: newImages,
+      files: newFiles
     };
+  });
+};
+
     
     const handleRemoveImage1 = (index) => {
       const newImages = [...product.images];

@@ -48,7 +48,8 @@ export async function POST(req) {
          const existingBrand = await Brand.findOne({ brand_name: item.brand });
           const brand_id = existingBrand?._id?.toString() || null;
           let Status = "Active";
-            if (item.Status === "InActive") {
+          let item_Status = item.status.toLowerCase();
+            if (item_Status == "inactive") {
                 Status = "Inactive";
             }
         if (existingProduct) {

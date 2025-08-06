@@ -85,21 +85,25 @@ console.log(imageFiles);
       productData.stock_status = "Out of Stock";
     }
 
-    if(savedImages.length == 0){
-      savedImages = productData.images;
-    }
-    const updatedProduct = await Product.findByIdAndUpdate(
-      productId,
-      {
-        ...productData,
-        category,
-         images: savedImages,
-    overview_image: savedOverviewImages,
-      },
-      { new: true }
-      
-    );
+   let finalImages = [...(productData.images || [])];
 
+if (savedImages.length > 0) {
+  // Replace only the image indices that had new uploads
+  savedImages.forEach((img, idx) => {
+    finalImages[idx] = img; // Replace the image at that index
+  });
+}
+
+const updatedProduct = await Product.findByIdAndUpdate(
+  productId,
+  {
+    ...productData,
+    category,
+    images: finalImages,
+    overview_image: savedOverviewImages.length > 0 ? savedOverviewImages : productData.overview_image,
+  },
+  { new: true }
+);
 
 const filterIds = (Filters ?? []).filter(Boolean); // Filters = array of strings
 
