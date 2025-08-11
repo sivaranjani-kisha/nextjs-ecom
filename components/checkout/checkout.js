@@ -167,7 +167,7 @@ export default function CheckoutPage() {
   const [authError, setAuthError] = useState('');
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-
+const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
     const fetchStores = async () => {
       try {
@@ -196,7 +196,12 @@ export default function CheckoutPage() {
     try {
       const decoded = jwtDecode(token);
       const userId = decoded.userId;
-
+       const checkoutData = localStorage.getItem('checkoutData');
+        console.log(checkoutData);
+        if (checkoutData) {
+          const parsedData = JSON.parse(checkoutData);
+          setCartItems(parsedData.cart.items);
+        }else{
       // Fetch cart data
       const cartResponse = await fetch('/api/cart', {
         headers: {
@@ -210,7 +215,7 @@ export default function CheckoutPage() {
 
       const cartData = await cartResponse.json();
       setCartItems(cartData.cart.items);
-
+    }
       // Fetch user address
       const addressResponse = await fetch(`/api/useraddress?user_id=${userId}`);
       if (!addressResponse.ok) {
@@ -275,82 +280,169 @@ export default function CheckoutPage() {
       throw new Error('Failed to create Razorpay order');
     }
   };
-
-  const handleOnlinePayment = async (totalAmount) => {
-    try {
-      const razorpayLoaded = await initializeRazorpay();
-      if (!razorpayLoaded) {
-        toast.error('Razorpay SDK failed to load');
-        return;
-      }
-  
-      const orderResponse = await createRazorpayOrder(totalAmount);
-      const { order } = orderResponse;
-  
-      return new Promise((resolve, reject) => {
-        const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_TEST_KEY,
-          amount: order.amount,
-          currency: "INR",
-          name: "BEA",
-          description: "Product Purchase",
-          order_id: order.id,
-          handler: async function (response) {
-            try {
-              const verificationRes = await fetch('/api/verify-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature
-                })
-              });
-  
-              if (verificationRes.ok) {
-                resolve({
-                  paymentId: response.razorpay_payment_id,
-                  status: "paid",
-                  mode: "online"
-                });
-              } else {
-                reject(new Error('Payment verification failed'));
-              }
-            } catch (err) {
-              reject(err);
-            }
-          },
-          prefill: {
-            name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
-            contact: formData.phonenumber
-          },
-          theme: {
-            color: "#F37254"
-          }
-        };
-  
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
-  
-        razorpay.on('payment.failed', function (response) {
-          reject(new Error(response.error.description));
-        });
-      });
-    } catch (error) {
-      console.error('Razorpay error:', error);
-      toast.error('Payment processing failed');
-      throw error;
+const handleOnlinePayment = async (totalAmount) => {
+  try {
+    const razorpayLoaded = await initializeRazorpay();
+    if (!razorpayLoaded) {
+      toast.error('Razorpay SDK failed to load');
+      setIsSubmitting(false);
+      return;
     }
-  };
 
+    const orderResponse = await createRazorpayOrder(totalAmount);
+    const { order } = orderResponse;
+
+    return new Promise((resolve, reject) => {
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_TEST_KEY,
+        amount: order.amount,
+        currency: "INR",
+        name: "BEA",
+        description: "Product Purchase",
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            const verificationRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+
+            if (verificationRes.ok) {
+              resolve({
+                paymentId: response.razorpay_payment_id,
+                status: "paid",
+                mode: "online"
+              });
+            } else {
+              reject(new Error('Payment verification failed'));
+            }
+          } catch (err) {
+            reject(err);
+          }
+        },
+        prefill: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          contact: formData.phonenumber
+        },
+        theme: {
+          color: "#F37254"
+        },
+        modal: {
+          ondismiss: () => {
+            setIsSubmitting(false);
+            reject(new Error('Payment window closed'));
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+
+      razorpay.on('payment.failed', function (response) {
+        setIsSubmitting(false);
+        reject(new Error(response.error.description));
+      });
+    });
+  } catch (error) {
+    console.error('Razorpay error:', error);
+    toast.error('Payment processing failed');
+    setIsSubmitting(false);
+    throw error;
+  }
+};
+  // const handleOnlinePayment = async (totalAmount) => {
+  //   try {
+  //     const razorpayLoaded = await initializeRazorpay();
+  //     if (!razorpayLoaded) {
+  //       toast.error('Razorpay SDK failed to load');
+  //       setIsSubmitting(false);
+  //       return;
+  //     }
+  
+  //     const orderResponse = await createRazorpayOrder(totalAmount);
+  //     const { order } = orderResponse;
+  
+  //     return new Promise((resolve, reject) => {
+  //       const options = {
+  //         key: process.env.NEXT_PUBLIC_RAZORPAY_TEST_KEY,
+  //         amount: order.amount,
+  //         currency: "INR",
+  //         name: "BEA",
+  //         description: "Product Purchase",
+  //         order_id: order.id,
+  //         handler: async function (response) {
+  //           try {
+  //             const verificationRes = await fetch('/api/verify-payment', {
+  //               method: 'POST',
+  //               headers: { 'Content-Type': 'application/json' },
+  //               body: JSON.stringify({
+  //                 razorpay_payment_id: response.razorpay_payment_id,
+  //                 razorpay_order_id: response.razorpay_order_id,
+  //                 razorpay_signature: response.razorpay_signature
+  //               })
+  //             });
+  
+  //             if (verificationRes.ok) {
+  //               resolve({
+  //                 paymentId: response.razorpay_payment_id,
+  //                 status: "paid",
+  //                 mode: "online"
+  //               });
+  //             } else {
+  //               reject(new Error('Payment verification failed'));
+  //             }
+  //           } catch (err) {
+  //             reject(err);
+  //           }
+  //         },
+  //         prefill: {
+  //           name: `${formData.firstName} ${formData.lastName}`,
+  //           email: formData.email,
+  //           contact: formData.phonenumber
+  //         },
+  //         theme: {
+  //           color: "#F37254"
+  //         }
+  //       };
+  
+  //       const razorpay = new window.Razorpay(options);
+  //       razorpay.open();
+  
+  //       razorpay.on('payment.failed', function (response) {
+  //          setIsSubmitting(false);
+  //         reject(new Error(response.error.description));
+  //       });
+  //        razorpay.on('modal.close', function() {
+  //       setIsSubmitting(false);
+  //     });
+  //     });
+  //   } catch (error) {
+  //     console.error('Razorpay error:', error);
+  //     toast.error('Payment processing failed');
+  //     throw error;
+  //   }
+  // };
+// Calculate totals
+const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+const totalDiscount = cartItems.reduce((sum, item) => sum + (item.discount || 0), 0);
+const grandTotal = subtotal - totalDiscount;
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
   
+  setIsSubmitting(true);
+  setError("");
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         setShowAuthModal(true);
+        setIsSubmitting(false);
         return;
       }
       const decoded = jwtDecode(token);
@@ -388,7 +480,10 @@ export default function CheckoutPage() {
   
       setError("");
   
-      const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+           const totalAmount = cartItems.reduce(
+        (sum, item) => sum + (item.price * item.quantity) - (item.discount || 0),
+        0
+      );
       let paymentId = "";
       let paymentStatus = "";
       let paymentMode = "";
@@ -405,6 +500,7 @@ export default function CheckoutPage() {
           paymentMode = result.mode;
         } catch (error) {
           toast.error(`Payment failed: ${error.message}`);
+          setIsSubmitting(false);
           return;
         }
       } else {
@@ -496,7 +592,7 @@ export default function CheckoutPage() {
           payment_status: paymentData.status,
           order_number: "ORD" + Date.now(),
           order_details: cartItems.map((item) => ({
-            item_code: `ITEM${item.id}`,
+            item_code: `ITEM${item.item_code}`,
             product_id: item.id,
             product_name: item.name,
             product_price: item.price,
@@ -563,6 +659,8 @@ export default function CheckoutPage() {
       }
 
       if (cartdelte.status === 200) {
+        localStorage.removeItem('checkoutData');
+        localStorage.removeItem('appliedCoupon')
         const orderData = await orderRes.json()
         // Prepare email data
         const emailData = {
@@ -598,6 +696,7 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("Error submitting order:", error);
       toast.error("Failed to place order. Please try again.");
+      setIsSubmitting(false);
     }
   };
 
@@ -734,15 +833,27 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-
+ {/* Add Discount row if there's any discount */}
+  {totalDiscount > 0 && (
+    <div className="flex justify-between text-green-600 mb-2">
+      <span>Discount:</span>
+      <span>-₹{totalDiscount.toFixed(2)}</span>
+    </div>
+  )}
             <div className="flex justify-between text-gray-800 font-semibold">
               <span>Subtotal:</span>
-              <span>₹{cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+              <span>₹{cartItems.reduce(
+        (sum, item) => sum + (item.price * item.quantity) - (item.discount || 0),
+        0
+      ).toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
               <span>Total:</span>
-              <span>₹{cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+              <span>₹{cartItems.reduce(
+        (sum, item) => sum + (item.price * item.quantity) - (item.discount || 0),
+        0
+      ).toFixed(2)}</span>
             </div>
 
             <div className="mt-6">
@@ -772,8 +883,27 @@ export default function CheckoutPage() {
                 </label>
               </div>
             </div>
+<button 
+  onClick={handleSubmit} 
+  disabled={isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved}
+  className={`mt-6 w-full text-white font-semibold py-3 rounded-lg transition ${
+    isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved
+      ? 'bg-gray-400 cursor-not-allowed' 
+      : 'bg-red-500 hover:bg-red-600'
+  }`}
+>
+  {isSubmitting ? (
+    <span className="flex items-center justify-center">
+      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Processing...
+    </span>
+  ) : 'Place Order'}
+</button>
 
-            <button 
+            {/* <button 
               onClick={handleSubmit} 
               disabled={loading || cartItems.length === 0 || !isDeliverySaved}
               className={`mt-6 w-full text-white font-semibold py-3 rounded-lg transition ${
@@ -783,7 +913,7 @@ export default function CheckoutPage() {
               }`}
             >
               {loading ? 'Processing...' : 'Place Order'}
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -798,6 +928,16 @@ export default function CheckoutPage() {
           error={authError}
         />
       )}
+      
+{isSubmitting && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto mb-4"></div>
+      <h3 className="text-lg font-medium text-gray-900">Processing Your Order</h3>
+      <p className="mt-2 text-sm text-gray-500">Please wait while we process your payment and order details.</p>
+    </div>
+  </div>
+)}
     </div>
   );
 }

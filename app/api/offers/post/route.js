@@ -17,7 +17,29 @@ export async function POST(req) {
     try {
         await connectDB();
         const body = await req.json();  // Parse request body
-        const newOffer = new Offer(body);
+          // Validate offer limit if enabled
+        if (body.limit_enabled) {
+            if (!body.offer_limit || body.offer_limit <= 0) {
+                return NextResponse.json(
+                    { success: false, error: "Offer limit must be a positive number when limit is enabled" },
+                    { status: 400 }
+                );
+            }
+        }
+
+       // console.log(body);
+        if (body.selected_users && !Array.isArray(body.selected_users)) {
+            return NextResponse.json(
+                { success: false, error: "selected_users must be an array" },
+                { status: 400 }
+            );
+        }
+        //const newOffer = new Offer(body);
+          const newOffer = new Offer({
+            ...body,
+            offer_limit: body.limit_enabled ? body.offer_limit : null
+        });
+        
         await newOffer.save();
         
         return NextResponse.json({ success: true, message: "Offer created successfully!" }, { status: 201 });

@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import Select from "react-select";
 import { Icon } from '@iconify/react';
+import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import DateRangePicker from '@/components/DateRangePicker';
 export default function OfferComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +22,95 @@ export default function OfferComponent() {
       startDate: null,
       endDate: null
     });
-  
+  const [users, setUsers] = useState([]);
+   const [selectedUsers, setSelectedUsers] = useState([]);
+
+  const toggleUser = (userId) => {
+    if (userId === "all") {
+      if (selectedUsers.includes("all")) {
+        setSelectedUsers([]); // Unselect All
+      } else {
+        setSelectedUsers(["all"]); // Select All
+      }
+    } else {
+      const newSelected = selectedUsers.includes(userId)
+        ? selectedUsers.filter((id) => id !== userId)
+        : [...selectedUsers, userId];
+
+      setSelectedUsers(newSelected);
+    }
+  };
+const [isMailModalOpen, setIsMailModalOpen] = useState(false);
+const [currentOffer, setCurrentOffer] = useState(null);
+const [mailContent, setMailContent] = useState({
+  subject: "",
+  message: "",
+});
+const handleMailClick = (offer) => {
+  setCurrentOffer(offer);
+  setIsMailModalOpen(true);
+};
+
+const handleMailContentChange = (e) => {
+  const { name, value } = e.target;
+  setMailContent(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
+
+const handleSendMail = async () => {
+  try {
+    const response = await fetch("/api/send-mail", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        products: currentOffer.offer_product,
+        offerId: currentOffer._id,
+        subject: mailContent.subject,
+        message: mailContent.message,
+        // Include any other necessary data
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to send email");
+    }
+
+    setAlertMessage("Email sent successfully!");
+    setAlertType("success");
+    setIsMailModalOpen(false);
+    setMailContent({ subject: "", message: "" });
+    setTimeout(() => setAlertMessage(""), 3000);
+  } catch (error) {
+    console.error("Error sending email:", error);
+    setAlertMessage(error.message || "Failed to send email");
+    setAlertType("error");
+    setTimeout(() => setAlertMessage(""), 3000);
+  }
+};
+  const isSelected = (userId) => selectedUsers.includes(userId);
+
+  // Filter visible users based on "all" selection
+  const visibleUsers = selectedUsers.includes("all")
+    ? [{ _id: "all", name: "All" }]
+    : [{ _id: "all", name: "All" }, ...users];
+
+useEffect(() => {
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch("/api/users/get");
+      const data = await res.json();
+      setUsers(data);
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+    }
+  };
+
+  fetchUsers();
+}, []);
   const [isLoading, setIsLoading] = useState(true);
   const [offerData, setOfferData] = useState({
     offer_code: "",
@@ -216,7 +304,10 @@ export default function OfferComponent() {
       offer_type: offer.offer_type,
       percentage: offer.percentage || "",
       fixed_price: offer.fixed_price || "",
+       limit_enabled: offer.limit_enabled || false,
+    offer_limit: offer.offer_limit || "",
     });
+    setSelectedUsers(offer.selected_users || []);
     setSelectedOfferType(offer.offer_type);
     setIsEditModalOpen(true);
   };
@@ -235,7 +326,10 @@ export default function OfferComponent() {
         id: editingOfferId,
         from_date: new Date(offerData.from_date),
         to_date: new Date(offerData.to_date),
-      };
+      selected_users: selectedUsers.includes("all") 
+        ? users.map(user => user._id) 
+        : selectedUsers.filter(id => id !== "all")
+    };
 
       const response = await fetch("/api/offers/update", {
         method: "PUT",
@@ -243,6 +337,7 @@ export default function OfferComponent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formattedData),
+          offer_user: selectedUsers,
       });
 
       if (!response.ok) {
@@ -334,6 +429,14 @@ export default function OfferComponent() {
       setAlertType("error");
       return false;
     }
+ // Validate offer limit if enabled
+    if (offerData.limit_enabled) {
+        if (!offerData.offer_limit || offerData.offer_limit <= 0) {
+            setAlertMessage("Please enter a valid offer limit (greater than 0)");
+            setAlertType("error");
+            return false;
+        }
+    }
 
     return true;
   };
@@ -351,7 +454,14 @@ export default function OfferComponent() {
         ...offerData,
         from_date: new Date(offerData.from_date),
         to_date: new Date(offerData.to_date),
-      };
+          selected_users: selectedUsers.includes("all") 
+        ? users.map(user => user._id) 
+        : selectedUsers.filter(id => id !== "all"),
+         limit_enabled: offerData.limit_enabled || false,
+        offer_limit: offerData.limit_enabled ? Number(offerData.offer_limit) : null
+        
+        
+    };
 
       const response = await fetch("/api/offers/post", {
         method: "POST",
@@ -386,6 +496,10 @@ export default function OfferComponent() {
         offer_type: "",
         percentage: "",
         fixed_price: "",
+        limit_enabled: false,  // Reset limit enabled checkbox
+        offer_limit: "",       // Reset limit input field
+        selected_users: [],
+        //selected_users: ["userId1", "userId2", "userId3"],
       });
 
       // Refresh offers list
@@ -550,6 +664,32 @@ const filteredOffers = offers.filter((offer) => {
                       )}
                     </td>
                     <td>
+  <div className="flex items-center gap-2 justify-center">
+    <button
+      onClick={() => handleEdit(offer)}
+      className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"
+      title="Edit"
+    >
+      <FaEdit className="w-3 h-3" />
+    </button>
+    <button
+      onClick={() => handleDelete(offer._id)}
+      className="w-7 h-7 bg-pink-100 text-pink-600 rounded-full inline-flex items-center justify-center"
+      title="Delete"
+    >
+      <Icon icon="mingcute:delete-2-line" />
+    </button>
+    {/* Add this mail button */}
+    <button
+      onClick={() => handleMailClick(offer)}
+      className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
+      title="Send Mail"
+    >
+      <Icon icon="ic:outline-email" />
+    </button>
+  </div>
+</td>
+                    {/* <td>
                       <div className="flex items-center gap-2 justify-center">
                         <button
                           onClick={() => handleEdit(offer)}
@@ -566,7 +706,7 @@ const filteredOffers = offers.filter((offer) => {
                           <Icon icon="mingcute:delete-2-line" />
                         </button>
                       </div>
-                    </td>
+                    </td> */}
                   </tr>
                 ))
               ) : (
@@ -636,10 +776,10 @@ const filteredOffers = offers.filter((offer) => {
       )}
 
       {/* Add Offer Modal */}
-      {isModalOpen && (
+    {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
-            {/* Header with bottom border and close button */}
+            {/* Header */}
             <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
               <h2 className="text-xl font-semibold text-gray-900">Create Festival Offer</h2>
               <button
@@ -659,7 +799,7 @@ const filteredOffers = offers.filter((offer) => {
               </button>
             </div>
 
-            {/* Scrollable body */}
+            {/* Body */}
             <div className="px-6 py-6 overflow-y-auto flex-grow">
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Offer Code */}
@@ -697,6 +837,32 @@ const filteredOffers = offers.filter((offer) => {
                   </select>
                 </div>
 
+                {/* Select User */}
+                <div >
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Select User</label>
+                  <div className="border border-gray-300 rounded-md max-h-64 overflow-y-auto">
+                    {visibleUsers.map((user) => (
+                      <div
+                        key={user._id}
+                        className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                          isSelected(user._id) ? "bg-gray-100" : ""
+                        }`}
+                        onClick={() => toggleUser(user._id)}
+                      >
+                        <div className="w-4 h-4 mr-2 border rounded flex items-center justify-center bg-white">
+                          {isSelected(user._id) && (
+                            <span className="text-xs text-green-600 font-bold">&#10003;</span>
+                          )}
+                        </div>
+                        <span className={user._id === "all" ? "font-semibold text-red-500" : ""}>
+                          {user.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <pre className="mt-2 text-xs text-gray-500">Selected: {JSON.stringify(selectedUsers)}</pre>
+                </div>
                 {/* Note */}
                 <div>
                   <label htmlFor="notes" className="block mb-1 text-sm font-semibold text-gray-700">
@@ -890,6 +1056,53 @@ const filteredOffers = offers.filter((offer) => {
                     />
                   </div>
                 )}
+{/* Offer Limit Section */}
+<div>
+  <label className="block mb-1 text-sm font-semibold text-gray-700">
+    Enable Limit
+  </label>
+  <div className="flex items-center space-x-3">
+    <input
+      type="checkbox"
+      id="limit_enabled"
+      name="limit_enabled"
+      checked={offerData.limit_enabled || false}
+      onChange={(e) =>
+        setOfferData((prev) => ({
+          ...prev,
+          limit_enabled: e.target.checked,
+          offer_limit: e.target.checked ? prev.offer_limit || "" : "", // Clear if unchecked
+        }))
+      }
+      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+    />
+    <label htmlFor="limit_enabled" className="text-sm text-gray-700">
+      Set Offer Limit
+    </label>
+  </div>
+
+  {/* Limit Input Field - Show only if checkbox is checked */}
+  {offerData.limit_enabled && (
+    <div className="mt-3">
+      <label
+        htmlFor="offer_limit"
+        className="block mb-1 text-sm font-semibold text-gray-700"
+      >
+        Offer Limit
+      </label>
+      <input
+        type="number"
+        id="offer_limit"
+        name="offer_limit"
+        value={offerData.offer_limit}
+        onChange={handleChange}
+        className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
+        min="1"
+        required
+      />
+    </div>
+  )}
+</div>
 
                 {/* Submit Button */}
                 <div className="pt-4">
@@ -905,6 +1118,7 @@ const filteredOffers = offers.filter((offer) => {
           </div>
         </div>
       )}
+
 
       {/* Edit Offer Modal */}
       {isEditModalOpen && (
@@ -967,7 +1181,30 @@ const filteredOffers = offers.filter((offer) => {
                     <option value="inactive">Inactive</option>
                   </select>
                 </div>
-
+                {/* Select User */}
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">Select User</label>
+                  <div className="border border-gray-300 rounded-md max-h-64 overflow-y-auto">
+                    {visibleUsers.map((user) => (
+                      <div
+                        key={user._id}
+                        className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                          isSelected(user._id) ? "bg-gray-100" : ""
+                        }`}
+                        onClick={() => toggleUser(user._id)}
+                      >
+                        <div className="w-4 h-4 mr-2 border rounded flex items-center justify-center bg-white">
+                          {isSelected(user._id) && (
+                            <span className="text-xs text-green-600 font-bold">&#10003;</span>
+                          )}
+                        </div>
+                        <span className={user._id === "all" ? "font-semibold text-red-500" : ""}>
+                          {user.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 {/* Note */}
                 <div>
                   <label htmlFor="notes" className="block mb-1 text-sm font-semibold text-gray-700">
@@ -1162,7 +1399,53 @@ const filteredOffers = offers.filter((offer) => {
                     />
                   </div>
                 )}
+{/* Offer Limit Section */}
+<div>
+  <label className="block mb-1 text-sm font-semibold text-gray-700">
+    Enable Limit
+  </label>
+  <div className="flex items-center space-x-3">
+    <input
+      type="checkbox"
+      id="limit_enabled"
+      name="limit_enabled"
+      checked={offerData.limit_enabled || false}
+      onChange={(e) =>
+        setOfferData((prev) => ({
+          ...prev,
+          limit_enabled: e.target.checked,
+          offer_limit: e.target.checked ? prev.offer_limit || "" : "", // Clear if unchecked
+        }))
+      }
+      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+    />
+    <label htmlFor="limit_enabled" className="text-sm text-gray-700">
+      Set Offer Limit
+    </label>
+  </div>
 
+  {/* Limit Input Field - Show only if checkbox is checked */}
+  {offerData.limit_enabled && (
+    <div className="mt-3">
+      <label
+        htmlFor="offer_limit"
+        className="block mb-1 text-sm font-semibold text-gray-700"
+      >
+        Offer Limit
+      </label>
+      <input
+        type="number"
+        id="offer_limit"
+        name="offer_limit"
+        value={offerData.offer_limit}
+        onChange={handleChange}
+        className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
+        min="1"
+        required
+      />
+    </div>
+  )}
+</div>
                 {/* Submit Button */}
                 <div className="pt-4">
                   <button
@@ -1177,6 +1460,100 @@ const filteredOffers = offers.filter((offer) => {
           </div>
         </div>
       )}
+      {/* Mail Modal */}
+{isMailModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
+    <div className="bg-white rounded-2xl shadow-lg w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+      <div className="flex justify-between items-center border-b-2 border-gray-300 px-6 py-4">
+        <h2 className="text-xl font-semibold text-gray-900">Send Offer Notification</h2>
+        <button
+          onClick={() => {
+            setIsMailModalOpen(false);
+            setMailContent({ subject: "", message: "" });
+          }}
+          className="text-gray-400 hover:text-gray-700 focus:outline-none"
+          aria-label="Close modal"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="px-6 py-6 overflow-y-auto flex-grow">
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Recipients
+          </label>
+          <div className="border border-gray-200 p-2 rounded-md">
+            {currentOffer?.selected_users?.map(userId => {
+              const user = users.find(u => u._id === userId);
+              return user ? (
+                <span key={userId} className="inline-block bg-gray-100 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">
+                  {user.name}
+                </span>
+              ) : null;
+            })}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+            Subject
+          </label>
+          <input
+            type="text"
+            name="subject"
+            value={mailContent.subject}
+            onChange={handleMailContentChange}
+            className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+            required
+          />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+            Message
+          </label>
+          <textarea
+            name="message"
+            value={mailContent.message}
+            onChange={handleMailContentChange}
+            rows="5"
+            className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-400"
+            required
+          ></textarea>
+        </div>
+
+        <div className="flex justify-end space-x-3 pt-4">
+          <button
+            type="button"
+            onClick={() => {
+              setIsMailModalOpen(false);
+              setMailContent({ subject: "", message: "" });
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSendMail}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+          >
+            Send Mail
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

@@ -58,6 +58,26 @@ const offerSchema = new mongoose.Schema(
         return this.offer_type === 'fixed_price'; // Required only if offer_type is 'fixed_price'
       },
     },
+     selected_users: {
+      type: [mongoose.Schema.Types.ObjectId], // or type: [String] if user IDs are strings
+      ref: 'User', // use your actual user model name
+      default: [], // optional: default to empty array
+    },
+     limit_enabled: {
+      type: Boolean,
+      default: false,
+    },
+    offer_limit: {
+      type: Number,
+      required: function () {
+        return this.limit_enabled === true;
+      },
+    },
+    used_by: {
+      type: Number,
+      default: 0,
+    },
+    
   },
   { timestamps: true, collection: 'ecom_offer_info' } // Explicit collection name
 );

@@ -60,21 +60,26 @@ export default function CheckoutPage() {
       try {
         const decoded = jwtDecode(token);
         const userId = decoded.userId;
+        const checkoutData = localStorage.getItem('checkoutData');
+        console.log(checkoutData);
+        if (checkoutData) {
+          const parsedData = JSON.parse(checkoutData);
+          setCartItems(parsedData.cart.items);
+        }else{
+          // Fetch cart data
+          const cartResponse = await fetch('/api/cart', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
 
-        // Fetch cart data
-        const cartResponse = await fetch('/api/cart', {
-          headers: {
-            'Authorization': `Bearer ${token}`
+          if (!cartResponse.ok) {
+            throw new Error('Failed to fetch cart data');
           }
-        });
 
-        if (!cartResponse.ok) {
-          throw new Error('Failed to fetch cart data');
+          const cartData = await cartResponse.json();
+          setCartItems(cartData.cart.items);
         }
-
-        const cartData = await cartResponse.json();
-        setCartItems(cartData.cart.items);
-
         // Fetch user address
         const addressResponse = await fetch(`/api/useraddress?user_id=${userId}`);
         if (!addressResponse.ok) {
@@ -253,7 +258,11 @@ export default function CheckoutPage() {
   
       setError("");
   
-      const totalAmount = cartItems.reduce((sum, item) => sum + item.price, 0);
+            const totalAmount = cartItems.reduce(
+        (sum, item) => sum + (item.price * item.quantity) - (item.discount || 0),
+        0
+      );
+ 
       let paymentId = "";
       let paymentStatus = "";
       let paymentMode = "";

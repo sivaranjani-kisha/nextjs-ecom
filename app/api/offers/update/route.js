@@ -22,7 +22,10 @@ export async function PUT(req) {
       offer_category,
       offer_type,
       percentage,
-      fixed_price
+      fixed_price, 
+      selected_users,
+       limit_enabled,
+      offer_limit,
     } = requestData;
 
     // Validate required fields
@@ -84,6 +87,9 @@ export async function PUT(req) {
         offer_product_category,
         offer_product: offer_product || [],
         offer_category: offer_category || [],
+        selected_users: selected_users || [],
+         limit_enabled: !!limit_enabled, // ✅ store as boolean
+    offer_limit: limit_enabled ? Number(offer_limit) : null, 
         offer_type,
         percentage: offer_type === "percentage" ? percentage : null,
         fixed_price: offer_type === "fixed_price" ? fixed_price : null,

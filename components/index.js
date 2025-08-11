@@ -527,7 +527,16 @@ const handleCategoryClick = useCallback((category) => (e) => {
     useEffect(() => {
       const fetchOfferProducts = async () => {
         try {
-          const res = await fetch("/api/offers/offer-products");
+          const token = localStorage.getItem('token');
+          if (!token) return;
+    
+          const res = await fetch('api/offers/offer-products', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            }
+          });
           const data = await res.json();
   
           if (data.success) {
@@ -801,7 +810,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
 
                   {/* Desktop view: Swiper */}
                   <div className="hidden sm:block">
-                    {offerProducts.length >= 3 && (
+                    {offerProducts.length && (
                       <Swiper
                         modules={[Navigation, Autoplay]}
                         navigation={{
