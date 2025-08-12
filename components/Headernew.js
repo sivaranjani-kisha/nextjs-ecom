@@ -806,8 +806,7 @@ const Header = () => {
                                     </div>
                                 )
                             )}
-                            {hoveredCategory.subcategories.length <= 6 &&
-                            hoveredCategory.image && (
+                            {hoveredCategory.image && (
                                 <div className="p-3">
                                     <Link href={`/category/${hoveredCategory.category_slug}`}>
                                         <Image src={hoveredCategory.image} alt="Category Image" width={200} height={200} className="object-cover rounded"/>
