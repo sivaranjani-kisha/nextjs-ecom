@@ -265,7 +265,7 @@ const Header = () => {
     }, []);
     const hideTimeout = useRef(null);
     // simple chunk function (adjust columns per row by changing size)
-    const chunkSubcategories = (subs, size = 10) => {
+    const chunkSubcategories = (subs, size = 2) => {
         const chunks = [];
         for (let i = 0; i < subs.length; i += size) {
             chunks.push(subs.slice(i, i + size));
@@ -795,7 +795,7 @@ const Header = () => {
                 {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
                     <div ref={dropdownRef} className="fixed z-50 border-t border-gray-200 shadow-xl" style={{ top: `${dropdownTop}px`,left: `${dropdownLeft}px`,maxWidth: "calc(100% - 20px)",}} onMouseEnter={cancelHide} onMouseLeave={() => startHide(120)}>
                         <div className="flex flex-wrap bg-white">
-                            {chunkSubcategories(hoveredCategory.subcategories, 10).map(
+                            {chunkSubcategories(hoveredCategory.subcategories, 2).map(
                                 (subChunk, index) => (
                                     <div key={index} className={`min-w-[180px] max-w-[220px] p-3 ${ index % 2 === 0 ? "bg-white" : "bg-gray-100"}`}>
                                         {subChunk.map((subcat) => (
