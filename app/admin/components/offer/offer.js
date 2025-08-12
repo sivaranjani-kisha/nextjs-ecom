@@ -76,7 +76,10 @@ const handleSendMail = async () => {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to send email");
+      // throw new Error("Failed to send email");
+        const errorData = await response.json().catch(() => ({}));
+        setAlertMessage(errorData.message || "Failed to send email");
+        return;
     }
 
     setAlertMessage("Email sent successfully!");
