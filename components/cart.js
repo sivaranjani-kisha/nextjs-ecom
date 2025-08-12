@@ -89,7 +89,7 @@ const SuccessModal = ({ show, message, onClose }) => (
   </AnimatePresence>
 );
 
-const CouponModal = ({ show, onClose, coupon, onApply, onChange }) => (
+const CouponModal = ({ show, onClose, coupon, onApply, onChange, couponError, isValidating }) => (
   <AnimatePresence>
     {show && (
       <motion.div
@@ -105,7 +105,7 @@ const CouponModal = ({ show, onClose, coupon, onApply, onChange }) => (
           exit={{ scale: 0.8 }}
         >
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Apply Coupon</h3>
-          <div className="flex mb-4">
+          <div className="flex mb-2">
             <input
               type="text"
               value={coupon}
@@ -115,11 +115,25 @@ const CouponModal = ({ show, onClose, coupon, onApply, onChange }) => (
             />
             <button
               onClick={onApply}
-              className="px-4 py-2 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600"
+              disabled={isValidating}
+              className="px-4 py-2 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 disabled:bg-blue-300"
             >
-              Apply
+              {isValidating ? 'Applying...' : 'Apply'}
             </button>
           </div>
+          {/* Error message with animation */}
+          <AnimatePresence>
+            {couponError && (
+              <motion.p 
+                className="text-red-500 text-sm mb-4"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                {couponError}
+              </motion.p>
+            )}
+          </AnimatePresence>
           <button
             className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
             onClick={onClose}
@@ -131,7 +145,6 @@ const CouponModal = ({ show, onClose, coupon, onApply, onChange }) => (
     )}
   </AnimatePresence>
 );
-
 export default function CartComponent() {
   const router = useRouter();
   const [cartData, setCartData] = useState(null);
@@ -355,58 +368,115 @@ export default function CartComponent() {
       setProductToDelete(null);
     }
   };
+const validateCoupon = async () => {
+  if (!couponCode.trim()) {
+    setCouponError("Please enter a coupon code");
+    return;
+  }
 
-  const validateCoupon = async () => {
-    if (!couponCode.trim()) {
-      setCouponError("Please enter a coupon code");
-      return;
+  setIsValidatingCoupon(true);
+  setCouponError("");
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch('/api/coupons/validate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ 
+        couponCode,
+        cartItems: cartData.items,
+        userId: localStorage.getItem('userId')
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Invalid coupon code');
     }
 
-    setIsValidatingCoupon(true);
-    setCouponError("");
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/coupons/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ 
-          couponCode,
-          cartItems: cartData.items,
-          userId: localStorage.getItem('userId')
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to validate coupon');
-      }
-
-      // Apply discount to eligible items
-      const itemsWithDiscount = applyDiscountToItems(data.coupon, cartData.items);
-      
-      // Update state
-      setAppliedCoupon(data.coupon);
-      localStorage.setItem('appliedCoupon', JSON.stringify(data.coupon));
-      setCartData(prev => ({
-        ...prev,
-        items: itemsWithDiscount
-      }));
-      
-      setCouponCode("");
-      setShowCouponModal(false);
-      setSuccessMessage("Coupon applied successfully!");
-      setShowSuccessModal(true);
-    } catch (err) {
-      setCouponError(err.message);
-    } finally {
-      setIsValidatingCoupon(false);
+    // Apply discount to eligible items
+    const itemsWithDiscount = applyDiscountToItems(data.coupon, cartData.items);
+    
+    // Update state
+    setAppliedCoupon(data.coupon);
+    localStorage.setItem('appliedCoupon', JSON.stringify(data.coupon));
+    setCartData(prev => ({
+      ...prev,
+      items: itemsWithDiscount
+    }));
+    
+    setCouponCode("");
+    setShowCouponModal(false);
+    setSuccessMessage("Coupon applied successfully!");
+    setShowSuccessModal(true);
+  } catch (err) {
+    setCouponError(err.message);
+    // Auto-close the modal after 2 seconds only for "not found" errors
+    if (err.message.includes("not found") || err.message.includes("Invalid")) {
+      setTimeout(() => {
+        setShowCouponModal(false);
+        setCouponError(""); // Clear error after closing
+      }, 2000);
     }
-  };
+  } finally {
+    setIsValidatingCoupon(false);
+  }
+};
+  // const validateCoupon = async () => {
+  //   if (!couponCode.trim()) {
+  //     setCouponError("Please enter a coupon code");
+  //     return;
+  //   }
+
+  //   setIsValidatingCoupon(true);
+  //   setCouponError("");
+
+  //   try {
+  //     const token = localStorage.getItem('token');
+  //     const response = await fetch('/api/coupons/validate', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`
+  //       },
+  //       body: JSON.stringify({ 
+  //         couponCode,
+  //         cartItems: cartData.items,
+  //         userId: localStorage.getItem('userId')
+  //       })
+  //     });
+
+  //     const data = await response.json();
+
+  //     if (!response.ok) {
+  //       throw new Error(data.message || 'Failed to validate coupon');
+  //     }
+
+  //     // Apply discount to eligible items
+  //     const itemsWithDiscount = applyDiscountToItems(data.coupon, cartData.items);
+      
+  //     // Update state
+  //     setAppliedCoupon(data.coupon);
+  //     localStorage.setItem('appliedCoupon', JSON.stringify(data.coupon));
+  //     setCartData(prev => ({
+  //       ...prev,
+  //       items: itemsWithDiscount
+  //     }));
+      
+  //     setCouponCode("");
+  //     setShowCouponModal(false);
+  //     setSuccessMessage("Coupon applied successfully!");
+  //     setShowSuccessModal(true);
+  //   } catch (err) {
+  //     setCouponError(err.message);
+  //   } finally {
+  //     setIsValidatingCoupon(false);
+  //   }
+  // };
 
   const removeCoupon = () => {
     // Remove discounts from all items
@@ -566,13 +636,18 @@ export default function CartComponent() {
         message={successMessage}
         onClose={() => setShowSuccessModal(false)}
       />
-      <CouponModal
-        show={showCouponModal}
-        onClose={() => setShowCouponModal(false)}
-        coupon={couponCode}
-        onApply={validateCoupon}
-        onChange={(e) => setCouponCode(e.target.value)}
-      />
+     <CouponModal
+  show={showCouponModal}
+  onClose={() => {
+    setShowCouponModal(false);
+    setCouponError(""); // Clear error when closing manually
+  }}
+  coupon={couponCode}
+  onApply={validateCoupon}
+  onChange={(e) => setCouponCode(e.target.value)}
+  couponError={couponError}
+  isValidating={isValidatingCoupon}
+/>
 
       {/* Header */}
       <div className="bg-blue-50 py-4 px-4 sm:px-8 flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -591,162 +666,108 @@ export default function CartComponent() {
         {/* Cart Table - Mobile optimized */}
         <div className="w-full lg:w-2/3 bg-white p-4 sm:p-6 rounded-lg border">
           <div className="hidden sm:block overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="py-3 px-4 text-center">Delete</th>
-                  <th className="py-3 px-4">Product</th>
-                  <th className="py-3 px-4 text-center">Price</th>
-                  <th className="py-3 px-4 text-center">Quantity</th>
-                 
-                  <th className="py-3 px-4 text-center">Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartData.items.map((item) => (
-                  <Fragment key={item.productId}>
-                    {/* Main Product Row */}
-                   {/* Main Product Row */}
-<tr className="border-b align-top">
-  <td className="py-4 px-4 text-center">
-    <button
-      className="text-blue-500 hover:text-blue-600 font-medium"
-      onClick={() => confirmRemoveItem(item.productId)}
-    >
-      ✖
-    </button>
-  </td>
-  <td className="flex items-center py-4 px-4 gap-3">
-    <Image
-      src={`/uploads/products/${item.image}`}
-      alt={item.name}
-      width={60}
-      height={60}
-      className="rounded-md"
-    />
-    <div className="relative group w-fit">
-      <Link href={`/product/${slugify(item.name)}`}>
-        <p className="font-semibold hover:text-blue-500 transition-colors duration-300">
-          {item.name.length > 50 ? item.name.slice(0, 50) + "..." : item.name}
-        </p>
-      </Link>
-      <div className="absolute z-10 hidden group-hover:block bg-black text-white text-sm px-2 py-1 rounded shadow-md top-full mt-1 max-w-xs w-max whitespace-normal">
-        {item.name}
-      </div>
-    </div>
-  </td>
-  <td className="py-4 px-4 text-center">₹{item.price.toFixed(2)}</td>
-  <td className="py-4 px-4 text-center align-top">
-    <div className="flex justify-center items-center gap-2 mb-1">
-      <button
-        className="px-2 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-        onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
-        disabled={item.quantity <= 1}
-      >
-        −
-      </button>
-      <span>{item.quantity}</span>
-      <button
-        className="px-2 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-        disabled={item.quantity >= item.original_quantity}
-        onClick={() => updateQuantity(item.productId, item.quantity + 1, item.original_quantity)}
-      >
-        +
-      </button>
-    </div>
-  </td>
-  <td className="py-4 px-4 text-center font-semibold align-top">
-    ₹{(item.price * item.quantity).toFixed(2)}
-  </td>
-</tr>
+           <table className="min-w-full border">
+  <thead className="bg-gray-50">
+    <tr>
+      <th className="py-3 px-4 text-center">Delete</th>
+      <th className="py-3 px-4">Product</th>
+      <th className="py-3 px-4 text-center">Price</th>
+      <th className="py-3 px-4 text-center">Quantity</th>
+      <th className="py-3 px-4 text-center">Subtotal</th>
+    </tr>
+  </thead>
+  <tbody>
+    {cartData.items.map((item) => (
+      <Fragment key={item.productId}>
 
-{/* Warranty and Discount Row */}
-<tr className="border-b align-top">
-  <td></td>
-  <td></td>
-  <td></td>
-  <td></td>
-  <td className="py-3 px-4 text-sm text-gray-500 font-semibold align-top">
-    <div className="space-y-3 ml-8">
-      <div>Product Subtotal</div>
-      <div>Warranty</div>
-      <div>Extended Warranty</div>
-      <div>Discount</div>
-    </div>
-  </td>
-  <td className="py-4 px-4 text-center font-semibold align-top">
-    <div className="space-y-1">
-      <div>₹{(item.price * item.quantity).toFixed(2)}</div>
-      <div>{item.warranty > 0 ? `₹${item.warranty.toFixed(2)}` : "-"}</div>
-      <div>{item.extendedWarranty > 0 ? `₹${item.extendedWarranty.toFixed(2)}` : "-"}</div>
-      <div className={item.discount > 0 ? "text-green-600" : ""}>
-        {item.discount > 0 ? `-₹${item.discount.toFixed(2)}` : "-"}
-      </div>
-    </div>
-  </td>
-</tr>
+        {/* Product Row */}
+        <tr className="border-b">
+          <td className="py-4 px-4 text-center">
+            <button
+              className="text-blue-500 hover:text-blue-600 font-medium"
+              onClick={() => confirmRemoveItem(item.productId)}
+            >
+              ✖
+            </button>
+          </td>
+          <td className="flex items-center py-4 px-4 gap-3">
+            <Image
+              src={`/uploads/products/${item.image}`}
+              alt="No image"
+              width={60}
+              height={60}
+              className="rounded-md"
+            />
+            <div className="relative group w-fit">
+              <Link href={`/product/${slugify(item.name)}`}>
+                <p className="font-semibold hover:text-blue-500 transition-colors duration-300">
+                  {item.name.length > 50 ? item.name.slice(0, 50) + "..." : item.name}
+                </p>
+              </Link>
+              <div className="absolute z-10 hidden group-hover:block bg-black text-white text-sm px-2 py-1 rounded shadow-md top-full mt-1 max-w-xs w-max whitespace-normal">
+                {item.name}
+              </div>
+            </div>
+          </td>
+          <td className="py-4 px-4 text-center">₹{item.price.toFixed(2)}</td>
+          <td className="py-4 px-4 text-center">
+            <div className="flex justify-center items-center gap-2">
+              <button
+                className="px-2 py-1 border rounded bg-gray-200 hover:bg-gray-300"
+                onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
+                disabled={item.quantity <= 1}
+              >
+                −
+              </button>
+              <span>{item.quantity}</span>
+              <button
+                className="px-2 py-1 border rounded bg-gray-200 hover:bg-gray-300"
+                disabled={item.quantity >= item.original_quantity}
+                onClick={() => updateQuantity(item.productId, item.quantity + 1, item.original_quantity)}
+              >
+                +
+              </button>
+            </div>
+          </td>
+          <td className="py-4 px-4 text-center font-semibold">
+            ₹{(item.price * item.quantity).toFixed(2)}
+          </td>
+        </tr>
 
-{/* Total Row */}
-<tr className="border-b">
-  <td></td>
-  <td></td>
-  <td></td>
-  <td></td>
-  <td className="py-2 px-12 font-semibold text-black">               
-    Item Total
-  </td>
-  <td className="py-2 px-12 font-semibold text-black">
-    ₹{(
-      (item.price * item.quantity) +
-      (item.warranty || 0) +
-      (item.extendedWarranty || 0) -
-      (item.discount || 0)
-    ).toFixed(2)}
-  </td>
-</tr>
+        {/* Breakdown Row */}
+        <tr className="bg-gray-50">
+          <td colSpan={4} className="py-3 px-4 text-right text-sm font-medium text-gray-500">
+            Product Subtotal<br />
+            Warranty<br />
+            Extended Warranty<br />
+            Discount
+          </td>
+          <td className="py-3 px-4 text-center text-sm font-semibold">
+            ₹{(item.price * item.quantity).toFixed(2)}<br />
+            {item.warranty > 0 ? `₹${item.warranty.toFixed(2)}` : "-"}<br />
+            {item.extendedWarranty > 0 ? `₹${item.extendedWarranty.toFixed(2)}` : "-"}<br />
+            {item.discount > 0 ? `-₹${item.discount.toFixed(2)}` : "-"}
+          </td>
+        </tr>
 
-                    {/* Warranty Labels and Values Row */}
-                    <tr className="border-b align-top">
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td className="py-3 px-4  text-sm text-gray-500 font-semibold align-top">
-                        <div className="space-y-3 ml-8">
-                          <div>Warranty</div>
-                          <div className="whitespace-nowrap">Extended Warranty</div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-center font-semibold align-top">
-                        <div className="space-y-1">
-                          <div>{item.warranty > 0 ? `₹${item.warranty.toFixed(2)}` : "-"}</div>
-                          <div>{item.extendedWarranty > 0 ? `₹${item.extendedWarranty.toFixed(2)}` : "-"}</div>
-                        </div>
-                      </td>
-                    </tr>
+        {/* Total Row */}
+        <tr className="border-t bg-gray-100">
+          <td colSpan={4} className="py-3 px-4 text-right font-bold">Item Total</td>
+          <td className="py-3 px-4 text-center font-bold">
+            ₹{(
+              (item.price * item.quantity) +
+              (item.warranty || 0) +
+              (item.extendedWarranty || 0) -
+              (item.discount || 0)
+            ).toFixed(2)}
+          </td>
+        </tr>
 
-                    {/* Total Row */}
-                    <tr className="border-b">
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td className="py-2 px-12  font-semibold text-black">               
-                        Total
-                      </td>
-                      <td className="py-2 px-12  font-semibold text-black">
-                        ₹{(
-                          (item.price * item.quantity) +
-                          (item.warranty || 0) +
-                          (item.extendedWarranty || 0) -
-                          (item.discount || 0)
-                        ).toFixed(2)}
-                      </td>
-                    </tr>
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
+      </Fragment>
+    ))}
+  </tbody>
+</table>
+
           </div>
 
           {/* Mobile view - list layout */}
