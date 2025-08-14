@@ -41,7 +41,7 @@ console.log(show_on_home)
       console.log('====================================');
       console.log(file);
       console.log('====================================');
-      image_url = `http://localhost:3000/uploads/categories/${file.name}`;
+      image_url = `/uploads/categories/${file.name}`;
     }
 
     // Create category

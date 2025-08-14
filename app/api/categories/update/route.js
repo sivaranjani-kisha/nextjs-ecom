@@ -65,7 +65,7 @@ export async function PUT(req) {
       const fileName = `category_${Date.now()}${path.extname(file.name)}`;
      
       await writeFile(path.join(uploadDir, fileName), buffer);
-      image_url = `http://localhost:3000/uploads/categories/${fileName}`;
+      image_url = `/uploads/categories/${fileName}`;
     }
  
     // Update category
