@@ -18,6 +18,7 @@ const steps = [
 export default function AddProductPage({ mode = "add", productData = null, productId = null,onSuccess, initialProductData}) {
   const [currentStep, setCurrentStep] = useState(1);
   const [jsonHighlightsInput, setJsonHighlightsInput] = useState('');
+  
   const [product, setProduct] = useState({
     name: "",
     slug: "",
@@ -1183,8 +1184,8 @@ formData.append("variant", JSON.stringify(variantsWithImages));
         }
         break;
       case 2:
-        if (!product.images.some(img => img) || !product.description) {
-          return "Please fill in all required fields: Images and Description.";
+        if (!product.images.some(img => img) ) {
+          return "Please fill in all required fields: Images.";
         }
         break;
       case 3:

@@ -1,6 +1,6 @@
 'use client';
 import ProductDetailsSection from "@/components/ProductDetailsSection";
-import RelatedProducts from "@/components/RelatedProducts";
+// import RelatedProducts from "@/components/RelatedProducts";
 import {  useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { FaShoppingCart, FaHeart, FaShareAlt, FaRupeeSign, FaCartPlus, FaBell } from "react-icons/fa";
@@ -11,10 +11,13 @@ import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import ProductBreadcrumb from "@/components/ProductBreadcrumb";
+import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
+import RelatedProducts from "@/components/RelatedProducts";
 import RazorpayOffers from "@/components/RazorpayOffers";
 
 export default function ProductPage() {
   const { slug } = useParams();
+  const [brand, setBrand] = useState([]);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
   const [showFeatures, setShowFeatures] = useState(false);
   const [showHighlights, setShowHighlights] = useState(false);
@@ -124,6 +127,7 @@ useEffect(() => {
         }
         
         const data = await response.json();
+        // console.log(data);
         
         // If API returns an array, find the product with matching slug
         if (Array.isArray(data)) {
@@ -181,6 +185,39 @@ useEffect(() => {
     }
   }
 }, [featuredProducts]);
+
+
+const fetchBrand = async () => {
+    try {
+      const response = await fetch("/api/brand");
+      const result = await response.json();
+      if (result.error) {
+      console.error(result.error);
+      } else {
+        const data = result.data;
+  
+        // Format for react-select
+        const brandOptions = data.map((b) => ({
+          value: b._id,
+          label: b.brand_name,
+        }));
+  
+        setBrand(brandOptions);
+        // 👉 If you already have the ID and want to get the label (e.g., when editing)
+        if (product?.brand) {
+  const matched = brandOptions.find((b) => b.value === product.brand);
+  // if (matched) console.log("Selected Brand Name:", matched.label);
+}
+
+      }
+    } catch (error) {
+  console.error(error.message);
+    }
+  };
+
+  useEffect(() => {
+      fetchBrand();
+    }, []);
 
 
   const handleThumbnailClick = (index) => {
@@ -393,8 +430,8 @@ useEffect(() => {
                   
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-1" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: ${product.slug}`)}`, '_blank')}>
-                    <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-blue-200 hover:bg-red-600 text-red-500 hover:text-white">
+                  <div className="flex items-center gap-1" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: https://bea.divinfosys.com/product/${product.slug}`)}`, '_blank')}>
+                    <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-blue-200 hover:bg-blue-600 text-blue-500 hover:text-white">
 
                       <FaShareAlt size={10} />
                     </button>
@@ -610,7 +647,7 @@ useEffect(() => {
           <div className="mb-4">
             <h4 className="text-sm font-semibold text-gray-900 mb-1">Brand</h4>
             <p className="text-gray-700 text-sm">
-              {product.brand || "No brand information available"}
+              {brand.find((b) => b.value === product.brand)?.label || "No Brand Info Available"}
             </p>
           </div>
 
@@ -1118,7 +1155,7 @@ useEffect(() => {
 
             <div className="rounded-b-lg w-full bg-gray-100">
               {[
-                { icon: TbTruckDelivery, title: "Fast Delivery", desc: "Lightning-fast shipping, guaranteed." },
+                { icon: TbTruckDelivery, title: "Fast Deliveryy", desc: "Lightning-fast shipping, guaranteed." },
                 { icon: IoReload, title: "Free 90-day returns", desc: "Shop risk-free with easy returns." },
                 { icon: IoStorefront, title: "Pickup available", desc: "Usually ready in 24 hours" },
                 { icon: IoCardOutline, title: "Payment", desc: "Secure online and cash payments." },
@@ -1141,12 +1178,22 @@ useEffect(() => {
           </div>
         </div>
 
-        <ProductDetailsSection product={product} />
-            <RelatedProducts 
+        {/* <ProductDetailsSection product={product} /> */}
+            {/* <RelatedProducts 
               currentProductId={product._id} 
               categoryId={product.category?._id || product.category} 
-            />
+            /> */}
       </div>
+     <div className="space-y-8">
+  <ProductDetailsSection product={product} />
+  <RecentlyViewedProducts className="w-full" />
+  <RelatedProducts 
+  className="w-full" 
+  currentProductId={product._id} 
+/>
+
+</div>
+      
     </div>
     
   );
