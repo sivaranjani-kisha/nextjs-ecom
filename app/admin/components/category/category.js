@@ -31,7 +31,7 @@ const [updateAlertMessage, setUpdateAlertMessage] = useState('');
     image: null,
     existingImage: null,
   });
-
+const [errorMessage, setErrorMessage] = useState("");
   const [dateFilter, setDateFilter] = useState({
     startDate: null,
     endDate: null
@@ -127,63 +127,71 @@ const handleImageChange = async (e) => {
   };
 
   // Handle category submission
-  const handleAddCategory = async (e) => {
-    e.preventDefault();
-      // Check if image is provided
-      if (!newCategory.image) {
-        setAlertMessage("Image is required and must be 260px width and 240px height");
-        setShowAlert(true);
-        setTimeout(() => setShowAlert(false), 3000);
-        return;
-      }
+ const handleAddCategory = async (e) => {
+  e.preventDefault();
+  
+  // Reset error messages
+  setImageError("");
+  setErrorMessage("");
 
-    // Check if category name already exists
-    if (isCategoryNameExists(newCategory.category_name)) {
-      setAlertMessage("Category name already exists!");
+  // Check if image is provided
+  if (!newCategory.image) {
+    setImageError("Image is required and must be 260px width and 240px height");
+    return;
+  }
+
+  // Trim and check if category name is empty
+  const trimmedCategoryName = newCategory.category_name.trim();
+  if (!trimmedCategoryName) {
+    setErrorMessage("Category name cannot be empty!");
+    return;
+  }
+
+  // Check if category name already exists
+  if (isCategoryNameExists(trimmedCategoryName)) {
+    setErrorMessage("Category name already exists!");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("category_name", trimmedCategoryName);
+  formData.append("parentid", newCategory.parentid);
+  formData.append("status", newCategory.status);
+  formData.append("image", newCategory.image);
+
+  try {
+    const response = await fetch("/api/categories/add", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      setIsModalOpen(false);
+      fetchCategories();
+
+      // Reset form
+      setNewCategory({
+        category_name: "",
+        parentid: "none",
+        status: "Active",
+        image: null,
+      });
+      setImagePreview(null);
+
+      // Show success alert (if you still want this as an alert)
+      setAlertMessage("Category added successfully!");
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 3000);
-      return;
+    } else {
+      setErrorMessage(result.error || "Failed to add category");
+      console.error("Error adding category:", result.error);
     }
-
-    const formData = new FormData();
-    formData.append("category_name", newCategory.category_name);
-    formData.append("parentid", newCategory.parentid);
-    formData.append("status", newCategory.status);
-    if (newCategory.image) {
-      formData.append("image", newCategory.image);
-    }
-
-    try {
-      const response = await fetch("/api/categories/add", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-      if (response.ok) {
-        setIsModalOpen(false);
-        fetchCategories();
-
-        // Reset form
-        setNewCategory({
-          category_name: "",
-          parentid: "none",
-          status: "Active",
-          image: null,
-        });
-        setImagePreview(null);
-
-        // Show success alert
-        setAlertMessage("Category added successfully!");
-        setShowAlert(true);
-        setTimeout(() => setShowAlert(false), 3000);
-      } else {
-        console.error("Error adding category:", result.error);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
+  } catch (error) {
+    setErrorMessage("Failed to add category. Please try again.");
+    console.error("Error:", error);
+  }
+};
 
   // Handle category update
   // const handleUpdateCategory = async (e) => {
@@ -753,18 +761,21 @@ const handleUpdateCategory = async (e) => {
               )}
 
               <div>
-                <label htmlFor="category_name" className="block mb-1 text-sm font-semibold text-gray-700">
-                  Category Name
-                </label>
-                <input
-                  name="category_name"
-                  value={newCategory.category_name}
-                  onChange={handleInputChange}
-                  id="category_name"
-                  className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
-                  placeholder="Enter Category Name"
-                  required
-                />
+                 <label htmlFor="category_name" className="block mb-1 text-sm font-semibold text-gray-700">
+    Category Name
+  </label>
+  <input
+    name="category_name"
+    value={newCategory.category_name}
+    onChange={handleInputChange}
+    id="category_name"
+    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
+    placeholder="Enter Category Name"
+    required
+  />
+  {errorMessage && (
+    <p className="text-red-500 text-sm mt-1">{errorMessage}</p>
+  )}
               </div>
 
               <div>
@@ -788,16 +799,19 @@ const handleUpdateCategory = async (e) => {
 
               <div>
                 <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image (260px X 240px)</label>
-                <input
-                  type="file"
-                  onChange={handleImageChange}
-                  className="block w-full text-sm text-gray-600
-                    file:mr-3 file:py-1 file:px-3
-                    file:rounded-md file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-red-50 file:text-red-700
-                    hover:file:bg-red-100"
-                />
+              <input
+    type="file"
+    onChange={handleImageChange}
+    className="block w-full text-sm text-gray-600
+      file:mr-3 file:py-1 file:px-3
+      file:rounded-md file:border-0
+      file:text-sm file:font-semibold
+      file:bg-red-50 file:text-red-700
+      hover:file:bg-red-100"
+  />
+  {imageError && (
+    <p className="text-red-500 text-sm mt-1">{imageError}</p>
+  )}
                 {imagePreview && (
                   <img
                     src={imagePreview}

@@ -181,7 +181,16 @@ export default function CartComponent() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch cart data');
+           const datares = await response.json();
+          if (
+            datares.error === "Token has expired" ||
+            datares.error === "Invalid token" ||
+            datares.error === "Authorization token required"
+          ) {
+            localStorage.removeItem("token");
+            window.location.reload(); // refresh page
+            return;
+          }
         }
 
         const data = await response.json();
