@@ -133,7 +133,7 @@ return (
                                       {product.special_price && product.special_price !== product.price && (
                                         <span className="text-xs text-gray-500 line-through">₹{product.price.toLocaleString()}</span>
                                       )}
-                                      <span className="text-base font-semibold text-blue-600">₹{(product.special_price || product.price).toLocaleString()}</span>
+                                      <span className="text-base font-semibold text-blue-600">₹{(product.special_price ?? product.price ?? 0).toLocaleString()}</span>
                                     </div>
                 
                                     <Addtocart productId={product._id} className="w-full text-xs sm:text-sm py-1.5"  />
