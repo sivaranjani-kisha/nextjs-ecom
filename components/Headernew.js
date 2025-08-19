@@ -403,14 +403,14 @@ const Header = () => {
                             {isMobileMenuOpen ? <FiX size={24} /> : <FaBars size={20} />}
                         </button>
                         <Link href="/" className="bg-white p-1 rounded-lg mx-auto">
-                            <img src="/user/bea.png" alt="Logo" className="h-auto" width={40} height={20} />
+                            <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={40} height={20} />
                         </Link>
                     </div>
 
                     {/* Logo (Hidden on mobile) */}
                     <div className="hidden sm:block mr-12 bg-white p-2 rounded-lg">
                         <Link href="/index" className="mx-auto">
-                            <img src="/user/bea.png" alt="Logo" className="h-auto" width={60} height={30} />
+                            <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={60} height={30} />
                         </Link>
                     </div>
 

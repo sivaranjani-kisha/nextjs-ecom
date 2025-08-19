@@ -220,10 +220,10 @@ export default function Order() {
                       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                         {/* Product Image */}
                         <div className="w-full sm:w-24 md:w-32 flex-shrink-0">
-                          {order.order_details?.[0]?.image ? (
+                          {order.order_item?.[0]?.image ? (
                             <img
-                              src={`/uploads/products/${order.order_details[0].image}`}
-                              alt={order.order_details[0].product_name || 'Product'}
+                              src={`/uploads/products/${order.order_item[0].image}`}
+                              alt={order.order_item[0].product_name || 'Product'}
                               className="w-full h-24 sm:h-32 object-contain rounded-lg border border-gray-200"
                             />
                           ) : (
@@ -239,8 +239,8 @@ export default function Order() {
                             <div>
                               <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">Order #{order.order_number}</p>
                               <h3 className="font-medium text-gray-800 mb-1 sm:mb-2 text-sm sm:text-base">
-                                {order.order_details?.[0]?.product_name || 'Product'}
-                                {order.order_details?.length > 1 && ` + ${order.order_details.length - 1} more`}
+                                {order.order_item?.[0]?.name || 'Product'}
+                                {order.order_item?.length > 1 && ` + ${order.order_item.length - 1} more`}
                               </h3>
                               <p className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">₹{order.order_amount}</p>
                             </div>

@@ -41,6 +41,8 @@ const handleIncrease = () => {
   }
 };
 
+
+
   // In your ProductPage component, add these state variables near the top:
 const [selectedFrequentProducts, setSelectedFrequentProducts] = useState([]);
 const [cartTotal, setCartTotal] = useState(0);
@@ -221,11 +223,21 @@ const fetchBrand = async () => {
 
 
   const handleThumbnailClick = (index) => {
-    const imagePath = product.images?.[index];
-    if (imagePath) {
-      setSelectedImage(`/uploads/products/${imagePath}`);
-    }
-  };
+  const imagePath = product.images?.[index];
+
+  if (imagePath) {
+    // Use same logic as main image src
+    const finalSrc =
+      imagePath.startsWith("http") ||
+      imagePath.startsWith("blob:") ||
+      imagePath.startsWith("data:")
+        ? imagePath
+        : `/uploads/products/${imagePath}`;
+
+    setSelectedImage(finalSrc);
+  }
+};
+
   const handleMouseMove = (e) => {
     if (!imgRef.current || !zoomContainerRef.current) return;
   
@@ -344,7 +356,13 @@ const fetchBrand = async () => {
             product.images.map((image, index) => (
               <div key={index} className="flex-shrink-0">
                 <img
-                  src={`/uploads/products/${image}`}
+                  src={
+                                      product.images[index]?.startsWith('http') ||
+                                      product.images[index]?.startsWith('blob:') ||
+                                      product.images[index]?.startsWith('data:')
+                                        ? product.images[index]
+                                        : `/uploads/products/${product.images[index] || 'no-image.jpg'}`
+                                    }
                   alt={`Thumbnail ${index + 1}`}
                   className="w-20 h-20 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300 object-cover"
                   onClick={() => handleThumbnailClick(index)}
@@ -691,50 +709,51 @@ const fetchBrand = async () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
-
-              {showFeatures && (
+        {showFeatures && (
   <div className="mt-3">
-    {
-      (() => {
-        let features = [];
+    {(() => {
+      let features = [];
 
-        // Parse key_specifications based on its type
-        if (typeof product.key_specifications === 'string') {
+      if (product?.key_specifications) {
+        if (typeof product.key_specifications === "string") {
           try {
             const parsed = JSON.parse(product.key_specifications);
             if (Array.isArray(parsed)) {
               features = parsed;
-            } else {
-              features = [product.key_specifications];
+            } else if (parsed) {
+              features = [parsed];
             }
           } catch (error) {
-            features = [product.key_specifications];
+            if (product.key_specifications.trim() !== "") {
+              features = [product.key_specifications];
+            }
           }
         } else if (Array.isArray(product.key_specifications)) {
           features = product.key_specifications;
         }
+      }
 
-        return features.length > 0 ? (
-          <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-            {features.map((feature, index) => {
-              const cleanedFeature = feature
-                .replace(/[{}\[\]"]/g, '') // Remove {}, [], and " characters
-                .trim();
+      // 🔥 Clean & filter empty entries
+      const cleanedFeatures = features
+        .map(f => String(f).replace(/[{}\[\]"]/g, "").trim())
+        .filter(f => f.length > 0);
 
-              return (
-                <li key={index}>
-                  {cleanedFeature.charAt(0).toUpperCase() + cleanedFeature.slice(1)}
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <span className="text-sm text-gray-500">No features available.</span>
-        );
-      })()
-    }
+      return cleanedFeatures.length > 0 ? (
+        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+          {cleanedFeatures.map((feature, index) => (
+            <li key={index}>
+              {feature.charAt(0).toUpperCase() + feature.slice(1)}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <span className="text-xs text-gray-500">No features available.</span>
+      );
+    })()}
   </div>
 )}
+
+
 
             </div>
 
@@ -1187,10 +1206,16 @@ const fetchBrand = async () => {
      <div className="space-y-8">
   <ProductDetailsSection product={product} />
   <RecentlyViewedProducts className="w-full" />
-  <RelatedProducts 
-  className="w-full" 
-  currentProductId={product._id} 
-/>
+
+  {product?.related_products?.length > 0 && (
+  <RelatedProducts
+    className="w-full"
+    currentProductId={product._id}
+  />
+)}
+
+
+
 
 </div>
       

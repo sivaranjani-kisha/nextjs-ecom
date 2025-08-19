@@ -11,7 +11,15 @@ export async function PUT(req) {
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
+  // ✅ Validate mobile (10 digits only)
+    if (!/^\d{10}$/.test(mobile)) {
+      return NextResponse.json({ error: "Mobile number must be exactly 10 digits" }, { status: 400 });
+    }
 
+    // ✅ Validate email format
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
     // Check if email or mobile already exists for another user
     const existingUser = await User.findOne({
       $or: [{ email }, { mobile }],
@@ -29,7 +37,7 @@ export async function PUT(req) {
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { name, mobile, email, status },
-      { new: true }
+      { new: true , runValidators: true}
     );
 
     if (!updatedUser) {
@@ -42,7 +50,7 @@ export async function PUT(req) {
       user: updatedUser
     });
   } catch (error) {
-    console.error("Error updating user:", error);
+    // console.error("Error updating user:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

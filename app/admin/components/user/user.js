@@ -125,9 +125,12 @@ export default function UserComponent() {
       }, 3000);
       
       fetchUsers();
+      setTimeout(() => {
       resetForm();
+       }, 3000);
     } catch (error) {
-      setAlertMessage(error.response?.data?.message || "❌ Error processing request");
+      console.log(error);
+      setAlertMessage(error.response?.data?.error || "❌ Error processing request");
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 3000);
     }
@@ -143,7 +146,7 @@ export default function UserComponent() {
       user_type: "user",
       status: "Active",
     });
-    //setIsEditMode(false);
+    setIsEditMode(false);
     setCurrentUserId(null);
   };
 
@@ -403,7 +406,8 @@ export default function UserComponent() {
             {showAlert && <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4 text-center">{alertMessage}</div>}
             <form onSubmit={handleSubmit} className="mt-4">
               <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
-              <input type="text" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
+              <input  type="tel" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleChange}   onInput={(e) => e.target.value = e.target.value.replace(/[^0-9]/g, '')}
+ className="w-full border p-2 mb-2 rounded" required />
               <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full border p-2 mb-2 rounded" required />
               
               {!isEditMode && (

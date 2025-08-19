@@ -22,6 +22,12 @@ const ProductSchema = new mongoose.Schema({
   filter : { type: Object, default: {} },
   overview_image: { type: [String], default: [] }, 
   featured_products :{ type: Object, default: {} },
+  related_products: { 
+  type: [mongoose.Schema.Types.ObjectId], 
+  ref: "Product", 
+  default: [] 
+},
+
   warranty: Number,
   extended_warranty:Number,
   overviewdescription: String,

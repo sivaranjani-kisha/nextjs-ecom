@@ -18,7 +18,6 @@ const steps = [
 export default function AddProductPage({ mode = "add", productData = null, productId = null,onSuccess, initialProductData}) {
   const [currentStep, setCurrentStep] = useState(1);
   const [jsonHighlightsInput, setJsonHighlightsInput] = useState('');
-  
   const [product, setProduct] = useState({
     name: "",
     slug: "",
@@ -101,6 +100,14 @@ export default function AddProductPage({ mode = "add", productData = null, produ
   const [selectedCategory, setSelectedCategory] = useState(""); 
   const [allproducts, setAllProducts] = useState([]);
   const router = useRouter();
+
+  const handleRelatedProductsChange = (selectedOptions) => {
+  setProduct(prev => ({
+    ...prev,
+    related_products: selectedOptions.map(option => option.value),
+  }));
+};
+
   const fetchCategories = async () => {
     try {
       const response = await fetch("/api/categories/get");
@@ -960,7 +967,8 @@ setProduct(prev => ({
       
     const cleanedProduct = {
       ...product,
-      filters: product.filters.map(f => f.value), // ✅ FIXED here
+      filters: product.filters.map(f => f.value),
+      related_products: product.related_products // ✅ FIXED here
     };
 
     // Upload each variant's images and inject filenames
@@ -1777,6 +1785,9 @@ formData.append("variant", JSON.stringify(variantsWithImages));
           </div>
         )}
 
+   
+
+
 
         {/* Step 3: status */}
         {currentStep === 4 && (
@@ -1844,6 +1855,23 @@ formData.append("variant", JSON.stringify(variantsWithImages));
                 closeMenuOnSelect={false}
               />
             </div>
+
+
+
+            <div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Related Products</label>
+  <Select
+    isMulti
+    options={allproducts.filter(p => p.value !== product._id)} // exclude current product if editing
+    onChange={handleRelatedProductsChange}
+    value={allproducts.filter(option =>
+      Array.isArray(product.related_products) && product.related_products.includes(option.value)
+    )}
+    placeholder="Select related products..."
+    closeMenuOnSelect={false}
+  />
+</div>
+
 
 
 

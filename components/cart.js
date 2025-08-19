@@ -742,9 +742,31 @@ const validateCoupon = async () => {
             ₹{(item.price * item.quantity).toFixed(2)}
           </td>
         </tr>
-
+{/* Breakdown Row */}
+<tr className="bg-gray-50">
+  <td colSpan={4} className="py-3 px-4 text-right text-sm font-medium text-gray-500">
+    Product Subtotal
+    {(item.warranty > 0 || item.extendedWarranty > 0 || item.discount > 0) && (
+      <>
+        {item.warranty > 0 && <><br />Warranty</>}
+        {item.extendedWarranty > 0 && <><br />Extended Warranty</>}
+        {item.discount > 0 && <><br />Discount</>}
+      </>
+    )}
+  </td>
+  <td className="py-3 px-4 text-center text-sm font-semibold">
+    ₹{(item.price * item.quantity).toFixed(2)}
+    {(item.warranty > 0 || item.extendedWarranty > 0 || item.discount > 0) && (
+      <>
+        {item.warranty > 0 && <><br />₹{item.warranty.toFixed(2)}</>}
+        {item.extendedWarranty > 0 && <><br />₹{item.extendedWarranty.toFixed(2)}</>}
+        {item.discount > 0 && <><br />-₹{item.discount.toFixed(2)}</>}
+      </>
+    )}
+  </td>
+</tr>
         {/* Breakdown Row */}
-        <tr className="bg-gray-50">
+        {/* <tr className="bg-gray-50">
           <td colSpan={4} className="py-3 px-4 text-right text-sm font-medium text-gray-500">
             Product Subtotal<br />
             Warranty<br />
@@ -757,7 +779,7 @@ const validateCoupon = async () => {
             {item.extendedWarranty > 0 ? `₹${item.extendedWarranty.toFixed(2)}` : "-"}<br />
             {item.discount > 0 ? `-₹${item.discount.toFixed(2)}` : "-"}
           </td>
-        </tr>
+        </tr> */}
 
         {/* Total Row */}
         <tr className="border-t bg-gray-100">
@@ -843,9 +865,27 @@ const validateCoupon = async () => {
                     </p>
                   </div>
                 </div>
-
+{/* Warranty Info */}
+<div className="text-sm text-gray-600 space-y-1 mt-2">
+  {item.warranty > 0 && (
+    <div className="flex justify-between">
+      <span>Warranty</span>
+      <span className="font-medium text-black">
+        ₹{item.warranty.toFixed(2)}
+      </span>
+    </div>
+  )}
+  {item.extendedWarranty > 0 && (
+    <div className="flex justify-between">
+      <span>Extended Warranty</span>
+      <span className="font-medium text-black">
+        ₹{item.extendedWarranty.toFixed(2)}
+      </span>
+    </div>
+  )}
+</div>
                 {/* Warranty Info */}
-                <div className="text-sm text-gray-600 space-y-1 mt-2">
+                {/* <div className="text-sm text-gray-600 space-y-1 mt-2">
                   <div className="flex justify-between">
                     <span>Warranty</span>
                     <span className="font-medium text-black">
@@ -860,7 +900,7 @@ const validateCoupon = async () => {
                         : "-"}
                     </span>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Total */}
                 <div className="flex justify-between border-t pt-2 mt-2 font-semibold text-black">
