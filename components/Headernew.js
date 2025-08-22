@@ -122,15 +122,15 @@ const Header = () => {
     const handleSearch = () => {
         // Don't search if both are empty
         if (!searchQuery.trim() && selectedCategory === 'All Categories') {
-        return;
+            return;
         }
         // Create URL with search parameters
         const searchParams = new URLSearchParams();
         if (searchQuery.trim()) {
-        searchParams.append('query', searchQuery.trim());
+            searchParams.append('query', searchQuery.trim());
         }
         if (selectedCategory !== 'All Categories') {
-        searchParams.append('category', selectedCategory);
+            searchParams.append('category', selectedCategory);
         }
         // Navigate to search page with query parameters
         router.push(`/search?${searchParams.toString()}`);
@@ -236,42 +236,70 @@ const Header = () => {
         fetchOffers();
     }, []);
 
+    const hideTimeout = useRef(null);
+
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch("/api/categories/get");
-                const data = await response.json();
-    
-                const categoryMap = {};
-                data.forEach((cat) => {
-                    cat.subcategories = [];
-                    categoryMap[cat._id] = cat;
-                });
-                const nestedCategories = [];
-                data.forEach((cat) => {
-                    if (cat.parentid === "none") {
-                        nestedCategories.push(cat);
-                    } else if (categoryMap[cat.parentid]) {
-                        categoryMap[cat.parentid].subcategories.push(cat);
-                    }
-                });
-                setCategories(nestedCategories.filter(cat => cat.status === "Active"));
+            const response = await fetch("/api/categories/get");
+            const data = await response.json();
+
+            const categoryMap = {};
+            data.forEach((cat) => {
+                cat.subcategories = [];
+                categoryMap[cat._id] = cat;
+            });
+
+            const nestedCategories = [];
+            data.forEach((cat) => {
+                if (cat.parentid === "none") {
+                nestedCategories.push(cat);
+                } else if (categoryMap[cat.parentid]) {
+                categoryMap[cat.parentid].subcategories.push(cat);
+                }
+            });
+
+            setCategories(nestedCategories.filter((cat) => cat.status === "Active"));
             } catch (err) {
-                console.error("Failed to fetch categories", err);
+            console.error("Failed to fetch categories", err);
             }
         };
         fetchCategories();
         checkAuthStatus();
     }, []);
-    const hideTimeout = useRef(null);
-    // simple chunk function (adjust columns per row by changing size)
-    const chunkSubcategories = (subs, size = 10) => {
+
+    // Flatten tree, but skip the main "Large Appliances"
+    const flattenTree = (cat, rootCategory, level = 0) => {
+    let result = [];
+    result.push({ ...cat, rootCategory, level });
+
+    if (cat.subcategories?.length > 0) {
+        cat.subcategories.forEach(child => {
+        result = result.concat(flattenTree(child, rootCategory, level + 1));
+        });
+    }
+    return result;
+    };
+
+    // Flatten all starting from actual visible categories (like Refrigerator, AC…)
+    const flattenAllCategories = (cats) => {
+    let result = [];
+    cats.forEach(cat => {
+        // each top-level category is itself the root
+        result = result.concat(flattenTree(cat, cat.category_slug, 0));
+    });
+    return result;
+    };
+
+    // 🔹 Split into columns (10 items max per column)
+    const chunkFlatList = (flatList, size = 15) => {
         const chunks = [];
-        for (let i = 0; i < subs.length; i += size) {
-            chunks.push(subs.slice(i, i + size));
+        for (let i = 0; i < flatList.length; i += size) {
+            chunks.push(flatList.slice(i, i + size));
         }
         return chunks;
     };
+
     const cancelHide = () => {
         if (hideTimeout.current) {
             clearTimeout(hideTimeout.current);
@@ -357,6 +385,29 @@ const Header = () => {
         } finally {
             setForgotPasswordLoading(false);
         }
+    };
+    // 🔹 Render flattened category item
+    const renderFlatItem = (item) => {
+        // if root (level 0) -> only /category/rootCategory
+        const href =
+            item.level === 0
+            ? `/category/${encodeURIComponent(item.rootCategory)}`
+            : `/category/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
+
+        return (
+            <div key={item._id} style={{ paddingLeft: `${item.level * 12}px` }}>
+            <Link
+                href={href}
+                className={`block mb-1 text-sm ${
+                item.level === 0
+                    ? "font-semibold text-blue-600"
+                    : "text-gray-700"
+                } hover:text-blue-600`}
+            >
+                {item.category_name}
+            </Link>
+            </div>
+        );
     };
     
     return (
@@ -761,7 +812,6 @@ const Header = () => {
                 )}
             </div>
     
-
             <div className="relative p-2 px-1 bg-customBlue border-b border-gray-200 shadow">
                 <div className="w-full px-2 sm:px-5 relative">
                     {/* Arrows */}
@@ -793,28 +843,47 @@ const Header = () => {
 
                 {/* DROPDOWN OUTSIDE SWIPER (fixed so it won't be clipped) */}
                 {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
-                    <div ref={dropdownRef} className="fixed z-50 border-t border-gray-200 shadow-xl" style={{ top: `${dropdownTop}px`,left: `${dropdownLeft}px`,maxWidth: "calc(100% - 20px)",}} onMouseEnter={cancelHide} onMouseLeave={() => startHide(120)}>
-                        <div className="flex flex-wrap bg-white">
-                            {chunkSubcategories(hoveredCategory.subcategories, 10).map(
-                                (subChunk, index) => (
-                                    <div key={index} className={`min-w-[180px] max-w-[220px] p-3 ${ index % 2 === 0 ? "bg-white" : "bg-gray-100"}`}>
-                                        {subChunk.map((subcat) => (
-                                            <Link key={subcat._id} href={`/category/${hoveredCategory.category_slug}/${encodeURIComponent(subcat.category_name)}`} className="block text-sm text-gray-700 hover:text-blue-600 no-underline mb-2">
-                                                {subcat.category_name}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )
-                            )}
-                            {hoveredCategory.image && (
-                                <div className="p-3">
-                                    <Link href={`/category/${hoveredCategory.category_slug}`}>
-                                        <Image src={hoveredCategory.image} alt="Category Image" width={200} height={200} className="object-cover rounded"/>
-                                    </Link>
-                                </div>
-                            )}
+                <div
+                    ref={dropdownRef}
+                    className="fixed z-50 border-t border-gray-200 shadow-xl"
+                    style={{
+                    top: `${dropdownTop}px`,
+                    left: `${dropdownLeft}px`,
+                    maxWidth: "calc(100% - 20px)",
+                    }}
+                    onMouseEnter={cancelHide}
+                    onMouseLeave={() => startHide(120)}
+                >
+                    <div className="flex flex-wrap bg-white">
+                    {chunkFlatList(
+                        flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+                        15
+                    ).map((chunk, index) => (
+                        <div
+                        key={index}
+                        className={`min-w-[220px] max-w-[250px] p-3 ${
+                            index % 2 === 0 ? "bg-white" : "bg-gray-100"
+                        }`}
+                        >
+                        {chunk.map(item => renderFlatItem(item))}
                         </div>
+                    ))}
+
+                    {hoveredCategory.image && (
+                        <div className="p-3">
+                        <Link href={``}>
+                            <Image
+                            src={hoveredCategory.image}
+                            alt="Category Image"
+                            width={200}
+                            height={200}
+                            className="object-cover rounded"
+                            />
+                        </Link>
+                        </div>
+                    )}
                     </div>
+                </div>
                 )}
             </div>
         </header>

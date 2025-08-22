@@ -24,6 +24,9 @@ export async function POST(req) {
         return NextResponse.json({ error: "Product already exists" }, { status: 400 });
       }
 
+      console.log(productData);
+console.log("..............................................................");
+
       let existingProductname = await Product.findOne({ slug });
       if (existingProductname) {
         return NextResponse.json({ error: "Product name already exists" }, { status: 400 });

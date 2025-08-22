@@ -21,7 +21,7 @@ export default function PendingOrders() {
   const [showOrderDetailsModal, setShowOrderDetailsModal] = useState(false);
   const [viewOrderDetails, setViewOrderDetails] = useState(null);
   
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
   const [dateFilter, setDateFilter] = useState({
     startDate: null,
     endDate: null

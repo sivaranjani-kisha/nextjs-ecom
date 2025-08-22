@@ -16,7 +16,7 @@ export default function UserComponent() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(20);
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",

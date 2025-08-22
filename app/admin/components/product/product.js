@@ -22,6 +22,7 @@ export default function CategoryComponent() {
   const [successMessage, setSuccessMessage] = useState("");
   const [SelectedProduct, setSelectedProduct] = useState("");
   
+  
   // Filters
   const [statusFilter, setStatusFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -30,14 +31,14 @@ export default function CategoryComponent() {
     startDate: null,
     endDate: null
   });
-
+ const [stockFilter, setStockFilter] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
 
   // Fetch products, categories and brands from API
   const fetchProducts = async () => {
@@ -51,6 +52,18 @@ export default function CategoryComponent() {
       setIsLoading(false);
     }
   };
+
+  const [subcategories, setSubcategories] = useState([]);
+
+const fetchSubcategories = async () => {
+  try {
+    const response = await fetch("/api/categories");
+    const data = await response.json();
+    setSubcategories(data);
+  } catch (error) {
+    console.error("Error fetching subcategories:", error);
+  }
+};
 
   const fetchCategories = async () => {
     try {
@@ -69,6 +82,7 @@ export default function CategoryComponent() {
       if (data.success) {
         setBrands(data.brands);
       }
+      
     } catch (error) {
       console.error("Error fetching brands:", error);
     }
@@ -78,6 +92,7 @@ export default function CategoryComponent() {
     fetchProducts();
     fetchCategories();
     fetchBrands();
+    fetchSubcategories
   }, []);
 
   // Debounce search input
@@ -177,7 +192,11 @@ const exportToExcel = () => {
 
   const brandMap = {};
   brands.forEach(brand => {
-    brandMap[brand._id] = brand.brand_name;
+    // Check what ID field your brands actually have
+    const brandId = brand._id || brand.id;
+    if (brandId) {
+      brandMap[brandId] = brand.brand_name || brand.name;
+    }
   });
 
   // Prepare data with names instead of IDs
@@ -204,13 +223,18 @@ const exportToExcel = () => {
 
     // Resolve brand name
     let brandName = 'No Brand';
-    if (product.brand_name) {
-      if (typeof product.brand_name === 'object') {
-        brandName = product.brand.brand_name;
-      } else if (brandMap[product.brand_name]) {
-        brandName = brandMap[product.brand_name];
+    if (product.brand) {
+      if (typeof product.brand === 'object') {
+        brandName = product.brand.brand_name || product.brand.name || 'No Brand Name';
+      } else {
+        // If brand is stored as ID
+        brandName = brandMap[product.brand] || 'Brand not found';
       }
     }
+
+//     const brandName = brands.find(b => b._id === product.brand)?.name || '';
+// // const categoryName = categories.find(c => c._id === product.category)?.name || '';
+// const subcategoryName = subcategories.find(sc => sc._id === product.sub_category)?.name || '';
 
     return {
       'Item No.': product.item_code,
@@ -219,9 +243,9 @@ const exportToExcel = () => {
       'Category': categoryName,
       'Subcategory': subcategoryName,
       'Brand': brandName,
-      'Size': product.filter?.size || '',
-      'Star': product.featured_products?.star_rating || '',
-      'Movement': product.stock_status === "In Stock" ? "In Stock" : "Out of Stock",
+      'Size': product.size,
+      'Star': product.star || '',
+      'Movement': product.movement,
       'MRP PRICE': product.price,
       'Special Price': product.special_price,
       'Description': product.description || '',
@@ -375,47 +399,46 @@ const exportToExcel = () => {
       ))
     ];
   };
-
-  const getFilteredProducts = () => {
+const getFilteredProducts = () => {
     const flattenedProducts = flattenProducts(products);
-    
+   
     return flattenedProducts.filter((product) => {
       // Search filter
-      const matchesSearch = debouncedSearchQuery === "" || 
+      const matchesSearch = debouncedSearchQuery === "" ||
         product.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         product.slug?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         product.item_code?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-
+ 
       // Status filter
-      const matchesStatus = statusFilter === "" || 
+      const matchesStatus = statusFilter === "" ||
         product.status?.toLowerCase() === statusFilter.toLowerCase();
-
+ 
       // Date filter
       let matchesDate = true;
       if (dateFilter.startDate && dateFilter.endDate && product.createdAt) {
         const productDate = new Date(product.createdAt);
         const startDate = new Date(dateFilter.startDate);
         const endDate = new Date(dateFilter.endDate);
-
+ 
         startDate.setHours(0, 0, 0, 0);
         endDate.setHours(23, 59, 59, 999);
-
+ 
         matchesDate = productDate >= startDate && productDate <= endDate;
       }
-
+ 
       // Category filter
       let matchesCategory = true;
       if (categoryFilter) {
         if (product.category && typeof product.category === 'object') {
           const productCategoryId = product.category._id.toString();
           const selectedCategory = categories.find(cat => cat._id.toString() === categoryFilter);
-          
+         
           if (selectedCategory.parentid === "none") {
             const subCategoryIds = categories
               .filter(cat => cat.parentid === categoryFilter)
               .map(cat => cat._id.toString());
-            
-            matchesCategory = productCategoryId === categoryFilter || 
+           
+            matchesCategory = productCategoryId === categoryFilter ||
                             subCategoryIds.includes(productCategoryId);
           } else {
             matchesCategory = productCategoryId === categoryFilter;
@@ -423,13 +446,13 @@ const exportToExcel = () => {
         } else if (product.category) {
           const productCategoryId = product.category.toString();
           const selectedCategory = categories.find(cat => cat._id.toString() === categoryFilter);
-          
+         
           if (selectedCategory.parentid === "none") {
             const subCategoryIds = categories
               .filter(cat => cat.parentid === categoryFilter)
               .map(cat => cat._id.toString());
-            
-            matchesCategory = productCategoryId === categoryFilter || 
+           
+            matchesCategory = productCategoryId === categoryFilter ||
                             subCategoryIds.includes(productCategoryId);
           } else {
             matchesCategory = productCategoryId === categoryFilter;
@@ -438,7 +461,7 @@ const exportToExcel = () => {
           matchesCategory = false;
         }
       }
-
+ 
       // Brand filter
       let matchesBrand = true;
       if (brandFilter) {
@@ -450,10 +473,95 @@ const exportToExcel = () => {
           matchesBrand = false;
         }
       }
-
-      return matchesSearch && matchesStatus && matchesDate && matchesCategory && matchesBrand;
+ 
+ 
+     let matchesStock = true;
+if (stockFilter) {
+  matchesStock = product.stock_status?.toLowerCase() === stockFilter.toLowerCase();
+}
+ 
+ 
+      return matchesSearch && matchesStatus && matchesDate && matchesCategory && matchesBrand && matchesStock;
     });
   };
+  // const getFilteredProducts = () => {
+  //   const flattenedProducts = flattenProducts(products);
+    
+  //   return flattenedProducts.filter((product) => {
+  //     // Search filter
+  //     const matchesSearch = debouncedSearchQuery === "" || 
+  //       product.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+  //       product.slug?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+  //       product.item_code?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+
+  //     // Status filter
+  //     const matchesStatus = statusFilter === "" || 
+  //       product.status?.toLowerCase() === statusFilter.toLowerCase();
+
+  //     // Date filter
+  //     let matchesDate = true;
+  //     if (dateFilter.startDate && dateFilter.endDate && product.createdAt) {
+  //       const productDate = new Date(product.createdAt);
+  //       const startDate = new Date(dateFilter.startDate);
+  //       const endDate = new Date(dateFilter.endDate);
+
+  //       startDate.setHours(0, 0, 0, 0);
+  //       endDate.setHours(23, 59, 59, 999);
+
+  //       matchesDate = productDate >= startDate && productDate <= endDate;
+  //     }
+
+  //     // Category filter
+  //     let matchesCategory = true;
+  //     if (categoryFilter) {
+  //       if (product.category && typeof product.category === 'object') {
+  //         const productCategoryId = product.category._id.toString();
+  //         const selectedCategory = categories.find(cat => cat._id.toString() === categoryFilter);
+          
+  //         if (selectedCategory.parentid === "none") {
+  //           const subCategoryIds = categories
+  //             .filter(cat => cat.parentid === categoryFilter)
+  //             .map(cat => cat._id.toString());
+            
+  //           matchesCategory = productCategoryId === categoryFilter || 
+  //                           subCategoryIds.includes(productCategoryId);
+  //         } else {
+  //           matchesCategory = productCategoryId === categoryFilter;
+  //         }
+  //       } else if (product.category) {
+  //         const productCategoryId = product.category.toString();
+  //         const selectedCategory = categories.find(cat => cat._id.toString() === categoryFilter);
+          
+  //         if (selectedCategory.parentid === "none") {
+  //           const subCategoryIds = categories
+  //             .filter(cat => cat.parentid === categoryFilter)
+  //             .map(cat => cat._id.toString());
+            
+  //           matchesCategory = productCategoryId === categoryFilter || 
+  //                           subCategoryIds.includes(productCategoryId);
+  //         } else {
+  //           matchesCategory = productCategoryId === categoryFilter;
+  //         }
+  //       } else {
+  //         matchesCategory = false;
+  //       }
+  //     }
+
+  //     // Brand filter
+  //     let matchesBrand = true;
+  //     if (brandFilter) {
+  //       if (product.brand && typeof product.brand === 'object') {
+  //         matchesBrand = product.brand._id.toString() === brandFilter;
+  //       } else if (product.brand) {
+  //         matchesBrand = product.brand.toString() === brandFilter;
+  //       } else {
+  //         matchesBrand = false;
+  //       }
+  //     }
+
+  //     return matchesSearch && matchesStatus && matchesDate && matchesCategory && matchesBrand;
+  //   });
+  // };
 
   const filteredProducts = getFilteredProducts();
   const pageCount = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -553,7 +661,21 @@ const exportToExcel = () => {
                 {renderBrandOptions()}
               </select>
             </div>
-
+<div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+              <select
+                value={stockFilter}
+                onChange={(e) => {
+                  setStockFilter(e.target.value);
+                  setCurrentPage(0);
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
+              >
+                <option value="">All Stock</option>
+                <option value="In Stock">In Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </select>
+            </div>
             {/* Date Range Picker */}
             {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>

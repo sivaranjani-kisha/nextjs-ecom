@@ -439,8 +439,10 @@ const grandTotal = subtotal - totalDiscount;
   setIsSubmitting(true);
   setError("");
     try {
+      alert("Bismillah");
       const token = localStorage.getItem("token");
       if (!token) {
+         alert("sdgdfhfd");
         setShowAuthModal(true);
         setIsSubmitting(false);
         return;
@@ -455,6 +457,7 @@ const grandTotal = subtotal - totalDiscount;
   
       // Validation Checks (only if not using saved address)
       if (!useSavedAddress || selectedAddress === null) {
+         alert("039746859");
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const phoneRegex = /^[0-9]{10}$/;
         const postCodeRegex = /^[0-9]{4,6}$/;
@@ -489,6 +492,7 @@ const grandTotal = subtotal - totalDiscount;
       let paymentMode = "";
   
       if (paymentMethod === 'cash') {
+         alert("money");
         paymentId = "COD_" + Date.now();
         paymentStatus = "pending";
         paymentMode = "cash";
@@ -566,6 +570,7 @@ const grandTotal = subtotal - totalDiscount;
         ? `${useraddress[selectedAddress].address}, ${useraddress[selectedAddress].city}, ${useraddress[selectedAddress].state}, ${useraddress[selectedAddress].country}, ${useraddress[selectedAddress].postCode}`
         : `${addressData.address}, ${addressData.city}, ${addressData.state}, ${addressData.country}, ${addressData.postCode}`;
   
+        alert("Hiiiii:)");
       // Save Order
       const orderRes = await fetch('/api/orders/add', {
         method: 'POST',
@@ -785,35 +790,164 @@ const grandTotal = subtotal - totalDiscount;
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
+                {/* First & Last Name */}
                 <div className="grid grid-cols-2 gap-4">
-                  <input type="text" name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                  <input type="text" name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
+                  </div>
                 </div>
 
-                <input type="text" name="businessName" placeholder="Business Name (Optional)" value={formData.businessName} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
-                <input type="text" name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                <input type="text" name="address" placeholder="House number and street name" value={formData.address} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                <input type="text" name="landmark" placeholder="landmark, suite, unit, etc. (Optional)" value={formData.landmark} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
-
-                <div className="grid grid-cols-2 gap-4 mt-3">
-                  <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                  <input type="text" name="state" placeholder="State/Province" value={formData.state} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
+                {/* Business Name */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">Business Name (Optional)</label>
+                  <input type="text" name="businessName" value={formData.businessName} onChange={handleChange} className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
                 </div>
 
-                <input type="text" name="postCode" placeholder="Post Code" value={formData.postCode} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                <input type="text" name="phonenumber" placeholder="Phone Number" value={formData.phonenumber} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required />
-                <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required />
                 
-                <DeliveryOptions
-                  formData={formData}
-                  handleChange={handleChange}
-                  isDeliverySaved={isDeliverySaved}
-                  setIsDeliverySaved={setIsDeliverySaved}
-                  stores={stores}
-                />
+                {/* Country */}
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700">
+      Country <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="text"
+      name="country"
+      value={formData.country}
+      onChange={handleChange}
+      className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+      required
+    />
+  </div>
+                {/* Address */}
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700">
+      House number and street name <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="text"
+      name="address"
+      value={formData.address}
+      onChange={handleChange}
+      className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+      required
+    />
+  </div>
+                {/* Landmark */}
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700">
+      Landmark, suite, unit, etc. (Optional)
+    </label>
+    <input
+      type="text"
+      name="landmark"
+      value={formData.landmark}
+      onChange={handleChange}
+      className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+    />
+  </div>
+
+                {/* City & State */}
+  <div className="grid grid-cols-2 gap-4">
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700">
+        City <span className="text-red-500">*</span>
+      </label>
+      <input
+        type="text"
+        name="city"
+        value={formData.city}
+        onChange={handleChange}
+        className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+        required
+      />
+    </div>
+
+    <div className="mb-4">
+  <label className="block text-sm font-medium text-gray-700">
+    State/Province <span className="text-red-500">*</span>
+  </label>
+  <select
+    name="state"
+    value={formData.state}
+    onChange={handleChange}
+    required
+    className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+  >
+    <option value="">-- Select State --</option>
+    <option value="tamilnadu">Tamil Nadu</option>
+  </select>
+</div>
+
+    </div>
+
+                {/* Post Code */}
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700">
+      Post Code <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="text"
+      name="postCode"
+      value={formData.postCode}
+      onChange={handleChange}
+      className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+      required
+    />
+  </div>
+                {/* Phone Number */}
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700">
+      Phone Number <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="text"
+      name="phonenumber"
+      value={formData.phonenumber}
+      onChange={handleChange}
+      className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+      required
+    />
+  </div>
+                {/* Email */}
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700">
+      Email Address <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="email"
+      name="email"
+      value={formData.email}
+      onChange={handleChange}
+      className="mt-1 block w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+      required
+    />
+  </div>
                 
-                <h3 className="text-lg font-semibold text-gray-700 mt-6 mb-2">Additional Information</h3>
-                <textarea name="additionalInfo" placeholder="Notes about your order" value={formData.additionalInfo} onChange={handleChange} className="border p-2 rounded-md w-full h-20 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"></textarea>
+        <DeliveryOptions formData={formData} handleChange={handleChange} isDeliverySaved={isDeliverySaved} setIsDeliverySaved={setIsDeliverySaved} stores={stores}/>
+                
+                {/* Additional Info */}
+  <h3 className="text-lg font-semibold text-gray-700 mt-6 mb-2">Additional Information</h3>
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700">
+      Notes about your order
+    </label>
+    <textarea
+      name="additionalInfo"
+      value={formData.additionalInfo}
+      onChange={handleChange}
+      className="mt-1 block w-full border p-2 rounded-md h-20 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+    ></textarea>
+  </div>
               </form>
             )}
           </div>
@@ -884,7 +1018,7 @@ const grandTotal = subtotal - totalDiscount;
               </div>
             </div>
 <button 
-  onClick={handleSubmit} 
+    onClick={handleSubmit} 
   disabled={isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved}
   className={`mt-6 w-full text-white font-semibold py-3 rounded-lg transition ${
     isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved
@@ -902,6 +1036,28 @@ const grandTotal = subtotal - totalDiscount;
     </span>
   ) : 'Place Order'}
 </button>
+
+
+
+{/* developer hider<button 
+  onClick={handleSubmit} 
+  disabled={isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved}
+  className={`mt-6 w-full text-white font-semibold py-3 rounded-lg transition ${
+    isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved
+      ? 'bg-gray-400 cursor-not-allowed' 
+      : 'bg-red-500 hover:bg-red-600'
+  }`}
+>
+  {isSubmitting ? (
+    <span className="flex items-center justify-center">
+      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Processing...
+    </span>
+  ) : 'Place Order'}
+</button> */}
 
             {/* <button 
               onClick={handleSubmit} 

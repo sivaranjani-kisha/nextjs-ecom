@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import Link from "next/link";
 
 // ✅ Section Modal for Add/Edit
 function SectionModal({ initialData = null, onClose, onSubmit }) {
@@ -14,74 +15,73 @@ function SectionModal({ initialData = null, onClose, onSubmit }) {
   };
 
   return (
-   <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-  <div className="bg-white p-6 rounded-md w-[90%] max-w-md shadow-lg">
-    <h2 className="text-xl font-semibold mb-4 text-center">
-      {initialData ? "Edit Section" : "Add Section"}
-    </h2>
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-md w-[90%] max-w-md shadow-lg">
+        <h2 className="text-xl font-semibold mb-4 text-center">
+          {initialData ? "Edit Section" : "Add Section"}
+        </h2>
 
-    <div className="grid grid-cols-2 gap-4 mb-4">
-      <div className="col-span-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Section Name
-        </label>
-        <input
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter section name"
-        />
-      </div>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Section Name
+            </label>
+            <input
+              className="w-full border border-gray-300 rounded px-3 py-2"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter section name"
+            />
+          </div>
 
-      <div className="col-span-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Status
-        </label>
-        <select
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-      </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              className="w-full border border-gray-300 rounded px-3 py-2"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
 
-      {/* ✅ On/Off toggle in center */}
-      <div className="col-span-2 flex justify-center mt-2">
-        <button
-          type="button"
-          onClick={() =>
-            setStatus((prev) => (prev === "active" ? "inactive" : "active"))
-          }
-          className={`px-5 py-2 text-sm font-semibold rounded-full transition ${
-            status === "active"
-              ? "bg-green-500 text-white"
-              : "bg-red-500 text-white"
-          }`}
-        >
-          {status === "active" ? "ON" : "OFF"}
-        </button>
+          {/* ✅ On/Off toggle in center */}
+          <div className="col-span-2 flex justify-center mt-2">
+            <button
+              type="button"
+              onClick={() =>
+                setStatus((prev) => (prev === "active" ? "inactive" : "active"))
+              }
+              className={`px-5 py-2 text-sm font-semibold rounded-full transition ${
+                status === "active"
+                  ? "bg-green-500 text-white"
+                  : "bg-red-500 text-white"
+              }`}
+            >
+              {status === "active" ? "ON" : "OFF"}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            className="px-4 py-2 bg-gray-300 text-sm rounded"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded"
+            onClick={handleSubmit}
+          >
+            {initialData ? "Update" : "Add"}
+          </button>
+        </div>
       </div>
     </div>
-
-    <div className="flex justify-end gap-2 mt-4">
-      <button
-        className="px-4 py-2 bg-gray-300 text-sm rounded"
-        onClick={onClose}
-      >
-        Cancel
-      </button>
-      <button
-        className="px-4 py-2 bg-blue-600 text-white text-sm rounded"
-        onClick={handleSubmit}
-      >
-        {initialData ? "Update" : "Add"}
-      </button>
-    </div>
-  </div>
-</div>
-
   );
 }
 
@@ -161,9 +161,9 @@ export default function HomeSectionOrder() {
   if (isLoading) return <p>Loading sections...</p>;
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <div className="flex justify-between mb-4">
-        <h1 className="text-xl font-bold">Manage Section Order</h1>
+    <div className="container mx-auto">
+      <div className="flex justify-between items-center mb-5 mt-5">
+        <h2 className="text-2xl font-bold">Manage Section Order</h2>
         <button
           onClick={() => setShowModal(true)}
           className="bg-green-600 text-white px-4 py-1 rounded"
@@ -177,7 +177,11 @@ export default function HomeSectionOrder() {
           {(provided) => (
             <div {...provided.droppableProps} ref={provided.innerRef}>
               {sections.map((section, index) => (
-                <Draggable key={section._id} draggableId={section._id} index={index}>
+                <Draggable
+                  key={section._id}
+                  draggableId={section._id}
+                  index={index}
+                >
                   {(provided) => (
                     <div
                       ref={provided.innerRef}
@@ -186,7 +190,16 @@ export default function HomeSectionOrder() {
                       className="p-3 mb-2 bg-white border rounded shadow flex justify-between items-center"
                     >
                       <div>
-                        <p className="font-medium">{section.name}</p>
+                        <p className="font-medium">
+                          <Link
+                            href={`/admin/homesettings/${encodeURIComponent(
+                              section.name
+                            )}`}
+                          >
+                            {section.name.charAt(0).toUpperCase() + section.name.slice(1)}
+                          </Link>
+                        </p>
+
                         <p
                           className={`text-xs ${
                             section.status === "inactive"

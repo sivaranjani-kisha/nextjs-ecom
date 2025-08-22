@@ -19,7 +19,7 @@ export default function OrderComponent() {
   const [error, setError] = useState("");
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
   const tabs = [
     { id: "pending", label: "Pending Orders" },
     { id: "cancelled", label: "Cancelled Orders" },

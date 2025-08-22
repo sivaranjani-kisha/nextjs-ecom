@@ -77,7 +77,7 @@ export async function POST(req) {
 
               }
               console.log(product);
-              if (product) {
+              if (product && product.quantity > 0) {
                 product.quantity = product.quantity - item.quantity;
                 await product.save();
               }

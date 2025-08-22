@@ -22,7 +22,7 @@ export default function BlogComponent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(20);
   const [blogToDelete, setBlogToDelete] = useState(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");

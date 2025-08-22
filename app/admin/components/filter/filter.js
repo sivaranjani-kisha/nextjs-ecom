@@ -36,7 +36,7 @@ export default function FilterComponent() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
 
   const fetchFilters = async () => {
     try {

@@ -28,7 +28,7 @@ export default function BrandComponent() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
 
   // Fetch categories from API
   const fetchBrand = async () => {

@@ -18,7 +18,7 @@ export default function ShippedOrders() {
   const [alertMessage, setAlertMessage] = useState(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState({

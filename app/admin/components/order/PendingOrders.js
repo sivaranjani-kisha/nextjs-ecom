@@ -22,7 +22,7 @@ export default function PendingOrders() {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
   
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
   const [dateFilter, setDateFilter] = useState({
     startDate: null,
     endDate: null

@@ -43,15 +43,23 @@ export default function AdminSider({ collapsed }) {
     { icon: 'mdi:note-text-outline', label: 'Blog', link: 'blog' },
     { icon: 'mdi:account-outline', label: 'User', link: 'user' },
     { icon: 'mdi:phone-outline', label: 'Contact', link: 'contact' },
-    { icon: 'mdi:phone-outline', label: 'Setting', link: 'settings' },
-        {
-      icon: 'mdi:map-marker-outline',
-      label: 'Store Location',
-      submenu: [
-        { icon: 'mdi:store-outline', label: 'Store', link: 'store', dotColor: 'bg-yellow-500' },
-        { icon: 'mdi:map-marker-radius-outline', label: 'Zone', link: 'zone', dotColor: 'bg-blue-500' },
-      ]
-    }
+    // ✅ Updated Settings with new icon + submenu
+  {
+    icon: 'mdi:cog-outline',  // changed from phone to settings cog
+    label: 'Settings',
+    submenu: [
+      { icon: 'mdi:home-outline', label: 'Home Settings', link: 'homesettings', dotColor: 'bg-green-500' },
+       { icon: 'mdi:store-outline', label: 'Store Settings', link: 'store', dotColor: 'bg-yellow-500' },
+    ]
+  },
+    //     {
+    //   icon: 'mdi:map-marker-outline',
+    //   label: 'Store Location',
+    //   submenu: [
+       
+    //     { icon: 'mdi:map-marker-radius-outline', label: 'Zone', link: 'zone', dotColor: 'bg-blue-500' },
+    //   ]
+    // }
 
   ];
   const handleCloseSubmenu = () => {

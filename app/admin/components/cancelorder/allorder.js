@@ -12,7 +12,7 @@ const OrdersTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('');
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
   const router = useRouter();
   const [filtered, setFiltered] = useState([]);
 

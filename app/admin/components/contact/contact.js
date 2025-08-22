@@ -19,7 +19,7 @@ export default function ContactComponent() {
     endDate: null
   });
 
-  const contactsPerPage = 5;
+  const contactsPerPage = 20;
 
   useEffect(() => {
     fetchContacts();
