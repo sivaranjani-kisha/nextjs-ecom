@@ -26,7 +26,7 @@ export default function AdminSider({ collapsed }) {
         { icon: 'mdi:filter-outline', label: 'Filter', link: 'filter', dotColor: 'bg-yellow-500' }
       ]
     },
-    { icon: 'mdi:image-outline', label: 'Banner', link: 'design' },
+    // { icon: 'mdi:image-outline', label: 'Banner', link: 'design' },
     {
       icon: 'material-symbols:receipt-long',
           label: 'Sales',

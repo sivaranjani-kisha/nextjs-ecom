@@ -18,6 +18,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { useRouter } from 'next/navigation';
+import { Play } from "lucide-react";
 
 import { Navigation } from 'swiper/modules';
 import SideNavbar from '@/components/sideNavbar';
@@ -239,34 +240,39 @@ const Header = () => {
     const hideTimeout = useRef(null);
 
     useEffect(() => {
-        const fetchCategories = async () => {
-            try {
+    const fetchCategories = async () => {
+        try {
             const response = await fetch("/api/categories/get");
             const data = await response.json();
 
+            // Keep only active categories
+            const activeCategories = data.filter(cat => cat.status === "Active");
+
             const categoryMap = {};
-            data.forEach((cat) => {
+            activeCategories.forEach((cat) => {
                 cat.subcategories = [];
                 categoryMap[cat._id] = cat;
             });
 
             const nestedCategories = [];
-            data.forEach((cat) => {
+            activeCategories.forEach((cat) => {
                 if (cat.parentid === "none") {
-                nestedCategories.push(cat);
+                    nestedCategories.push(cat);
                 } else if (categoryMap[cat.parentid]) {
-                categoryMap[cat.parentid].subcategories.push(cat);
+                    categoryMap[cat.parentid].subcategories.push(cat);
                 }
             });
 
-            setCategories(nestedCategories.filter((cat) => cat.status === "Active"));
-            } catch (err) {
+            setCategories(nestedCategories);
+        } catch (err) {
             console.error("Failed to fetch categories", err);
-            }
-        };
-        fetchCategories();
-        checkAuthStatus();
-    }, []);
+        }
+    };
+
+    fetchCategories();
+    checkAuthStatus();
+}, []);
+
 
     // Flatten tree, but skip the main "Large Appliances"
     const flattenTree = (cat, rootCategory, level = 0) => {
@@ -387,28 +393,40 @@ const Header = () => {
         }
     };
     // 🔹 Render flattened category item
-    const renderFlatItem = (item) => {
-        // if root (level 0) -> only /category/rootCategory
-        const href =
-            item.level === 0
+   const renderFlatItem = (item) => {
+    // if root (level 0) -> only /category/rootCategory
+    const href =
+        item.level === 0
             ? `/category/${encodeURIComponent(item.rootCategory)}`
             : `/category/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
 
-        return (
-            <div key={item._id} style={{ paddingLeft: `${item.level * 12}px` }}>
+    return (
+        <div key={item._id} style={{ paddingLeft: `${item.level * 12}px` }}>
             <Link
                 href={href}
-                className={`block mb-1 text-sm ${
-                item.level === 0
-                    ? "font-semibold text-blue-600"
-                    : "text-gray-700"
-                } hover:text-blue-600`}
+                className={`flex items-center justify-between mb-1 text-sm ${
+                    item.level === 0
+                        ? "font-semibold text-blue-600"
+                        : "text-gray-700"
+                }`}
             >
-                {item.category_name}
+                {/* Category name with bold font */}
+                <span className={item.level === 0 ? "font-bold" : "font-normal"}>
+                    {item.category_name}
+                </span>
+
+                {/* Show triangle icon only for top-level categories */}
+                {item.level === 0 && (
+                    <Play
+                        size={14}
+                        strokeWidth={0} // remove outline
+                        className="text-blue-600 fill-blue-600"
+                    />
+                )}
             </Link>
-            </div>
-        );
-    };
+        </div>
+    );
+};
     
     return (
         <header className="sticky top-0 z-50">
@@ -827,17 +845,20 @@ const Header = () => {
                     </div>
                     {/* Swiper */}
                     <div className="relative bg-customBlue">
-                        <Swiper modules={[Navigation]} navigation={{ prevEl: ".custom-swiper-prev", nextEl: ".custom-swiper-next",}} spaceBetween={10} slidesPerView="auto" watchOverflow={true} className="pl-6 pr-12">
-                            {categories.map((category) => (
-                                <SwiperSlide key={category._id} className="!w-auto">
-                                    <div ref={(el) => (slideRefs.current[category._id] = el)} onMouseEnter={() => handleMouseEnter(category._id)} onMouseLeave={() => startHide(120)} className="px-4 py-2 flex flex-col items-center text-center" >
-                                        <Link href={`/category/${category.category_slug}`} className="text-sm text-white hover:text-orange-500 whitespace-nowrap" >
-                                            {category.category_name}
-                                        </Link>
-                                    </div>
-                                </SwiperSlide>
-                            ))}
-                        </Swiper>
+                        <div className="flex justify-center overflow-x-auto scrollbar-hide">
+                           
+                                <Swiper modules={[Navigation]} navigation={{ prevEl: ".custom-swiper-prev", nextEl: ".custom-swiper-next",}} spaceBetween={10} slidesPerView="auto" watchOverflow={true} className="pl-6 pr-12">
+                                    {categories.map((category) => (
+                                        <SwiperSlide key={category._id} className="!w-auto">
+                                            <div ref={(el) => (slideRefs.current[category._id] = el)} onMouseEnter={() => handleMouseEnter(category._id)} onMouseLeave={() => startHide(120)} className="px-4 py-2 flex flex-col items-center text-center" >
+                                                <Link href={`/category/${category.category_slug}`} className="text-sm text-white hover:text-orange-500 whitespace-nowrap" >
+                                                    {category.category_name}
+                                                </Link>
+                                            </div>
+                                        </SwiperSlide>
+                                    ))}
+                                </Swiper>
+                        </div>
                     </div>
                 </div>
 
