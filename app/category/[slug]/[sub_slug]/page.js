@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-import CategoryComponent from "@/components/category/[slug]/page";
+import CategoryComponent from "@/components/category/[slug]/[sub_slug]/page";
 
 
 export default function Dashboard({ params }) {

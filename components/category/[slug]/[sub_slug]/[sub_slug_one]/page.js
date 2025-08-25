@@ -449,7 +449,7 @@ const handleProductClick = (product) => {
         <div className="lg:col-span-3">
           {/* Sorting and Count */}
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <p className="text-sm text-gray-600">{products.length} products found</p>
+            <p className="text-sm text-gray-600">{pagination.totalProducts} products found</p>
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-600">Sort by:</span>
               <select
@@ -682,14 +682,13 @@ const handleProductClick = (product) => {
                       )}
   
                       {/* Discount Badge */}
-                      {product.special_price &&
-                        product.special_price !== product.price &&
-                        100 - (product.special_price / product.price) * 100 > 0 && (
+                      {Number(product.special_price) > 0 &&
+                        Number(product.special_price) < Number(product.price) && (
                           <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
-                            {Math.round(100 - (product.special_price / product.price) * 100)}%
-                            OFF
+                            {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                           </span>
-                        )}
+                      )}
+
   
                       {/* Wishlist */}
                       <div className="absolute top-2 right-2">
@@ -713,14 +712,21 @@ const handleProductClick = (product) => {
   
                       {/* Price Row (same level always) */}
                       <div className="flex items-center gap-2 mb-3">
-                        
                         <span className="text-base font-semibold text-blue-600">
-                          ₹{(product.special_price || product.price).toLocaleString()}
+                          ₹{(
+                            product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
+                              ? product.special_price
+                              : product.price
+                          ).toLocaleString()}
                         </span>
-                          {product.special_price && product.special_price !== product.price && (
-                          <span className="text-xs text-gray-500 line-through">
-                            ₹{product.price.toLocaleString()}
-                          </span>
+
+
+                        {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
+                          product.special_price < product.price &&
+                          (
+                            <span className="text-xs text-gray-500 line-through">
+                              ₹{product.price.toLocaleString()}
+                            </span>
                         )}
                       </div>
   
