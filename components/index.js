@@ -5,7 +5,9 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { motion, useAnimation, useInView } from "framer-motion";
-import { ShoppingCartSimple, CaretDown } from "@phosphor-icons/react";
+//import { ShoppingCartSimple, CaretDown } from "@phosphor-icons/react";
+import { X } from "lucide-react"; 
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { HiArrowRight } from "react-icons/hi";
@@ -59,7 +61,9 @@ export default function HomeComponent() {
   const [isSectionLoading, setIsSectionLoading] = useState(false);
     // Cateogry Scroll
     const categoryScrollRef = useRef(null);
-
+const [videos, setVideos] = useState([]);
+ const [activeVideo, setActiveVideo] = useState(null);
+  const scrollRef = useRef(null);
 const scrollCategories = (direction) => {
   if (categoryScrollRef.current) {
     categoryScrollRef.current.scrollBy({
@@ -68,6 +72,41 @@ const scrollCategories = (direction) => {
     });
   }
 };
+
+
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const res = await fetch("/api/videocard");
+        const data = await res.json();
+        if (data.success) setVideos(data.videoCards);
+      } catch (err) {
+        console.error("Error fetching videos:", err);
+      }
+    };
+    fetchVideos();
+  }, []);
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = 350;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+   // ✅ Extract YouTube ID
+  const getYoutubeId = (url) => {
+    try {
+      const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+      return match ? match[1] : null;
+    } catch {
+      return null;
+    }
+  };
+
   // Fetch banner data
 useEffect(() => {
     const fetchBannerData = async () => {
@@ -240,6 +279,60 @@ const fetchCategoryBanners = async () => {
     console.error("Error fetching category banners:", error);
   }
 };
+const fetchSingleBannerData = async () => {
+  setIsSingleBannerLoading(true);
+  try {
+    const response = await fetch("/api/singlebanner");
+    const data = await response.json();
+
+    if (data.success && data.banners?.length > 0) {
+      const singleBannerItems = data.banners
+        .filter((banner) => banner.status === "Active") // ✅ only Active
+        .map((banner) => ({
+          id: banner._id,
+         redirect_url: banner.redirect_url || "/shop",
+          bgImageUrl: banner.banner_image,
+          singleBannerImageUrl: banner.banner_image,
+        }));
+
+      setSingleBannerData({
+        singlebanner: { items: singleBannerItems },
+      });
+    } else {
+      // if no data, fallback default
+      setSingleBannerData({
+        singlebanner: {
+          items: [
+            {
+              id: 1,
+              buttonLink: "/shop",
+              bgImageUrl: "/images/singlebanner-img1.png",
+              singleBannerImageUrl: "/images/singlebanner-product.png",
+            },
+          ],
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching single banner data:", error);
+    setSingleBannerData({
+      singlebanner: {
+        items: [
+          {
+            id: 1,
+            buttonLink: "/shop",
+            bgImageUrl: "/images/singlebanner-img1.png",
+            singleBannerImageUrl: "/images/singlebanner-product.png",
+          },
+        ],
+      },
+    });
+  } finally {
+    setIsSingleBannerLoading(false);
+  }
+};
+
+
 
 
 
@@ -250,7 +343,7 @@ const fetchCategoryBanners = async () => {
     fetchBrands();
     fetchCategories();
     fetchProducts();
-
+fetchSingleBannerData();
     const timer = setTimeout(() => {
         setIsLoading(false);
     }, 2000);
@@ -476,6 +569,11 @@ const fetchCategoryBanners = async () => {
     };
 
     const categoryRef = useRef(null);
+// ✅ State for single banner
+const [singleBannerData, setSingleBannerData] = useState({
+  singlebanner: { items: [] }
+});
+const [isSingleBannerLoading, setIsSingleBannerLoading] = useState(false);
 
     const scrollLeft = () => {
         scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
@@ -763,13 +861,32 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                   whileHover={{ y: -5 }} 
                                   className="relative border rounded-lg shadow p-4 transition-all duration-300 hover:border-blue-500 hover:shadow-lg group bg-white h-full flex flex-col justify-between"
                                 >
-                                  {product.special_price && (
+                                  {product.special_price && product.price > product.special_price ? (
+                                    (() => {
+                                      const discount = Math.floor(
+                                        ((product.price - product.special_price) / product.price) * 100
+                                      );
+                                      return discount > 0 ? (
+                                        <div className="absolute top-3 left-3 z-10">
+                                          <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
+                                            {discount}% OFF
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <p></p> // 👈 discount 0% na <p></p> render aagum
+                                      );
+                                    })()
+                                  ) : (
+                                    <p></p> // 👈 special price illa na kooda <p></p> render aagum
+                                  )}
+
+                                  {/* {product.special_price && (
                                     <div className="absolute top-3 left-3 z-10">
                                       <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
                                         {Math.round(((product.price - product.special_price) / product.price) * 100)}% OFF
                                       </span>
                                     </div>
-                                  )}
+                                  )} */}
 
                                   <div className="absolute top-2 right-2 z-10 hover:text-red-500">
                                     <ProductCard productId={product._id} />
@@ -1089,7 +1206,188 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     </div>
                   </motion.section>
                   )
-                
+                case 'singlebanner':
+                  return (
+                    <motion.section
+                      ref={refs.singlebanner}
+                      initial="hidden"
+                      animate="visible"
+                      variants={containerVariants}
+                      className="overflow-hidden pt-0 m-0 "
+                    >
+                      <div className="relative">
+                        {isSingleBannerLoading ? (
+                          <div className="p-2 flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full border-t-2 border-b-2 border-blue-600"></div>
+                          </div>
+                        ) : singleBannerData.singlebanner.items.length > 0 ? (
+                          singleBannerData.singlebanner.items.length > 1 ? (
+                            <Slider {...settings} className="relative">
+                              {singleBannerData.singlebanner.items.map((item) => (
+                                <motion.div
+                                  key={item.id}
+                                  className="relative w-full 
+                                            aspect-[16/9] max-h-[110px] 
+                                            sm:aspect-[16/6] sm:max-h-[180px]
+                                            md:aspect-[16/8] md:max-h-[200px]
+                                            lg:aspect-[16/9] lg:max-h-[300px]
+                                            xl:aspect-[16/10] xl:max-h-[400px]
+                                            2xl:aspect-[16/12] 2xl:max-h-[700px]"
+                                  variants={itemVariants}
+                                >
+                                  <Link href={item.redirect_url || "#"} className="block w-full h-full">
+                                    <div className="absolute inset-0 flex justify-center items-center bg-white">
+                                      <Image
+                                        src={item.bgImageUrl}
+                                        alt="Single Banner"
+                                        fill
+                                        quality={100}
+                                        className="object-fill w-full h-full"
+                                        priority
+                                      />
+                                    </div>
+                                  </Link>
+                                </motion.div>
+                              ))}
+                            </Slider>
+                          ) : (
+                            <motion.div
+                              className="p-2 md:p-2 relative h-[250px] md:h-[500px]"
+                              variants={itemVariants}
+                            >
+                              <Link
+                                href={singleBannerData.singlebanner.items[0].redirect_url || "#"}
+                                className="block w-full h-full"
+                              >
+                                <div className="absolute inset-0 flex justify-center items-center bg-white rounded-[30px] overflow-hidden">
+                                  <Image
+                                    src={singleBannerData.singlebanner.items[0].bgImageUrl}
+                                    alt="Single Banner"
+                                    fill
+                                    className="rounded-[30px] object-cover"
+                                    priority
+                                  />
+                                </div>
+                              </Link>
+                            </motion.div>
+                          )
+                        ) : (
+                          <div className="p-6 text-center">
+                            <p className="text-lg">No active single banners available</p>
+                          </div>
+                        )}
+                      </div>
+                    </motion.section>
+                  )
+
+                case 'videocard':
+                  return(
+                   <motion.section
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.3 }}
+                      transition={{ duration: 0.6 }}
+                      className="px-2  pt-15 mb-5 mt-4"
+                    >
+                      <div className="bg-gray-100 rounded-2xl p-6">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-6">
+                          <h5 className="text-xl font-bold">What's Trending</h5>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => scroll("left")}
+                              className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
+                            >
+                              <CaretLeft size={20} weight="bold" />
+                            </button>
+                            <button
+                              onClick={() => scroll("right")}
+                              className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
+                            >
+                              <CaretRight size={20} weight="bold" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Video Scroll */}
+                        <div ref={scrollRef} className="flex gap-4 overflow-x-hidden scroll-smooth px-2">
+                         {videos.map((video) => {
+                          let thumb = video.thumbnail_image;
+
+                          if (thumb) {
+                            // Ensure correct path
+                            if (!thumb.startsWith("http") && !thumb.startsWith("/")) {
+                              thumb = "/" + thumb;
+                            }
+                          } else if (video.video_url) {
+                            const ytId = getYoutubeId(video.video_url);
+                            if (ytId) thumb = `https://img.youtube.com/vi/${ytId}/0.jpg`;
+                          }
+
+                          if (!thumb) thumb = "/placeholder.jpg";
+
+                          return (
+                            <motion.div
+                              key={video._id}
+                              whileHover={{ scale: 1.05 }}
+                              className="min-w-[320px] rounded-xl shadow-md bg-white overflow-hidden"
+                            >
+                              <div className="h-48 relative flex items-center justify-center bg-gray-200">
+                                <img
+                                  src={thumb}
+                                  alt={video.title}
+                                  className="w-full h-full object-cover"
+                                />
+                                <img
+                                  src="https://img.poorvika.com//play_video.png"
+                                  alt="play"
+                                  className="absolute w-12 h-12"
+                                />
+                              </div>
+                              <div className="p-3">
+                                <p
+                                  className="text-sm font-medium text-gray-800 line-clamp-2 cursor-pointer hover:text-orange-600"
+                                  onClick={() => setActiveVideo(video)}
+                                >
+                                  {video.title}
+                                </p>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+
+                        </div>
+
+                        {/* ✅ Modal for YouTube video */}
+                        {activeVideo && (
+                          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg overflow-hidden relative w-[90%] md:w-[700px] h-[400px]">
+                              {/* Close Button */}
+                              <button
+                                className="absolute top-2 right-2 bg-black text-white rounded-full p-1"
+                                onClick={() => setActiveVideo(null)}
+                              >
+                                <X size={20} />
+                              </button>
+
+                              {/* YouTube Embed */}
+                              <iframe
+                                width="100%"
+                                height="100%"
+                                src={`https://www.youtube.com/embed/${getYoutubeId(
+                                  activeVideo.video_url
+                                )}?autoplay=1`}
+                                title={activeVideo.title}
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              ></iframe>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.section>
+                     )
                 default:
                     return null;
             }
@@ -1165,7 +1463,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                         </>
                     )}
                   </div>
-                  {/* features code start */}
+              
                   
 
                   {/* Existing offer code start */}
@@ -1309,126 +1607,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                   </div> */}
 
 
-                
-                  {/* flash sale section code start */}
-                  {/* <motion.section
-                    ref={refs.flashSales}
-                    initial="hiddenDown"
-                    animate={isInView.flashSales ? "visible" : "hiddenDown"}
-                    variants={sectionVariants}
-                    id="flash-sales-section"
-                    className=""
-                  >
-                    {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
-                      <div className="py-2">
-                        <motion.div
-                          variants={itemVariants}
-                          className="section-heading flex justify-between items-center mb-4 p-2"
-                        >
-                          <h5 className="text-2xl font-bold">Categories</h5>
-                        </motion.div>
-
-                        {isFlashSalesLoading ? (
-                          <div className="flex justify-center items-center h-64">
-                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-                          </div>
-                        ) : flashSalesData.length === 1 && flashSalesData[0].bgImage && flashSalesData[0].productImage ? (
-                          <motion.div variants={itemVariants} className="px-2">
-                            <motion.div
-                              whileHover={{ y: -5 }}
-                              className="relative p-6 rounded-lg shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
-                              style={{
-                                backgroundImage: `url(${flashSalesData[0].bgImage})`,
-                                backgroundSize: "cover",
-                                backgroundPosition: "center",
-                              }}
-                            >
-                              <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-center">
-                                <div className="w-full md:w-1/2 flex justify-center items-center overflow-hidden">
-                                  <Image
-                                    src={flashSalesData[0].productImage}
-                                    alt={flashSalesData[0].title}
-                                    width={180}
-                                    height={180}
-                                    className="object-contain max-h-[180px] transform transition-transform duration-300 hover:scale-110"
-                                  />
-                                </div>
-                                <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center mt-4 md:mt-0 md:pl-4">
-                                  <h6 className="text-xl font-semibold mb-2 text-gray-900">{flashSalesData[0].title}</h6>
-                                  <motion.a
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    href={flashSalesData[0].redirectUrl}
-                                    className="mt-auto px-4 py-2 bg-blue-600 text-white rounded-full text-center hover:bg-blue-700 transition"
-                                  >
-                                    Shop Now →
-                                  </motion.a>
-                                </div>
-                              </div>
-                            </motion.div>
-                          </motion.div>
-                        ) : (
-                          <motion.div variants={itemVariants}>
-                            <Slider {...flashSalesSettings} className="flash-sales-slider relative">
-                              {flashSalesData
-                                .filter(item => item.bgImage && item.productImage)
-                                .map(item => (
-                                  <div key={item.id} className="px-2">
-                                    <motion.div
-                                      className="relative p-6 rounded-lg shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
-                                      style={{
-                                        backgroundImage: `url(${item.bgImage})`,
-                                        backgroundSize: "cover",
-                                        backgroundPosition: "center",
-                                      }}
-                                    >
-                                      <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-center">
-                                        <div className="w-full md:w-1/2 flex justify-center items-center overflow-hidden">
-                                          <Image
-                                            src={item.productImage}
-                                            alt={item.title}
-                                            width={180}
-                                            height={180}
-                                            className="object-contain max-h-[180px] transform transition-transform duration-300 hover:scale-110"
-                                          />
-                                        </div>
-                                        <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center mt-4 md:mt-0 md:pl-4">
-                                          <motion.h6
-                                            className="text-xl font-semibold mb-2 text-gray-900"
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 1.1 }}
-                                            transition={{ type: "spring", stiffness: 300, damping: 10 }}
-                                          >
-                                            {item.title}
-                                          </motion.h6>
-                                          <motion.a
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            href={item.redirectUrl}
-                                            className="mt-auto px-4 py-2 bg-blue-600 text-white rounded-full text-center hover:bg-blue-700 transition"
-                                          >
-                                            Shop Now →
-                                          </motion.a>
-                                        </div>
-                                      </div>
-                                    </motion.div>
-                                  </div>
-                                ))}
-                            </Slider>
-                          </motion.div>
-                        )}
-                      </div>
-                    )}
-                  </motion.section> */}
-
-                  {/* brand section code start */}
-               
-
-                  {/* recomended product sections */}
                   
 
                   <RecentlyViewedProducts />
-              
+                  
+
                 
             </div>
         </>
