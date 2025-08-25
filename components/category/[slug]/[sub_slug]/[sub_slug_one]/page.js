@@ -34,7 +34,7 @@ export default function CategoryPage() {
   const toggleFilters = () => setIsFiltersExpanded(!isFiltersExpanded);
     const [showEndMessage, setShowEndMessage] = useState(false);
   const { sub_slug } = useParams();
-  const { slug } = useParams();
+  const { slug,sub_slug_one } = useParams();
   const toggleBrands = () => setIsBrandsExpanded(!isBrandsExpanded);
   const toggleFilterGroup = (id) => {
     setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
@@ -82,15 +82,10 @@ const handleProductClick = (product) => {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      
       // Fetch category data (brands, filters, etc.)
-      const categoryRes = await fetch(`/api/categories/${sub_slug}`);
+      const categoryRes = await fetch(`/api/categories/${sub_slug}/${sub_slug}/${sub_slug_one}`);
       const categoryData = await categoryRes.json();
-       setCategoryData({
-        ...categoryData,
-        categoryTree: categoryData.category,
-        allCategoryIds: categoryData.allCategoryIds
-      });
+      setCategoryData(categoryData);
       
       // Set initial price range based on products in category
       if (categoryData.products?.length > 0) {
@@ -313,72 +308,6 @@ const handleProductClick = (product) => {
       price: { min: values[0], max: values[1] }
     }));
   };
-
-    const CategoryTree = ({ 
-      categories, 
-      level = 0, 
-      selectedFilters, 
-      onFilterChange 
-    }) => {
-      const [expandedCategories, setExpandedCategories] = useState([]);
-    
-      const toggleCategory = (categoryId) => {
-        setExpandedCategories(prev => 
-          prev.includes(categoryId)
-            ? prev.filter(id => id !== categoryId)
-            : [...prev, categoryId]
-        );
-      };
-    
-      return (
-        <div className="space-y-2">
-          {categories.map((category) => (
-            <div key={category._id}>
-              <div className={`flex items-center gap-2 ${level > 0 ? `ml-${level * 4}` : ''}`}>
-                {/* <button
-                  onClick={() => onFilterChange('categories', category._id)}
-                  className={`flex-1 text-left p-2 rounded hover:bg-gray-100 text-gray-700 ${
-                    selectedFilters.includes(category._id) 
-                      ? 'bg-blue-100 font-medium' 
-                      : ''
-                  }`}
-                >
-                  {category.category_name}
-                </button> */}
-                 <Link
-                  href={`/category/${slug}/${sub_slug}/${category.category_slug}`}
-                  className="p-2 hover:bg-gray-100 rounded inline-flex items-center"
-                >     
-                  {category.image && (
-                    <div className="w-6 h-6 mr-2 relative">
-                      <Image
-                        src={category.image.startsWith('http') ? category.image : `${category.image}`}
-                        alt={category.category_name}
-                        fill
-                        className="object-contain"
-                        unoptimized
-                      />
-                    </div>
-                  )}
-                  {category.category_name}
-                </Link>
-              </div>
-              
-              {category.subCategories?.length > 0 && 
-                expandedCategories.includes(category._id) && (
-                  <CategoryTree 
-                    categories={category.subCategories} 
-                    level={level + 1}
-                    selectedFilters={selectedFilters}
-                    onFilterChange={onFilterChange}
-                  />
-                )}
-            </div>
-          ))}
-        </div>
-      );
-    };
-  
 
   useEffect(() => {
     if (categoryData.category?._id) {
@@ -614,17 +543,6 @@ const handleProductClick = (product) => {
               </div>
             </div>
           )}
-
-          {/* Categories Tree */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
-                <h3 className="text-base font-semibold mb-3 text-gray-700">Categories</h3>
-                {categoryData.categoryTree?.length > 0 ? (
-                  <CategoryTree categories={categoryData.categoryTree} selectedFilters={selectedFilters.categories}
-                  onFilterChange={handleFilterChange} />
-                ) : (
-                  <p className="text-gray-500 text-sm">No subcategories</p>
-                )}
-              </div>
 
           {/* Price Filter */}
           <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
