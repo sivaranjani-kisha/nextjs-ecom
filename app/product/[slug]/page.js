@@ -447,8 +447,20 @@ const fetchBrand = async () => {
                 <title>{product.name}</title>
                 <meta property="og:title" content={product.name} />
                 <meta property="og:description" content={product.description} />
-                <meta property="og:image" content={selectedImage ? `https://bea.divinfosys.com/uploads/products/${selectedImage}` : "https://bea.divinfosys.com/no-image.jpg"} />
+                <meta
+  property="og:image"
+  content={
+    selectedImage
+      ? `https://bea.divinfosys.com/uploads/products/${selectedImage}`
+      : product?.images?.[0]
+        ? `https://bea.divinfosys.com/uploads/products/${product.images[0]}`
+        : "https://bea.divinfosys.com/no-image.jpg"
+  }
+/>
+
+
                 <meta property="og:url" content={`https://bea.divinfosys.com/product/${product?.slug}`} />
+
                 <meta property="og:type" content="product" />
             
                   {/* Action Buttons */}
