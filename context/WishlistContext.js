@@ -27,7 +27,7 @@ export const WishlistProvider = ({ children }) => {
   }, []);
 
   const isInWishlist = (productId) => {
-    console.log(wishlistItems);
+   
     return wishlistItems.some(item => item.productId === productId);
   };
 

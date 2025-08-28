@@ -2,13 +2,62 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import ProductView from "@/models/productView";
 
-// 🔹 Get single product view
-export async function GET(request, context) {
+// GET single product view
+export async function GET(req, { params }) {
   await dbConnect();
+  
   try {
-    const { id } = context.params;   // ✅ Correct way to read id
-
+    const { id } = params;
+    
     const productView = await ProductView.findById(id)
+      .populate("category")
+      .populate("products", "name price");
+    
+    if (!productView) {
+      return NextResponse.json(
+        { success: false, message: "ProductView not found" },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({
+      success: true,
+      data: productView
+    });
+  } catch (err) {
+    console.error("Error fetching product view:", err);
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Update product view
+export async function PUT(req, { params }) {
+  await dbConnect();
+  
+  try {
+    const { id } = params;
+    const body = await req.json();
+    const { category, products, status } = body;
+
+    if (!category || !Array.isArray(products) || products.length === 0) {
+      return NextResponse.json(
+        { success: false, message: "Category and products are required" },
+        { status: 400 }
+      );
+    }
+
+    const productView = await ProductView.findByIdAndUpdate(
+      id,
+      {
+        category,
+        products,
+        status: status || "active",
+      },
+      { new: true, runValidators: true }
+    )
       .populate("category", "category_name")
       .populate("products", "name price");
 
@@ -19,44 +68,44 @@ export async function GET(request, context) {
       );
     }
 
-    return NextResponse.json({ success: true, data: productView });
+    return NextResponse.json({
+      success: true,
+      message: "ProductView updated successfully",
+      data: productView,
+    });
   } catch (err) {
-    console.error("❌ Error fetching ProductView:", err.message);
+    console.error("Error updating product view:", err);
     return NextResponse.json(
-      { success: false, message: "Internal server error", error: err.message },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
 }
 
-// 🔹 Update product view
-export async function PUT(request, context) {
+// DELETE - Remove product view
+export async function DELETE(req, { params }) {
   await dbConnect();
+  
   try {
-    const { id } = context.params;   // ✅ Correct way
-    const body = await request.json();
-    const { products, status } = body;
-
-    const productView = await ProductView.findById(id);
+    const { id } = params;
+    
+    const productView = await ProductView.findByIdAndDelete(id);
+    
     if (!productView) {
       return NextResponse.json(
         { success: false, message: "ProductView not found" },
         { status: 404 }
       );
     }
-
-    if (Array.isArray(products)) productView.products = products;
-    if (status) productView.status = status;
-
-    await productView.save();
-    await productView.populate("category", "category_name");
-   
-
-    return NextResponse.json({ success: true, data: productView });
+    
+    return NextResponse.json({
+      success: true,
+      message: "ProductView deleted successfully"
+    });
   } catch (err) {
-    console.error("❌ Error updating ProductView:", err.message);
+    console.error("Error deleting product view:", err);
     return NextResponse.json(
-      { success: false, message: "Internal server error", error: err.message },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

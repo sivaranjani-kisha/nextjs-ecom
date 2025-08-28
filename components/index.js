@@ -241,11 +241,18 @@ const fetchHomeSections = async () => {
             const response = await fetch("/api/categories/get");
             const data = await response.json();
             setCategories(data);
-            const parentCategories = data.filter(
-                category => category.parentid === "none" && category.status === "Active"
-            );
-            setParentCategories(parentCategories);
-            setSelectedCategory(parentCategories[0]);
+           const rootIds = data
+  .filter(cat => cat.parentid === "none" && cat.status === "Active")
+  .map(cat => cat._id);
+console.log(rootIds);
+// 2. Get only categories whose parentid is in rootIds → second level
+const secondLevelCategories = data.filter(
+  cat => rootIds.includes(cat.parentid) && cat.status === "Active"
+);
+console.log(secondLevelCategories);
+  setParentCategories(secondLevelCategories);
+  
+            setSelectedCategory(secondLevelCategories[0]);
         } catch (error) {
             console.error("Error fetching categories:", error);
         }
@@ -331,8 +338,60 @@ const fetchSingleBannerData = async () => {
     setIsSingleBannerLoading(false);
   }
 };
+const fetchSingleBannerDatatwo = async () => {
+  setIsSingleBannerLoading(true);
+  try {
+    const response = await fetch("/api/singlebanner-two");
+    const data = await response.json();
 
+    if (data.success && data.banners?.length > 0) {
+      const singleBannerItems = data.banners
+        .filter((banner) => banner.status === "Active")
+        .map((banner) => ({
+          id: banner._id,
+          redirect_url: banner.redirect_url || "/shop",
+          bgImageUrl: banner.banner_image,
+          singleBannerImageUrl: banner.banner_image,
+        }));
 
+      setSingleBannerData((prev) => ({
+        ...prev,
+        singlebannerTwo: { items: singleBannerItems },
+      }));
+    } else {
+      setSingleBannerData((prev) => ({
+        ...prev,
+        singlebannerTwo: {
+          items: [
+            {
+              id: 1,
+              redirect_url: "/shop",
+              bgImageUrl: "/images/singlebanner-img1.png",
+              singleBannerImageUrl: "/images/singlebanner-product.png",
+            },
+          ],
+        },
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching single banner-two data:", error);
+    setSingleBannerData((prev) => ({
+      ...prev,
+      singlebannerTwo: {
+        items: [
+          {
+            id: 1,
+            redirect_url: "/shop",
+            bgImageUrl: "/images/singlebanner-img1.png",
+            singleBannerImageUrl: "/images/singlebanner-product.png",
+          },
+        ],
+      },
+    }));
+  } finally {
+    setIsSingleBannerLoading(false);
+  }
+};
 
 
 
@@ -344,6 +403,7 @@ const fetchSingleBannerData = async () => {
     fetchCategories();
     fetchProducts();
 fetchSingleBannerData();
+fetchSingleBannerDatatwo();
     const timer = setTimeout(() => {
         setIsLoading(false);
     }, 2000);
@@ -701,6 +761,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
             switch(sectionName) {
                 case 'category_banner':
                     return (
+                      <section id="category_banner">
                         <div className="px-2 sm:px-2 lg:px-2 p-2">
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 {categoryBanner.map((banner, index) => (
@@ -710,7 +771,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                 <img
                                                     src={banner.imageUrl}
                                                     alt={`Category Banner ${index + 1}`}
-                                                    title={`Category Banner ${index + 1}`}
+                                                    // title={`Category Banner ${index + 1}`}
                                                     className="w-full h-auto object-cover"
                                                     width={400}
                                                     height={400}
@@ -721,10 +782,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                 ))}
                             </div>
                         </div>
+                        </section>
                     );
                 case 'product' :
                   return (
-                       <motion.section 
+                       <motion.section id="product"
                     initial={{ opacity: 0, y: 50 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
@@ -924,7 +986,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                   </div>
 
                                   <div className="mt-3 flex items-center justify-between gap-2">
-                                    <Addtocart productId={product._id} stockQuantity={product.quantity} className="flex-1" />
+                                    <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
                                     <a 
                                       href={`https://wa.me/?text=Check this out: ${product.name}`} 
                                       target="_blank" 
@@ -953,7 +1015,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             initial="hiddenDown"
                             animate="visible"
                             variants={sectionVariants}
-                            id="flash-sales-section"
+                            id="flash_sales"
                             className=""
                         >
                             {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
@@ -1060,7 +1122,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     );
                 case 'features':
                     return (
-                   <section className="p-2" >
+                   <section className="p-2" id="features" >
                     <div
                       className="grid grid-cols-2 gap-4 
                                 md:flex md:flex-nowrap md:justify-center md:gap-6 
@@ -1093,7 +1155,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     );
                 case 'brands':
                     return (
-                   <motion.section 
+                   <motion.section id="brands"
                             ref={refs.delivery} 
                             initial={scrollDirection === 'down' ? 'hiddenDown' : 'hiddenUp'} 
                             animate= 'visible' 
@@ -1141,7 +1203,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     
                 case 'topbanner':
                   return(
-                        <motion.section
+                        <motion.section id="topbanner"
                                                 ref={refs.banner}
                                                 initial="hidden"
                                                 animate="visible"
@@ -1174,7 +1236,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                     alt="Banner"
                                     fill
                                     quality={100}
-                                    className="object-cover w-full h-full"
+                                    className="object-fill w-full h-full"
                                     style={{ objectPosition: "center 30%" }}
                                     priority
                                   />
@@ -1187,28 +1249,30 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             className="p-4 md:p-6 relative h-[250px] md:h-[500px]"
                             variants={itemVariants}
                           >
-                            <div className="absolute inset-0 rounded-[30px] overflow-hidden">
+                            <div className="absolute inset-0 flex justify-center items-center bg-white">
                               <Image
                                 src={bannerData.banner.items[0].bgImageUrl}
                                 alt="Banner"
                                 fill
-                                className="rounded-[30px] object-cover"
+                                className=" object-fill w-full h-full"
                                 priority
                               />
                             </div>
                           </motion.div>
                         )
                       ) : (
-                        <div className="p-6 text-center">
-                          <p className="text-lg">No active banners available</p>
-                        </div>
+                        <div>
+                          </div>
+                        // <div className="p-6 text-center">
+                        //   <p className="text-lg">No active banners available</p>
+                        // </div>
                       )}
                     </div>
                   </motion.section>
                   )
                 case 'singlebanner':
                   return (
-                    <motion.section
+                    <motion.section id="singlebanner"
                       ref={refs.singlebanner}
                       initial="hidden"
                       animate="visible"
@@ -1252,19 +1316,107 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             </Slider>
                           ) : (
                             <motion.div
-                              className="p-2 md:p-2 relative h-[250px] md:h-[500px]"
+                              className="relative w-full 
+                                        aspect-[16/9] max-h-[110px] 
+                                        sm:aspect-[16/6] sm:max-h-[180px]
+                                        md:aspect-[16/8] md:max-h-[200px]
+                                        lg:aspect-[16/9] lg:max-h-[300px]
+                                        xl:aspect-[16/10] xl:max-h-[400px]
+                                        2xl:aspect-[16/12] 2xl:max-h-[700px]"
                               variants={itemVariants}
                             >
                               <Link
                                 href={singleBannerData.singlebanner.items[0].redirect_url || "#"}
                                 className="block w-full h-full"
                               >
-                                <div className="absolute inset-0 flex justify-center items-center bg-white rounded-[30px] overflow-hidden">
+                                <div className="absolute inset-0 flex justify-center items-center bg-white">
                                   <Image
                                     src={singleBannerData.singlebanner.items[0].bgImageUrl}
                                     alt="Single Banner"
                                     fill
-                                    className="rounded-[30px] object-cover"
+                                    quality={100}
+                                    className="object-fill w-full h-full"
+                                    priority
+                                  />
+                                </div>
+                              </Link>
+                            </motion.div>
+
+                          )
+                        ) : (
+                          <div className="p-6 text-center">
+                            <p className="text-lg">No active single banners available</p>
+                          </div>
+                        )}
+                      </div>
+                    </motion.section>
+                  )
+                case 'singlebanner-two':
+                  return (
+                    <motion.section id="singlebanner-two"
+                      ref={refs.singlebanner}
+                      initial="hidden"
+                      animate="visible"
+                      variants={containerVariants}
+                      className="overflow-hidden pt-0 m-0 "
+                    >
+                      <div className="relative">
+                        {isSingleBannerLoading ? (
+                          <div className="p-2 flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full border-t-2 border-b-2 border-blue-600"></div>
+                          </div>
+                        ) : singleBannerData.singlebannerTwo?.items?.length > 0 ? (
+                          singleBannerData.singlebannerTwo.items.length > 1 ? (
+                            <Slider {...settings} className="relative">
+                              {singleBannerData.singlebannerTwo.items.map((item) => (
+                                <motion.div
+                                  key={item.id}
+                                  className="relative w-full 
+                                            aspect-[16/9] max-h-[110px] 
+                                            sm:aspect-[16/6] sm:max-h-[180px]
+                                            md:aspect-[16/8] md:max-h-[200px]
+                                            lg:aspect-[16/9] lg:max-h-[300px]
+                                            xl:aspect-[16/10] xl:max-h-[400px]
+                                            2xl:aspect-[16/12] 2xl:max-h-[700px]"
+                                  variants={itemVariants}
+                                >
+                                  <Link href={item.redirect_url || "#"} className="block w-full h-full">
+                                    <div className="absolute inset-0 flex justify-center items-center bg-white">
+                                      <Image
+                                        src={item.bgImageUrl}
+                                        alt="Single Banner"
+                                        fill
+                                        quality={100}
+                                        className="object-cover w-full h-full"
+                                        priority
+                                      />
+                                    </div>
+                                  </Link>
+                                </motion.div>
+                              ))}
+                            </Slider>
+                          ) : (
+                            <motion.div
+                              className="relative w-full 
+                                        aspect-[16/9] max-h-[110px] 
+                                        sm:aspect-[16/6] sm:max-h-[180px]
+                                        md:aspect-[16/8] md:max-h-[200px]
+                                        lg:aspect-[16/9] lg:max-h-[300px]
+                                        xl:aspect-[16/10] xl:max-h-[400px]
+                                        2xl:aspect-[16/12] 2xl:max-h-[700px]"
+                              variants={itemVariants}
+                            >
+                              <Link
+                                href={singleBannerData.singlebannerTwo.items[0].redirect_url || "#"}
+                                className="block w-full h-full"
+                              >
+                                <div className="absolute inset-0 flex justify-center items-center bg-white">
+                                  <Image
+                                    src={singleBannerData.singlebannerTwo.items[0].bgImageUrl}
+                                    alt="Single Banner"
+                                    fill
+                                    quality={100}
+                                    className="object-cover w-full h-full"
                                     priority
                                   />
                                 </div>
@@ -1278,11 +1430,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                         )}
                       </div>
                     </motion.section>
-                  )
+                  );
 
                 case 'videocard':
                   return(
-                   <motion.section
+                   <motion.section id="videocard"
                       initial={{ opacity: 0, y: 50 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
@@ -1468,6 +1620,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
 
                   {/* Existing offer code start */}
                   {offerProducts.length > 0 && (
+                    <section id="offer">
                     <div className="px-2 py-4">
                       <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold">Exciting Offers</h2>
@@ -1582,29 +1735,9 @@ const handleCategoryClick = useCallback((category) => (e) => {
                         )}
                       </div>
                     </div>
+                    </section>
                   )}
 
-                  {/* category banner code start */}
-                  {/* <div className="px-2 sm:px-2 lg:px-2 p-2">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                      {categoryBanner.map((banner, index) => (
-                        <div key={index} className="col-span-1">
-                          <div className="card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                            <Link href={banner.redirectUrl || "#"} className="no-underline">
-                              <img
-                                src={banner.imageUrl}
-                                alt={`Category Banner ${index + 1}`}
-                                title={`Category Banner ${index + 1}`}
-                                className="w-full h-auto object-cover"
-                                width={400}
-                                height={400}
-                              />
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div> */}
 
 
                   

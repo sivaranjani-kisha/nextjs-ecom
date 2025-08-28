@@ -186,8 +186,13 @@ export default function AddProductPage({ mode = "add", productData = null, produ
         if (!Array.isArray(productData.product_highlights) && typeof productData.product_highlights === 'object') {
             setJsonHighlightsInput(JSON.stringify(productData.product_highlights, null, 2));
         }
+
+        if(productData.sub_category){
+          console.log(productData.sub_category);
+          setSelectedCategory(productData.sub_category);
+        }
     }
-}, [mode, productData, setJsonHighlightsInput]);
+}, [mode, productData, setJsonHighlightsInput,setSelectedCategory]);
 useEffect(() => {
     fetchCategories();
     fetchFilter();
@@ -720,6 +725,13 @@ setProduct(prev => ({
     setSelectedCategory(product.category); // This is the subcategory ID
   }
 }, [product]);
+
+//   useEffect(() => {
+//   if (productData) {
+//     console.log(productData.sub_category);
+//     setSelectedCategory(productData.sub_category); // This is the subcategory ID
+//   }
+// }, [productData,product]);
 
   
   

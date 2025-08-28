@@ -431,6 +431,7 @@ const fetchBrand = async () => {
                       <Addtocart
                         productId={product._id}
                         stockQuantity={product.quantity}
+                         special_price={product.special_price}
                         quantity={quantity}
                         additionalProducts={selectedFrequentProducts.map(p => p._id)}
                         warranty={selectedWarranty}

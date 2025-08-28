@@ -7,7 +7,7 @@ import { useHeaderdetails } from '@/context/HeaderContext';
 
 import { FaShoppingCart} from "react-icons/fa";
 
-const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts = [],extendedWarranty, selectedFrequentProducts = [], stockQuantity = 1, }) => {
+const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts = [],extendedWarranty, selectedFrequentProducts = [], stockQuantity = 1,special_price }) => {
   const { openAuthModal } = useModal();
   const { updateHeaderdetails, setIsLoggedIn, setUserData,setIsAdmin } = useHeaderdetails();
   const [isLoading, setIsLoading] = useState(false);
@@ -15,10 +15,14 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
   // const [authError, setAuthError] = useState('');
   const [cartSuccess, setCartSuccess] = useState(false);
   const isOutOfStock = stockQuantity <= 0;
+    const isprice = special_price <= 0;
   const { cartCount, updateCartCount } = useCart();
   const handleAddToCart = async () => {
      if (isOutOfStock) return;
 
+     if(isprice){
+      return;
+     }
       setIsLoading(true);
       // setAuthError('');
       setCartSuccess(false);
@@ -110,7 +114,7 @@ if (selectedFrequentProducts?.length > 0) {
     <>
       <button 
   onClick={handleAddToCart}
-  disabled={isLoading || isOutOfStock}
+  disabled={isLoading || isOutOfStock || isprice}
   className={`w-full sm:w-auto px-2 py-2 md:px-3 md:py-2 rounded-md shadow-md  transition duration-300 text-md flex items-center justify-center gap-x-3 
     ${isOutOfStock
           ? 'bg-gray-400 cursor-not-allowed text-white'
@@ -118,6 +122,8 @@ if (selectedFrequentProducts?.length > 0) {
       isLoading 
         ? 'bg-blue-700 cursor-not-allowed opacity-75' 
         : cartSuccess 
+          ? 'bg-green-500 text-white hover:bg-green-600'
+          : isprice
           ? 'bg-green-500 text-white hover:bg-green-600'
           : 'bg-customBlue text-white hover:bg-blue-700'
     }
@@ -164,7 +170,7 @@ if (selectedFrequentProducts?.length > 0) {
       >
         <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
       </svg>
-      <span className="hidden sm:inline">Add to Cart</span>
+      <span className="hidden sm:inline" >Add to Cart</span>
       <span className="sm:hidden">Add</span>
     </>
   )}

@@ -14,7 +14,6 @@ export default function SingleBannerPage() {
   const [imageError, setImageError] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [bannerToDelete, setBannerToDelete] = useState(null);
   const [editingStates, setEditingStates] = useState({
     redirect_url: "",
     status: "Active",
@@ -26,12 +25,13 @@ export default function SingleBannerPage() {
   // Fetch single banner
   const fetchBanner = async () => {
     try {
-      const res = await fetch("/api/singlebanner");
+      const res = await fetch("/api/singlebanner-two");
       const data = await res.json();
-      
+      console.log("API Response:", data);
+
       if (data.success) {
-        // If we have a banner, set it and hide the add form
         if (data.banners && data.banners.length > 0) {
+          // If we have a banner, set it and hide the add form
           setBanner(data.banners[0]);
           setShowAddForm(false);
           
@@ -78,7 +78,7 @@ export default function SingleBannerPage() {
     formData.append("status", newBanner.status);
 
     try {
-      const res = await fetch("/api/singlebanner", {
+      const res = await fetch("/api/singlebanner-two", {
         method: "POST",
         body: formData,
       });
@@ -117,7 +117,7 @@ export default function SingleBannerPage() {
     }
 
     try {
-      const res = await fetch("/api/singlebanner", {
+      const res = await fetch("/api/singlebanner-two", {
         method: "PUT",
         body: formData,
       });
@@ -158,13 +158,13 @@ export default function SingleBannerPage() {
 
   // Delete banner
   const handleDelete = async () => {
-    if (!bannerToDelete) return;
+    if (!banner) return;
 
     try {
-      await fetch("/api/singlebanner", {
+      await fetch("/api/singlebanner-two", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: bannerToDelete._id }),
+        body: JSON.stringify({ id: banner._id }),
       });
       fetchBanner(); // Refresh the banner
       closeDeleteModal();
@@ -175,13 +175,11 @@ export default function SingleBannerPage() {
   };
 
   const openDeleteModal = () => {
-    setBannerToDelete(banner);
     setShowDeleteModal(true);
   };
 
   const closeDeleteModal = () => {
     setShowDeleteModal(false);
-    setBannerToDelete(null);
   };
 
   return (

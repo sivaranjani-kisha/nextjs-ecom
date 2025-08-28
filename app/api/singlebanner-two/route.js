@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
-import SingleBanner from "@/models/singlebanner";
+import SingleBanner from "@/models/singlebanner-two";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
@@ -35,7 +35,7 @@ async function saveFile(file) {
   return "/uploads/singlebanner/" + filename;
 }
 
-// ✅ GET: return all banners (should only be one)
+// ✅ GET: return all banners
 export async function GET() {
   try {
     await dbConnect();

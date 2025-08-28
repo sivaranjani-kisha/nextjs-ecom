@@ -393,12 +393,12 @@ const Header = () => {
         }
     };
     // 🔹 Render flattened category item
-   const renderFlatItem = (item,hoveredCategory_slug) => {
+   const renderFlatItem = (item) => {
     // if root (level 0) -> only /category/rootCategory
     const href =
         item.level === 0
-            ? `/category/${hoveredCategory_slug}/${encodeURIComponent(item.rootCategory)}`
-            : `/category/${hoveredCategory_slug}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
+            ? `/category/${encodeURIComponent(item.rootCategory)}`
+            : `/category/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
 
     return (
         <div key={item._id} style={{ paddingLeft: `${item.level * 12}px` }}>
@@ -430,6 +430,16 @@ const Header = () => {
     
     return (
         <header className="sticky top-0 z-50">
+
+
+            <title>SAMSUNG Galaxy S20 FE 5G</title>
+            <meta property="og:title" content="SAMSUNG Galaxy S20 FE 5G" />
+            <meta property="og:description" content="Handset (Non Removable Battery Included), Travel Adapter, USB Cable, User Manual" />
+            <meta property="og:image" content="https://bea.divinfosys.com/uploads/products/SM-G781BZGGINS.jpeg" />
+            <meta property="og:url" content="https://bea.divinfosys.com/product/samsung-galaxy-s20-fe-5g-cloud-mint-128-gb8-gb-ram" />
+            <meta property="og:type" content="product" />
+
+
             {/* Top Announcement Bar */}
             {offers.some(
                 (offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active"
@@ -847,11 +857,11 @@ const Header = () => {
                     <div className="relative bg-customBlue">
                         <div className="flex justify-center overflow-x-auto scrollbar-hide">
                            
-                                <Swiper modules={[Navigation]} navigation={{ prevEl: ".custom-swiper-prev", nextEl: ".custom-swiper-next",}} spaceBetween={10} slidesPerView="auto" watchOverflow={true} className="pl-6 pr-12">
+                                <Swiper modules={[Navigation]} navigation={{ prevEl: ".custom-swiper-prev", nextEl: ".custom-swiper-next",}} spaceBetween={20} slidesPerView="auto" watchOverflow={true} className="pl-10 pr-14">
                                     {categories.map((category) => (
                                         <SwiperSlide key={category._id} className="!w-auto">
-                                            <div ref={(el) => (slideRefs.current[category._id] = el)} onMouseEnter={() => handleMouseEnter(category._id)} onMouseLeave={() => startHide(120)} className="px-4 py-2 flex flex-col items-center text-center" >
-                                                <Link href={`/category/${category.category_slug}`} className="text-sm text-white hover:text-orange-500 whitespace-nowrap" >
+                                            <div ref={(el) => (slideRefs.current[category._id] = el)} onMouseEnter={() => handleMouseEnter(category._id)} onMouseLeave={() => startHide(120)} className="px-5 py-2 flex flex-col items-center text-center" >
+                                                <Link href={`/category/${category.category_slug}`} className="text-sm text-base text-white hover:text-orange-500 whitespace-nowrap" >
                                                     {category.category_name}
                                                 </Link>
                                             </div>
@@ -886,7 +896,7 @@ const Header = () => {
                             index % 2 === 0 ? "bg-white" : "bg-gray-100"
                         }`}
                         >
-                        {chunk.map(item => renderFlatItem(item,hoveredCategory.category_slug))}
+                        {chunk.map(item => renderFlatItem(item))}
                         </div>
                     ))}
 

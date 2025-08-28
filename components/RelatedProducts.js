@@ -167,7 +167,7 @@ const RelatedProducts = ({ currentProductId }) => {
 
             {/* Cart and Share Buttons */}
             <div className="mt-3 flex items-center justify-between gap-2">
-              <Addtocart stockQuantity={product.quantity}
+              <Addtocart stockQuantity={product.quantity}  special_price={product.special_price}
                 productId={product._id} 
                 className="flex-1 py-2 text-xs" 
               />

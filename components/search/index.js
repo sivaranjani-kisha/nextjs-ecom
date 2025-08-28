@@ -136,7 +136,7 @@ return (
                                       <span className="text-base font-semibold text-blue-600">₹{(product.special_price ?? product.price ?? 0).toLocaleString()}</span>
                                     </div>
                 
-                                    <Addtocart productId={product._id} className="w-full text-xs sm:text-sm py-1.5"  />
+                                    <Addtocart productId={product._id} special_price={product.special_price} className="w-full text-xs sm:text-sm py-1.5"  />
                                   </div>
               </div>
             ))}
