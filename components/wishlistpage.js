@@ -209,10 +209,10 @@ const WishlistPage = () => {
                       <p className="font-medium text-sm hover:text-orange-500 cursor-pointer">
                         {item.name.length > 50 ? `${item.name.substring(0, 50)}...` : item.name}
                       </p>
-                      <div className="text-xs text-gray-500 mt-1">
+                      {/* <div className="text-xs text-gray-500 mt-1">
                         <span className="text-yellow-500">⭐ {item.rating}</span>
                         <span className="ml-2">| {item.reviews} Reviews</span>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 </td>
