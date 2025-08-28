@@ -1300,7 +1300,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                   variants={itemVariants}
                                 >
                                   <Link href={item.redirect_url || "#"} className="block w-full h-full">
-                                    <div className="absolute inset-0 flex justify-center items-center bg-white">
+                                    <div className="absolute inset-0 flex justify-center items-center bg-white mb-4">
                                       <Image
                                         src={item.bgImageUrl}
                                         alt="Single Banner"
@@ -1329,7 +1329,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                 href={singleBannerData.singlebanner.items[0].redirect_url || "#"}
                                 className="block w-full h-full"
                               >
-                                <div className="absolute inset-0 flex justify-center items-center bg-white">
+                                <div className="absolute inset-0 flex justify-center items-center bg-white mb-4">
                                   <Image
                                     src={singleBannerData.singlebanner.items[0].bgImageUrl}
                                     alt="Single Banner"
@@ -1345,7 +1345,6 @@ const handleCategoryClick = useCallback((category) => (e) => {
                           )
                         ) : (
                           <div className="p-6 text-center">
-                            <p className="text-lg">No active single banners available</p>
                           </div>
                         )}
                       </div>

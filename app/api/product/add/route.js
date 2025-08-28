@@ -12,7 +12,7 @@ export async function POST(req) {
     const formData = await req.formData();
     const productData = JSON.parse(formData.get("product"));
     const imageFiles = formData.getAll("images");
-    const category   = formData.get("category");
+    // const category   = formData.get("category");
     let variants = JSON.parse(formData.get("variant"));
     const Filters    = productData.filters;
     const item_code  = productData.item_code;
@@ -26,7 +26,7 @@ export async function POST(req) {
 
       console.log(productData);
 console.log("..............................................................");
-
+ const category = productData.sub_category;
       let existingProductname = await Product.findOne({ slug });
       if (existingProductname) {
         return NextResponse.json({ error: "Product name already exists" }, { status: 400 });

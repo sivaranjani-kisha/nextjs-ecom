@@ -123,8 +123,8 @@ if (selectedFrequentProducts?.length > 0) {
         ? 'bg-blue-700 cursor-not-allowed opacity-75' 
         : cartSuccess 
           ? 'bg-green-500 text-white hover:bg-green-600'
-          : isprice
-          ? 'bg-green-500 text-white hover:bg-green-600'
+          // : isprice
+          // ? 'bg-green-500 text-white hover:bg-green-600'
           : 'bg-customBlue text-white hover:bg-blue-700'
     }
     active:scale-95 disabled:active:scale-100`}

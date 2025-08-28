@@ -6,6 +6,7 @@ import fs from "fs";
 import connectDB from "@/lib/db";
 import Product from "@/models/product";
 import Product_filter from "@/models/ecom_productfilter_info";
+import Category from "@/models/ecom_category_info";
 import md5 from "md5";
 
 export async function PUT(req, { params }) {
@@ -15,14 +16,25 @@ export async function PUT(req, { params }) {
     const productData = JSON.parse(formData.get("product"));
     const imageFiles = formData.getAll("images");
     const overviewImageFiles = formData.getAll("overviewImages");
-    const category = formData.get("category");
+//     const category = formData.get("category");
     const highlights = JSON.parse(formData.get("highlights") || "[]");
     let variants = JSON.parse(formData.get("variant") || "[]");
     const Filters    = productData.filters;
 
 console.log(productData);
 console.log("..............................................................");
-
+ const category = productData.sub_category;
+ let main_Category = "";
+ if(category != ""){
+    const main_cat = await Category.findOne({ _id: category });
+    console.log(category,main_cat);
+    if(main_cat){
+      main_Category = main_cat.parentid;
+        console.log(main_Category);
+      productData.category = main_Category;
+    }
+  }
+console.log(productData);
     const slug = productData.slug;
     const md5_cat_name = md5(slug);
 
@@ -105,11 +117,15 @@ for (const file of imageFiles) {
   ...(savedImages || [])         // newly uploaded files
 ];
 
+
+  
+
 const updatedProduct = await Product.findByIdAndUpdate(
   productId,
   {
     ...productData,
-    category,
+category:main_Category,
+sub_category:category,
     images: finalImages,
     overview_image: savedOverviewImages.length > 0 ? savedOverviewImages : productData.overview_image,
   },

@@ -188,7 +188,6 @@ export default function AddProductPage({ mode = "add", productData = null, produ
         }
 
         if(productData.sub_category){
-          console.log(productData.sub_category);
           setSelectedCategory(productData.sub_category);
         }
     }
@@ -715,23 +714,17 @@ setProduct(prev => ({
   setSelectedCategory(category._id);
   setProduct((prev) => ({
     ...prev,
-    category: category._id, // set subcategory here
+    sub_category: category._id, // set subcategory here
   }));
 };
 
 
-  useEffect(() => {
-  if (product) {
-    setSelectedCategory(product.category); // This is the subcategory ID
-  }
-}, [product]);
-
 //   useEffect(() => {
-//   if (productData) {
-//     console.log(productData.sub_category);
-//     setSelectedCategory(productData.sub_category); // This is the subcategory ID
+//   if (product) {
+//     setSelectedCategory(product.category); // This is the subcategory ID
 //   }
-// }, [productData,product]);
+// }, [product]);
+
 
   
   
@@ -1052,6 +1045,8 @@ const handleFilterChange = (selectedOptions) => {
       images: product.images.filter(img => typeof img === "string") // clear images so no blob goes to DB
     };
 
+    console.log(product);
+    // return false;
     // ✅ Upload product images
     (product.files || []).forEach(file => {
       if (file) formData.append("images", file);
