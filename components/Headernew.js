@@ -430,16 +430,6 @@ const Header = () => {
     
     return (
         <header className="sticky top-0 z-50">
-
-
-            <title>SAMSUNG Galaxy S20 FE 5G</title>
-            <meta property="og:title" content="SAMSUNG Galaxy S20 FE 5G" />
-            <meta property="og:description" content="Handset (Non Removable Battery Included), Travel Adapter, USB Cable, User Manual" />
-            <meta property="og:image" content="https://bea.divinfosys.com/uploads/products/SM-G781BZGGINS.jpeg" />
-            <meta property="og:url" content="https://bea.divinfosys.com/product/samsung-galaxy-s20-fe-5g-cloud-mint-128-gb8-gb-ram" />
-            <meta property="og:type" content="product" />
-
-
             {/* Top Announcement Bar */}
             {offers.some(
                 (offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active"

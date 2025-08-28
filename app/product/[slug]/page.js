@@ -431,7 +431,6 @@ const fetchBrand = async () => {
                       <Addtocart
                         productId={product._id}
                         stockQuantity={product.quantity}
-                         special_price={product.special_price}
                         quantity={quantity}
                         additionalProducts={selectedFrequentProducts.map(p => p._id)}
                         warranty={selectedWarranty}
@@ -445,9 +444,13 @@ const fetchBrand = async () => {
                     </div>
                   </div>
 
-
-                  
-
+                <title>{product.name}</title>
+                <meta property="og:title" content={product.name} />
+                <meta property="og:description" content={product.description} />
+                <meta property="og:image" content={selectedImage ? `https://bea.divinfosys.com/uploads/products/${selectedImage}` : "https://bea.divinfosys.com/no-image.jpg"} />
+                <meta property="og:url" content={`https://bea.divinfosys.com/product/${product?.slug}`} />
+                <meta property="og:type" content="product" />
+            
                   {/* Action Buttons */}
                   <div className="flex items-center gap-1" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: https://bea.divinfosys.com/product/${product.slug}`)}`, '_blank')}>
                     <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-blue-200 hover:bg-blue-600 text-blue-500 hover:text-white">
