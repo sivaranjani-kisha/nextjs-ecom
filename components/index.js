@@ -1461,53 +1461,62 @@ const handleCategoryClick = useCallback((category) => (e) => {
                         </div>
 
                         {/* Video Scroll */}
-                        <div ref={scrollRef} className="flex gap-4 overflow-x-hidden scroll-smooth px-2">
-                         {videos.map((video) => {
-                          let thumb = video.thumbnail_image;
+                       <div
+  ref={scrollRef}
+  className="flex gap-4 overflow-x-hidden scroll-smooth px-2 scrollbar-hide"
+>
+  {videos.map((video) => {
+    let thumb = video.thumbnail_image;
 
-                          if (thumb) {
-                            // Ensure correct path
-                            if (!thumb.startsWith("http") && !thumb.startsWith("/")) {
-                              thumb = "/" + thumb;
-                            }
-                          } else if (video.video_url) {
-                            const ytId = getYoutubeId(video.video_url);
-                            if (ytId) thumb = `https://img.youtube.com/vi/${ytId}/0.jpg`;
-                          }
+    if (thumb) {
+      // Ensure correct path
+      if (!thumb.startsWith("http") && !thumb.startsWith("/")) {
+        thumb = "/" + thumb;
+      }
+    } else if (video.video_url) {
+      const ytId = getYoutubeId(video.video_url);
+      if (ytId) thumb = `https://img.youtube.com/vi/${ytId}/0.jpg`;
+    }
 
-                          if (!thumb) thumb = "/placeholder.jpg";
+    if (!thumb) thumb = "/placeholder.jpg";
 
-                          return (
-                            <motion.div
-                              key={video._id}
-                              whileHover={{ scale: 1.05 }}
-                              className="min-w-[320px] rounded-xl shadow-md bg-white overflow-hidden"
-                            >
-                              <div className="h-48 relative flex items-center justify-center bg-gray-200">
-                                <img
-                                  src={thumb}
-                                  alt={video.title}
-                                  className="w-full h-full object-cover"
-                                />
-                                <img
-                                  src="https://img.poorvika.com//play_video.png"
-                                  alt="play"
-                                  className="absolute w-12 h-12"
-                                />
-                              </div>
-                              <div className="p-3">
-                                <p
-                                  className="text-sm font-medium text-gray-800 line-clamp-2 cursor-pointer hover:text-orange-600"
-                                  onClick={() => setActiveVideo(video)}
-                                >
-                                  {video.title}
-                                </p>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
+    return (
+      <motion.div
+        key={video._id}
+        whileHover={{ scale: 1.05 }}
+        className="min-w-[320px] rounded-xl shadow-md bg-white overflow-hidden"
+      >
+        {/* 👉 Thumbnail click = same as title click */}
+        <div
+          className="h-48 relative flex items-center justify-center bg-gray-200 cursor-pointer"
+          onClick={() => setActiveVideo(video)}
+        >
+          <img
+            src={thumb}
+            alt={video.title}
+            className="w-full h-full object-cover"
+          />
+          <img
+            src="https://img.poorvika.com//play_video.png"
+            alt="play"
+            className="absolute w-12 h-12"
+          />
+        </div>
 
-                        </div>
+        {/* 👉 Title click */}
+        <div className="p-3">
+          <p
+            className="text-sm font-medium text-gray-800 line-clamp-2 cursor-pointer hover:text-orange-600"
+            onClick={() => setActiveVideo(video)}
+          >
+            {video.title}
+          </p>
+        </div>
+      </motion.div>
+    );
+  })}
+</div>
+
 
                         {/* ✅ Modal for YouTube video */}
                         {activeVideo && (

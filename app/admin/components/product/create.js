@@ -983,6 +983,7 @@ const uploadImages = async (files) => {
      }
    }
 const handleFilterChange = (selectedOptions) => {
+  console.log(selectedOptions);
   // Extract only the 'value' from each selected option object
   const selectedValues = selectedOptions.map((option) => option.value);
  
@@ -993,6 +994,15 @@ const handleFilterChange = (selectedOptions) => {
   }));
 };
  
+const handleupdatefilterchange = (filters) => {
+  const selectedValues = filters.map((option) => option.value);
+ 
+  setProduct((prev) => ({
+    ...prev,
+    // Store an array of strings, not objects
+    filters: selectedValues,
+  }));
+}
  
   // const handleFilterChange = (selectedOptions) => {
   //   console.log(selectedOptions);
