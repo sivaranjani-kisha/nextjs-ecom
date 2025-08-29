@@ -6,7 +6,6 @@ import fs from "fs";
 import connectDB from "@/lib/db";
 import Product from "@/models/product";
 import Product_filter from "@/models/ecom_productfilter_info";
-import Category from "@/models/ecom_category_info";
 import md5 from "md5";
 
 export async function PUT(req, { params }) {
@@ -16,25 +15,14 @@ export async function PUT(req, { params }) {
     const productData = JSON.parse(formData.get("product"));
     const imageFiles = formData.getAll("images");
     const overviewImageFiles = formData.getAll("overviewImages");
-//     const category = formData.get("category");
+    const category = formData.get("category");
     const highlights = JSON.parse(formData.get("highlights") || "[]");
     let variants = JSON.parse(formData.get("variant") || "[]");
     const Filters    = productData.filters;
 
 console.log(productData);
 console.log("..............................................................");
- const category = productData.sub_category;
- let main_Category = "";
- if(category != ""){
-    const main_cat = await Category.findOne({ _id: category });
-    console.log(category,main_cat);
-    if(main_cat){
-      main_Category = main_cat.parentid;
-        console.log(main_Category);
-      productData.category = main_Category;
-    }
-  }
-console.log(productData);
+
     const slug = productData.slug;
     const md5_cat_name = md5(slug);
 
@@ -118,21 +106,27 @@ for (const file of imageFiles) {
 ];
 
 
-  
+
+
+// Normalize filters to just ObjectId strings
+const filterIds = (productData.filters ?? []).map(f =>
+  typeof f === "object" ? f.value : f
+).filter(Boolean);
 
 const updatedProduct = await Product.findByIdAndUpdate(
-  productId,
-  {
-    ...productData,
-category:main_Category,
-sub_category:category,
-    images: finalImages,
-    overview_image: savedOverviewImages.length > 0 ? savedOverviewImages : productData.overview_image,
-  },
-  { new: true }
+  productId,
+  {
+    ...productData,
+    category: productData.category,
+    images: finalImages,
+    overview_image: savedOverviewImages.length > 0 
+      ? savedOverviewImages 
+      : productData.overview_image,
+    filters: filterIds   // ✅ Save filters directly to product
+  },
+  { new: true }
 );
-
-const filterIds = (Filters ?? []).filter(Boolean); // Filters = array of strings
+// Filters = array of strings
 console.log(Filters);
 const product_id = updatedProduct?._id;
 if (product_id){
