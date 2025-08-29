@@ -449,10 +449,7 @@ const fetchBrand = async () => {
                 <meta property="og:description" content={product.description} />
                 <meta
           property="og:image"
-          content={
-            product?.images?.[0]
-              ? `https://bea.divinfosys.com/uploads/products/${product.images[0]}`
-              : "https://bea.divinfosys.com/no-image.jpg"
+          content={"https://bea.divinfosys.com/no-image.jpg"
           }
         />
 

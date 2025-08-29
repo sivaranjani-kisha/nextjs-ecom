@@ -104,7 +104,7 @@ export default function CategoryPage() {
     } catch (error) {
       toast.error("Error fetching initial data");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
   //const [showEndMessage, setShowEndMessage] = useState(false);

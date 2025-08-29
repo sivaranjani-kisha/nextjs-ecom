@@ -393,12 +393,13 @@ const Header = () => {
         }
     };
     // 🔹 Render flattened category item
-   const renderFlatItem = (item) => {
+   const renderFlatItem = (item,hoveredCategory) => {
+    console.log(hoveredCategory);
     // if root (level 0) -> only /category/rootCategory
     const href =
         item.level === 0
-            ? `/category/${encodeURIComponent(item.rootCategory)}`
-            : `/category/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
+            ? `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}`
+            : `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
 
     return (
         <div key={item._id} style={{ paddingLeft: `${item.level * 12}px` }}>
@@ -886,7 +887,7 @@ const Header = () => {
                             index % 2 === 0 ? "bg-white" : "bg-gray-100"
                         }`}
                         >
-                        {chunk.map(item => renderFlatItem(item))}
+                        {chunk.map(item => renderFlatItem(item,hoveredCategory))}
                         </div>
                     ))}
 

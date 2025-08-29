@@ -125,7 +125,7 @@ const handleProductClick = (product) => {
     } catch (error) {
       toast.error('Error fetching initial data:', error);
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
