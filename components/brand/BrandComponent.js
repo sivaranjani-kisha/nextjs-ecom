@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -8,16 +8,16 @@ import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import { ToastContainer, toast } from 'react-toastify';
 
-export default function CategoryPage() {
-  const [categoryData, setCategoryData] = useState({
-    category: null,
-    brands: [],
+export default function BrandPage() {
+  const [brandData, setBrandData] = useState({
+    brand: null,
+    categories: [],
     filters: []
   });
-  const [showEndMessage, setShowEndMessage] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState({
     categories: [],
+    subcategories: [],
     brands: [],
     price: { min: 0, max: 100000 },
     filters: []
@@ -41,7 +41,6 @@ export default function CategoryPage() {
     setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
   };
   const [nofound, setNofound] = useState(false);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -63,17 +62,17 @@ export default function CategoryPage() {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const categoryRes = await fetch(`/api/categories/${slug}`);
-      const categoryData = await categoryRes.json();
+      const brandRes = await fetch(`/api/brand/${slug}`);
+      const brandData = await brandRes.json();
       
-      setCategoryData({
-        ...categoryData,
-        categoryTree: categoryData.category,
-        allCategoryIds: categoryData.allCategoryIds
+      setBrandData({
+        ...brandData,
+        categoryTree: brandData.categories,
+        allCategoryIds: brandData.allCategoryIds || []
       });
 
-      if (categoryData.products?.length > 0) {
-        const prices = categoryData.products.map(p => p.special_price);
+      if (brandData.products?.length > 0) {
+        const prices = brandData.products.map(p => p.special_price);
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
         setPriceRange([minPrice, maxPrice]);
@@ -84,7 +83,7 @@ export default function CategoryPage() {
       }
 
       const groups = {};
-      categoryData.filters.forEach(filter => {
+      brandData.filters.forEach(filter => {
         const groupId = filter.filter_group_name;
         if (groupId) {
           if (!groups[groupId]) {
@@ -99,32 +98,34 @@ export default function CategoryPage() {
         }
       });
       setFilterGroups(groups);
-      
-      // Fetch products after setting up initial data
-      await fetchFilteredProducts(categoryData, 1, true);
     } catch (error) {
       toast.error("Error fetching initial data");
     } finally {
-      setInitialLoadComplete(true);
-      // setLoading(false);
+      setLoading(false);
     }
   };
 
-  const fetchFilteredProducts = useCallback(async (categoryData, pageNum = 1, initialLoad = false) => {
+  const fetchFilteredProducts = useCallback(async (brandData, pageNum = 1, initialLoad = false) => {
     try {
-      if (!initialLoad) setLoading(true);
+      setLoading(true);
       const query = new URLSearchParams();
-      const categoryIds = selectedFilters.categories.length > 0
-        ? selectedFilters.categories
-        : categoryData.allCategoryIds;
-
-      query.set('categoryIds', categoryIds.join(','));
+      
+      // Always filter by the current brand
+      query.set('brands', brandData.brand._id);
+      
+      // Add category filters if any
+      if (selectedFilters.categories.length > 0) {
+        query.set('categoryIds', selectedFilters.categories.join(','));
+      }
+      
+      // Add subcategory filters if any
+      if (selectedFilters.subcategories.length > 0) {
+        query.set('subcategoryIds', selectedFilters.subcategories.join(','));
+      }
+      
       query.set('page', pageNum);
       query.set('limit', itemsPerPage);
 
-      if (selectedFilters.brands.length > 0) {
-        query.set('brands', selectedFilters.brands.join(','));
-      }
       query.set('minPrice', selectedFilters.price.min);
       query.set('maxPrice', selectedFilters.price.max);
       
@@ -132,7 +133,7 @@ export default function CategoryPage() {
         query.set('filters', selectedFilters.filters.join(','));
       }
 
-      const res = await fetch(`/api/product/filter/main?${query}`);
+      const res = await fetch(`/api/product/filter/brand/main?${query}`);
       const { products, pagination: paginationData } = await res.json();
 
       setProducts(products);
@@ -154,10 +155,10 @@ export default function CategoryPage() {
     } catch (error) {
       toast.error('Error fetching products'+error);
     } finally {
-      if (!initialLoad) setLoading(false);
+      setLoading(false);
     }
   }, [selectedFilters]);
-
+  
   const handleProductClick = (product) => {
     const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
 
@@ -190,7 +191,7 @@ export default function CategoryPage() {
         return sortedProducts;
     }
   };
-
+  
   const handleFilterChange = (type, value) => {
     setSelectedFilters(prev => {
       const newFilters = { ...prev };
@@ -205,10 +206,14 @@ export default function CategoryPage() {
         newFilters.categories = prev.categories.includes(value)
           ? prev.categories.filter(item => item !== value)
           : [...prev.categories, value];
+      } else if (type === 'subcategories') {
+        newFilters.subcategories = prev.subcategories.includes(value)
+          ? prev.subcategories.filter(item => item !== value)
+          : [...prev.subcategories, value];
       }
        else {
         newFilters.filters = prev.filters.includes(value)
-          ? prev.filters.filter(item => item !== item)
+          ? prev.filters.filter(item => item !== value)
           : [...prev.filters, value];
       }
       return newFilters;
@@ -225,7 +230,8 @@ export default function CategoryPage() {
   const CategoryTree = ({ 
     categories, 
     level = 0, 
-    selectedFilters, 
+    selectedCategories,
+    selectedSubcategories,
     onFilterChange 
   }) => {
     const [expandedCategories, setExpandedCategories] = useState([]);
@@ -243,10 +249,17 @@ export default function CategoryPage() {
         {categories.map((category) => (
           <div key={category._id}>
             <div className={`flex items-center gap-2 ${level > 0 ? `ml-${level * 4}` : ''}`}>
-              <Link
-                href={`/category/${slug}/${category.category_slug}`}
-                className="p-2 hover:bg-gray-100 rounded inline-flex items-center"
-              >     
+              
+              {/* Select category (filter) */}
+              <button
+                onClick={() => onFilterChange(level === 0 ? 'categories' : 'subcategories', category._id)}
+                className={`flex-1 p-2 rounded hover:bg-gray-100 inline-flex items-center ${
+                  (level === 0 && selectedCategories.includes(category._id)) ||
+                  (level > 0 && selectedSubcategories.includes(category._id))
+                    ? 'bg-blue-50 text-blue-600 font-medium'
+                    : 'text-gray-600'
+                }`}
+              >
                 {category.image && (
                   <div className="w-6 h-6 mr-2 relative">
                     <Image
@@ -259,15 +272,32 @@ export default function CategoryPage() {
                   </div>
                 )}
                 {category.category_name}
-              </Link>
+              </button>
+
+              {/* Expand/Collapse chevron */}
+              {category.subCategories?.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(category._id)}
+                  className="p-1 rounded hover:bg-gray-200"
+                >
+                  {expandedCategories.includes(category._id) ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
+                </button>
+              )}
             </div>
-            
-            {category.subCategories?.length > 0 && 
+
+            {/* Render subcategories */}
+            {category.subCategories?.length > 0 &&
               expandedCategories.includes(category._id) && (
-                <CategoryTree 
-                  categories={category.subCategories} 
+                <CategoryTree
+                  categories={category.subCategories}
                   level={level + 1}
-                  selectedFilters={selectedFilters}
+                  selectedCategories={selectedCategories}
+                  selectedSubcategories={selectedSubcategories}
                   onFilterChange={onFilterChange}
                 />
               )}
@@ -278,15 +308,16 @@ export default function CategoryPage() {
   };
 
   useEffect(() => {
-    if (categoryData.main_category && categoryData.category && initialLoadComplete) {
-      fetchFilteredProducts(categoryData, 1);
+    if (brandData.brand) {
+      fetchFilteredProducts(brandData, 1);
     }
-  }, [selectedFilters, categoryData.main_category, categoryData.category, initialLoadComplete]);
+  }, [selectedFilters, brandData.brand]);
 
   const clearAllFilters = () => {
     setSelectedFilters({
       categories: [],
-      brands: [],
+      subcategories: [],
+      brands: [brandData.brand?._id], // Keep the current brand selected
       price: { min: priceRange[0], max: priceRange[1] },
       filters: []
     });
@@ -294,7 +325,7 @@ export default function CategoryPage() {
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= pagination.totalPages) {
-      fetchFilteredProducts(categoryData, page);
+      fetchFilteredProducts(brandData, page);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -376,21 +407,12 @@ export default function CategoryPage() {
     );
   };
 
-  // Show loader until all data is loaded
-  if (loading || !initialLoadComplete) {
+  if ((loading || !brandData.brand) && pagination.currentPage === 1) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
-      </div>
-    );
-  }
-
-  if (!categoryData.category) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold">Category not found</h1>
       </div>
     );
   }
@@ -401,7 +423,17 @@ export default function CategoryPage() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-1 space-y-6">
-              <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.main_category.category_name}</h1>
+              {brandData.brand?.image && (
+                <div className="w-32 h-12  relative mb-4">
+                  <Image
+                    src={brandData.brand.image.startsWith('http') ? brandData.brand.image : `/uploads/Brands/${brandData.brand.image}`}
+                    alt={brandData.brand.brand_name}
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              )}
             </div>
             <div className="lg:col-span-3">
               {/* Sorting and Count */}
@@ -429,11 +461,11 @@ export default function CategoryPage() {
             {/* Filters Sidebar */}
             <div className="w-full md:w-[250px] shrink-0">
               {/* Active Filters */}
-              {(selectedFilters.brands.length > 0 || 
-              selectedFilters.categories.length > 0 ||
-               selectedFilters.filters.length > 0 ||
-               selectedFilters.price.min !== priceRange[0] || 
-               selectedFilters.price.max !== priceRange[1]) && (
+              {(selectedFilters.categories.length > 0 ||
+                selectedFilters.subcategories.length > 0 ||
+                selectedFilters.filters.length > 0 ||
+                selectedFilters.price.min !== priceRange[0] || 
+                selectedFilters.price.max !== priceRange[1]) && (
                 <div className="bg-white p-4 rounded shadow">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="font-semibold">Active Filters</h3>
@@ -446,7 +478,7 @@ export default function CategoryPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {selectedFilters.categories.map(categoryId => {
-                      const category = categoryData.category?.find(c => c._id === categoryId);
+                      const category = brandData.categories?.find(c => c._id === categoryId);
                       return category ? (
                         <span 
                           key={categoryId}
@@ -462,16 +494,33 @@ export default function CategoryPage() {
                         </span>
                       ) : null;
                     })}
-                    {selectedFilters.brands.map(brandId => {
-                      const brand = categoryData.brands.find(b => b._id === brandId);
-                      return brand ? (
+                    
+                    {selectedFilters.subcategories.map(subcategoryId => {
+                      // Find the subcategory in the category tree
+                      let subcategoryName = "";
+                      const findSubcategory = (categories) => {
+                        for (const category of categories) {
+                          if (category._id === subcategoryId) {
+                            subcategoryName = category.category_name;
+                            return true;
+                          }
+                          if (category.subCategories && category.subCategories.length > 0) {
+                            if (findSubcategory(category.subCategories)) return true;
+                          }
+                        }
+                        return false;
+                      };
+                      
+                      findSubcategory(brandData.categoryTree || []);
+                      
+                      return subcategoryName ? (
                         <span 
-                          key={brandId}
+                          key={subcategoryId}
                           className="bg-gray-100 px-2 py-1 rounded text-sm flex items-center"
                         >
-                          {brand.brand_name}
+                          {subcategoryName}
                           <button 
-                            onClick={() => handleFilterChange('brands', brandId)}
+                            onClick={() => handleFilterChange('subcategories', subcategoryId)}
                             className="ml-1 text-gray-500 hover:text-gray-700"
                           >
                             ×
@@ -522,11 +571,15 @@ export default function CategoryPage() {
               {/* Categories Tree */}
               <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
                 <h3 className="text-base font-semibold mb-3 text-gray-700">Categories</h3>
-                {categoryData.categoryTree?.length > 0 ? (
-                  <CategoryTree categories={categoryData.categoryTree} selectedFilters={selectedFilters.categories}
-                  onFilterChange={handleFilterChange} />
+                {brandData.categoryTree?.length > 0 ? (
+                  <CategoryTree 
+                    categories={brandData.categoryTree} 
+                    selectedCategories={selectedFilters.categories}
+                    selectedSubcategories={selectedFilters.subcategories}
+                    onFilterChange={handleFilterChange} 
+                  />
                 ) : (
-                  <p className="text-gray-500 text-sm">No subcategories</p>
+                  <p className="text-gray-500 text-sm">No categories available</p>
                 )}
               </div>
 
@@ -551,45 +604,6 @@ export default function CategoryPage() {
                     <span>₹{selectedFilters.price.max}</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Brand Filter */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
-                <div className="flex items-center justify-between pb-2">
-                  <h3 className="text-base font-semibold text-gray-700">Brands</h3>
-                  <button onClick={toggleBrands} className="text-gray-500 hover:text-gray-700">
-                    {isBrandsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                  </button>
-                </div>
-                {isBrandsExpanded && (
-                  <ul className="mt-2 space-y-2">
-                    {categoryData.brands.map(brand => (
-                      <li key={brand._id} className="flex items-center">
-                        <button
-                          onClick={() => handleFilterChange('brands', brand._id)}
-                          className={`flex items-center w-full text-left p-2 rounded-md text-sm ${
-                            selectedFilters.brands.includes(brand._id) 
-                              ? 'bg-blue-50 text-blue-600' 
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {brand.image && (
-                            <div className="w-6 h-6 mr-2 relative">
-                              <Image
-                                src={brand.image.startsWith('http') ? brand.image : `/uploads/Brands/${brand.image}`}
-                                alt={brand.brand_name}
-                                fill
-                                className="object-contain"
-                                unoptimized
-                              />
-                            </div>
-                          )}
-                          <span>{brand.brand_name}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
 
               {/* Dynamic Filters */}
@@ -709,7 +723,7 @@ export default function CategoryPage() {
 
                           <div className="mt-auto flex items-center justify-between gap-2 ccs">
                             <Addtocart
-                              productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
+                              productId={product._id} stockQuantity={product.quantity}
                               className="w-full text-xs sm:text-sm py-1.5"
                             />
                             <a

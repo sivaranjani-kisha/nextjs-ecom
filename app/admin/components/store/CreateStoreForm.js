@@ -279,19 +279,19 @@ export default function CreateStoreForm({ storeId = null }) {
     const currentStepErrors = {};
     if (currentStep === 1) {
       if (!newStore.organisation_name.trim()) currentStepErrors.organisation_name = "Organisation Name is required";
-      if (!newStore.category) currentStepErrors.category = "Category is required";
-      if (!newStore.description.trim()) currentStepErrors.description = "Description is required";
-      if (!newStore.logo && !storeId) currentStepErrors.logo = "Logo is required"; // Logo required only on create
+      // if (!newStore.category) currentStepErrors.category = "Category is required";
+      // if (!newStore.description.trim()) currentStepErrors.description = "Description is required";
+      // if (!newStore.logo && !storeId) currentStepErrors.logo = "Logo is required"; // Logo required only on create
     } else if (currentStep === 2) {
       if (!newStore.address.trim()) currentStepErrors.address = "Address is required";
       if (!newStore.city.trim()) currentStepErrors.city = "City is required";
       if (!newStore.phone.trim()) currentStepErrors.phone = "Phone is required";
     } else if (currentStep === 3) {
       if (!newStore.email.trim()) currentStepErrors.email = "Email is required";
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (newStore.email && !emailRegex.test(newStore.email)) {
-        currentStepErrors.email = "Invalid email format";
-      }
+      // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // if (newStore.email && !emailRegex.test(newStore.email)) {
+      //   currentStepErrors.email = "Invalid email format";
+      // }
       if (!newStore.user) currentStepErrors.user = "Assigned User is required";
     }
 
@@ -314,10 +314,10 @@ export default function CreateStoreForm({ storeId = null }) {
     // Final validation for the last step before submission
     const finalErrors = {};
     if (!newStore.email.trim()) finalErrors.email = "Email is required";
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (newStore.email && !emailRegex.test(newStore.email)) {
-      finalErrors.email = "Invalid email format";
-    }
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // if (newStore.email && !emailRegex.test(newStore.email)) {
+    //   finalErrors.email = "Invalid email format";
+    // }
     const phoneRegex = /^[0-9\-\+\s()]+$/;
     if (newStore.phone && !phoneRegex.test(newStore.phone)) {
       finalErrors.phone = "Phone format is invalid";
@@ -423,7 +423,7 @@ export default function CreateStoreForm({ storeId = null }) {
             </div>
 
             {/* Category */}
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <div className="border rounded p-2 max-h-48 overflow-y-auto">
                 {renderCategoryTree(categories)}
@@ -431,7 +431,7 @@ export default function CreateStoreForm({ storeId = null }) {
               {errors.category && (
                 <span className="text-red-500 text-sm">{errors.category}</span>
               )}
-            </div>
+            </div> */}
 
             {/* Description (full width) */}
             <div className="col-span-1 md:col-span-2">
@@ -474,7 +474,7 @@ export default function CreateStoreForm({ storeId = null }) {
             </div>
 
             {/* Store Images (600x450, Max 3) */}
-            <div>
+            {/* <div>
               <label className="block mb-1 text-sm font-semibold text-gray-700">Store Images (600x450, Max 3)</label>
               {[0, 1, 2].map((index) => (
                 <div key={index} className="flex items-center space-x-2 mb-2">
@@ -507,7 +507,7 @@ export default function CreateStoreForm({ storeId = null }) {
                   )}
                 </div>
               ))}
-            </div>
+            </div> */}
 
             {/* Location */}
             <div>
@@ -675,7 +675,7 @@ export default function CreateStoreForm({ storeId = null }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
-                type="email"
+                type="text"
                 name="email"
                 className="p-2 border rounded w-full"
                 onChange={handleInputChange}

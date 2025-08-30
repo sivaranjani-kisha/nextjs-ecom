@@ -21,6 +21,10 @@ const ContactSchema = new mongoose.Schema(
       type: String, 
       required: true 
     },
+    city: { 
+      type: String, 
+      required: true 
+    },
     status: {
       type: String,
       enum: ["active", "inactive"],

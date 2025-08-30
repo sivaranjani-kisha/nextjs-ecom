@@ -9,11 +9,12 @@ const StoreSchema = new mongoose.Schema({
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
-    required: [true, 'Please select a category'],
+    required: false,
+  default: null
   },
   description: {
     type: String,
-    required: [true, 'Please provide a description'],
+    required: false,
     maxlength: [1000, 'Description cannot be more than 1000 characters'],
   },
   logo: {
@@ -69,8 +70,9 @@ const StoreSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    maxlength: [100, 'Email cannot be more than 100 characters'],
-    match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, 'Please add a valid email'],
+    
+    // maxlength: [100, 'Email cannot be more than 100 characters'],
+    // match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, 'Please add a valid email'],
   },
   twitter: {
     type: String,

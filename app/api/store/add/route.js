@@ -83,6 +83,11 @@ export async function POST(req) {
         newStoreData.images.push(`/uploads/${filename}`);
       }
     }
+
+    if (!newStoreData.category || newStoreData.category === "") {
+  newStoreData.category = null;
+}
+
     
     // Create new store in database
     // Ensure the model is imported correctly and named 'Store' if that's what you want to use

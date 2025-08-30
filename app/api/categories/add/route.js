@@ -5,6 +5,15 @@ import md5 from "md5";
 import { writeFile } from "fs/promises";
 import path from "path";
 
+function convertSlug(slug) {
+  let result = slug.replace(/ /g, "-"); // replace spaces with hyphens
+  result = result.replace(/[^A-Za-z0-9\-]/g, ""); // remove special chars
+  result = result.replace(/-+/g, "-"); // collapse multiple hyphens
+  result = result.toLowerCase();
+
+  return result;
+
+}
 export async function POST(req) {
   try {
     await dbConnect();
@@ -21,7 +30,7 @@ console.log(show_on_home)
       return NextResponse.json({ error: "Category name is required" }, { status: 400 });
     }
 
-    let category_slug = category_name.toLowerCase().replace(/\s+/g, "-");
+    let category_slug = convertSlug(category_name); // category_name.toLowerCase().replace(/\s+/g, "-");
     let md5_cat_name = md5(category_slug);
 
     // Check if category already exists

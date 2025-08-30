@@ -22,6 +22,15 @@ import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import 'swiper/css';
 import 'swiper/css/navigation';
 export default function HomeComponent() {
+  function slugify(text) {
+  return text
+    ?.toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")        // replace spaces with -
+    .replace(/[^\w\-]+/g, "")    // remove special chars
+    .replace(/\-\-+/g, "-");     // collapse multiple -
+}
     const features = [
         { icon: "🚗", title: "Free Shipping", description: "Free shipping all over the US" },
         { icon: "🔒", title: "100% Satisfaction", description: "Guaranteed satisfaction with every order" },
@@ -1165,7 +1174,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             <div>
                                 <motion.div variants={containerVariants} className="rounded-lg bg-gray-100 rounded-[23px] p-2">
                                     <motion.div variants={itemVariants} className="flex justify-between items-center mb-4">
-                                        <h5 className="text-lg font-semibold">Shop by Brands</h5>
+                                        <h5 className= "text-lg font-semibold">Shop by Brands</h5>
                                     </motion.div>
     
                                     {isBrandsLoading ? (
@@ -1181,16 +1190,18 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                         className="p-4 flex justify-center items-center"
                                                         whileHover={{ scale: 1.1 }}
                                                     >
-                                                        <div className="w-28 h-28 flex items-center justify-center overflow-hidden">
-                                                            <Image
-                                                                src={`/uploads/Brands/${brand.image}`}
-                                                                alt={brand.brand_name || "Brand Logo"}
-                                                                width={100}
-                                                                height={100}
-                                                                className="object-contain w-full h-full"
-                                                                unoptimized
-                                                            />
-                                                        </div>
+                                                    <div className="w-28 h-28 flex items-center justify-center overflow-hidden">
+                                                      <Link href={`/brand/${slugify(brand.brand_name)}`}>
+                                                        <Image
+                                                          src={`/uploads/Brands/${brand.image}`}
+                                                          alt={brand.brand_name || "Brand Logo"}
+                                                          width={100}
+                                                          height={100}
+                                                          className="object-contain w-full h-full cursor-pointer"
+                                                          unoptimized
+                                                        />
+                                                      </Link>
+                                                    </div>
                                                     </motion.div>
                                                 ))}
                                             </Slider>

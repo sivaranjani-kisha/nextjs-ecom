@@ -8,51 +8,73 @@ export default function ProductBreadcrumb({ product }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchCategoryHierarchy = async () => {
-      try {
-        if (!product?.category) {
-          console.warn('No category ID found in product');
-          return;
-        }
-
-        // First fetch all categories
-        const allCategoriesRes = await fetch('/api/categories/breadcrumb');
-        const allCategories = await allCategoriesRes.json();
-
-        // Find current category
-        const currentCategory = allCategories.find(
-          cat => cat._id === product.category
-        );
-
-        if (!currentCategory) {
-          console.warn('Category not found for product');
-          return;
-        }
-
-        // Build hierarchy array
-        const hierarchy = [currentCategory];
-        
-        // Find parent category if exists
-        if (currentCategory.parentid) {
-          const parentCategory = allCategories.find(
-            cat => cat._id === currentCategory.parentid
-          );
-          if (parentCategory) {
-            hierarchy.unshift(parentCategory); // Add to beginning
-          }
-        }
-
-        setCategories(hierarchy);
-      } catch (error) {
-        console.error('Error fetching category data:', error);
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  const fetchCategoryHierarchy = async () => {
+    try {
+      if (!product?.category) {
+        console.warn('No category ID found in product');
+        return;
       }
-    };
 
-    fetchCategoryHierarchy();
-  }, [product]);
+      // Fetch all categories
+      const allCategoriesRes = await fetch('/api/categories/breadcrumb');
+      const allCategories = await allCategoriesRes.json();
+
+      // Find current category
+      let currentCategory = allCategories.find(
+        (cat) => cat._id === product.category
+      );
+
+      if (!currentCategory) {
+        console.warn('Category not found for product');
+        return;
+      }
+
+      // Build hierarchy recursively
+     const hierarchy = [];
+let safetyCounter = 0;
+
+while (currentCategory && safetyCounter < 10) {
+  hierarchy.unshift(currentCategory);
+
+  if (currentCategory.parentid) {
+    const parentCategory = allCategories.find(
+      (cat) => String(cat._id) === String(currentCategory.parentid)
+    );
+
+    if (!parentCategory) {
+      console.warn(
+        "Parent not found for:",
+        currentCategory.category_name,
+        "parentid:",
+        currentCategory.parentid
+      );
+      break;
+    }
+
+    currentCategory = parentCategory;
+  } else {
+    currentCategory = null;
+  }
+
+  safetyCounter++;
+}
+
+setCategories(hierarchy);
+
+
+
+     
+    } catch (error) {
+      console.error('Error fetching category data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchCategoryHierarchy();
+}, [product]);
+
 
   if (loading) {
     return (
