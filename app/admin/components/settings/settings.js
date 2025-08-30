@@ -164,12 +164,12 @@ export default function HomeSectionOrder() {
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-5 mt-5">
         <h2 className="text-2xl font-bold">Manage Section Order</h2>
-        <button
+        {/* <button
           onClick={() => setShowModal(true)}
           className="bg-green-600 text-white px-4 py-1 rounded"
         >
           + Add
-        </button>
+        </button> */}
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -227,7 +227,7 @@ export default function HomeSectionOrder() {
                           {section.status === "active" ? "On" : "Off"}
                         </button>
 
-                        <button
+                        {/* <button
                           className="text-blue-500 text-sm"
                           onClick={() => {
                             setEditSection(section);
@@ -235,7 +235,7 @@ export default function HomeSectionOrder() {
                           }}
                         >
                           Edit
-                        </button>
+                        </button> */}
                       </div>
                     </div>
                   )}

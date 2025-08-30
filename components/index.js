@@ -1368,7 +1368,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       initial="hidden"
                       animate="visible"
                       variants={containerVariants}
-                      className="overflow-hidden pt-0 m-0 "
+                      className="overflow-hidden pt-0 m-0  "
                     >
                       <div className="relative">
                         {isSingleBannerLoading ? (
@@ -1391,13 +1391,13 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                   variants={itemVariants}
                                 >
                                   <Link href={item.redirect_url || "#"} className="block w-full h-full">
-                                    <div className="absolute inset-0 flex justify-center items-center bg-white">
+                                    <div className="absolute inset-0 flex justify-center items-center bg-white mb-4">
                                       <Image
                                         src={item.bgImageUrl}
                                         alt="Single Banner"
                                         fill
                                         quality={100}
-                                        className="object-cover w-full h-full"
+                                        className="object-fill w-full h-full"
                                         priority
                                       />
                                     </div>
@@ -1426,7 +1426,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                     alt="Single Banner"
                                     fill
                                     quality={100}
-                                    className="object-cover w-full h-full"
+                                    className="object-fill w-full h-full"
                                     priority
                                   />
                                 </div>
@@ -1434,8 +1434,8 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             </motion.div>
                           )
                         ) : (
-                          <div className="p-6 text-center">
-                            <p className="text-lg">No active single banners available</p>
+                          <div className="">
+                           
                           </div>
                         )}
                       </div>
