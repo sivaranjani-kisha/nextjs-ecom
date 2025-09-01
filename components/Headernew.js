@@ -877,35 +877,35 @@ const Header = () => {
                     onMouseEnter={cancelHide}
                     onMouseLeave={() => startHide(120)}
                 >
-                    <div className="flex flex-wrap bg-white h-[390px] " >
-                    {chunkFlatList(
-                        flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
-                        15
-                    ).map((chunk, index) => (
-                        <div
-                        key={index}
-                        className={`min-w-[220px] max-w-[250px] p-3 flex flex-col justify-between h-[250px]`}
-                        >
-                        {chunk.map(item => renderFlatItem(item,hoveredCategory))}
-                        </div>
-                    ))}
+                    <div className="flex flex-wrap bg-white h-[390px]">
+  {chunkFlatList(
+    flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+    15
+  ).map((chunk, index) => (
+    <div
+      key={index}
+      className="min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start" // 👈 h-[250px] remove panniten
+    >
+      {chunk.map(item => renderFlatItem(item, hoveredCategory))}
+    </div>
+  ))}
 
-                    {(hoveredCategory.navImage || hoveredCategory.image) && (
-  <div className="min-w-[220px] max-w-[250px] h-[390px] flex items-center justify-center">
-    <Link href={``} className="w-full h-full">
-      <Image
-        src={hoveredCategory.navImage || hoveredCategory.image}
-        alt="Category Navigation Image"
-        width={220}
-        height={390}
-        style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-        className="object-cover rounded"
-      />
-    </Link>
-  </div>
-)}
+  {(hoveredCategory.navImage || hoveredCategory.image) && (
+    <div className="min-w-[220px] max-w-[250px] flex items-center justify-center h-full"> 
+      <Link href={``} className="w-full h-full">
+        <Image
+          src={hoveredCategory.navImage || hoveredCategory.image}
+          alt="Category Navigation Image"
+          width={220}
+          height={390}
+          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+          className="object-cover rounded"
+        />
+      </Link>
+    </div>
+  )}
+</div>
 
-                    </div>
                 </div>
                 )}
             </div>
