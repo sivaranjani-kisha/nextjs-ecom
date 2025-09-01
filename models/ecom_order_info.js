@@ -1,5 +1,20 @@
 import mongoose from "mongoose";
 
+
+const OrderHistorySchema = new mongoose.Schema(
+  {
+    date: { type: Date, default: Date.now },   // When the status was updated
+    status: { 
+      type: String, 
+      enum: ["Pending", "Accepted", "Cancelled", "Shipped"], 
+      required: true 
+    },
+    comment: { type: String, maxlength: 150 }, // Optional comment
+    customer_notified: { type: Boolean, default: false } // whether customer got notified
+  },
+  { _id: false } // prevent automatic _id for subdocs
+);
+
 const OrderSchema = new mongoose.Schema(
   {
   user_id:{ type: String, required: true},
@@ -69,6 +84,9 @@ const OrderSchema = new mongoose.Schema(
   api_reason: {
     type: String,
   },
+
+  // NEW: Order History
+    order_history: [OrderHistorySchema]
 },
 
   { timestamps: true }

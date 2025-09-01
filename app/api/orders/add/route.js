@@ -84,6 +84,19 @@ export async function POST(req) {
           }
         }
     }
+    // Create notification after order is placed
+    try {
+      const Notification = require("@/models/Notification.js");
+      const notification = new Notification({
+        userId: user_id,
+        message: `Order #${newOrder.order_number || newOrder._id} placed successfully!`,
+        orderId: newOrder._id,
+      });
+      await notification.save();
+    } catch (notifErr) {
+      // Optionally log notification error, but don't block order creation
+      console.error("Notification creation failed:", notifErr);
+    }
     return Response.json({ success: true, message: "Order added successfully", order: newOrder }, { status: 201 });
 
   } catch (error) {

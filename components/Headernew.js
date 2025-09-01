@@ -25,6 +25,7 @@ import SideNavbar from '@/components/sideNavbar';
 import { useHeaderdetails } from "@/context/HeaderContext";
 
 const Header = () => {
+    const router = useRouter(); // Already present, just ensure usage
     const [category, setCategory] = useState('All Categories');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { wishlistCount } = useWishlist();
@@ -117,7 +118,6 @@ const Header = () => {
     };
 
     // ... (keep all your existing state declarations)
-    const router = useRouter(); // Initialize the router
 
     // Add this search handler function
     const handleSearch = () => {
@@ -469,8 +469,8 @@ const Header = () => {
                 <div className="flex justify-between items-center">
                     {/* Mobile Menu Button (Hidden on desktop) */}
                     <div className="sm:hidden flex items-center justify-center w-full relative">
-                        <button onClick={toggleMobileMenu} className="text-customBlue absolute left-0">
-                            {isMobileMenuOpen ? <FiX size={24} /> : <FaBars size={20} />}
+                        <button onClick={toggleMobileMenu} className="text-customBlue absolute left-0 z-50 p-2">
+                            {isMobileMenuOpen ? <FiX size={28} /> : <FaBars size={28} />}
                         </button>
                         <Link href="/" className="bg-white p-1 rounded-lg mx-auto">
                             <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={40} height={20} />
@@ -579,63 +579,70 @@ const Header = () => {
                 </div>
 
                 {/* Mobile Menu (Hidden on desktop) */}
-                {isMobileMenuOpen && (
-                    <div className={`sm:hidden bg-white mt-2 p-4 rounded-lg shadow-lg transition-all duration-300 ${ isMobileMenuOpen ? "block h-full" : "hidden"}`}>
-                        {/* Mobile Search Bar */}
-                        <div className="flex items-center bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
-                            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2 text-xs text-gray-700 bg-white border-r border-gray-300 outline-none">
-                                <option value="All Categories">All Categories</option>
-                                {categories.map((cat) => (
-                                    <option key={cat._id} value={cat.category_name}>
-                                        {cat.category_name}
-                                    </option>
-                                ))}
-                            </select>
-                            <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none"/>
-                            <button className="px-3 text-customBlue" onClick={handleSearch}>
-                                <FaSearch />
-                            </button>
-                        </div>
-        
-                        {/* Mobile Menu Links */}
-                        <div className="space-y-3">
-                            <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
-                                <FaLocationDot className="mr-2 text-customBlue" />Location
-                            </Link>
-                            <Link href="/wishlist" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
-                                <FaHeart className="mr-2 text-customBlue" />Wishlist
-                                {wishlistCount > 0 && (
-                                    <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{wishlistCount}</span>
+                                {isMobileMenuOpen && (
+                                    <div className={`sm:hidden bg-white fixed inset-0 z-50 p-4 rounded-lg shadow-lg overflow-y-auto transition-all duration-300`}> 
+                                        {/* Mobile Search Bar */}
+                                        <div className="flex items-center bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
+                                            <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none"/>
+                                            <button className="px-3 text-customBlue" onClick={handleSearch}>
+                                                <FaSearch />
+                                            </button>
+                                        </div>
+                                        {/* Category List */}
+                                        <div className="mb-4">
+                                            <div className="font-bold mb-2 text-blue-700">Categories</div>
+                                                                    <ul className="space-y-2">
+                                                                        <li>
+                                                                            <button className={`w-full text-left px-2 py-1 rounded ${selectedCategory === 'All Categories' ? 'bg-blue-100' : ''}`} onClick={() => { setSelectedCategory('All Categories'); setIsMobileMenuOpen(false); router.push('/category'); }}>
+                                                                                All Categories
+                                                                            </button>
+                                                                        </li>
+                                                                        {categories.map(cat => (
+                                                                            <li key={cat._id}>
+                                                                                <button className={`w-full text-left px-2 py-1 rounded ${selectedCategory === cat.category_name ? 'bg-blue-100' : ''}`} onClick={() => { setSelectedCategory(cat.category_name); setIsMobileMenuOpen(false); router.push(`/category/${cat.category_slug}`); }}>
+                                                                                    {cat.category_name}
+                                                                                </button>
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                        </div>
+                                        {/* Mobile Menu Links */}
+                                        <div className="space-y-3">
+                                            <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                                                <FaLocationDot className="mr-2 text-customBlue" />Location
+                                            </Link>
+                                            <Link href="/wishlist" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                                                <FaHeart className="mr-2 text-customBlue" />Wishlist
+                                                {wishlistCount > 0 && (
+                                                    <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{wishlistCount}</span>
+                                                )}
+                                            </Link>
+                                            <Link href="/cart" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                                                <FaShoppingCart className="mr-2 text-customBlue" />Cart
+                                                {cartCount > 0 && (
+                                                    <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
+                                                )}
+                                            </Link>
+                                            {isLoggedIn && isAdmin &&  (
+                                                <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
+                                            )}
+                                            {isLoggedIn ? (
+                                                <>
+                                                    <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        <FaShoppingBag className="mr-2 text-customBlue" />My Orders
+                                                    </Link>
+                                                    <button onClick={handleLogout} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
+                                                        <IoLogOut className="mr-2 text-customBlue" />Logout
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button onClick={() => {setShowAuthModal(true);setIsMobileMenuOpen(false);}} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
+                                                    <FiUser className="mr-2 text-customBlue" />Sign In
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 )}
-                            </Link>
-                            <Link href="/cart" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
-                                <FaShoppingCart className="mr-2 text-customBlue" />Cart
-                                {cartCount > 0 && (
-                                    <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
-                                )}
-                            </Link>
-                            {isLoggedIn && isAdmin &&  (
-                                <>
-                                    <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100"><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
-                                </>
-                            )}
-                            {isLoggedIn ? (
-                                <>
-                                    <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
-                                        <FaShoppingBag className="mr-2 text-customBlue" />My Orders
-                                    </Link>
-                                    <button onClick={handleLogout} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
-                                        <IoLogOut className="mr-2 text-customBlue" />Logout
-                                    </button>
-                                </>
-                            ) : (
-                                <button onClick={() => {setShowAuthModal(true);setIsMobileMenuOpen(false);}} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
-                                    <FiUser className="mr-2 text-customBlue" />Sign In
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
 
                 {/* Auth Modal */}
                 {showAuthModal && (
@@ -891,7 +898,7 @@ const Header = () => {
   ))}
 
   {(hoveredCategory.navImage || hoveredCategory.image) && (
-    <div className="min-w-[220px] max-w-[250px] flex items-center justify-center h-full"> 
+    <div className="min-w-[220px] max-w-[250px] flex items-center justify-center h-full "> 
       <Link href={``} className="w-full h-full">
         <Image
           src={hoveredCategory.navImage || hoveredCategory.image}

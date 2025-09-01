@@ -449,8 +449,7 @@ const fetchBrand = async () => {
                 <meta property="og:description" content={product.description} />
                 <meta
           property="og:image"
-          content={"https://bea.divinfosys.com/no-image.jpg"
-          }
+          content={selectedImage || "https://bea.divinfosys.com/no-image.jpg"}
         />
 
 
@@ -460,9 +459,29 @@ const fetchBrand = async () => {
             
                   {/* Action Buttons */}
                   <div className="flex items-center gap-1" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: https://bea.divinfosys.com/product/${product.slug}`)}`, '_blank')}>
-                    <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-blue-200 hover:bg-blue-600 text-blue-500 hover:text-white">
-
+                    <button
+                      className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-blue-200 hover:bg-blue-600 text-blue-500 hover:text-white"
+                      onClick={() => window.open(
+                        `https://wa.me/?text=${encodeURIComponent(
+                          `Check this out: ${product.name}\n${selectedImage || "https://bea.divinfosys.com/no-image.jpg"}\nhttps://bea.divinfosys.com/product/${product.slug}`
+                        )}`,
+                        '_blank'
+                      )}
+                    >
                       <FaShareAlt size={10} />
+                    </button>
+                    <button
+                      className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-green-200 hover:bg-green-600 text-green-500 hover:text-white ml-2"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = selectedImage || "https://bea.divinfosys.com/no-image.jpg";
+                        link.download = product.name ? `${product.name.replace(/\s+/g, '_')}.jpg` : 'product.jpg';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                    >
+                      <span className="text-xs font-bold">↓</span>
                     </button>
 
                     {/* <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">

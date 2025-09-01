@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
 import { FaPhoneAlt,  FaStore  } from "react-icons/fa";
 import { MdDateRange } from "react-icons/md";
 import { IoWalletSharp } from "react-icons/io5";
@@ -12,33 +13,74 @@ import { MdOutlineLocalShipping, MdDeliveryDining, MdContacts } from "react-icon
 const OrderDetails = () => {
   const params = useParams();
   const orderId = params?.orderId;
+  const [isUpdating, setIsUpdating] = useState(false);
+ 
+  // FOR ORDER HISTORY
+  const [status, setStatus] = useState("");
+  const [comment, setComment] = useState("");
 
   const [order, setOrder] = useState(null);
 
-  const orderr = {
-    history: [
-      {
-        date: '2025-07-22T12:00:00Z',
-        comment: 'Order placed by user',
-        status: 'Pending',
-        customer_notified: true,
-      },
-      {
-        date: '2025-07-23T08:30:00Z',
-        comment: 'Order packed and ready to ship',
-        status: 'Processing',
-        customer_notified: false,
-      },
-      {
-        date: '2025-07-23T14:00:00Z',
-        comment: 'Order shipped via BlueDart',
-        status: 'Shipped',
-        customer_notified: true,
-      },
-    ],
-  };
+  // const orderr = {
+  //   history: [
+  //     {
+  //       date: '2025-07-22T12:00:00Z',
+  //       comment: 'Order placed by user',
+  //       status: 'Pending',
+  //       customer_notified: true,
+  //     },
+  //     {
+  //       date: '2025-07-23T08:30:00Z',
+  //       comment: 'Order packed and ready to ship',
+  //       status: 'Processing',
+  //       customer_notified: false,
+  //     },
+  //     {
+  //       date: '2025-07-23T14:00:00Z',
+  //       comment: 'Order shipped via BlueDart',
+  //       status: 'Shipped',
+  //       customer_notified: true,
+  //     },
+  //   ],
+  // };
 
+const addHistory = async () => {
+  if (!status || !comment) {
+    toast.error("Please select a status and add a comment");
+    return;
+  }
 
+  setIsUpdating(true);
+  try {
+    const res = await fetch(`/api/allorders/${orderId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status,
+        comment,
+        customer_notified: true,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("❌ Failed to update history:", data);
+      toast.error("Failed to update history");
+    } else {
+      console.log("✅ History updated", data);
+      setOrder(data);
+      setStatus("");
+      setComment("");
+      toast.success("History updated successfully!");
+    }
+  } catch (err) {
+    console.error("❌ Network error:", err);
+    toast.error("Network error occurred");
+  } finally {
+    setIsUpdating(false);
+  }
+};
   useEffect(() => {
     if (orderId) {
       fetch(`/api/allorders/${orderId}`)
@@ -49,13 +91,14 @@ const OrderDetails = () => {
   }, [orderId]);
 
   if (!order) return <p className="text-center mt-10">Loading...</p>;
-  console.log('Order:', order);
+  // console.log('Order:', order);
 
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto bg-white">
       {/* Title */}
       <h2 className="text-2xl font-semibold text-gray-700">Orders</h2>
+      <ToastContainer />
 
       {/* Top Grid */}
       <div className="grid grid-cols-3 gap-6">
@@ -123,7 +166,7 @@ const OrderDetails = () => {
           <td className="p-2 flex items-center gap-2 font-semibold text-gray-700">
             <FaStore className="bg-red-500 text-white p-1 rounded-md w-6 h-6" />
             store:</td>
-         <td className="p-2">{order.order_details[0]?.store_id}</td>
+         <td className="p-2">{order.order_details?.[0]?.store_id}</td>
 
         </tr>
         <tr>
@@ -202,15 +245,29 @@ const OrderDetails = () => {
               </tr>
             </thead>
             <tbody>
-  {order.order_details?.map((item, i) => (
-    <tr key={i} className="border-b">
-      <td className="p-2">{item.product_name}</td>
-      <td className="p-2">{item.model}</td>
-      <td className="p-2 text-center">{item.quantity}</td>
-      <td className="p-2 text-right">₹{item.product_price}</td>
-      <td className="p-2 text-right">₹{item.quantity * item.product_price}</td>
-    </tr>
-  ))}
+ {order.order_details?.map((item, i) => (
+  <tr key={i} className="border-b">
+    <td className="p-2">
+  {item.slug ? (
+    <a 
+      href={`/product/${item.slug}`} 
+      className="text-blue-600 hover:underline"
+    >
+      {item.product_name} - ({item.item_code.replace(/^ITEM/, "")})
+    </a>
+  ) : (
+    <span>
+      {item.product_name} - ({item.item_code.replace(/^ITEM/, "")})
+    </span>
+  )}
+</td>
+
+    <td className="p-2">{item.model}</td>
+    <td className="p-2 text-center">{item.quantity}</td>
+    <td className="p-2 text-right">₹{item.product_price}</td>
+    <td className="p-2 text-right">₹{item.quantity * item.product_price}</td>
+  </tr>
+))}
   <tr className="font-semibold">
     <td colSpan="4" className="p-2 text-right">Sub-Total:</td>
     {/* <td className="p-2 text-right">₹{order.sub_total}</td> */}
@@ -229,55 +286,87 @@ const OrderDetails = () => {
 
           </table>
         </div>
-      </div>
 
-      {/* Order History */}
-      <div className="bg-white p-4 shadow rounded">
-      {/* <h3 className="font-semibold text-gray-600 border-b pb-2">Order History</h3>
 
-      <table className="w-full text-sm mt-3 border text-gray-700">
-        <thead>
-          <tr className="bg-gray-100 border-b">
-            <th className="p-2">Date Added</th>
-            <th className="p-2">Comment</th>
-            <th className="p-2">Status</th>
-            <th className="p-2 text-center">Customer Notified</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orderr.history.map((entry, i) => (
-            <tr key={i} className="border-b">
-              <td className="p-2">{new Date(entry.date).toLocaleDateString()}</td>
-              <td className="p-2">{entry.comment}</td>
-              <td className="p-2">{entry.status}</td>
-              <td className="p-2 text-center">
-                {entry.customer_notified ? 'Yes' : 'No'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table> */}
+        {/* Order History */}
+<div className="bg-white p-4 shadow rounded mt-6">
+  <h3 className="font-semibold text-gray-600 border-b pb-2">Order History</h3>
 
-      {/* Add Order History Form */}
-      {/* <div className="mt-6">
-        <h4 className="font-semibold text-gray-600 border-b pb-2">Add Order History</h4>
-        <select className="w-full border p-2 mb-3 rounded text-sm">
-          <option>Choose Status</option>
-          <option value="Pending">Pending</option>
-          <option value="Completed">Completed</option>
-          <option value="Failed">Failed</option>
-        </select>
-        <textarea
-          className="w-full border rounded p-2 text-sm"
-          rows={3}
-          placeholder="Comment"
-        ></textarea>
-        <button className="bg-red-500 text-white px-4 py-2 rounded mt-2 hover:bg-red-700">
-          Add History
-        </button>
-      </div> */}
+  {/* Order History Table */}
+  <table className="w-full text-sm mt-3 border text-gray-700">
+    <thead>
+      <tr className="bg-gray-100 border-b">
+        <th className="p-2">Date Added</th>
+        <th className="p-2">Comment</th>
+        <th className="p-2">Status</th>
+        <th className="p-2 text-center">Customer Notified</th>
+      </tr>
+    </thead>
+    <tbody>
+      {order.order_history?.map((entry, i) => (
+        <tr key={i} className="border-b">
+          <td className="p-2">{new Date(entry.date).toLocaleDateString()}</td>
+          <td className="p-2">{entry.comment}</td>
+          <td className="p-2">{entry.status}</td>
+          <td className="p-2 text-center">
+            {entry.customer_notified ? "Yes" : "No"}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  {/* Add Order History Form */}
+  <div className="mt-6">
+    <h4 className="font-semibold text-gray-600 border-b pb-2">
+      Add Order History
+    </h4>
+
+    {/* Order Status Dropdown */}
+    <div className="mt-4">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Order Status
+      </label>
+     <select
+  value={status}
+  onChange={(e) => setStatus(e.target.value)}
+  className="w-full border p-2 rounded text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+>
+  <option>Choose</option>
+  <option value="Cancelled">Cancelled</option>
+  <option value="Shipped">Shipped</option>
+  <option value="Accepted">Accepted</option>
+</select>
     </div>
+
+    {/* Comment Box */}
+    <div className="mt-4">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Comment
+      </label>
+      <textarea
+  value={comment}
+  onChange={(e) => setComment(e.target.value)}
+  className="w-full border rounded p-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+  rows={3}
+  placeholder="Enter comment here..."
+></textarea>
     </div>
+
+    {/* Add History Button */}
+    <div className="mt-4">
+      <button
+  onClick={addHistory}
+  disabled={isUpdating}
+  className="bg-red-500 text-white px-4 py-2 rounded text-sm hover:bg-red-600 disabled:bg-gray-400"
+>
+  {isUpdating ? "Adding..." : "+ Add History"}
+</button>
+    </div>
+  </div>
+</div>
+</div>
+</div>
   );
 };
 
