@@ -145,19 +145,40 @@ const capitalizeFirstLetter = (str) =>
       
       {/* Corporate Office */}
       <div className="space-y-3">
-        <h3 className="text-white font-semibold text-lg mb-4">Corporate Office</h3>
-        <p>26/1 Drr. Alagappa Chettiyar Rd, Tatabad, Near Kovai Scan Centre, Coimbatore-641012</p>
-        <hr className="border-gray-600 my-3" />
-        <div className="flex items-center gap-2">
-          <FiPhone /> <span>9842344323</span>
-        </div>
-        <hr className="border-gray-600 my-3" />
-        <div className="flex items-center gap-2">
-          <FiMail /> <span>customercare@bharatelectronics.in</span>
-        </div>
-        <hr className="border-gray-600 my-3" />
-        <p><strong>Business Hours:</strong> 09:30AM - 09:30 PM (Mon to Sun)</p>
-      </div>
+  <h3 className="text-white font-semibold text-lg mb-4">Corporate Office</h3>
+  <p>
+    26/1 Drr. Alagappa Chettiyar Rd, Tatabad, Near Kovai Scan Centre,
+    Coimbatore-641012
+  </p>
+
+  <hr className="border-gray-600 my-3" />
+
+  <div className="flex items-center gap-2">
+    <FiPhone />
+    <a href="tel:9842344323" className="text-blue-600 hover:underline">
+      9842344323
+    </a>
+  </div>
+
+  <hr className="border-gray-600 my-3" />
+
+  <div className="flex items-center gap-2">
+    <FiMail />
+    <a
+      href="mailto:customercare@bharatelectronics.in"
+      className="text-blue-600 hover:underline"
+    >
+      customercare@bharatelectronics.in
+    </a>
+  </div>
+
+  <hr className="border-gray-600 my-3" />
+
+  <p>
+    <strong>Business Hours:</strong> 09:30AM - 09:30 PM (Mon to Sun)
+  </p>
+</div>
+
 
       {/* My Account & Policy */}
       <div className="flex flex-col space-y-6 md:mx-auto">
@@ -216,12 +237,12 @@ const capitalizeFirstLetter = (str) =>
         <div>
           <h3 className="text-white font-semibold text-lg mb-4">Connect With Us</h3>
           <div className="flex space-x-4">
-            <Link href="#"><FaWhatsapp className="text-xl text-green-500" /></Link>
-            <Link href="#"><FaFacebookF className="text-xl text-customBlue" /></Link>
-            <Link href="#"><FaInstagram className="text-xl text-pink-500" /></Link>
-            <Link href="#"><FaYoutube className="text-xl text-red-500" /></Link>
-            <Link href="#"><FaXTwitter className="text-xl text-black-500" /></Link>
-            <Link href="#"><FaLinkedinIn className="text-xl text-customBlue" /></Link>
+            <Link href="https://web.whatsapp.com/send?phone=919842344323&amp;text=Hi"><FaWhatsapp className="text-xl text-green-500" /></Link>
+            <Link href="https://www.facebook.com/BharathElectronics/"><FaFacebookF className="text-xl text-customBlue" /></Link>
+            <Link href="https://www.instagram.com/bharathelectronics/"><FaInstagram className="text-xl text-pink-500" /></Link>
+            <Link href="https://www.youtube.com/@bharathelectronicsandappli3074"><FaYoutube className="text-xl text-red-500" /></Link>
+            <Link href="https://twitter.com/bharath_bea"><FaXTwitter className="text-xl text-black-500" /></Link>
+            <Link href="https://in.linkedin.com/company/bharath-electronics-and-appliances"><FaLinkedinIn className="text-xl text-customBlue" /></Link>
           </div>
         </div>
       </div>

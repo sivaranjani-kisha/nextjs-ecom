@@ -23,6 +23,7 @@ const [updateImageError, setUpdateImageError] = useState("");
     parentid: "none",
     status: "Active",
     image: null,
+    navImage: null,
   });
   const [categoryToUpdate, setCategoryToUpdate] = useState({
     _id: "",
@@ -31,6 +32,8 @@ const [updateImageError, setUpdateImageError] = useState("");
     status: "Active",
     image: null,
     existingImage: null,
+    navImage: null,
+    existingNavImage: null,
   });
 const [errorMessage, setErrorMessage] = useState("");
   const [dateFilter, setDateFilter] = useState({
@@ -159,6 +162,9 @@ const handleImageChange = async (e) => {
   formData.append("parentid", newCategory.parentid);
   formData.append("status", newCategory.status);
   formData.append("image", newCategory.image);
+  if (newCategory.navImage) {
+    formData.append("navImage", newCategory.navImage);
+  }
 
   try {
     const response = await fetch("/api/categories/add", {
@@ -312,6 +318,12 @@ const handleUpdateCategory = async (e) => {
 
   formData.append("existingImage", categoryToUpdate.existingImage || "");
 
+  // Check if a new nav image is being uploaded
+  if (categoryToUpdate.navImage instanceof File) {
+    formData.append("navImage", categoryToUpdate.navImage);
+  }
+  formData.append("existingNavImage", categoryToUpdate.existingNavImage || "");
+
   try {
     const response = await fetch("/api/categories/update", {
       method: "PUT",
@@ -372,6 +384,15 @@ const handleUpdateImageChange = (e) => {
   img.onerror = function() {
     setUpdateImageError("Invalid image file");
   };
+};
+const handleNavImageChange = async (e) => {
+  const file = e.target.files[0];
+  // You can add dimension checks here if needed
+  setNewCategory(prev => ({ ...prev, navImage: file }));
+};
+const handleUpdateNavImageChange = async (e) => {
+  const file = e.target.files[0];
+  setCategoryToUpdate(prev => ({ ...prev, navImage: file }));
 };
   // Handle category deletion
   const handleDeleteCategory = async (categoryId) => {
@@ -583,7 +604,8 @@ const handleUpdateImageChange = (e) => {
               onClick={() => {
                 setCategoryToUpdate({
                   ...category,
-                  existingImage: category.image || null
+                  existingImage: category.image || null,
+                  existingNavImage: category.navImage || null,
                 });
                 setIsUpdateModalOpen(true);
               }}
@@ -877,6 +899,22 @@ const handleUpdateImageChange = (e) => {
               </div>
 
               <div>
+                <label className="block mb-1 text-sm font-semibold text-gray-700">
+                  Upload Navigation Image (260px X 240px)
+                </label>
+                <input
+                  type="file"
+                  onChange={handleNavImageChange}
+                  className="block w-full text-sm text-gray-600
+                    file:mr-3 file:py-1 file:px-3
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-red-50 file:text-red-700
+                    hover:file:bg-red-100"
+                />
+              </div>
+
+              <div>
                 <label htmlFor="status" className="block mb-1 text-sm font-semibold text-gray-700">
                   Status
                 </label>
@@ -1015,6 +1053,41 @@ const handleUpdateImageChange = (e) => {
                   className="h-16 rounded-md object-contain"
                 />
                 <p className="text-xs text-gray-500 mt-1">Current Image Preview</p>
+              </div>
+            )}
+          </div>
+
+          {/* Navigation Image Upload */}
+          <div>
+            <label className="block mb-1 text-sm font-semibold text-gray-700">
+              Upload Navigation Image (260px X 240px)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleUpdateNavImageChange}
+              className="block w-full text-sm text-gray-600
+                file:mr-3 file:py-1 file:px-3
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-red-50 file:text-red-700
+                hover:file:bg-red-100"
+            />
+            {updateImageError && (
+              <p className="text-red-500 text-sm mt-1">{updateImageError}</p>
+            )}
+            {(categoryToUpdate.existingNavImage || categoryToUpdate.navImage) && (
+              <div className="mt-3 flex flex-col items-center">
+                <img
+                  src={
+                    categoryToUpdate.navImage instanceof File
+                      ? URL.createObjectURL(categoryToUpdate.navImage)
+                      : categoryToUpdate.existingNavImage
+                  }
+                  alt="Preview"
+                  className="h-16 rounded-md object-contain"
+                />
+                <p className="text-xs text-gray-500 mt-1">Current Navigation Image Preview</p>
               </div>
             )}
           </div>

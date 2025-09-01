@@ -67,17 +67,42 @@ export async function PUT(req) {
           console.error("Error deleting old image:", err);
         }
       }
- 
+
       // Save new image
       const buffer = Buffer.from(await file.arrayBuffer());
       const uploadDir = path.join(process.cwd(), "public/uploads/categories");
       const fileName = `category_${Date.now()}${path.extname(file.name)}`;
-     
       await writeFile(path.join(uploadDir, fileName), buffer);
-      image_url = `/uploads/categories/${fileName}`;
+      image_url = `http://localhost:3000/uploads/categories/${fileName}`;
     }
  
-    // Update category
+    // Handle navImage upload/update BEFORE updating category
+    const existingNavImage = formData.get("existingNavImage");
+    let nav_image_url = existingNavImage;
+    const navFile = formData.get("navImage");
+    if (navFile) {
+      console.log('navFile:', navFile);
+      if (nav_image_url) {
+        try {
+          const oldNavImagePath = path.join(
+            process.cwd(),
+            "public",
+            nav_image_url.replace("http://localhost:3000", "")
+          );
+          await unlink(oldNavImagePath);
+        } catch (err) {
+          console.error("Error deleting old navImage:", err);
+        }
+      }
+      const buffer = Buffer.from(await navFile.arrayBuffer());
+      const uploadDir = path.join(process.cwd(), "public/uploads/categories");
+      const fileName = `category_nav_${Date.now()}${path.extname(navFile.name)}`;
+      await writeFile(path.join(uploadDir, fileName), buffer);
+      nav_image_url = `http://localhost:3000/uploads/categories/${fileName}`;
+      console.log('nav_image_url:', nav_image_url);
+    }
+
+    // Update category with navImage
     const updatedCategory = await Category.findByIdAndUpdate(
       _id,
       {
@@ -87,15 +112,16 @@ export async function PUT(req) {
         parentid,
         status,
         image: image_url,
+        navImage: nav_image_url,
         updatedAt: new Date(),
       },
-      { new: true } // Return the updated document
+      { new: true }
     );
- 
+
     if (!updatedCategory) {
       return NextResponse.json({ error: "Failed to update category" }, { status: 400 });
     }
- 
+
     return NextResponse.json(
       {
         message: "Category updated successfully",

@@ -16,55 +16,51 @@ useEffect(() => {
         return;
       }
 
+      console.log('Building hierarchy for category ID:', product.category);
+
       // Fetch all categories
       const allCategoriesRes = await fetch('/api/categories/breadcrumb');
       const allCategories = await allCategoriesRes.json();
+      
+      console.log('All categories from API:', allCategories);
 
-      // Find current category
-      let currentCategory = allCategories.find(
-        (cat) => cat._id === product.category
-      );
+      // Helper function to find category by ID
+      const findCategoryById = (id) => {
+        return allCategories.find(cat => 
+          String(cat._id) === String(id) || 
+          (cat._id && cat._id.toString() === String(id))
+        );
+      };
 
-      if (!currentCategory) {
-        console.warn('Category not found for product');
-        return;
-      }
+      // Function to find the deepest category path
+      const findDeepestCategoryPath = (categoryId, allCategories) => {
+        let currentCategory = findCategoryById(categoryId);
+        if (!currentCategory) return [];
 
-      // Build hierarchy recursively
-     const hierarchy = [];
-let safetyCounter = 0;
+        const hierarchy = [currentCategory];
+        
+        // If this category has children, find the deepest path
+        const children = allCategories.filter(cat => 
+          cat.parentid && String(cat.parentid) === String(categoryId)
+        );
 
-while (currentCategory && safetyCounter < 10) {
-  hierarchy.unshift(currentCategory);
+        if (children.length > 0) {
+          // For simplicity, just take the first child
+          const childHierarchy = findDeepestCategoryPath(children[0]._id, allCategories);
+          hierarchy.push(...childHierarchy);
+        }
 
-  if (currentCategory.parentid) {
-    const parentCategory = allCategories.find(
-      (cat) => String(cat._id) === String(currentCategory.parentid)
-    );
+        return hierarchy;
+      };
 
-    if (!parentCategory) {
-      console.warn(
-        "Parent not found for:",
-        currentCategory.category_name,
-        "parentid:",
-        currentCategory.parentid
-      );
-      break;
-    }
+      // Build hierarchy using the deepest path function
+      const hierarchy = findDeepestCategoryPath(product.category, allCategories);
 
-    currentCategory = parentCategory;
-  } else {
-    currentCategory = null;
-  }
+      console.log('Found current category:', hierarchy[0]);
+      console.log('Final hierarchy:', hierarchy);
 
-  safetyCounter++;
-}
+      setCategories(hierarchy);
 
-setCategories(hierarchy);
-
-
-
-     
     } catch (error) {
       console.error('Error fetching category data:', error);
     } finally {
@@ -74,6 +70,8 @@ setCategories(hierarchy);
 
   fetchCategoryHierarchy();
 }, [product]);
+
+
 
 
   if (loading) {

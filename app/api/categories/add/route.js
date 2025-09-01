@@ -44,13 +44,19 @@ console.log(show_on_home)
     if (file) {
       const buffer = Buffer.from(await file.arrayBuffer());
       const uploadDir = path.join(process.cwd(), "public/uploads/categories");
-
-      // Ensure the directory exists
       await writeFile(path.join(uploadDir, file.name), buffer);
-      console.log('====================================');
-      console.log(file);
-      console.log('====================================');
-      image_url = `/uploads/categories/${file.name}`;
+      image_url = `http://localhost:3000/uploads/categories/${file.name}`;
+    }
+    // Handle navImage upload
+    let nav_image_url = "";
+    const navFile = formData.get("navImage");
+    if (navFile) {
+      console.log('navFile:', navFile);
+      const buffer = Buffer.from(await navFile.arrayBuffer());
+      const uploadDir = path.join(process.cwd(), "public/uploads/categories");
+      await writeFile(path.join(uploadDir, navFile.name), buffer);
+      nav_image_url = `http://localhost:3000/uploads/categories/${navFile.name}`;
+      console.log('nav_image_url:', nav_image_url);
     }
 
     // Create category
@@ -61,7 +67,8 @@ console.log(show_on_home)
       parentid,
       status,
       show_on_home, // Include the new field
-      image:image_url, // Store local image path
+      image: image_url, // Store local image path
+      navImage: nav_image_url, // Store nav image path
       createdAt: new Date(),
       updatedAt: new Date(),
     });

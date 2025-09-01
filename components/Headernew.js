@@ -891,12 +891,12 @@ const Header = () => {
                         </div>
                     ))}
 
-                    {hoveredCategory.image && (
-                        <div className="p-3">
+                    {(hoveredCategory.navImage || hoveredCategory.image) && (
+                        <div className="">
                         <Link href={``}>
                             <Image
-                            src={hoveredCategory.image}
-                            alt="Category Image"
+                            src={hoveredCategory.navImage || hoveredCategory.image}
+                            alt="Category Navigation Image"
                             width={200}
                             height={200}
                             className="object-cover rounded"
