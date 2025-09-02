@@ -611,13 +611,13 @@ const Header = () => {
                                         setSelectedCategory('All Categories');
                                         setIsMobileMenuOpen(false);
                                         setTimeout(() => {
-                                            window.location.href = 'http://localhost:3000/category';
+                                            window.location.href = 'https://bea.divinfosys.com/category';
                                         }, 50);
                                     }}>
                                     All Categories
                                 </div>
                                 {categories.map(cat => {
-                                    const url = `http://localhost:3000/category/${cat.category_slug}`;
+                                    const url = `https://bea.divinfosys.com/category/${cat.category_slug}`;
                                     console.log('Rendering category:', cat.category_name, 'URL:', url);
                                     
                                     const handleCategoryClick = () => {
