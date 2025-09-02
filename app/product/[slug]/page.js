@@ -105,6 +105,7 @@ useEffect(() => {
 }, [featuredProducts]);
 
 
+
   const [selectedImage, setSelectedImage] = useState(null);
 
       useEffect(() => {
@@ -112,8 +113,33 @@ useEffect(() => {
           setSelectedImage(`/uploads/products/${product.images[0]}`);
         }
       }, [product]);
-  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0, visible: false });
+  const [zoomPosition, setZoomPosition] = useState({
+  visible: false,
+  x: 0,
+  y: 0,
+  boxWidth: 0,
+  boxHeight: 0,
+});
   const imgRef = useRef(null);
+const handleMouseMove = (e) => {
+  const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - left;
+  const y = e.clientY - top;
+
+  setZoomPosition({
+    visible: true,
+    x,
+    y,
+    boxWidth: width,
+    boxHeight: height,
+  });
+};
+
+
+const handleMouseLeave = () => {
+  setZoomPosition({ visible: false, x: 0, y: 0, boxWidth: 0, boxHeight: 0 });
+};
+
   const zoomContainerRef = useRef(null);
   const [showReplacementModal, setShowReplacementModal] = useState(false);
   const [showWarrantyModal, setshowWarrantyModal] = useState(false);
@@ -238,19 +264,6 @@ const fetchBrand = async () => {
   }
 };
 
-  const handleMouseMove = (e) => {
-    if (!imgRef.current || !zoomContainerRef.current) return;
-  
-    const { left, top, width, height } = imgRef.current.getBoundingClientRect();
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
-  
-    setZoomPosition({ x, y, visible: true });
-  };
-  
-  const handleMouseLeave = () => {
-    setZoomPosition((prev) => ({ ...prev, visible: false }));
-  };
 
   if (loading) {
     return (
@@ -309,78 +322,96 @@ const fetchBrand = async () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Left Section - Product Image with Zoom */}
           <div className="md:col-span-4 relative sticky top-20">
-            <div className="border border-gray-400 rounded-lg">
-               {/* Main Image with fixed aspect ratio */}
-          <div className="relative aspect-square w-full px-7">
-            <img
-              src={selectedImage || "/no-image.jpg"}
-              alt={product?.name || "Product"}
-              className="w-full h-full object-contain rounded-xl"
-              ref={imgRef}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/no-image.jpg";
-              }}
-            />
-          </div>
-          {/* Zoom Box */}
-          {zoomPosition.visible && (
-            <div
-              className="absolute left-full top-0 ml-4 w-[300px] h-[300px] border border-gray-300 bg-white shadow-lg overflow-hidden"
-              ref={zoomContainerRef}
-            >
-              <img
-                src={selectedImage || "/no-image.jpg"}
-                alt="Zoomed"
-                className="absolute w-[400%] h-[400%] object-cover"
-                style={{
-                  left: `-${zoomPosition.x * 3}%`,
-                  top: `-${zoomPosition.y * 3}%`
-                }}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/no-image.jpg";
-                }}
-              />
-            </div>
-          )}
-
-            </div>
-            
-           
-        
-
-        {/* Thumbnails */}
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-2 -mt-1">
-          {product.images?.length > 0 ? (
-            product.images.map((image, index) => (
-              <div key={index} className="flex-shrink-0">
+           <div className="border border-gray-400 rounded-lg">
+              {/* Main Image with fixed aspect ratio */}
+              <div 
+                className="relative aspect-square w-full px-7"
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+              >
                 <img
-                  src={
-                                      product.images[index]?.startsWith('http') ||
-                                      product.images[index]?.startsWith('blob:') ||
-                                      product.images[index]?.startsWith('data:')
-                                        ? product.images[index]
-                                        : `/uploads/products/${product.images[index] || 'no-image.jpg'}`
-                                    }
-                  alt={`Thumbnail ${index + 1}`}
-                  className="w-20 h-20 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300 object-cover"
-                  onClick={() => handleThumbnailClick(index)}
+                  src={selectedImage || "/no-image.jpg"}
+                  alt={product?.name || "Product"}
+                  className="w-full h-full object-contain rounded-xl"
+                  ref={imgRef}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = "/no-image.jpg";
                   }}
                 />
+
+                {/* 🔹 Lens Overlay */}
+            {zoomPosition.visible && (
+              <div
+                className="absolute border border-blue-400 bg-blue-200 bg-opacity-30 rounded-md pointer-events-none"
+                style={{
+                  width: "120px",
+                  height: "120px",
+                  left: `${zoomPosition.x - 60}px`,
+                  top: `${zoomPosition.y - 60}px`,
+                }}
+              />
+            )}
+
+
               </div>
-            ))
-          ) : (
-            <img
-              src="/no-image.jpg"
-              alt="No Thumbnail"
-              className="w-20 h-20 border border-gray-400 rounded-lg object-cover"
+
+              {/* Zoom Box */}
+              {zoomPosition.visible && (
+                <div
+                  className="absolute left-full top-0 ml-4 w-[400px] h-[400px] border border-gray-300 bg-white shadow-lg overflow-hidden"
+                >
+                <img
+              src={selectedImage || "/no-image.jpg"}
+              alt="Zoomed"
+              className="absolute object-contain"
+              style={{
+                width: "200%",
+                height: "200%",
+                left: `-${(zoomPosition.x / zoomPosition.boxWidth) * 100}%`,
+                top: `-${(zoomPosition.y / zoomPosition.boxHeight) * 100}%`,
+              }}
             />
-          )}
-        </div>
+
+                </div>
+              )}
+            </div>
+
+            
+           
+        
+
+              {/* Thumbnails */}
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-2 -mt-1">
+                {product.images?.length > 0 ? (
+                  product.images.map((image, index) => (
+                    <div key={index} className="flex-shrink-0">
+                      <img
+                        src={
+                                            product.images[index]?.startsWith('http') ||
+                                            product.images[index]?.startsWith('blob:') ||
+                                            product.images[index]?.startsWith('data:')
+                                              ? product.images[index]
+                                              : `/uploads/products/${product.images[index] || 'no-image.jpg'}`
+                                          }
+                        alt={`Thumbnail ${index + 1}`}
+                        className="w-20 h-20 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300 object-cover"
+                        onClick={() => handleThumbnailClick(index)}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/no-image.jpg";
+                        }}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <img
+                    src="/no-image.jpg"
+                    alt="No Thumbnail"
+                    className="w-20 h-20 border border-gray-400 rounded-lg object-cover"
+                  />
+                )}
+              </div>
           </div>
 
 
@@ -431,6 +462,7 @@ const fetchBrand = async () => {
                       <Addtocart
                         productId={product._id}
                         stockQuantity={product.quantity}
+                        special_price={product.special_price}
                         quantity={quantity}
                         additionalProducts={selectedFrequentProducts.map(p => p._id)}
                         warranty={selectedWarranty}
@@ -1253,5 +1285,4 @@ const fetchBrand = async () => {
     
   );
 }
-
 

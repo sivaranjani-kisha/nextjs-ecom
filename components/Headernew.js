@@ -6,10 +6,10 @@ import Link from "next/link";
 import Image from 'next/image';
 
 import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX } from "react-icons/fi";
-import { FaBars, FaShoppingBag,FaUserShield  } from "react-icons/fa";
+import { FaBars, FaShoppingBag, FaUserShield } from "react-icons/fa";
 import { FaHeart, FaShoppingCart, FaSearch } from 'react-icons/fa';
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { useState, useRef, useEffect,useLayoutEffect  } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { IoLogOut } from "react-icons/io5";
 import { FaCircleChevronLeft, FaCircleChevronRight, FaLocationDot } from "react-icons/fa6";
 import { useCart } from '@/context/CartContext';
@@ -17,7 +17,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Play } from "lucide-react";
 
 import { Navigation } from 'swiper/modules';
@@ -25,18 +25,26 @@ import SideNavbar from '@/components/sideNavbar';
 import { useHeaderdetails } from "@/context/HeaderContext";
 
 const Header = () => {
-    const router = useRouter(); // Already present, just ensure usage
+    const router = useRouter();
+    const pathname = usePathname();
     const [category, setCategory] = useState('All Categories');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { wishlistCount } = useWishlist();
     const { cartCount, updateCartCount } = useCart();
+    
+    const handleCategoryClick = useCallback((categorySlug, categoryName) => {
+        const path = `/category/${categorySlug}`;
+        setSelectedCategory(categoryName);
+        setIsMobileMenuOpen(false);
+        router.push(path);
+    }, [router]);
     const dropdownRef = useRef(null);
     const [activeTab, setActiveTab] = useState('login');
     // const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     // const [userData, setUserData] = useState(null);
     const [hasMounted, setHasMounted] = useState(false);
-    const { userData,isLoggedIn, setIsLoggedIn, setUserData,isAdmin,setIsAdmin } = useHeaderdetails();
+    const { userData, isLoggedIn, setIsLoggedIn, setUserData, isAdmin, setIsAdmin } = useHeaderdetails();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
     const [searchQuery, setSearchQuery] = useState("");
@@ -76,8 +84,8 @@ const Header = () => {
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-            setIsMobileMenuOpen(false);
-            setDropdownOpen(false);
+                setIsMobileMenuOpen(false);
+                setDropdownOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -92,7 +100,7 @@ const Header = () => {
             if (!token) return;
 
             const response = await fetch('/api/auth/check', {
-            method: 'GET',
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
@@ -102,11 +110,11 @@ const Header = () => {
             if (response.ok) {
                 const data = await response.json();
                 setIsLoggedIn(true);
-            if(data.role == "admin") {
-                setIsAdmin(true);
-            } else {
-                setIsAdmin(false);
-            }
+                if (data.role == "admin") {
+                    setIsAdmin(true);
+                } else {
+                    setIsAdmin(false);
+                }
                 setUserData(data.user);
             } else {
                 localStorage.removeItem('token');
@@ -134,6 +142,7 @@ const Header = () => {
             searchParams.append('category', selectedCategory);
         }
         // Navigate to search page with query parameters
+        setIsMobileMenuOpen(false);
         router.push(`/search?${searchParams.toString()}`);
     };
 
@@ -173,12 +182,12 @@ const Header = () => {
             if (!response.ok) {
                 throw new Error(data.message || 'Something went wrong');
             }
-            if(data.token){
+            if (data.token) {
                 localStorage.setItem('token', data.token);
                 setIsLoggedIn(true);
-                if(data.user.role == "admin"){
+                if (data.user.role == "admin") {
                     setIsAdmin(true);
-                }else{
+                } else {
                     setIsAdmin(false);
                 }
                 setUserData(data.user);
@@ -199,7 +208,7 @@ const Header = () => {
                     const cartData = await cartResponse.json();
                     updateCartCount(cartData.count);
                 }
-            }else{
+            } else {
                 setShowAuthModal(true);
                 setActiveTab('login');
             }
@@ -228,7 +237,7 @@ const Header = () => {
 
                 // Process and format dates before setting state
                 const activeOffers = result.data
-                .filter((offer) => offer.fest_offer_status === "active")
+                    .filter((offer) => offer.fest_offer_status === "active")
                 setOffers(activeOffers);
             } catch (err) {
                 console.error("Failed to fetch offers", err);
@@ -240,61 +249,61 @@ const Header = () => {
     const hideTimeout = useRef(null);
 
     useEffect(() => {
-    const fetchCategories = async () => {
-        try {
-            const response = await fetch("/api/categories/get");
-            const data = await response.json();
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch("/api/categories/get");
+                const data = await response.json();
 
-            // Keep only active categories
-            const activeCategories = data.filter(cat => cat.status === "Active");
+                // Keep only active categories
+                const activeCategories = data.filter(cat => cat.status === "Active");
 
-            const categoryMap = {};
-            activeCategories.forEach((cat) => {
-                cat.subcategories = [];
-                categoryMap[cat._id] = cat;
-            });
+                const categoryMap = {};
+                activeCategories.forEach((cat) => {
+                    cat.subcategories = [];
+                    categoryMap[cat._id] = cat;
+                });
 
-            const nestedCategories = [];
-            activeCategories.forEach((cat) => {
-                if (cat.parentid === "none") {
-                    nestedCategories.push(cat);
-                } else if (categoryMap[cat.parentid]) {
-                    categoryMap[cat.parentid].subcategories.push(cat);
-                }
-            });
+                const nestedCategories = [];
+                activeCategories.forEach((cat) => {
+                    if (cat.parentid === "none") {
+                        nestedCategories.push(cat);
+                    } else if (categoryMap[cat.parentid]) {
+                        categoryMap[cat.parentid].subcategories.push(cat);
+                    }
+                });
 
-            setCategories(nestedCategories);
-        } catch (err) {
-            console.error("Failed to fetch categories", err);
-        }
-    };
+                setCategories(nestedCategories);
+            } catch (err) {
+                console.error("Failed to fetch categories", err);
+            }
+        };
 
-    fetchCategories();
-    checkAuthStatus();
-}, []);
+        fetchCategories();
+        checkAuthStatus();
+    }, []);
 
 
     // Flatten tree, but skip the main "Large Appliances"
     const flattenTree = (cat, rootCategory, level = 0) => {
-    let result = [];
-    result.push({ ...cat, rootCategory, level });
+        let result = [];
+        result.push({ ...cat, rootCategory, level });
 
-    if (cat.subcategories?.length > 0) {
-        cat.subcategories.forEach(child => {
-        result = result.concat(flattenTree(child, rootCategory, level + 1));
-        });
-    }
-    return result;
+        if (cat.subcategories?.length > 0) {
+            cat.subcategories.forEach(child => {
+                result = result.concat(flattenTree(child, rootCategory, level + 1));
+            });
+        }
+        return result;
     };
 
     // Flatten all starting from actual visible categories (like Refrigerator, AC…)
     const flattenAllCategories = (cats) => {
-    let result = [];
-    cats.forEach(cat => {
-        // each top-level category is itself the root
-        result = result.concat(flattenTree(cat, cat.category_slug, 0));
-    });
-    return result;
+        let result = [];
+        cats.forEach(cat => {
+            // each top-level category is itself the root
+            result = result.concat(flattenTree(cat, cat.category_slug, 0));
+        });
+        return result;
     };
 
     // 🔹 Split into columns (10 items max per column)
@@ -393,42 +402,41 @@ const Header = () => {
         }
     };
     // 🔹 Render flattened category item
-   const renderFlatItem = (item,hoveredCategory) => {
-    console.log(hoveredCategory);
-    // if root (level 0) -> only /category/rootCategory
-    const href =
-        item.level === 0
-            ? `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}`
-            : `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
+    const renderFlatItem = (item, hoveredCategory) => {
+        console.log(hoveredCategory);
+        // if root (level 0) -> only /category/rootCategory
+        const href =
+            item.level === 0
+                ? `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}`
+                : `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
 
-    return (
-        <div key={item._id} style={{ paddingLeft: `${item.level * 12}px` }}>
-            <Link
-                href={href}
-                className={`flex items-center justify-between mb-1 text-sm ${
-                    item.level === 0
-                        ? "font-semibold text-blue-600"
-                        : "text-gray-700"
-                }`}
-            >
-                {/* Category name with bold font */}
-                <span className={item.level === 0 ? "font-bold" : "font-normal"}>
-                    {item.category_name}
-                </span>
+        return (
+            <div key={item._id} style={{ paddingLeft: `${item.level * 12}px` }}>
+                <Link
+                    href={href}
+                    className={`flex items-center justify-between mb-1 text-sm ${item.level === 0
+                            ? "font-semibold text-blue-600"
+                            : "text-gray-700"
+                        }`}
+                >
+                    {/* Category name with bold font */}
+                    <span className={item.level === 0 ? "font-bold" : "font-normal"}>
+                        {item.category_name}
+                    </span>
 
-                {/* Show triangle icon only for top-level categories */}
-                {item.level === 0 && (
-                    <Play
-                        size={14}
-                        strokeWidth={0} // remove outline
-                        className="text-blue-600 fill-blue-600"
-                    />
-                )}
-            </Link>
-        </div>
-    );
-};
-    
+                    {/* Show triangle icon only for top-level categories */}
+                    {item.level === 0 && (
+                        <Play
+                            size={14}
+                            strokeWidth={0} // remove outline
+                            className="text-blue-600 fill-blue-600"
+                        />
+                    )}
+                </Link>
+            </div>
+        );
+    };
+
     return (
         <header className="sticky top-0 z-50">
             {/* Top Announcement Bar */}
@@ -440,24 +448,24 @@ const Header = () => {
                     <div className="relative w-full overflow-hidden h-6 flex items-center">
                         <motion.div initial={{ x: "100%" }} animate={{ x: "-100%" }} transition={{ ease: "linear", duration: 20, repeat: Infinity }} className="absolute whitespace-nowrap flex items-center space-x-8">
                             {offers
-                                .filter((offer) =>String(offer.fest_offer_status).trim().toLowerCase() === "active")
+                                .filter((offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active")
                                 .map((offer, index) => (
                                     <span key={index} className="font-medium text-xs sm:text-sm">
-                                    {offer.notes} {offer.percentage}% | Code:{" "}
-                                    <strong>{offer.offer_code}</strong>
+                                        {offer.notes} {offer.percentage}% | Code:{" "}
+                                        <strong>{offer.offer_code}</strong>
                                     </span>
                                 ))
                             }
                         </motion.div>
                     </div>
                 </div>
-                ) : (
+            ) : (
                 // ❌ No active offers
                 <div className={`bg-customBlue text-yellow-300 px-4 py-1 overflow-hidden relative w-full ${isMobileMenuOpen ? 'hidden' : ''}`}>
                     <div className="relative w-full overflow-hidden h-6 flex items-center">
                         <motion.div initial={{ x: "100%" }} animate={{ x: "-100%" }} transition={{ ease: "linear", duration: 20, repeat: Infinity }} className="absolute whitespace-nowrap flex items-center space-x-8">
                             <span className="font-medium text-xs sm:text-sm">
-                            No current offers available — shop now and stay tuned for exciting discounts coming soon!
+                                No current offers available — shop now and stay tuned for exciting discounts coming soon!
                             </span>
                         </motion.div>
                     </div>
@@ -490,12 +498,12 @@ const Header = () => {
                             <option value="All Categories">All Categories</option>
                             {categories.map((cat) => (
                                 <option key={cat._id} value={cat.category_name}>
-                                {cat.category_name}
-                            </option>
+                                    {cat.category_name}
+                                </option>
                             ))}
                         </select>
                         <input type="text" placeholder="Search products..." value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none" />
+                            onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none" />
                         <button className="px-3 text-customBlue" onClick={handleSearch}><FaSearch /></button>
                     </div>
 
@@ -517,7 +525,7 @@ const Header = () => {
                             <FaHeart size={18} className="text-customBlue" />
                             {wishlistCount > 0 && (
                                 <span className="absolute -top-2 -right-4 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
-                                {wishlistCount}
+                                    {wishlistCount}
                                 </span>
                             )}
                             <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Wishlist</span>
@@ -539,7 +547,7 @@ const Header = () => {
                                     <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center text-black focus:outline-none p-1 sm:p-0">
                                         <FiUser size={18} className="text-customBlue" />
                                         <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">
-                                        Hi, {userData?.name || userData?.username || "User"}
+                                            Hi, {userData?.name || userData?.username || "User"}
                                         </span>
                                     </button>
                                     {dropdownOpen && (
@@ -556,14 +564,14 @@ const Header = () => {
                                                     </>
                                                 )}
                                                 <Link href="/order" className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
-                                                <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
-                                                    <FaShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                </span>My Orders</Link>
+                                                    <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
+                                                        <FaShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                    </span>My Orders</Link>
                                                 <hr className="my-2 border-gray-200" />
                                                 <button onClick={handleLogout} className="flex items-center gap-2 sm:gap-3 w-full text-left px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-red-50 transition-colors">
-                                                <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
-                                                    <IoLogOut className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                </span>Logout</button>
+                                                    <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
+                                                        <IoLogOut className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                    </span>Logout</button>
                                             </div>
                                         </div>
                                     )}
@@ -579,76 +587,117 @@ const Header = () => {
                 </div>
 
                 {/* Mobile Menu (Hidden on desktop) */}
-                                {isMobileMenuOpen && (
-                                    <div className={`sm:hidden bg-white fixed inset-0 z-50 p-4 rounded-lg shadow-lg overflow-y-auto transition-all duration-300`}> 
-                                        {/* Mobile Search Bar */}
-                                        <div className="flex items-center bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
-                                            <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none"/>
-                                            <button className="px-3 text-customBlue" onClick={handleSearch}>
-                                                <FaSearch />
-                                            </button>
-                                        </div>
-                                        {/* Category List */}
-                                        <div className="mb-4">
-                                            <div className="font-bold mb-2 text-blue-700">Categories</div>
-                                                                    <ul className="space-y-2">
-                                                                        <li>
-                                                                            <button className={`w-full text-left px-2 py-1 rounded ${selectedCategory === 'All Categories' ? 'bg-blue-100' : ''}`} onClick={() => { setSelectedCategory('All Categories'); setIsMobileMenuOpen(false); router.push('/category'); }}>
-                                                                                All Categories
-                                                                            </button>
-                                                                        </li>
-                                                                        {categories.map(cat => (
-                                                                            <li key={cat._id}>
-                                                                                <button className={`w-full text-left px-2 py-1 rounded ${selectedCategory === cat.category_name ? 'bg-blue-100' : ''}`} onClick={() => { setSelectedCategory(cat.category_name); setIsMobileMenuOpen(false); router.push(`/category/${cat.category_slug}`); }}>
-                                                                                    {cat.category_name}
-                                                                                </button>
-                                                                            </li>
-                                                                        ))}
-                                                                    </ul>
-                                        </div>
-                                        {/* Mobile Menu Links */}
-                                        <div className="space-y-3">
-                                            <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
-                                                <FaLocationDot className="mr-2 text-customBlue" />Location
-                                            </Link>
-                                            <Link href="/wishlist" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
-                                                <FaHeart className="mr-2 text-customBlue" />Wishlist
-                                                {wishlistCount > 0 && (
-                                                    <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{wishlistCount}</span>
-                                                )}
-                                            </Link>
-                                            <Link href="/cart" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
-                                                <FaShoppingCart className="mr-2 text-customBlue" />Cart
-                                                {cartCount > 0 && (
-                                                    <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
-                                                )}
-                                            </Link>
-                                            {isLoggedIn && isAdmin &&  (
-                                                <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
-                                            )}
-                                            {isLoggedIn ? (
-                                                <>
-                                                    <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
-                                                        <FaShoppingBag className="mr-2 text-customBlue" />My Orders
-                                                    </Link>
-                                                    <button onClick={handleLogout} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
-                                                        <IoLogOut className="mr-2 text-customBlue" />Logout
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <button onClick={() => {setShowAuthModal(true);setIsMobileMenuOpen(false);}} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
-                                                    <FiUser className="mr-2 text-customBlue" />Sign In
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
+                {isMobileMenuOpen && (
+                    <div className="sm:hidden bg-white fixed inset-0 z-50 p-4 rounded-lg shadow-lg overflow-y-auto transition-all duration-300"
+                         style={{ touchAction: 'auto', userSelect: 'auto', WebkitUserSelect: 'auto' }}>
+                        {/* Mobile Search Bar */}
+                        <div className="flex items-center bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
+                            <input type="text" tabIndex={0} autoFocus placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none bg-white" />
+                            <button className="px-3 text-customBlue" onClick={handleSearch} tabIndex={0}>
+                                <FaSearch />
+                            </button>
+                        </div>
+                        {/* Category List */}
+                        <div className="mb-4">
+                            <div className="font-bold mb-2 text-blue-700">Categories</div>
+                            <nav className="space-y-2">
+                                <div
+                                    role="button"
+                                    tabIndex={0}
+                                    className={`block w-full text-left px-2 py-1 rounded cursor-pointer ${selectedCategory === 'All Categories' ? 'bg-blue-100' : ''}`}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        console.log('All categories clicked');
+                                        setSelectedCategory('All Categories');
+                                        setIsMobileMenuOpen(false);
+                                        setTimeout(() => {
+                                            window.location.href = 'http://localhost:3000/category';
+                                        }, 50);
+                                    }}>
+                                    All Categories
+                                </div>
+                                {categories.map(cat => {
+                                    const url = `http://localhost:3000/category/${cat.category_slug}`;
+                                    console.log('Rendering category:', cat.category_name, 'URL:', url);
+                                    
+                                    const handleCategoryClick = () => {
+                                        console.log('Category clicked:', cat.category_name, 'navigating to:', url);
+                                        setSelectedCategory(cat.category_name);
+                                        setIsMobileMenuOpen(false);
+                                        setTimeout(() => {
+                                            console.log('Navigating now to:', url);
+                                            window.location.href = url;
+                                        }, 50);
+                                    };
+
+                                    return (
+                                        <button
+                                            key={cat._id}
+                                            type="button"
+                                            className={`block w-full text-left px-2 py-1 rounded cursor-pointer hover:bg-blue-50 active:bg-blue-100 ${selectedCategory === cat.category_name ? 'bg-blue-100' : ''}`}
+                                            style={{ WebkitTapHighlightColor: 'rgba(0,0,0,0)' }}
+                                            onClick={handleCategoryClick}
+                                            onTouchEnd={(e) => {
+                                                e.preventDefault();
+                                                console.log('Touch event on category:', cat.category_name);
+                                                handleCategoryClick();
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    console.log('Keyboard event on category:', cat.category_name);
+                                                    handleCategoryClick();
+                                                }
+                                            }}>
+                                            {cat.category_name}
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        </div>
+                        {/* Mobile Menu Links */}
+                        <div className="space-y-3">
+                            <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                                <FaLocationDot className="mr-2 text-customBlue" />Location
+                            </Link>
+                            <Link href="/wishlist" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                                <FaHeart className="mr-2 text-customBlue" />Wishlist
+                                {wishlistCount > 0 && (
+                                    <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{wishlistCount}</span>
                                 )}
+                            </Link>
+                            <Link href="/cart" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                                <FaShoppingCart className="mr-2 text-customBlue" />Cart
+                                {cartCount > 0 && (
+                                    <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
+                                )}
+                            </Link>
+                            {isLoggedIn && isAdmin && (
+                                <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
+                            )}
+                            {isLoggedIn ? (
+                                <>
+                                    <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                                        <FaShoppingBag className="mr-2 text-customBlue" />My Orders
+                                    </Link>
+                                    <button onClick={handleLogout} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
+                                        <IoLogOut className="mr-2 text-customBlue" />Logout
+                                    </button>
+                                </>
+                            ) : (
+                                <button onClick={() => { setShowAuthModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
+                                    <FiUser className="mr-2 text-customBlue" />Sign In
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Auth Modal */}
                 {showAuthModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
-                            <button onClick={() => {setShowAuthModal(false);setFormError('');setError('');}} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">
+                            <button onClick={() => { setShowAuthModal(false); setFormError(''); setError(''); }} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">
                                 &times;
                             </button>
                             <div className="flex gap-4 mb-6 border-b">
@@ -662,16 +711,16 @@ const Header = () => {
 
                             <form onSubmit={handleAuthSubmit} className="space-y-4">
                                 {activeTab === 'register' && (
-                                    <input type="text" placeholder="Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+                                    <input type="text" placeholder="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                                 )}
-                                <input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+                                <input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                                 {activeTab === 'register' && (
-                                    <input type="tel" placeholder="Mobile" value={formData.mobile} onChange={(e) => setFormData({...formData, mobile: e.target.value})} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                                    <input type="tel" placeholder="Mobile" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                                 )}
-                                <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required minLength={6} />
+                                <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required minLength={6} />
                                 {(formError || error) && (
                                     <div className="text-red-500 text-sm">
-                                    {formError || error}
+                                        {formError || error}
                                     </div>
                                 )}
                                 <button type="submit" disabled={loadingAuth} className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200">
@@ -679,9 +728,9 @@ const Header = () => {
                                 </button>
 
                                 {/* Moved Forgot Password button here - better placement */}
-                                {activeTab === 'login' && ( 
+                                {activeTab === 'login' && (
                                     <div className="text-center mt-2">
-                                        <button type="button" onClick={() => { setShowAuthModal(false); setShowForgotPasswordModal(true); setForgotStep(1); setForgotPasswordEmail(formData.email || ''); setForgotOTP(''); setNewPassword(''); setConfirmPassword(''); setForgotPasswordMessage(''); setForgotPasswordError(''); }}className="text-sm text-blue-500 hover:underline">
+                                        <button type="button" onClick={() => { setShowAuthModal(false); setShowForgotPasswordModal(true); setForgotStep(1); setForgotPasswordEmail(formData.email || ''); setForgotOTP(''); setNewPassword(''); setConfirmPassword(''); setForgotPasswordMessage(''); setForgotPasswordError(''); }} className="text-sm text-blue-500 hover:underline">
                                             Forgot Password?
                                         </button>
                                     </div>
@@ -698,12 +747,13 @@ const Header = () => {
                             {forgotStep === 1 && (
                                 <>
                                     <h2 className="text-lg font-semibold mb-4">Reset Password</h2>
-                                    <form onSubmit={async (e) => { e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage(''); setForgotPasswordLoading(true);
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage(''); setForgotPasswordLoading(true);
                                         try {
                                             const res = await fetch('/api/auth/request-reset', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ email: forgotPasswordEmail }),
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ email: forgotPasswordEmail }),
                                             });
                                             const data = await res.json();
                                             if (!res.ok) throw new Error(data.message || 'Error sending OTP');
@@ -714,27 +764,27 @@ const Header = () => {
                                         } finally {
                                             setForgotPasswordLoading(false);
                                         }
-                                    }}className="space-y-4">
+                                    }} className="space-y-4">
                                         <input
-                                        type="email"
-                                        placeholder="Enter your email"
-                                        value={forgotPasswordEmail}
-                                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                                        required
-                                        className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            type="email"
+                                            placeholder="Enter your email"
+                                            value={forgotPasswordEmail}
+                                            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                                            required
+                                            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                         {forgotPasswordError && (
-                                        <p className="text-red-500 text-sm">{forgotPasswordError}</p>
+                                            <p className="text-red-500 text-sm">{forgotPasswordError}</p>
                                         )}
                                         {forgotPasswordMessage && (
-                                        <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
+                                            <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
                                         )}
                                         <button
-                                        type="submit"
-                                        disabled={forgotPasswordLoading}
-                                        className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+                                            type="submit"
+                                            disabled={forgotPasswordLoading}
+                                            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
                                         >
-                                        {forgotPasswordLoading ? 'Sending...' : 'Send OTP'}
+                                            {forgotPasswordLoading ? 'Sending...' : 'Send OTP'}
                                         </button>
                                     </form>
                                 </>
@@ -745,7 +795,8 @@ const Header = () => {
                                 <>
                                     <h2 className="text-lg font-semibold mb-4">Enter OTP</h2>
                                     <p className="text-sm mb-2">Email: <strong>{forgotPasswordEmail}</strong></p>
-                                    <form onSubmit={async (e) => { e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage('');
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage('');
                                         if (!forgotOTP.trim()) {
                                             setForgotPasswordError('Please enter OTP.');
                                             return;
@@ -772,10 +823,10 @@ const Header = () => {
                                     }} className="space-y-4">
                                         <input type="text" placeholder="Enter OTP" value={forgotOTP} onChange={(e) => setForgotOTP(e.target.value)} required className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                         {forgotPasswordError && (
-                                        <p className="text-red-500 text-sm">{forgotPasswordError}</p>
+                                            <p className="text-red-500 text-sm">{forgotPasswordError}</p>
                                         )}
                                         {forgotPasswordMessage && (
-                                        <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
+                                            <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
                                         )}
                                         <button type="submit" disabled={forgotPasswordLoading} className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400">
                                             {forgotPasswordLoading ? 'Validating...' : 'Validate OTP'}
@@ -789,38 +840,39 @@ const Header = () => {
                                 <>
                                     <h2 className="text-lg font-semibold mb-4">Set New Password</h2>
                                     <p className="text-sm mb-2">Email: <strong>{forgotPasswordEmail}</strong></p>
-                                    <form onSubmit={async (e) => { e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage('');
-                                    if (newPassword !== confirmPassword) {
-                                        setForgotPasswordError('Passwords do not match.');
-                                        return;
-                                    }
-                                    setForgotPasswordLoading(true);
-                                    try {
-                                        const res = await fetch('/api/auth/reset-password', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({
-                                                email: forgotPasswordEmail,
-                                                otp: forgotOTP,
-                                                newPassword,
-                                            }),
-                                        });
-                                        const data = await res.json();
-                                        if (!res.ok) throw new Error(data.message || 'Error resetting password');
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage('');
+                                        if (newPassword !== confirmPassword) {
+                                            setForgotPasswordError('Passwords do not match.');
+                                            return;
+                                        }
+                                        setForgotPasswordLoading(true);
+                                        try {
+                                            const res = await fetch('/api/auth/reset-password', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    email: forgotPasswordEmail,
+                                                    otp: forgotOTP,
+                                                    newPassword,
+                                                }),
+                                            });
+                                            const data = await res.json();
+                                            if (!res.ok) throw new Error(data.message || 'Error resetting password');
 
-                                        setForgotPasswordMessage('Password reset successful.');
-                                        setTimeout(() => {
-                                            setShowForgotPasswordModal(false);
-                                            setShowAuthModal(true); // reopen login
-                                        }, 1500);
-                                    } catch (err) {
-                                        setForgotPasswordError(err.message);
-                                    } finally {
-                                        setForgotPasswordLoading(false);
-                                    }
+                                            setForgotPasswordMessage('Password reset successful.');
+                                            setTimeout(() => {
+                                                setShowForgotPasswordModal(false);
+                                                setShowAuthModal(true); // reopen login
+                                            }, 1500);
+                                        } catch (err) {
+                                            setForgotPasswordError(err.message);
+                                        } finally {
+                                            setForgotPasswordLoading(false);
+                                        }
                                     }} className="space-y-4">
                                         <input type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={6} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                        <input type="password" placeholder="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                        <input type="password" placeholder="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                         {forgotPasswordError && (
                                             <p className="text-red-500 text-sm">{forgotPasswordError}</p>
                                         )}
@@ -837,7 +889,7 @@ const Header = () => {
                     </div>
                 )}
             </div>
-    
+
             <div className="relative p-2 px-1 bg-customBlue border-b border-gray-200 shadow">
                 <div className="w-full px-2 sm:px-5 relative">
                     {/* Arrows */}
@@ -854,66 +906,66 @@ const Header = () => {
                     {/* Swiper */}
                     <div className="relative bg-customBlue">
                         <div className="flex justify-center overflow-x-auto scrollbar-hide">
-                           
-                                <Swiper modules={[Navigation]} navigation={{ prevEl: ".custom-swiper-prev", nextEl: ".custom-swiper-next",}} spaceBetween={20} slidesPerView="auto" watchOverflow={true} className="pl-10 pr-14">
-                                    {categories.map((category) => (
-                                        <SwiperSlide key={category._id} className="!w-auto">
-                                            <div ref={(el) => (slideRefs.current[category._id] = el)} onMouseEnter={() => handleMouseEnter(category._id)} onMouseLeave={() => startHide(120)} className="px-5 py-2 flex flex-col items-center text-center" >
-                                                <Link href={`/category/${category.category_slug}`} className="text-sm text-base text-white hover:text-orange-500 whitespace-nowrap" >
-                                                    {category.category_name}
-                                                </Link>
-                                            </div>
-                                        </SwiperSlide>
-                                    ))}
-                                </Swiper>
+
+                            <Swiper modules={[Navigation]} navigation={{ prevEl: ".custom-swiper-prev", nextEl: ".custom-swiper-next", }} spaceBetween={20} slidesPerView="auto" watchOverflow={true} className="pl-10 pr-14">
+                                {categories.map((category) => (
+                                    <SwiperSlide key={category._id} className="!w-auto">
+                                        <div ref={(el) => (slideRefs.current[category._id] = el)} onMouseEnter={() => handleMouseEnter(category._id)} onMouseLeave={() => startHide(120)} className="px-5 py-2 flex flex-col items-center text-center" >
+                                            <Link href={`/category/${category.category_slug}`} className="text-sm text-base text-white hover:text-orange-500 whitespace-nowrap" >
+                                                {category.category_name}
+                                            </Link>
+                                        </div>
+                                    </SwiperSlide>
+                                ))}
+                            </Swiper>
                         </div>
                     </div>
                 </div>
 
                 {/* DROPDOWN OUTSIDE SWIPER (fixed so it won't be clipped) */}
                 {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
-                <div
-                    ref={dropdownRef}
-                    className="fixed z-50 border-t border-gray-200 shadow-xl"
-                    style={{
-                    top: `${dropdownTop}px`,
-                    left: `${dropdownLeft}px`,
-                    maxWidth: "calc(100% - 20px)",
-                    
-                    }}
-                    onMouseEnter={cancelHide}
-                    onMouseLeave={() => startHide(120)}
-                >
-                    <div className="flex flex-wrap bg-white h-[390px]">
-  {chunkFlatList(
-    flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
-    15
-  ).map((chunk, index) => (
-    <div
-      key={index}
-      className="min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start" // 👈 h-[250px] remove panniten
-    >
-      {chunk.map(item => renderFlatItem(item, hoveredCategory))}
-    </div>
-  ))}
+                    <div
+                        ref={dropdownRef}
+                        className="fixed z-50 border-t border-gray-200 shadow-xl"
+                        style={{
+                            top: `${dropdownTop}px`,
+                            left: `${dropdownLeft}px`,
+                            maxWidth: "calc(100% - 20px)",
 
-  {(hoveredCategory.navImage || hoveredCategory.image) && (
-    <div className="min-w-[220px] max-w-[250px] flex items-center justify-center h-full "> 
-      <Link href={``} className="w-full h-full">
-        <Image
-          src={hoveredCategory.navImage || hoveredCategory.image}
-          alt="Category Navigation Image"
-          width={220}
-          height={390}
-          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-          className="object-cover rounded"
-        />
-      </Link>
-    </div>
-  )}
-</div>
+                        }}
+                        onMouseEnter={cancelHide}
+                        onMouseLeave={() => startHide(120)}
+                    >
+                        <div className="flex flex-wrap bg-white h-[390px]">
+                            {chunkFlatList(
+                                flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+                                15
+                            ).map((chunk, index) => (
+                                <div
+                                    key={index}
+                                    className="min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start" // 👈 h-[250px] remove panniten
+                                >
+                                    {chunk.map(item => renderFlatItem(item, hoveredCategory))}
+                                </div>
+                            ))}
 
-                </div>
+                            {(hoveredCategory.navImage || hoveredCategory.image) && (
+                                <div className="min-w-[220px] max-w-[250px] flex items-center justify-center h-full ">
+                                    <Link href={``} className="w-full h-full">
+                                        <Image
+                                            src={hoveredCategory.navImage || hoveredCategory.image}
+                                            alt="Category Navigation Image"
+                                            width={220}
+                                            height={390}
+                                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                                            className="object-cover rounded"
+                                        />
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+
+                    </div>
                 )}
             </div>
         </header>

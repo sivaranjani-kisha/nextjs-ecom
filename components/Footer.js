@@ -230,7 +230,7 @@ const capitalizeFirstLetter = (str) =>
           <h3 className="text-white font-semibold text-lg mb-4">Company</h3>
           <ul className="space-y-2">
             <li><Link href="/aboutus" className="hover:underline hover:text-white">About Us</Link></li>
-            <li><Link href="/profile" className="hover:underline hover:text-white">Contact Us</Link></li>
+            <li><Link href="/contact" className="hover:underline hover:text-white">Contact Us</Link></li>
             <li><Link href="/blog" className="hover:underline hover:text-white">Blogs</Link></li>
           </ul>
         </div>

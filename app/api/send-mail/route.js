@@ -45,6 +45,7 @@ const offer = await Offer.findOne({ _id: new mongoose.Types.ObjectId(offerId) })
       const mailOptions = {
         from: process.env.EMAIL_USER,
         to: user.email,
+        cc: ["ecom@bharathelectronics.in", "siva96852@gmail.com"],
         subject: subject,
         html: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 30px;">

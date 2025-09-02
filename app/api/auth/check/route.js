@@ -24,5 +24,18 @@ export async function GET(req) {
 
 // Simple JWT verification example (implement properly)
 function verifyToken(token) {
-  return jwt.verify(token, process.env.JWT_SECRET);
-}
+//   return jwt.verify(token, process.env.JWT_SECRET);
+// }
+// const verifyToken = (token) => {
+  if (!token) throw new Error("Authorization token required");
+   const jwt = require('jsonwebtoken');
+   try {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      throw new Error("Token has expired");
+    } else {
+      throw new Error("Invalid token");
+    }
+  }
+};

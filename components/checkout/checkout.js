@@ -161,7 +161,7 @@ export default function CheckoutPage() {
   const [useraddress, setUseraddress] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [useSavedAddress, setUseSavedAddress] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
   const [error, setError] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -436,7 +436,7 @@ const grandTotal = subtotal - totalDiscount;
     e.preventDefault();
     if (isSubmitting) return;
   
-  setIsSubmitting(true);
+
   setError("");
     try {
       const token = localStorage.getItem("token");
@@ -477,7 +477,7 @@ const grandTotal = subtotal - totalDiscount;
           return;
         }
       }
-  
+    setIsSubmitting(true);
       setError("");
   
            const totalAmount = cartItems.reduce(
@@ -488,10 +488,10 @@ const grandTotal = subtotal - totalDiscount;
       let paymentStatus = "";
       let paymentMode = "";
   
-      if (paymentMethod === 'cash') {
+      if (paymentMethod === 'Cash on Delivery') {
         paymentId = "COD_" + Date.now();
         paymentStatus = "pending";
-        paymentMode = "cash";
+        paymentMode = "Cash on Delivery";
       } else if (paymentMethod === 'online') {
         try {
           const result = await handleOnlinePayment(totalAmount);
@@ -667,7 +667,7 @@ const grandTotal = subtotal - totalDiscount;
           orderDetails: {
             order_number: orderData.order_number || "ORD" + Date.now(),
             order_amount: totalAmount,
-            payment_method: paymentMethod === 'cash' ? 'Cash on Delivery' : 'Online Payment',
+            payment_method: paymentMethod === 'Cash on Delivery' ? 'Cash on Delivery' : 'Online Payment',
             order_item: cartItems,
             order_username: `${addressData.firstName} ${addressData.lastName}`,
             order_phonenumber: addressData.phonenumber,
@@ -874,8 +874,8 @@ const grandTotal = subtotal - totalDiscount;
                   <input 
                     type="radio" 
                     name="payment" 
-                    value="cash" 
-                    checked={paymentMethod === "cash"} 
+                    value="Cash on Delivery" 
+                    checked={paymentMethod === "Cash on Delivery"} 
                     onChange={handlePaymentChange} 
                     className="w-4 h-4 text-orange-500"
                   />

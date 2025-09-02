@@ -28,6 +28,10 @@ export async function POST(req) {
   await dbConnect();
  const token = extractToken(req);
     const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+    
     const userId = decoded.userId;
   try {
     const body = await req.json();

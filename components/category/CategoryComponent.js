@@ -51,7 +51,7 @@ export default function CategoryPage() {
     hasPrev: false,
     totalProducts: 0
   });
-  const itemsPerPage = 20;
+  const itemsPerPage = 12;
 
   // Fetch initial data
   useEffect(() => {
