@@ -50,7 +50,7 @@ export default function CategoryPage() {
     hasPrev: false,
     totalProducts: 0
   });
-  const itemsPerPage = 20;
+  const itemsPerPage = 12;
   const productsContainerRef = useRef(null);
   const scrollPositionBeforeFetch = useRef({
     y: 0,

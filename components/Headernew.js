@@ -440,7 +440,7 @@ const Header = () => {
     return (
         <header className="sticky top-0 z-50">
             {/* Top Announcement Bar */}
-            {offers.some(
+            {/* {offers.some(
                 (offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active"
             ) ? (
                 // ✅ Active offer banner
@@ -470,7 +470,7 @@ const Header = () => {
                         </motion.div>
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* Main Header */}
             <div className={`${isMobileMenuOpen ? "fixed inset-0 mt-0 pt-0 z-50 overflow-y-auto" : "bg-white px-4 sm:px-6 md:px-6 py-1 sticky top-0 z-40"}`}>
