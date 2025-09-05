@@ -31,24 +31,34 @@ const Footer = () => {
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch("/api/categories/get");
-        const data = await res.json();
-        
-        if (data) {
-          setCategories(data);
-          const grouped = groupCategories(data);
-          setGroupedCategories(grouped);
-        }
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-      }
-    };
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/categories/get");
+      const data = await res.json();
 
-    fetchCategories();
-    checkAuthStatus();
-  }, []);
+      if (data) {
+        // Main category = parentid === "none"
+        const main = data.filter((cat) => cat.parentid === "none");
+
+        // Subcategories grouped by parentid
+        const subs = {};
+        data.forEach((cat) => {
+          if (cat.parentid !== "none") {
+            if (!subs[cat.parentid]) subs[cat.parentid] = [];
+            subs[cat.parentid].push(cat);
+          }
+        });
+
+        setGroupedCategories({ main, subs });
+      }
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+  fetchCategories();
+}, []);
+
 
   const checkAuthStatus = async () => {
     try {
@@ -270,36 +280,58 @@ const capitalizeFirstLetter = (str) =>
               </div>
             </div>
           </div>
-          <div className="bg-[#2e2a2a] ">
+         <div className="bg-[#2e2a2a]">
             <div className="container mx-auto px-4 text-base font-medium space-y-4">
-              {groupedCategories.main
-                .filter((mainCat) => groupedCategories.subs[mainCat._id]?.length > 0)
-                .map((mainCat) => (
-                  <div key={mainCat._id}>
-                    <Link
-                      href={`/category/${mainCat.category_slug}`}
-                      className="font-semibold text-white hover:underline whitespace-nowrap"
-                    >
-                      {capitalizeFirstLetter(mainCat.category_name)} :
-                    </Link>
-                    <span className="text-gray-400 ml-2">
-                      {groupedCategories.subs[mainCat._id].map((subcat, index) => (
-                        <span key={subcat._id}>
-                          <Link
-                            href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
-                            className="hover:text-white hover:underline"
-                          >
-                            {capitalizeFirstLetter(subcat.category_name)}
-                          </Link>
-                          {index < groupedCategories.subs[mainCat._id].length - 1 && ' / '}
-                        </span>
-                      ))}
-                    </span>
-                  </div>
-                ))}
+              {groupedCategories.main.map((mainCat) => (
+                <div key={mainCat._id}>
+                  {/* Main Category */}
+                  {/* <Link
+                    href={`/category/${mainCat.category_slug}`}
+                    className="font-semibold text-white hover:underline whitespace-nowrap"
+                  >
+                    {capitalizeFirstLetter(mainCat.category_name)} :
+                  </Link> */}
+
+                  {/* Sub Categories */}
+                  <span className="text-gray-400">
+                    {groupedCategories.subs[mainCat._id]?.map((subcat, i) => (
+                      <span key={subcat._id}>
+                        <Link
+                          href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
+                          className="text-white hover:underline"
+                        >
+                          {capitalizeFirstLetter(subcat.category_name)} :
+                        </Link>
+
+                        {/* Sub-Sub Categories */}
+                        {groupedCategories.subs[subcat._id]?.length > 0 && (
+                          <span className="ml-1  text-gray-500">
+                            {/* {" ("} */}
+                            {groupedCategories.subs[subcat._id].map((child, j) => (
+                              <span key={child._id}>
+                                <Link
+                                  href={`/category/${mainCat.category_slug}/${subcat.category_slug}/${child.category_slug}`}
+                                  className="hover:text-white hover:underline pl-2 pr-2"
+                                >
+                                  {capitalizeFirstLetter(child.category_name)}
+                                </Link>
+                                {j < groupedCategories.subs[subcat._id].length - 1 && " / "}
+                              </span>
+                            ))}
+                            {/* {")"} */}
+                          </span>
+                        )}
+
+                      {i < groupedCategories.subs[mainCat._id].length - 1 && (
+                        <span className="block mb-4"></span>
+                      )}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-
         </div>
       </footer>
 

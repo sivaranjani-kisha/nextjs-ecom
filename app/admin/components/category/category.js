@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import { Icon } from '@iconify/react';
 import DateRangePicker from '@/components/DateRangePicker';
-
+import Link from "next/link";
 export default function CategoryComponent() {
   const [categories, setCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -648,7 +648,12 @@ const handleUpdateNavImageChange = async (e) => {
         <p>Loading categories...</p>
       ) : (
         <div className="bg-white shadow-md rounded-lg p-5 mb-5 overflow-x-auto">
-          {/* Search and Filter Section */}
+        <Link
+      href="/admin/category/navcat"
+      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150 inline-block"
+    >
+      NavMenu
+    </Link>
         {/* Search and Filter Section */}
 {/* Search and Filter Section */}
 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end mb-4">
