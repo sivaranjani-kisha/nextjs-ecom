@@ -14,7 +14,7 @@ import { IoLogOut } from "react-icons/io5";
 const Footer = () => {
   const [categories, setCategories] = useState([]);
   const [groupedCategories, setGroupedCategories] = useState({ main: [], subs: {} });
-  
+    const [stores, setStores] = useState([]);
   // Auth state
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
@@ -39,7 +39,7 @@ const Footer = () => {
       if (data) {
         // Main category = parentid === "none"
         const main = data.filter((cat) => cat.parentid === "none");
-
+console.log(main);
         // Subcategories grouped by parentid
         const subs = {};
         data.forEach((cat) => {
@@ -55,8 +55,21 @@ const Footer = () => {
       console.error("Error fetching categories:", err);
     }
   };
+ const fetchStores = async () => {
+      try {
+        const res = await fetch("/api/store/get");
+        const data = await res.json();
+        
+        if (data && data.success) {
+          setStores(data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching stores:", err);
+      }
+    };
 
   fetchCategories();
+   fetchStores();
 }, []);
 
 
@@ -322,6 +335,26 @@ const capitalizeFirstLetter = (str) =>
                           </span>
                         )}
 
+                        {mainCat.brands.length > 0 && (
+                        <>
+                          <br /> {/* 👈 Force new line before brands */}
+                          <span className="font-semibold text-white">Brands:</span>
+                          <span className="text-gray-400">
+                            {mainCat.brands.map((brand, i) => (
+                              <span key={brand._id}>
+                                <Link
+                                  href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
+                                  className="hover:text-white hover:underline pl-2 pr-2"
+                                >
+                                  {capitalizeFirstLetter(brand.brand_name)}
+                                </Link>
+                                {i < mainCat.brands.length - 1 && " / "}
+                              </span>
+                            ))}
+                          </span>
+                        </>
+                      )}
+
                       {i < groupedCategories.subs[mainCat._id].length - 1 && (
                         <span className="block mb-4"></span>
                       )}
@@ -332,6 +365,17 @@ const capitalizeFirstLetter = (str) =>
               ))}
             </div>
           </div>
+           {stores.length > 0 && (
+                  <>
+                    <hr className="border-gray-600 my-3" />
+                    <div className="container mx-auto px-3 flex flex-col md:flex-row">
+                      <h4 className="text-white font-medium mb-2">Our Locations:</h4>
+                      <p className="pl-2">
+                        {stores.map(store => store.organisation_name).join(', ')}
+                      </p>
+                    </div>
+                  </>
+                )}
         </div>
       </footer>
 
