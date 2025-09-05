@@ -51,7 +51,7 @@ export default function CategoryPage() {
     hasPrev: false,
     totalProducts: 0
   });
-  const itemsPerPage = 12;
+  const itemsPerPage = 20;
 
   // Fetch initial data
   useEffect(() => {
@@ -109,6 +109,34 @@ export default function CategoryPage() {
       // setLoading(false);
     }
   };
+
+ const [brandMap, setBrandMap] = useState([]);
+
+const fetchBrand = async () => {
+  try {
+    const response = await fetch("/api/brand");
+    const result = await response.json();
+    if (result.error) {
+      console.error(result.error);
+    } else {
+      const data = result.data;
+
+      // Store as map for quick access
+      const map = {};
+      data.forEach((b) => {
+        map[b._id] = b.brand_name;
+      });
+      setBrandMap(map);
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+};
+
+useEffect(() => {
+  fetchBrand();
+}, []);
+
 
   const fetchFilteredProducts = useCallback(async (categoryData, pageNum = 1, initialLoad = false) => {
     try {
@@ -668,7 +696,8 @@ export default function CategoryPage() {
 
                           {Number(product.special_price) > 0 &&
                             Number(product.special_price) < Number(product.price) && (
-                              <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
+                              // <span className="absolute top-2 left-1 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
+                              <span className="absolute  top-3 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
                                 {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                               </span>
                           )}
@@ -679,19 +708,23 @@ export default function CategoryPage() {
                         </div>
 
                         <div className="p-2 md:p-4 flex flex-col h-full">
+
+                        <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
+                        {brandMap[product.brand] || ""}
+                        </h4>
                           <Link
                             href={`/product/${product.slug}`}
                             className="block mb-2"
                             onClick={() => handleProductClick(product)}
                           >
-                            <h3 className="text-xs sm:text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2 min-h-[40px]">
+                            <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
                               {product.name}
                             </h3>
                           </Link>
 
                           <div className="flex items-center gap-2 mb-3">
-                            <span className="text-base font-semibold text-blue-600">
-                              ₹{(
+                            <span className="text-base font-semibold text-red-600">
+                              ₹ {(
                                 product.special_price && product.special_price > 0 && product.special_price != '0' && product.special_price != 0 && product.special_price < product.price
                                   ? product.special_price
                                   : product.price
@@ -702,10 +735,22 @@ export default function CategoryPage() {
                               product.special_price < product.price &&
                               (
                                 <span className="text-xs text-gray-500 line-through">
-                                  ₹{product.price.toLocaleString()}
+                                  ₹ {product.price.toLocaleString()}
                                 </span>
                             )}
                           </div>
+                          <h4
+                            className={`text-xs mb-3 ${
+                              product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
+                            }`}
+                          >
+                            {product.stock_status}
+                            {product.stock_status === "In Stock" && product.quantity
+                              ? `, ${product.quantity} units`
+                              : ""}
+                          </h4>
+
+                              
 
                           <div className="mt-auto flex items-center justify-between gap-2 ccs">
                             <Addtocart

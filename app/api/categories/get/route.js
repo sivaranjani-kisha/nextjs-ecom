@@ -35,28 +35,42 @@ import Product from "@/models/product";
 import Brand from "@/models/ecom_brand_info";
 import { NextResponse } from "next/server";
 
+async function getDescendantCategoryIds(categoryId) {
+  const children = await Category.find({ parentid: categoryId });
+  let ids = [categoryId]; // include self
+
+  for (const child of children) {
+    const childIds = await getDescendantCategoryIds(child._id);
+    ids = ids.concat(childIds);
+  }
+
+  return ids;
+}
+
 export async function GET() {
   try {
     await dbConnect();
 
-    // Step 1: Get categories sorted by position
+    // Step 1: Get top-level categories sorted by position
     const categories = await Category.find().sort({ position: 1 });
 
     // Step 2: For each category, get products and related brand details
     const categoriesWithProducts = await Promise.all(
       categories.map(async (cat) => {
-        // Get products under this category
-        const products = await Product.find({ categoryId: cat._id });
+        // ✅ Get all descendant categories (including itself)
+        const categoryIds = await getDescendantCategoryIds(cat._id);
 
-        // Get unique brand IDs from those products
-        const brandIds = [...new Set(products.map((p) => p.brandId?.toString()))];
+        // ✅ Fetch products under this category and its children
+        const products = await Product.find({ category: { $in: categoryIds } });
 
-        // Fetch brand details
+        // ✅ Collect unique brand IDs
+        const brandIds = [...new Set(products.map((p) => p.brand?.toString()))];
+
+        // ✅ Fetch brand details
         const brands = await Brand.find({ _id: { $in: brandIds } });
 
         return {
           ...cat.toObject(),
-          products,
           brands,
         };
       })
