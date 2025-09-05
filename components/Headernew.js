@@ -416,7 +416,7 @@ const Header = () => {
                     href={href}
                     className={`flex items-center justify-between mb-1 text-sm ${item.level === 0
                             ? "font-semibold text-blue-600"
-                            : "text-gray-700"
+                            : "text-[#8c8c8c] !p-[5px] hover:text-[#0e54e6]"
                         }`}
                 >
                     {/* Category name with bold font */}
@@ -488,12 +488,12 @@ const Header = () => {
                     {/* Logo (Hidden on mobile) */}
                     <div className="hidden sm:block mr-12 bg-white p-2 rounded-lg">
                         <Link href="/index" className="mx-auto">
-                            <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={60} height={30} />
+                            <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={100} height={30} />
                         </Link>
                     </div>
 
                     {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
-                    <div className="hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden">
+                    <div className="hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden !border !border-[#8c8c8c]">
                         <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2 text-xs sm:text-sm text-gray-700 bg-gray-100 border-r border-gray-300 outline-none">
                             <option value="All Categories">All Categories</option>
                             {categories.map((cat) => (
@@ -517,7 +517,7 @@ const Header = () => {
                         {/* Location (Hidden on mobile) */}
                         <Link href="/location" className="hidden sm:flex items-center relative">
                             <FaLocationDot size={18} className="text-customBlue" />
-                            <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Location</span>
+                                {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Location</span> */}
                         </Link>
 
                         {/* Wishlist */}
@@ -528,7 +528,7 @@ const Header = () => {
                                     {wishlistCount}
                                 </span>
                             )}
-                            <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Wishlist</span>
+                            {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Wishlist</span> */}
                         </Link>
 
                         {/* Cart */}
@@ -537,7 +537,7 @@ const Header = () => {
                             <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
                                 {cartCount}
                             </span>
-                            <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Cart</span>
+                            {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Cart</span> */}
                         </Link>
 
                         {/* User Account */}
@@ -579,7 +579,7 @@ const Header = () => {
                             ) : (
                                 <button onClick={() => setShowAuthModal(true)} className="flex items-center text-black p-1 sm:p-0">
                                     <FiUser size={18} className="text-customBlue" />
-                                    <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">Sign In</span>
+                                    {/* <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">Sign In</span> */}
                                 </button>
                             )}
                         </div>
@@ -939,7 +939,7 @@ const Header = () => {
                         <div className="flex flex-wrap bg-white h-[390px]">
                             {chunkFlatList(
                                 flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
-                                15
+                                11
                             ).map((chunk, index) => (
                                 <div
                                     key={index}
