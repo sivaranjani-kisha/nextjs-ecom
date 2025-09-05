@@ -64,14 +64,14 @@ export async function GET() {
         const products = await Product.find({ category: { $in: categoryIds } });
 
         // ✅ Collect unique brand IDs
-        const brandIds = [...new Set(products.map((p) => p.brand?.toString()))];
+        // const brandIds = [...new Set(products.map((p) => p.brand?.toString()))];
 
-        // ✅ Fetch brand details
-        const brands = await Brand.find({ _id: { $in: brandIds } });
+        // // ✅ Fetch brand details
+        // const brands = await Brand.find({ _id: { $in: brandIds } });
 
         return {
           ...cat.toObject(),
-          brands,
+          brands: [],
         };
       })
     );
