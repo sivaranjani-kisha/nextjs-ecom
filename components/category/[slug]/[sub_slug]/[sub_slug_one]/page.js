@@ -50,7 +50,7 @@ export default function CategoryPage() {
     hasPrev: false,
     totalProducts: 0
   });
-  const itemsPerPage = 20;
+  const itemsPerPage = 12;
   const productsContainerRef = useRef(null);
   const scrollPositionBeforeFetch = useRef({
     y: 0,
@@ -85,6 +85,7 @@ const handleProductClick = (product) => {
       // Fetch category data (brands, filters, etc.)
       const categoryRes = await fetch(`/api/categories/${sub_slug}/${sub_slug}/${sub_slug_one}`);
       const categoryData = await categoryRes.json();
+      console.log(categoryData);
       setCategoryData(categoryData);
       
       // Set initial price range based on products in category
@@ -128,33 +129,6 @@ const handleProductClick = (product) => {
       // setLoading(false);
     }
   };
-
-  const [brandMap, setBrandMap] = useState([]);
-    
-    const fetchBrand = async () => {
-      try {
-        const response = await fetch("/api/brand");
-        const result = await response.json();
-        if (result.error) {
-          console.error(result.error);
-        } else {
-          const data = result.data;
-    
-          // Store as map for quick access
-          const map = {};
-          data.forEach((b) => {
-            map[b._id] = b.brand_name;
-          });
-          setBrandMap(map);
-        }
-      } catch (error) {
-        console.error(error.message);
-      }
-    };
-    
-    useEffect(() => {
-      fetchBrand();
-    }, []);
 
   // useEffect(() => {
   //   if (!hasMore && products.length > 0) {
@@ -329,12 +303,20 @@ const handleProductClick = (product) => {
     });
   };
 
-  const handlePriceChange = (values) => {
-    setSelectedFilters(prev => ({
-      ...prev,
-      price: { min: values[0], max: values[1] }
-    }));
-  };
+ const handlePriceChange = (values) => {
+  let min = Math.max(1, values[0]);     // clamp to >= 1
+  let max = Math.max(1, values[1]);   // clamp to <= 100
+
+  // Ensure min never exceeds max
+  if (min > max) {
+    min = max;
+  }
+
+  setSelectedFilters((prev) => ({
+    ...prev,
+    price: { min, max }
+  }));
+};
 
   useEffect(() => {
     if (categoryData.category?._id) {
@@ -467,8 +449,6 @@ const handleProductClick = (product) => {
   return(
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
       <ToastContainer/>
-      {!nofound && categoryData.products.length > 0 ? (
-      <>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
         <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.category.category_name}</h1>
@@ -495,15 +475,18 @@ const handleProductClick = (product) => {
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        {/* Filters Sidebar */}
+
+         {/* Filters Sidebar */}
        
         <div className="w-full md:w-[250px] shrink-0">
           {/* Active Filters */}
+          
           {(selectedFilters.brands.length > 0 || 
            selectedFilters.filters.length > 0 ||
            selectedFilters.price.min !== priceRange[0] || 
            selectedFilters.price.max !== priceRange[1]) && (
             <div className="bg-white p-4 rounded shadow">
+              
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-semibold">Active Filters</h3>
                 <button 
@@ -513,6 +496,7 @@ const handleProductClick = (product) => {
                   Clear all
                 </button>
               </div>
+              
               <div className="flex flex-wrap gap-2">
                 {selectedFilters.brands.map(brandId => {
                   const brand = categoryData.brands.find(b => b._id === brandId);
@@ -568,28 +552,61 @@ const handleProductClick = (product) => {
                   </span>
                 )}
               </div>
+
             </div>
           )}
-
           {/* Price Filter */}
           <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
             <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
             <div className="space-y-4">
-              <input
-                type="range"
-                min={priceRange[0]}
-                max={priceRange[1]}
-                step="100"
-                value={selectedFilters.price.max}
-                onChange={(e) => handlePriceChange([
-                  selectedFilters.price.min, 
-                  parseInt(e.target.value)
-                ])}
-                className="w-full range accent-blue-600"
-              />
+              <div className="relative">
+                 <div className="relative mt-6 group">
+                <input
+                  type="range"
+                  min={priceRange[0]}
+                  max={priceRange[1]}
+                  step="100"
+                  value={selectedFilters.price.min}
+                  onChange={(e) => handlePriceChange([parseInt(e.target.value), selectedFilters.price.max])}
+                  className="w-full h-2 bg-gray-200 rounded-lg absolute appearance-none"
+                  style={{ zIndex: 2 }}
+                />
+                <div className="absolute -top-8 left-0 w-full flex justify-center pointer-events-none">
+                  <span className="px-2 py-1 text-xs text-white bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition">
+                    Min
+                  </span>
+                </div></div>
+                <br />
+                <div className="relative mt-6 group">
+                <input
+                  type="range"
+                  min={priceRange[0]}
+                  max={priceRange[1]}
+                  step="100"
+                  value={selectedFilters.price.max}
+                  onChange={(e) => handlePriceChange([selectedFilters.price.min, parseInt(e.target.value)])}
+                  className="w-full h-2 bg-gray-200 rounded-lg absolute appearance-none"
+                  style={{ zIndex: 1 }}
+                />
+                <div className="absolute -top-8 left-0 w-full flex justify-center pointer-events-none">
+                  <span className="px-2 py-1 text-xs text-white bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition">
+                    Max
+                  </span>
+                </div></div>
+                 <br />
+                <div
+                  className="absolute h-2 bg-green-500 rounded-lg"
+                  style={{
+                    left: `${((selectedFilters.price.min - priceRange[0]) / (priceRange[1] - priceRange[0])) * 100}%`,
+                    right: `${100 - ((selectedFilters.price.max - priceRange[0]) / (priceRange[1] - priceRange[0])) * 100}%`,
+                    top: 0,
+                    zIndex: 0,
+                  }}
+                ></div>
+              </div>
               <div className="flex justify-between text-sm text-gray-600">
-                <span>₹{selectedFilters.price.min}</span>
-                <span>₹{selectedFilters.price.max}</span>
+                <span>₹{selectedFilters.price.min.toLocaleString()}</span>
+                <span>₹{selectedFilters.price.max.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -603,17 +620,16 @@ const handleProductClick = (product) => {
                 </button>
               </div>
               {isBrandsExpanded && (
-                <ul className="mt-2 space-y-2">
+                <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
                   {categoryData.brands.map(brand => (
                     <li key={brand._id} className="flex items-center">
-                      <button
-                        onClick={() => handleFilterChange('brands', brand._id)}
-                        className={`flex items-center w-full text-left p-2 rounded-md text-sm ${
-                          selectedFilters.brands.includes(brand._id) 
-                            ? 'bg-blue-50 text-blue-600' 
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
+                      <input
+                        type="checkbox"
+                        checked={selectedFilters.brands.includes(brand._id)}
+                        onChange={() => handleFilterChange("brands", brand._id)}
+                        className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      />
+                        {/*
                         {brand.image && (
                           <div className="w-6 h-6 mr-2 relative">
                             <Image
@@ -625,8 +641,9 @@ const handleProductClick = (product) => {
                             />
                           </div>
                         )}
-                        <span>{brand.brand_name}</span>
-                      </button>
+                          */}
+                        <span>{brand.brand_name} ({brand.count})</span>
+                      
                     </li>
                   ))}
                 </ul>
@@ -656,7 +673,7 @@ const handleProductClick = (product) => {
 
                     {/* Filter Options */}
                     {expandedFilters[group._id] && (
-                      <ul className="mt-3 space-y-2 pl-1">
+                      <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
                         {group.filters.map(filter => (
                           <li key={filter._id} className="flex items-center">
                             <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
@@ -683,7 +700,9 @@ const handleProductClick = (product) => {
             )}
           </div>
         </div>
-
+      {!nofound && categoryData.products.length > 0 ? (
+      <>
+      
         {/* Products Section */}
         <div ref={productsContainerRef} className="products-container flex-1">
           {products.length > 0 ? (
@@ -711,7 +730,7 @@ const handleProductClick = (product) => {
                       {/* Discount Badge */}
                       {Number(product.special_price) > 0 &&
                         Number(product.special_price) < Number(product.price) && (
-                          <span className="absolute top-3 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
                             {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                           </span>
                       )}
@@ -725,24 +744,22 @@ const handleProductClick = (product) => {
   
                     {/* Product Info and Buttons */}
                     <div className="p-2 md:p-4 flex flex-col h-full">
-                      <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
-                        {brandMap[product.brand] || ""}
-                        </h4>
+                      
                       {/* Title with fixed height */}
                       <Link
                         href={`/product/${product.slug}`}
                         className="block mb-2"
                         onClick={() => handleProductClick(product)}
                       >
-                        <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                        <h3 className="text-xs sm:text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2 min-h-[40px]">
                           {product.name}
                         </h3>
                       </Link>
   
                       {/* Price Row (same level always) */}
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-base font-semibold text-red-600">
-                          ₹ {(
+                        <span className="text-base font-semibold text-blue-600">
+                          ₹{(
                             product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
                               ? product.special_price
                               : product.price
@@ -754,21 +771,10 @@ const handleProductClick = (product) => {
                           product.special_price < product.price &&
                           (
                             <span className="text-xs text-gray-500 line-through">
-                              ₹ {product.price.toLocaleString()}
+                              ₹{product.price.toLocaleString()}
                             </span>
                         )}
                       </div>
-
-                      <h4
-                            className={`text-xs mb-3 ${
-                              product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
-                            }`}
-                          >
-                            {product.stock_status}
-                            {product.stock_status === "In Stock" && product.quantity
-                              ? `, ${product.quantity} units`
-                              : ""}
-                          </h4>
   
                       {/* Bottom Buttons */}
                       <div className="mt-auto flex items-center justify-between gap-2">
@@ -831,10 +837,10 @@ const handleProductClick = (product) => {
 
           
         </div>
-      </div>
+      
       </>
       ) : (
-        <div className="text-center py-10">
+        <div className="text-center justify-center py-10 mx-auto">
               <img 
                 src="/images/no-productbox.png" 
                 alt="No Products" 
@@ -842,6 +848,7 @@ const handleProductClick = (product) => {
               />
         </div>
       )}
+      </div>
     </div>
   );
 }

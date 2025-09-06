@@ -661,346 +661,298 @@ const validateCoupon = async () => {
   isValidating={isValidatingCoupon}
 />
 
-      {/* Header */}
-      <div className="bg-blue-50 py-4 px-4 sm:px-8 flex flex-col sm:flex-row justify-between items-center gap-2">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-          Cart ({cartData.totalItems} items)
-        </h2>
-        <div className="flex items-center space-x-1 text-sm">
-          <span className="text-gray-600">🏠 Home</span>
-          <span className="text-gray-500">›</span>
-          <span className="text-blue-500 font-semibold">Product Cart</span>
+    {/* Header */}
+      <div className=" sm:pl-[3rem] sm:pr-[2rem] flex flex-col sm:flex-row justify-between items-center gap-2 my-[35px]">
+        <div style={{ "--heading-color": "#0069c6" }}>
+          <h1 className="font-bold text-[1.75rem] text-[#0069c6]"> My Cart</h1>
         </div>
+        
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 p-4 sm:p-6">
-        {/* Cart Table - Mobile optimized */}
-        <div className="w-full lg:w-2/3 bg-white p-4 sm:p-6 rounded-lg border">
-          <div className="hidden sm:block overflow-x-auto">
-           <table className="min-w-full border">
-  <thead className="bg-gray-50">
-    <tr>
-      <th className="py-3 px-4 text-center">Delete</th>
-      <th className="py-3 px-4">Product</th>
-      <th className="py-3 px-4 text-center">Price</th>
-      <th className="py-3 px-4 text-center">Quantity</th>
-      <th className="py-3 px-4 text-center">Subtotal</th>
-    </tr>
-  </thead>
-<tbody>
-  {cartData.items.map((item) => (
-    <Fragment key={item.productId}>
-      {/* Product Row */}
-      <tr className="border-b">
-        <td className="py-4 px-4 text-center">
-          <button
-            className="text-blue-500 hover:text-blue-600 font-medium"
-            onClick={() => confirmRemoveItem(item.productId)}
-          >
-            ✖
-          </button>
-        </td>
-        <td className="flex items-center py-4 px-4 gap-3">
-          <Image
-            src={`/uploads/products/${item.image}`}
-            alt="No image"
-            width={60}
-            height={60}
-            className="rounded-md"
-          />
-          <div className="relative group w-fit">
-            <Link href={`/product/${slugify(item.name)}`}>
-              <p className="font-semibold hover:text-blue-500 transition-colors duration-300">
-                {item.name.length > 50 ? item.name.slice(0, 50) + "..." : item.name}
-              </p>
-            </Link>
-            <div className="absolute z-10 hidden group-hover:block bg-black text-white text-sm px-2 py-1 rounded shadow-md top-full mt-1 max-w-xs w-max whitespace-normal">
-              {item.name}
-            </div>
-          </div>
-        </td>
-        <td className="py-4 px-4 text-center">₹{item.price.toFixed(2)}</td>
-        <td className="py-4 px-4 text-center">
-          <div className="flex justify-center items-center gap-2">
-            <button
-              className="px-2 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-              onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
-              disabled={item.quantity <= 1}
-            >
-              −
-            </button>
-            <span>{item.quantity}</span>
-            <button
-              className="px-2 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-              onClick={() =>
-                updateQuantity(item.productId, item.quantity + 1, item.original_quantity)
-              }
-            >
-              +
-            </button>
-          </div>
-        </td>
-        <td className="py-4 px-4 text-center font-semibold">
-          ₹{(item.price * item.quantity).toFixed(2)}
-        </td>
-      </tr>
+       {/* Main Content */}
 
-      {/* Breakdown Row */}
-      {/* <tr className="bg-gray-50">
-        <td colSpan={4} className="py-3 px-4 text-right text-sm font-medium text-gray-500">
-          Product Subtotal
-          {(item.warranty > 0 || item.extendedWarranty > 0 || item.discount > 0) && (
-            <>
-              {item.warranty > 0 && <><br />Warranty</>}
-              {item.extendedWarranty > 0 && <><br />Extended Warranty</>}
-              {item.discount > 0 && <><br />Discount</>}
-            </>
-          )}
-        </td>
-        <td className="py-3 px-4 text-center text-sm font-semibold">
-          ₹{(item.price * item.quantity).toFixed(2)}
-          {(item.warranty > 0 || item.extendedWarranty > 0 || item.discount > 0) && (
-            <>
-              {item.warranty > 0 && <><br />₹{item.warranty.toFixed(2)}</>}
-              {item.extendedWarranty > 0 && <><br />₹{item.extendedWarranty.toFixed(2)}</>}
-              {item.discount > 0 && <><br />-₹{item.discount.toFixed(2)}</>}
-            </>
-          )}
-        </td>
-      </tr> */}
-    </Fragment>
-  ))}
+        
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 my-[35px] px-4 sm:pl-[3rem] sm:pr-[2rem] py-0">
+        
+        {/* Left Side - Cart Table (big width) */}
+        <div className="lg:col-span-2">
+          <div className="overflow-x-auto bg-white rounded-lg border">
+              <table className="min-w-full border">
+                      <thead className="bg-white-50 border-b">
+                        <tr>
+                          <th className="py-3 px-4 text-center text-gray-500 text-sm font-semibold cursor-pointer ">Product</th>
+                          <th className="text-center text-gray-500 text-sm font-semibold cursor-pointer ">Quantity</th>
+                          <th className="text-center text-gray-500 text-sm font-semibold cursor-pointer ">Subtotal</th>
+                          <th className="text-center text-gray-500 text-sm font-semibold cursor-pointer ">&emsp;</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cartData.items.map((item) => (
+                          <Fragment key={item.productId}>
+                            {/* Product Row */}
+                         
+                            <tr className="border-b px-0 py-8">
+                                <td className="flex items-center py-4 px-4 gap-3">
+                                <Image
+                                  src={`/uploads/products/${item.image}`}
+                                  alt={item.name}
+                                  width={100}
+                                  height={100}
+                                  className="rounded-md"
+                                />
+                                <div className="relative group w-full  py-0">
+                                  {/* Vertical stack for item info */}
+                                  <div className="flex flex-col gap-1">
+                                    {/* Item Code */}
+                                    <h3 className="py-1 text-gray-500 text-xs font-semibold cursor-pointer hover:text-[#00badb]"cstyle={{ fontSize: ".95rem" }}>
+                                      {item.item_code}
+                                    </h3>
 
-  {/* ✅ Final Item Total Row (only once) */}
-  <tr className="border-t bg-gray-100">
-    <td colSpan={4} className="py-3 px-4 text-right font-bold">Item Total</td>
-    <td className="py-3 px-4 text-center font-bold">
+                                    {/* Product Name */}
+                                    <Link href={`/product/${slugify(item.name)}`}>
+                                      <p className="py-1  font-semibold text-xs  text-[#0069c6] hover:text-[#00badb] break-words whitespace-normal" style={{ fontSize: ".95rem" }}>
+                                        {item.name.length > 35 ? item.name.slice(0, 35) + "..." : item.name}
+                                      </p>
+                                    </Link>
+
+                                    {/* Tooltip for full name */}
+                                    <div className="py-1 absolute z-10 hidden group-hover:block bg-black text-white text-sm px-2 py-1 rounded shadow-md top-full mt-1 max-w-xs w-max whitespace-normal" style={{ fontSize: ".95rem" }}>
+                                      {item.name}
+                                    </div>
+
+                                    {/* Prices */}
+                                    <div className="flex items-center gap-2 ">
+                                      <h3 className="text-gray-500 text-sm font-semibold" style={{ fontSize: ".85rem" }}>₹{item.price.toFixed(2)}</h3>
+                                      <h3 className="text-gray-400 text-sm line-through" style={{ fontSize: ".85rem" }} >₹{item.price.toFixed(2)}</h3>
+                                    </div>
+                                  </div>
+                                </div>
+                                </td>
+                                
+                                <td className="py-4 px-4 text-center ">
+                                  <div className="flex justify-center items-center gap-2 border border-gray-300 rounded p-1">
+                                    <button
+                                      className="px-2 py-1 text-black  hover:text-[#0069c6] transition-colors rounded"
+                                      onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
+                                      disabled={item.quantity <= 1}
+                                    >
+                                      −
+                                    </button>
+                                    <span>{item.quantity}</span>
+                                    <button
+                                      className="px-2 py-1 text-black  hover:text-[#0069c6] transition-colors rounded"
+                                      onClick={() =>
+                                        updateQuantity(item.productId, item.quantity + 1, item.original_quantity)
+                                      }
+                                    >
+                                      +
+                                    </button>
+                                    
+                                  </div>
+                                  <button
+                                    className="text-gray-500 text-xs font-semibold cursor-pointer hover:text-[#00badb]"
+                                    onClick={() => confirmRemoveItem(item.productId)}
+                                  >
+                                    Remove
+                                  </button>
+                                </td>
+                                <td className=" text-center font-semibold text-gray-900 text-sm font-semibold cursor-pointer ">
+                                  ₹{(item.price * item.quantity).toFixed(2)}  
+                                </td>
+                                <td className="mt-2 py-4  text-center ">
+                                    &emsp;
+                                    </td>
+                                
+                            </tr>
+                         
+                              {(item.warranty > 0 || item.extendedWarranty > 0) && (
+                                <tr className="border-b px-0 py-8 bg-gray-200">
+                                    <td className="mt-2 py-4  text-center ">
+                                    
+                                    </td>
+                                  
+                                    <td className="mt-2 py-4   text-center ">
+                                      <h3 className="text-center  text-gray-500 text-sm  font-semibold cursor-pointer py-1 ">
+                                          Product Subtotal<br />
+                                      </h3>
+                                      <h3 className="text-center  text-gray-500 text-sm  font-semibold cursor-pointer py-1 ">
+                                          Warranty<br />
+                                      </h3>
+                                      <h3 className="text-center  text-gray-500 text-sm  font-semibold cursor-pointer py-1 ">
+                                          Extended Warranty<br />
+                                      </h3>
+                                      <h3 className="text-center  text-gray-500 text-sm  font-semibold cursor-pointer py-1 ">
+                                          Discount<br />
+                                      </h3>
+                                    
+                                    </td>
+
+                                    <td className="mt-2 py-4  text-center ">
+                                      <h3 className="text-center text-gray-500 text-sm font-semibold cursor-pointer py-1">
+                                          ₹{(item.price * item.quantity).toFixed(2)}<br />
+                                      </h3>
+                                      <h3 className="text-center font-semibold text-gray-500 text-sm font-semibold cursor-pointer py-1">
+                                          {item.warranty > 0 ? `₹${item.warranty.toFixed(2)}` : "-"}<br />
+                                      </h3>
+                                      <h3 className="text-center font-semibold text-gray-500 text-sm font-semibold cursor-pointer py-1">
+                                          {item.extendedWarranty > 0 ? `₹${item.extendedWarranty.toFixed(2)}` : "-"}<br />
+                                      </h3>
+                                      <h3 className="text-center font-semibold text-gray-500 text-sm font-semibold cursor-pointer py-1">
+                                          {item.discount > 0 ? `-₹${item.discount.toFixed(2)}` : "-"}
+                                      </h3>
+                                    
+                                    </td>
+                                    <td className="mt-2 py-4  text-center ">
+                                    &emsp;
+                                    </td>
+                                    
+                                </tr>
+                              )}
+                        
+
+                            {/* Breakdown Row */}
+                            {/* <tr className="bg-gray-50">
+                              <td colSpan={4} className="py-3 px-4 text-right text-sm font-medium text-gray-500">
+                                Product Subtotal
+                                {(item.warranty > 0 || item.extendedWarranty > 0 || item.discount > 0) && (
+                                  <>
+                                    {item.warranty > 0 && <><br />Warranty</>}
+                                    {item.extendedWarranty > 0 && <><br />Extended Warranty</>}
+                                    {item.discount > 0 && <><br />Discount</>}
+                                  </>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 text-center text-sm font-semibold">
+                                ₹{(item.price * item.quantity).toFixed(2)}
+                                {(item.warranty > 0 || item.extendedWarranty > 0 || item.discount > 0) && (
+                                  <>
+                                    {item.warranty > 0 && <><br />₹{item.warranty.toFixed(2)}</>}
+                                    {item.extendedWarranty > 0 && <><br />₹{item.extendedWarranty.toFixed(2)}</>}
+                                    {item.discount > 0 && <><br />-₹{item.discount.toFixed(2)}</>}
+                                  </>
+                                )}
+                              </td>
+                            </tr> */}
+                          </Fragment>
+                        ))}
+
+                        {/* ✅ Final Item Total Row (only once) */}
+                        {/* <tr className="border-t bg-gray-100">
+                          <td colSpan={4} className="py-3 px-4 text-right font-bold">Item Total:
       ₹{cartData.items.reduce(
-        (acc, item) =>
-          acc +
-          (item.price * item.quantity) +
-          (item.warranty || 0) +
-          (item.extendedWarranty || 0) -
-          (item.discount || 0),
-        0
-      ).toFixed(2)}
-    </td>
-  </tr>
-</tbody>
-</table>
+                              (acc, item) =>
+                                acc +
+                                (item.price * item.quantity) +
+                                (item.warranty || 0) +
+                                (item.extendedWarranty || 0) -
+                                (item.discount || 0),
+                              0
+                            ).toFixed(2)}
 
+                          </td>
+                        </tr> */}
+                      </tbody>
+              </table>
           </div>
-
-          {/* Mobile view - list layout */}
-          <div className="sm:hidden space-y-6">
-            {cartData.items.map((item) => (
-              <div key={item.productId} className="border rounded-lg p-4 space-y-3">
-                {/* Top Section: Image, Name, Remove */}
-                <div className="flex justify-between items-start">
-                  <div className="flex gap-3">
-                    <Image
-                      src={`/uploads/products/${item.image}`}
-                      alt={item.name}
-                      width={60}
-                      height={60}
-                      className="rounded-md"
-                    />
-                    <div>
-                      <Link href={`/product/${item.name}`}>
-                        <p className="font-semibold hover:text-blue-500 transition-colors duration-300">
-                          {item.name}
-                        </p>
-                      </Link>
-                      <p className="text-gray-600 text-sm mt-1">₹{item.price.toFixed(2)}</p>
-                    </div>
-                  </div>
-                  <button
-                    className="text-blue-500 hover:text-blue-600"
-                    onClick={() => confirmRemoveItem(item.productId)}
-                  >
-                    ✖
-                  </button>
-                </div>
-
-                {/* Quantity Controls */}
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <button
-                      className="px-3 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-                      onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
-                      disabled={item.quantity <= 1}
-                    >
-                      −
-                    </button>
-                    <span>{item.quantity}</span>
-                    <button
-                      className="px-3 py-1 border rounded bg-gray-200 hover:bg-gray-300"
-                      onClick={() => updateQuantity(item.productId, item.quantity + 1, item.original_quantity)}
-                      disabled={item.quantity >= item.original_quantity}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div className="text-right">
-                    {item.discount > 0 && (
-                      <p className="text-green-600 text-sm">
-                        Discount: -₹{item.discount.toFixed(2)}
-                      </p>
-                    )}
-                    <p className="font-semibold">
-                      ₹{(
-                        (item.price * item.quantity) - 
-                        (item.discount || 0)
-                      ).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-{/* Warranty Info */}
-<div className="text-sm text-gray-600 space-y-1 mt-2">
-  {item.warranty > 0 && (
-    <div className="flex justify-between">
-      <span>Warranty</span>
-      <span className="font-medium text-black">
-        ₹{item.warranty.toFixed(2)}
-      </span>
-    </div>
-  )}
-  {item.extendedWarranty > 0 && (
-    <div className="flex justify-between">
-      <span>Extended Warranty</span>
-      <span className="font-medium text-black">
-        ₹{item.extendedWarranty.toFixed(2)}
-      </span>
-    </div>
-  )}
-</div>
-                {/* Warranty Info */}
-                {/* <div className="text-sm text-gray-600 space-y-1 mt-2">
-                  <div className="flex justify-between">
-                    <span>Warranty</span>
-                    <span className="font-medium text-black">
-                      {item.warranty > 0 ? `₹${item.warranty.toFixed(2)}` : "-"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Extended Warranty</span>
-                    <span className="font-medium text-black">
-                      {item.extendedWarranty > 0
-                        ? `₹${item.extendedWarranty.toFixed(2)}`
-                        : "-"}
-                    </span>
-                  </div>
-                </div> */}
-
-                {/* Total */}
-                <div className="flex justify-between border-t pt-2 mt-2 font-semibold text-black">
-                  <span>Total</span>
-                  <span>
-                    ₹
-                    {(
-                      (item.price * item.quantity) +
-                      (item.warranty || 0) +
-                      (item.extendedWarranty || 0) -
-                      (item.discount || 0)
-                    ).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-between items-center mt-6 flex-wrap gap-2">
+            {/* Continue Shopping Button */}
+          {/* <div className="flex justify-between items-center mt-6 flex-wrap gap-2">
             <button
               className="text-gray-500 hover:underline"
               onClick={() => router.push("/index")}
             >
               ← Continue Shopping
             </button>
-          </div>
+          </div> */}
         </div>
 
-        {/* Summary Section */}
-        <div className="w-full md:w-1/3 bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold text-gray-900">Cart Totals</h3>
-          
-          {/* Coupon Section */}
-          <div className="mt-4">
-            {appliedCoupon ? (
-              <div className="bg-green-50 p-3 rounded-lg mb-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-green-700">
-                    Coupon: {appliedCoupon.offer_code}
-                  </span>
-                  <button 
-                    onClick={removeCoupon}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    ✖
-                  </button>
+        {/* Right Side - Cart Totals (small width) */}
+        <div className="lg:col-span-1 bg-white p-3 rounded-lg border ">
+          {/* Cart Totals content */}
+          <h3 className="text-gray-500 text-sm font-semibold cursor-pointer">Cart Total</h3>
+                
+                {/* Coupon Section */}
+                {/* <div className="mt-4">
+                  {appliedCoupon ? (
+                    <div className="bg-white-200 p-2 mt-0  rounded-lg flex justify-between text-red-500 text-large  cursor-pointer">
+                      <span>YOU SAVED ₹{calculateTotal().toFixed(2)}</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowCouponModal(true)}
+                      className="w-full py-2 rounded-lg text-sm font-semibold cursor-pointer transition-colors"
+                      style={{
+                        border: "1px solid #0069c6",
+                        color: "#0069c6",
+                        backgroundColor: "transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#0069c6"; // light blue
+                        e.currentTarget.style.color = "white"; // optional if you want white text on hover
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "#0069c6";
+                      }}
+                    >
+                      Apply Coupon
+                    </button>
+                  )}
+                  {couponError && (
+                    <p className="text-red-500 text-sm mb-2">{couponError}</p>
+                  )}
+                </div> */}
+                
+                <div className=" p-4 rounded-lg space-y-3">
+                  <div className="flex justify-between text-gray-600 text-gray-500 text-sm font-semibold cursor-pointer ">
+                    <span>Subtotal</span>
+                    <span className="font-semibold text-gray-900">
+                      ₹{calculateSubtotal().toFixed(2)}
+                    </span>
+                    
+                  </div>
+                  <hr className="my-2 border-gray-300" />
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-gray-600 text-gray-500 text-sm font-semibold cursor-pointer">
+                      <span>Discount</span>
+                      <span className="font-semibold text-green-600">
+                        -₹{calculateDiscount().toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-gray-600 text-gray-500 text-sm font-semibold cursor-pointer">
+                    <span>Estimated Delivery</span>
+                    <span className="font-semibold text-gray-900">Free</span>
+                  </div>
+                  <hr className="my-2 border-gray-300" />
+                  <div className="flex justify-between text-gray-600 text-gray-500 text-sm font-semibold cursor-pointer">
+                    <span>Estimated Taxes</span>
+                    <span className="font-semibold text-gray-900">₹0.00</span>
+                  </div>
+                  <hr className="my-2 border-gray-300" />
                 </div>
-                <p className="text-sm text-green-600 mt-1">
-                  {appliedCoupon.offer_type === "percentage" 
-                    ? `${appliedCoupon.percentage}% off` 
-                    : `₹${appliedCoupon.fixed_price} off`}
-                </p>
-              </div>
-            ) : (
+              
+                {/* Total price section */}
+                <div className="bg-gray-200 p-4 mt-4  rounded-lg flex justify-between text-gray-900 font-bold text-gray-500 text-sm font-semibold cursor-pointer">
+                  <span>Total</span>
+                  <span className="text-gray-900 text-sm font-semibold cursor-pointer">
+                    ₹{calculateTotal().toFixed(2)}
+                  </span>
+                </div>
+              
               <button
-                onClick={() => setShowCouponModal(true)}
-                className="w-full py-2 text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-50 mb-4"
+                className="mt-4 text-white w-full py-3 rounded-md hover:brightness-110 transition-all text-gray-500 text-sm font-semibold cursor-pointer"
+                style={{ backgroundColor: "#2453D3" }}
+                onClick={proceedToCheckout}
               >
-                Apply Coupon
+                Checkout
               </button>
-            )}
-            {couponError && (
-              <p className="text-red-500 text-sm mb-2">{couponError}</p>
-            )}
-          </div>
-          
-          <div className="bg-gray-100 p-4 rounded-lg space-y-3">
-            <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span>
-              <span className="font-semibold text-gray-900">
-                ₹{calculateSubtotal().toFixed(2)}
-              </span>
-            </div>
 
-            {appliedCoupon && (
-              <div className="flex justify-between text-gray-600">
-                <span>Discount</span>
-                <span className="font-semibold text-green-600">
-                  -₹{calculateDiscount().toFixed(2)}
-                </span>
-              </div>
-            )}
-
-            <div className="flex justify-between text-gray-600">
-              <span>Estimated Delivery</span>
-              <span className="font-semibold text-gray-900">Free</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Estimated Taxes</span>
-              <span className="font-semibold text-gray-900">₹0.00</span>
-            </div>
-          </div>
-        
-          {/* Total price section */}
-          <div className="bg-gray-100 p-4 mt-4 rounded-lg flex justify-between text-gray-900 font-bold">
-            <span>Total</span>
-            <span>
-              ₹{calculateTotal().toFixed(2)}
-            </span>
-          </div>
-        
-          <button
-            className="mt-4 bg-blue-500 text-white w-full py-3 rounded-md hover:bg-blue-600 transition-all"
-            onClick={proceedToCheckout}
-          >
-            Proceed to Checkout
-          </button>
         </div>
+
       </div>
-    </div>
+
+  </div>
+  
   );
 }

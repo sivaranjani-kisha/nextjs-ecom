@@ -34,6 +34,21 @@ export async function GET(req, { params }) {
     // Extract product IDs for filtering
     const productIds = products.map(product => product._id);
     const productFilters = await ProductFilter.find({ product_id: { $in: productIds } });
+
+    // Count products per brand
+    const brandCountMap = products.reduce((acc, product) => {
+      const brandId = product.brand?.toString();
+      if (brandId) {
+        acc[brandId] = (acc[brandId] || 0) + 1;
+      }
+      return acc;
+    }, {});
+
+    // Attach count to brands
+    const brandsWithCount = brands.map(b => ({
+      ...b.toObject(),
+      count: brandCountMap[b._id.toString()] || 0
+    }));
     
     // Extract unique filter IDs
     const filterIds = [...new Set(productFilters.map(pf => pf.filter_id))];
@@ -54,7 +69,7 @@ export async function GET(req, { params }) {
         filter_group_name: filter.filter_group?.filtergroup_name || 'No Group',
         filter_group: filter.filter_group?._id // Keep original ID
       }));
-    return Response.json({ category, products, brands, filters: formattedFilters });
+    return Response.json({ category, products, brands, brands: brandsWithCount,  filters: formattedFilters });
   } catch (error) {
     console.error(error);
     return Response.json({ error: "Error fetching category details" }, { status: 500 });

@@ -308,11 +308,19 @@ const handleProductClick = (product) => {
   };
 
   const handlePriceChange = (values) => {
-    setSelectedFilters(prev => ({
-      ...prev,
-      price: { min: values[0], max: values[1] }
-    }));
-  };
+  let min = Math.max(1, values[0]);     // clamp to >= 1
+  let max = Math.max(1, values[1]);   // clamp to <= 100
+
+  // Ensure min never exceeds max
+  if (min > max) {
+    min = max;
+  }
+
+  setSelectedFilters((prev) => ({
+    ...prev,
+    price: { min, max }
+  }));
+};
 
     const CategoryTree = ({ 
       categories, 
@@ -331,7 +339,7 @@ const handleProductClick = (product) => {
       };
     
       return (
-        <div className="space-y-2">
+        <div className="mt-2 max-h-48 overflow-y-auto pr-2">
           {categories.map((category) => (
             <div key={category._id}>
               <div className={`flex items-center gap-2 ${level > 0 ? `ml-${level * 4}` : ''}`}>
@@ -348,7 +356,8 @@ const handleProductClick = (product) => {
                  <Link
                   href={`/category/${slug}/${sub_slug}/${category.category_slug}`}
                   className="p-2 hover:bg-gray-100 rounded inline-flex items-center"
-                >     
+                >    
+                {/* 
                   {category.image && (
                     <div className="w-6 h-6 mr-2 relative">
                       <Image
@@ -360,6 +369,7 @@ const handleProductClick = (product) => {
                       />
                     </div>
                   )}
+                    */}
                   {category.category_name}
                 </Link>
               </div>
@@ -511,8 +521,6 @@ const handleProductClick = (product) => {
   return(
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
       <ToastContainer/>
-      {!nofound && categoryData.products.length > 0 ? (
-      <>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
         <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.category.category_name}</h1>
@@ -630,21 +638,54 @@ const handleProductClick = (product) => {
           <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
             <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
             <div className="space-y-4">
-              <input
-                type="range"
-                min={priceRange[0]}
-                max={priceRange[1]}
-                step="100"
-                value={selectedFilters.price.max}
-                onChange={(e) => handlePriceChange([
-                  selectedFilters.price.min, 
-                  parseInt(e.target.value)
-                ])}
-                className="w-full range accent-blue-600"
-              />
+              <div className="relative">
+                 <div className="relative mt-6 group">
+                <input
+                  type="range"
+                  min={priceRange[0]}
+                  max={priceRange[1]}
+                  step="100"
+                  value={selectedFilters.price.min}
+                  onChange={(e) => handlePriceChange([parseInt(e.target.value), selectedFilters.price.max])}
+                  className="w-full h-2 bg-gray-200 rounded-lg absolute appearance-none"
+                  style={{ zIndex: 2 }}
+                />
+                <div className="absolute -top-8 left-0 w-full flex justify-center pointer-events-none">
+                  <span className="px-2 py-1 text-xs text-white bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition">
+                    Min
+                  </span>
+                </div></div>
+                <br />
+                <div className="relative mt-6 group">
+                <input
+                  type="range"
+                  min={priceRange[0]}
+                  max={priceRange[1]}
+                  step="100"
+                  value={selectedFilters.price.max}
+                  onChange={(e) => handlePriceChange([selectedFilters.price.min, parseInt(e.target.value)])}
+                  className="w-full h-2 bg-gray-200 rounded-lg absolute appearance-none"
+                  style={{ zIndex: 1 }}
+                />
+                <div className="absolute -top-8 left-0 w-full flex justify-center pointer-events-none">
+                  <span className="px-2 py-1 text-xs text-white bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition">
+                    Max
+                  </span>
+                </div></div>
+                 <br />
+                <div
+                  className="absolute h-2 bg-green-500 rounded-lg"
+                  style={{
+                    left: `${((selectedFilters.price.min - priceRange[0]) / (priceRange[1] - priceRange[0])) * 100}%`,
+                    right: `${100 - ((selectedFilters.price.max - priceRange[0]) / (priceRange[1] - priceRange[0])) * 100}%`,
+                    top: 0,
+                    zIndex: 0,
+                  }}
+                ></div>
+              </div>
               <div className="flex justify-between text-sm text-gray-600">
-                <span>₹{selectedFilters.price.min}</span>
-                <span>₹{selectedFilters.price.max}</span>
+                <span>₹{selectedFilters.price.min.toLocaleString()}</span>
+                <span>₹{selectedFilters.price.max.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -658,17 +699,16 @@ const handleProductClick = (product) => {
                 </button>
               </div>
               {isBrandsExpanded && (
-                <ul className="mt-2 space-y-2">
+                <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
                   {categoryData.brands.map(brand => (
                     <li key={brand._id} className="flex items-center">
-                      <button
-                        onClick={() => handleFilterChange('brands', brand._id)}
-                        className={`flex items-center w-full text-left p-2 rounded-md text-sm ${
-                          selectedFilters.brands.includes(brand._id) 
-                            ? 'bg-blue-50 text-blue-600' 
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
+                      <input
+                        type="checkbox"
+                        checked={selectedFilters.brands.includes(brand._id)}
+                        onChange={() => handleFilterChange("brands", brand._id)}
+                        className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      />
+                        {/*
                         {brand.image && (
                           <div className="w-6 h-6 mr-2 relative">
                             <Image
@@ -680,8 +720,9 @@ const handleProductClick = (product) => {
                             />
                           </div>
                         )}
-                        <span>{brand.brand_name}</span>
-                      </button>
+                        */}
+                        <span>{brand.brand_name} ({brand.count})</span>
+                      
                     </li>
                   ))}
                 </ul>
@@ -711,7 +752,7 @@ const handleProductClick = (product) => {
 
                     {/* Filter Options */}
                     {expandedFilters[group._id] && (
-                      <ul className="mt-3 space-y-2 pl-1">
+                      <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
                         {group.filters.map(filter => (
                           <li key={filter._id} className="flex items-center">
                             <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
@@ -738,6 +779,9 @@ const handleProductClick = (product) => {
             )}
           </div>
         </div>
+      {!nofound && categoryData.products.length > 0 ? (
+      <>
+      
 
         {/* Products Section */}
         <div ref={productsContainerRef} className="products-container flex-1">
@@ -866,11 +910,11 @@ const handleProductClick = (product) => {
           {products.length > 0 && <div ref={sentinelRef} className="h-px" />}
 
           
-        </div>
+        
       </div>
       </>
       ) : (
-        <div className="text-center py-10">
+        <div className="text-center justify-center py-10 mx-auto">
               <img 
                 src="/images/no-productbox.png" 
                 alt="No Products" 
@@ -878,6 +922,7 @@ const handleProductClick = (product) => {
               />
         </div>
       )}
+      </div>
     </div>
   );
 }
