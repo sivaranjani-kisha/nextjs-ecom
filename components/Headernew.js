@@ -1054,7 +1054,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                 )}
             </div>
 
-          <div className="relative p-2  mt-0 px-1 bg-[#2453D3] min-h-[64px] border-b border-gray-200 shadow flex items-center">
+          <div className="relative p-2  mt-0 px-1 bg-[#2453D3] min-h-[64px]  border-gray-200 shadow flex items-center">
                 <div className="w-full px-2 sm:px-5 relative">
                     {/* Arrows */}
                     <div className="absolute left-0 sm:-left-2 top-1/2 z-20 -translate-y-1/2 custom-swiper-prev cursor-pointer">
