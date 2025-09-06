@@ -57,7 +57,7 @@ const Header = () => {
     const [dropdownLeft, setDropdownLeft] = useState(0);
     const [dropdownTop, setDropdownTop] = useState(0);
     const slideRefs = useRef({});
-
+ const [suggestions, setSuggestions] = useState([]);
     // Toggle mobile menu
     const toggleMobileMenu = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -128,23 +128,43 @@ const Header = () => {
     // ... (keep all your existing state declarations)
 
     // Add this search handler function
-    const handleSearch = () => {
-        // Don't search if both are empty
-        if (!searchQuery.trim() && selectedCategory === 'All Categories') {
-            return;
-        }
-        // Create URL with search parameters
-        const searchParams = new URLSearchParams();
-        if (searchQuery.trim()) {
-            searchParams.append('query', searchQuery.trim());
-        }
-        if (selectedCategory !== 'All Categories') {
-            searchParams.append('category', selectedCategory);
-        }
-        // Navigate to search page with query parameters
-        setIsMobileMenuOpen(false);
-        router.push(`/search?${searchParams.toString()}`);
-    };
+   const handleSearch = () => {
+    if (!searchQuery.trim() && selectedCategory === "All Categories") return;
+
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.append("query", searchQuery.trim());
+    if (selectedCategory !== "All Categories") {
+      params.append("category", selectedCategory);
+    }
+
+    router.push(`/search?${params.toString()}`);
+  };
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    const delay = setTimeout(async () => {
+      const res = await fetch(`/api/search/suggestions?q=${searchQuery}`);
+      const data = await res.json();
+      setSuggestions(data);
+    }, 400);
+
+    return () => clearTimeout(delay);
+  }, [searchQuery]);
+
+  
+    // Auto-search when typing (debounced)
+    useEffect(() => {
+      if (searchQuery.trim() || selectedCategory !== "All Categories") {
+        const delayDebounce = setTimeout(() => {
+          handleSearch();
+        }, 500); // 500ms delay after typing stops
+  
+        return () => clearTimeout(delayDebounce);
+      }
+    }, [searchQuery, selectedCategory]);
 
     // Modify the search button to use the handler
     // Also make the search work when pressing Enter in the input field
@@ -595,20 +615,62 @@ const renderFlatItem = (item, hoveredCategory) => {
                     </div>
 
                     {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
-                    <div className="hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden !border !border-[#8c8c8c]">
-                        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2 text-xs sm:text-sm text-gray-700 bg-gray-100 border-r border-gray-300 outline-none">
-                            <option value="All Categories">All Categories</option>
-                            {categories.map((cat) => (
-                                <option key={cat._id} value={cat.category_name}>
-                                    {cat.category_name}
-                                </option>
-                            ))}
-                        </select>
-                        <input type="text" placeholder="Search products..." value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none" />
-                        <button className="px-3 text-customBlue" onClick={handleSearch}><FaSearch /></button>
-                    </div>
+    <div className="relative hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden !border !border-[#8c8c8c]">
+      <select
+        value={selectedCategory}
+        onChange={(e) => setSelectedCategory(e.target.value)}
+        className="px-3 py-2 text-xs sm:text-sm text-gray-700 bg-gray-100 border-r border-gray-300 outline-none"
+      >
+        <option value="All Categories">All Categories</option>
+        {categories.map((cat) => (
+          <option key={cat._id} value={cat.category_name}>
+            {cat.category_name}
+          </option>
+        ))}
+      </select>
 
+      <input
+        type="text"
+        placeholder="Search products..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="flex-1 px-3 py-2 text-sm outline-none"
+      />
+
+      <button className="px-3 text-customBlue" onClick={handleSearch}>
+        <FaSearch />
+      </button>
+
+      {/* Suggestions dropdown */}
+      {suggestions.length > 0 && (
+        <div className="absolute top-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 z-50">
+          <div className="p-2 text-xs font-semibold text-gray-500">PRODUCTS</div>
+          {suggestions.map((p) => (
+            <Link
+              key={p._id}
+              href={`/product/${p.product_slug}`}
+              className="flex items-center gap-2 p-2 hover:bg-gray-100"
+            >
+              <img
+                src={p.product_image}
+                alt={p.product_name}
+                className="w-10 h-10 object-contain"
+              />
+              <div>
+                <div className="text-sm font-medium text-gray-800">{p.product_name}</div>
+                <div className="text-sm text-customBlue">Rs. {p.price}</div>
+              </div>
+            </Link>
+          ))}
+          <div
+            onClick={handleSearch}
+            className="block p-2 text-center text-sm text-customBlue hover:bg-gray-100 cursor-pointer"
+          >
+            View all results →
+          </div>
+        </div>
+      )}
+    </div>
                     {/* Icons Group */}
                     <div className="flex items-center gap-[2rem] sm:gap-4">
                         {/* Mobile Search Button (Hidden on desktop) */}
@@ -618,24 +680,24 @@ const renderFlatItem = (item, hoveredCategory) => {
 
                         {/* Location (Hidden on mobile) */}
                         <Link href="/location" className="hidden sm:flex items-center relative">
-                            <FaLocationDot size={18} className="text-customBlue" />
+                            <FiMapPin size={18} className="text-customBlue" />
                                 {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Location</span> */}
                         </Link>
 
                         {/* Wishlist */}
                         <Link href="/wishlist" className="flex items-center relative p-1 sm:p-0">
-                            <FaHeart size={18} className="text-customBlue" />
-                            {wishlistCount > 0 && (
-                                <span className="absolute -top-2 -right-4 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
+                            <FiHeart size={18} className="text-customBlue" />
+                            {/* {wishlistCount > 0 && ( */}
+                                <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
                                     {wishlistCount}
                                 </span>
-                            )}
+                            {/* )} */}
                             {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Wishlist</span> */}
                         </Link>
 
                         {/* Cart */}
-                        <Link href="/cart" className="flex items-center relative p-1 sm:p-0 sm:px-2">
-                            <FaShoppingCart size={18} className="text-customBlue" />
+                        <Link href="/cart" className="flex items-center relative p-1 sm:p-0 ">
+                            <FiShoppingCart size={18} className="text-customBlue" />
                             <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
                                 {cartCount}
                             </span>
@@ -992,7 +1054,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                 )}
             </div>
 
-          <div className="relative p-2  mt-1 px-1 bg-[#2453D3] min-h-[64px] border-b border-gray-200 shadow flex items-center">
+          <div className="relative p-2  mt-0 px-1 bg-[#2453D3] min-h-[64px] border-b border-gray-200 shadow flex items-center">
                 <div className="w-full px-2 sm:px-5 relative">
                     {/* Arrows */}
                     <div className="absolute left-0 sm:-left-2 top-1/2 z-20 -translate-y-1/2 custom-swiper-prev cursor-pointer">
