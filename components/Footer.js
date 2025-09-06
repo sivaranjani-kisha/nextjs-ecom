@@ -283,6 +283,7 @@ const capitalizeFirstLetter = (str) =>
                 <a href="#" className="hover:underline text-white">Bharath Electronics ©</a> 2025 All rights reserved.
               </p>
             </div>
+            {/*
             <div className="flex flex-col md:flex-row items-center gap-4">
               <div className="flex gap-2">
                 <img src="https://estore.bharathelectronics.in/assets/images/gplay-img.jpg" alt="Google Play" className="p-1 w-[120px]" />
@@ -291,8 +292,9 @@ const capitalizeFirstLetter = (str) =>
               <div>
                 <img src="https://estore.bharathelectronics.in/assets/images/payments.png" alt="Payment methods" className="p-2 w-[200px]" />
               </div>
-            </div>
+            </div> */}
           </div>
+            
          <div className="bg-[#2e2a2a]">
             <div className="container mx-auto px-4 text-base font-medium space-y-4">
               {groupedCategories.main.map((mainCat) => (
