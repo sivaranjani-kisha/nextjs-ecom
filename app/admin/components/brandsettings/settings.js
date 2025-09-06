@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState,Fragment  } from "react";
 
 export default function BrandBannerManager() {
   const [brands, setBrands] = useState([]);
@@ -132,66 +132,67 @@ export default function BrandBannerManager() {
             <th className="border px-3 py-2 w-1/6">Actions</th>
           </tr>
         </thead>
-        <tbody>
-  {brands.map((brand) => (
-    <>
-      {/* Brand row */}
-      <tr key={brand._id + "-row"} className="bg-gray-50">
-        <td className="border px-3 py-2 font-bold">{brand.brand_name}</td>
-        <td colSpan={2}></td>
-        <td className="border px-3 py-2 text-right">
-          <button
-            onClick={() => openModal(brand)}
-            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-          >
-            + Add Banner
-          </button>
-        </td>
-      </tr>
+        <tbody key="tbody">
+            {brands.map((brand) => (
+                <Fragment key={brand._id}>
 
-      {/* Banner rows */}
-      {brand.banners?.map((banner) => (
-        <tr key={banner._id}>
-          <td className="border px-3 py-2 text-center">
-            <img
-              src={banner.banner_image}
-              alt="banner"
-              className="h-12 w-24 object-contain mx-auto"
-            />
-          </td>
-          <td className="border px-3 py-2">{banner.redirect_url}</td>
-          <td className="border px-3 py-2 text-center">
-            <span
-              className={`px-2 py-1 text-xs rounded ${
-                banner.banner_status === "Active"
-                  ? "bg-green-100 text-green-600"
-                  : "bg-red-100 text-red-600"
-              }`}
-            >
-              {banner.banner_status}
-            </span>
-          </td>
-          <td className="border px-3 py-2 text-center">
-            <div className="space-x-2">
-              <button
-                onClick={() => openModal(brand, banner)}
-                className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(brand._id, banner._id)}
-                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </td>
-        </tr>
-      ))}
-    </>
-  ))}
-</tbody>
+                {/* Brand row */}
+                <tr key={brand._id + "-row"} className="bg-gray-50">
+                    <td className="border px-3 py-2 font-bold">{brand.brand_name}</td>
+                    <td colSpan={2}></td>
+                    <td className="border px-3 py-2 text-right">
+                    <button
+                        onClick={() => openModal(brand)}
+                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                    >
+                        + Add Banner
+                    </button>
+                    </td>
+                </tr>
+
+                {/* Banner rows */}
+                {brand.banners?.map((banner) => (
+                    <tr key={banner._id + "-banner"}>
+                    <td className="border px-3 py-2 text-center">
+                        <img
+                        src={banner.banner_image}
+                        alt="banner"
+                        className="h-12 w-24 object-contain mx-auto"
+                        />
+                    </td>
+                    <td className="border px-3 py-2">{banner.redirect_url}</td>
+                    <td className="border px-3 py-2 text-center">
+                        <span
+                        className={`px-2 py-1 text-xs rounded ${
+                            banner.banner_status === "Active"
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                        >
+                        {banner.banner_status}
+                        </span>
+                    </td>
+                    <td className="border px-3 py-2 text-center">
+                        <div className="space-x-2">
+                        <button
+                            onClick={() => openModal(brand, banner)}
+                            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            onClick={() => handleDelete(brand._id, banner._id)}
+                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                        >
+                            Delete
+                        </button>
+                        </div>
+                    </td>
+                    </tr>
+                ))}
+                </Fragment>
+            ))}
+        </tbody>
 
       </table>
 
