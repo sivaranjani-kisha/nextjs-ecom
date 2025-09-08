@@ -3,3 +3,7 @@
     text-align: left !important;
     left: 175px !important;
 }
+
+.slick-dots li button:before {
+    font-size: 12px !important;
+}
