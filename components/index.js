@@ -784,7 +784,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                 case 'category_banner':
                     return (
                       <section id="category_banner">
-                        <div className="px-4 sm:px-6 md:px-6 pt-14">
+                        <div className="px-0  pt-14">
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 {categoryBanner.map((banner, index) => (
                                     <div key={index} className="col-span-1">
@@ -813,12 +813,12 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.6 }}
-                    className="recommended-products px-4 sm:px-6 md:px-6 pt-14"
+                    className="recommended-products px-0 sm:px-0 md:px-0 pt-14"
                 >
-                    <div className="bg-gray-100 rounded-[23px] px-2 py-4 p-2">
+                    <div className="bg-gray-100 rounded-[23px] px-0 py-4 p-2">
                       
                       {/* Section Header */}
-                      <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                      <div className="flex justify-between items-center flex-wrap gap-4 mb-6 md:px-6">
                         <h5 className="text-xl sm:text-2xl font-bold">
                           Recommended for you
                         </h5>
@@ -1011,13 +1011,13 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             animate="visible"
                             variants={sectionVariants}
                             id="flash_sales"
-                            className="px-4 sm:px-6 md:px-6 pt-14"
+                            className="px-0 sm:px-0 md:px-0 pt-14"
                         >
                             {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
                                 <div className="py-0">
                                     <motion.div
                                         variants={itemVariants}
-                                        className="section-heading flex justify-between items-center mb-4 p-2"
+                                        className="section-heading flex justify-between items-center mb-4 p-2 md:px-6"
                                     >
                                         <h5 className="text-2xl font-bold">Categories</h5>
                                     </motion.div>
@@ -1155,10 +1155,10 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             initial={scrollDirection === 'down' ? 'hiddenDown' : 'hiddenUp'} 
                             animate= 'visible' 
                             variants={sectionVariants} 
-                            className="px-4 sm:px-6 md:px-6 pt-14"
+                            className="px-0 sm:px-0 md:px-0 pt-14"
                         >
                             <div>
-                                <motion.div variants={containerVariants} className="rounded-lg bg-gray-100 rounded-[23px] p-2">
+                                <motion.div variants={containerVariants} className="rounded-lg bg-gray-100 rounded-[23px] p-2 md:px-6">
                                     <motion.div variants={itemVariants} className="flex justify-between items-center mb-4">
                                         <h5 className= "text-lg font-semibold">Shop by Brands</h5>
                                     </motion.div>
@@ -1419,11 +1419,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
                       transition={{ duration: 0.6 }}
-                      className="px-4 sm:px-6 md:px-6 pt-14"
+                      className="px-0 sm:px-0 md:px-0 pt-14"
                     >
                       <div className="bg-gray-100 rounded-2xl p-3">
                         {/* Header */}
-                        <div className="flex justify-between items-center mb-6">
+                        <div className="flex justify-between items-center mb-6 md:px-4">
                           <h5 className="text-xl font-bold">What's Trending</h5>
                           <div className="flex gap-2">
                             <button

@@ -1065,8 +1065,9 @@ const renderFlatItem = (item, hoveredCategory) => {
             </div>
 
           <div className="relative p-2  mt-0 px-1 bg-[#2453D3] min-h-[64px]  border-gray-200 shadow flex items-center">
-                <div className="w-full px-2 sm:px-5 relative">
+                <div className="w-full  relative">
                     {/* Arrows */}
+                    {/*
                     <div className="absolute left-0 sm:-left-2 top-1/2 z-20 -translate-y-1/2 custom-swiper-prev cursor-pointer">
                         <div className="p-0 bg-white rounded-full shadow">
                             <FiChevronLeft size={20} className="text-black" />
@@ -1077,6 +1078,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                             <FiChevronRight size={20} className="text-black" />
                         </div>
                     </div>
+                    */}
                     {/* Swiper */}
                     <div className="relative">
                         <div className="flex justify-center overflow-x-auto scrollbar-hide">

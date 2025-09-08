@@ -130,9 +130,9 @@ const RecentlyViewedProducts = () => {
         </div>
       )}
       
-      <section className="mb-14 px-4 sm:px-6 md:px-6 pt-14">
+      <section className="mb-14 px-0 sm:px-0 md:px-0 pt-14">
         <div className="bg-gray-100 rounded-2xl p-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 ">
             <h5 className="text-xl font-bold">Recently Visited</h5>
             <div className="flex gap-3">
               <button
@@ -152,7 +152,7 @@ const RecentlyViewedProducts = () => {
             </div>
           </div>
 
-          <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto sm:overflow-visible px-1">
+          <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto sm:overflow-visible px-0">
             {visibleProducts.map((product) => (
               <div
                 key={product._id}
