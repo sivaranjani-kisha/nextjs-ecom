@@ -882,16 +882,14 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             
                               <div className="relative z-10 h-full flex flex-col p-6 text-white">
                                 <h2 className="text-2xl font-bold">{selectedCategory.category_name}</h2>
-                                {/* <button className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit">
-                                  Shop Now
-                                </button> */}
+                                
                                 <Link  href={`/category/${selectedCategory.category_slug || selectedCategory._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
                               </div>
                             </div>
                             )}
 
                             {/* Right Scrollable Products */}
-                            <div className="relative flex-1 p-2 bg-[#1e3a8a]/95 overflow-hidden group">
+                            <div className="relative flex-1 pt-2 pb-2 pr-2 bg-[#1e3a8a]/95 overflow-hidden group">
                               {/* Left Arrow */}
                               <button
                                 onClick={scrollLeft}
@@ -915,7 +913,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                               >
                                 {filteredProducts.map((product) => (
 
-                                <div className="relative border shadow bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4">
+                                <div  key={product._id} className="relative border shadow bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4">
                                   <div className="absolute top-3 left-3">
                                     
                                       {product.special_price && product.price > product.special_price ? (
@@ -923,8 +921,6 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                         const discount = Math.floor(
                                           ((product.price - product.special_price) / product.price) * 100
                                         );
-
-                                        console.log(product);
 
                                         return discount && discount > 0 ? (
 
