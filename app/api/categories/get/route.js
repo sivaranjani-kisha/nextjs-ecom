@@ -63,15 +63,20 @@ export async function GET() {
         // ✅ Fetch products under this category and its children
         const products = await Product.find({ category: { $in: categoryIds } });
 
-        // ✅ Collect unique brand IDs
-        // const brandIds = [...new Set(products.map((p) => p.brand?.toString()))];
+        //✅ Collect unique brand IDs
+        const { Types } = require('mongoose');
 
-        // // ✅ Fetch brand details
-        // const brands = await Brand.find({ _id: { $in: brandIds } });
+        const brandIds = [...new Set(
+          products
+            .map((p) => p.brand?.toString())
+            .filter(brandId => brandId && Types.ObjectId.isValid(brandId))
+        )];
 
+        // ✅ Fetch brand details
+        const brands = brandIds.length > 0  ? await Brand.find({ _id: { $in: brandIds } }) : [];
         return {
           ...cat.toObject(),
-          brands: [],
+          brands,
         };
       })
     );

@@ -507,7 +507,7 @@ const renderFlatItem = (item, hoveredCategory) => {
     
     if (item.type === 'brands-header') {
         return (
-            <div key={itemKey} className="mt-4 mb-2" style={{ paddingLeft: `${item.level * 12}px` }}>
+            <div key={itemKey} className="" style={{ paddingLeft: `${item.level * 12}px` }}>
                 <h3 className="font-semibold text-sm text-blue-600 border-b border-gray-200 pb-1">
                     {item.category_name}
                 </h3>

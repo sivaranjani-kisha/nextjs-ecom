@@ -276,109 +276,158 @@ const capitalizeFirstLetter = (str) =>
 
 
         {/* Bottom Section */}
-        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white">
-          <div className="container mx-auto px-3 flex flex-col md:flex-row justify-between items-center gap-6 ">
-            <div className="text-center md:text-left">
-              <p>
-                <a href="#" className="hover:underline text-white">Bharath Electronics ©</a> 2025 All rights reserved.
-              </p>
+        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 md:grid-cols-[70%_30%]"> 
+          <div className="">
+            <div className="container mx-auto px-3 flex flex-col md:flex-row justify-between items-center gap-6 ">
+              <div className="text-center md:text-left ml-1 mb-1">
+                <p>
+                  <a href="#" className="hover:underline text-white">Bharath Electronics ©</a> 2025 All rights reserved.
+                </p>
+              </div>
+              {/*
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                <div className="flex gap-2">
+                  <img src="https://estore.bharathelectronics.in/assets/images/gplay-img.jpg" alt="Google Play" className="p-1 w-[120px]" />
+                  <img src="https://estore.bharathelectronics.in/assets/images/app-store-img.jpg" alt="App Store" className="p-1 w-[120px]" />
+                </div>
+                <div>
+                  <img src="https://estore.bharathelectronics.in/assets/images/payments.png" alt="Payment methods" className="p-2 w-[200px]" />
+                </div>
+              </div> */}
             </div>
-            {/*
-            <div className="flex flex-col md:flex-row items-center gap-4">
-              <div className="flex gap-2">
-                <img src="https://estore.bharathelectronics.in/assets/images/gplay-img.jpg" alt="Google Play" className="p-1 w-[120px]" />
-                <img src="https://estore.bharathelectronics.in/assets/images/app-store-img.jpg" alt="App Store" className="p-1 w-[120px]" />
-              </div>
-              <div>
-                <img src="https://estore.bharathelectronics.in/assets/images/payments.png" alt="Payment methods" className="p-2 w-[200px]" />
-              </div>
-            </div> */}
-          </div>
-            
-         <div className="bg-[#2e2a2a]">
-            <div className="container mx-auto px-4 text-base font-medium space-y-4">
-              {groupedCategories.main.map((mainCat) => (
-                <div key={mainCat._id}>
-                  {/* Main Category */}
-                  {/* <Link
-                    href={`/category/${mainCat.category_slug}`}
-                    className="font-semibold text-white hover:underline whitespace-nowrap"
-                  >
-                    {capitalizeFirstLetter(mainCat.category_name)} :
-                  </Link> */}
+              
+          <div className="bg-[#2e2a2a]">
+              <div className="container mx-auto px-4 text-base font-medium space-y-4">
+                {groupedCategories.main.map((mainCat) => (
+                  <div key={mainCat._id}>
+                    {/* Main Category */}
+                    {/* <Link
+                      href={`/category/${mainCat.category_slug}`}
+                      className="font-semibold text-white hover:underline whitespace-nowrap"
+                    >
+                      {capitalizeFirstLetter(mainCat.category_name)} :
+                    </Link> */}
 
-                  {/* Sub Categories */}
-                  <span className="text-gray-400">
-                    {groupedCategories.subs[mainCat._id]?.map((subcat, i) => (
-                      <span key={subcat._id}>
-                        <Link
-                          href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
-                          className="text-white hover:underline"
-                        >
-                          {capitalizeFirstLetter(subcat.category_name)} :
-                        </Link>
+                    {/* Sub Categories */}
+                    <span className="text-gray-400">
+                      {groupedCategories.subs[mainCat._id]?.map((subcat, i) => (
+                        <span key={subcat._id}>
+                          <Link
+                            href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
+                            className="text-white hover:underline"
+                          >
+                            {capitalizeFirstLetter(subcat.category_name)} :
+                          </Link>
 
-                        {/* Sub-Sub Categories */}
-                        {groupedCategories.subs[subcat._id]?.length > 0 && (
-                          <span className="ml-1  text-gray-500">
-                            {/* {" ("} */}
-                            {groupedCategories.subs[subcat._id].map((child, j) => (
-                              <span key={child._id}>
-                                <Link
-                                  href={`/category/${mainCat.category_slug}/${subcat.category_slug}/${child.category_slug}`}
-                                  className="hover:text-white hover:underline pl-2 pr-2"
-                                >
-                                  {capitalizeFirstLetter(child.category_name)}
-                                </Link>
-                                {j < groupedCategories.subs[subcat._id].length - 1 && " / "}
-                              </span>
-                            ))}
-                            {/* {")"} */}
-                          </span>
+                          {/* Sub-Sub Categories */}
+                          {groupedCategories.subs[subcat._id]?.length > 0 && (
+                            <span className="ml-1  text-gray-500">
+                              {/* {" ("} */}
+                              {groupedCategories.subs[subcat._id].map((child, j) => (
+                                <span key={child._id}>
+                                  <Link
+                                    href={`/category/${mainCat.category_slug}/${subcat.category_slug}/${child.category_slug}`}
+                                    className="hover:text-white hover:underline pl-2 pr-2"
+                                  >
+                                    {capitalizeFirstLetter(child.category_name)}
+                                  </Link>
+                                  {j < groupedCategories.subs[subcat._id].length - 1 && " / "}
+                                </span>
+                              ))}
+                              {/* {")"} */}
+                            </span>
+                          )}
+
+                          {mainCat.brands.length > 0 && (
+                          <>
+                            <br /> {/* 👈 Force new line before brands */}
+                            <span className="font-semibold text-white">Brands:</span>
+                            <span className="text-gray-500">
+                              {mainCat.brands.map((brand, i) => (
+                                <span key={brand._id}>
+                                  <Link
+                                    href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
+                                    className="hover:text-white hover:underline pl-2 pr-2"
+                                  >
+                                    {capitalizeFirstLetter(brand.brand_name)}
+                                  </Link>
+                                  {i < mainCat.brands.length - 1 && " / "}
+                                </span>
+                              ))}
+                            </span>
+                          </>
                         )}
 
-                        {mainCat.brands.length > 0 && (
-                        <>
-                          <br /> {/* 👈 Force new line before brands */}
-                          <span className="font-semibold text-white">Brands:</span>
-                          <span className="text-gray-400">
-                            {mainCat.brands.map((brand, i) => (
-                              <span key={brand._id}>
-                                <Link
-                                  href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
-                                  className="hover:text-white hover:underline pl-2 pr-2"
-                                >
-                                  {capitalizeFirstLetter(brand.brand_name)}
-                                </Link>
-                                {i < mainCat.brands.length - 1 && " / "}
-                              </span>
-                            ))}
-                          </span>
-                        </>
-                      )}
-
-                      {i < groupedCategories.subs[mainCat._id].length - 1 && (
-                        <span className="block mb-4"></span>
-                      )}
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              ))}
+                        {i < groupedCategories.subs[mainCat._id].length - 1 && (
+                          <span className="block mb-4"></span>
+                        )}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
            {stores.length > 0 && (
                   <>
-                    <hr className="border-gray-600 my-3" />
-                    <div className="container mx-auto px-3 flex flex-col md:flex-row">
-                      <h4 className="text-white font-medium mb-2">Our Locations:</h4>
-                      <p className="pl-2">
-                        {stores.map(store => store.organisation_name).join(', ')}
-                      </p>
+                    {/* <hr className="border-gray-600 my-3" /> */}
+                    <div >
+                      <div className="container mx-auto px-3 flex flex-col md:flex-row">
+                        <h4 className="text-white font-medium mb-2">Our Locations:</h4>
+                        <p className="pl-2">
+                          {stores.map(store => store.organisation_name).join(', ')}
+                        </p>
+                      </div>
                     </div>
                   </>
                 )}
         </div>
+        <div class="px-4 py-8 space-y-10">
+
+  
+  <div>
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Buy Best Laptops & Gadgets Online
+  </h2>
+  <p className="text-white leading-relaxed">
+    Unleash the Power of Technology with{" "}
+    <span className="font-semibold text-white">
+      Bharath Electronics' Laptop & Computers Collection
+    </span>
+    . Find the Perfect Device for Your Computing Needs, including Gaming
+    Laptops, Everyday Laptops, and Business Laptops. We Offer a Wide
+    Selection from Top Brands such as Samsung, Asus, Apple, HP, Lenovo, and
+    More. Our Laptops and Computers Boast Premium Design, High-Capacity RAM,
+    Latest Processors, Quality Graphics Cards, Excellent Battery Life, and
+    Incredible Display & Sound Features. Don’t Forget to Check Out our Range
+    of Smart Watches, Chargers, Power Banks, Headphones, and Bluetooth
+    Speakers for a Complete Tech Experience.
+  </p>
+</div>
+
+<div className="mt-8">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Buy Kitchen Appliances at Best Prices Online – Shop Now
+  </h2>
+  <p className="text-white leading-relaxed">
+    Revolutionize Your Kitchen with{" "}
+    <span className="font-semibold text-white">
+      Bharath Electronics' Kitchen Appliances Collection
+    </span>
+    . Explore a Wide Range of Colours, Sizes, Manufacturers, and Types to
+    Find the Perfect Appliances for Your Culinary Needs. From Multi-Functional
+    Mixer Juicer Grinders to Energy-Efficient Electric Cookers, Kitchen
+    Chimneys, Gas Stoves, Induction Stoves, Water Purifiers, Microwave Ovens,
+    and Pressure Cookers, we Offer a Diverse Selection. Upgrade Your Cooking
+    Experience Today with our Affordable and High-Quality Kitchen Appliances.
+  </p>
+</div>
+
+
+</div>
+
+
       </footer>
 
       {/* Auth Modal */}
