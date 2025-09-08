@@ -4,6 +4,7 @@ import Image from "next/image";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import "../styles/slick-custom.css";
 import { motion, useAnimation, useInView } from "framer-motion";
 //import { ShoppingCartSimple, CaretDown } from "@phosphor-icons/react";
 import { X } from "lucide-react"; 
@@ -195,36 +196,35 @@ useEffect(() => {
         setIsFlashSalesLoading(false);
       }
     };
-const fetchHomeSections = async () => {
-  setIsSectionLoading(true);
-  try {
-    const response = await fetch("/api/home-sections");
-    const data = await response.json();
 
-    if (data.success && data.data?.length > 0) {
-      const sectionItems = data.data
-        .filter(section => section.status === "active") // ✅ only active
-        .map(section => ({
-          id: section._id,
-          name: section.name,
-          position: section.position
-        }));
+    const fetchHomeSections = async () => {
+      setIsSectionLoading(true);
+      try {
+        const response = await fetch("/api/home-sections");
+        const data = await response.json();
 
-      setHomeSectionData({
-        sections: sectionItems
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching home sections:", error);
-    setHomeSectionData({
-      sections: []
-    });
-  } finally {
-    setIsSectionLoading(false);
-  }
-};
+        if (data.success && data.data?.length > 0) {
+          const sectionItems = data.data
+            .filter(section => section.status === "active") // ✅ only active
+            .map(section => ({
+              id: section._id,
+              name: section.name,
+              position: section.position
+            }));
 
-
+          setHomeSectionData({
+            sections: sectionItems
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching home sections:", error);
+        setHomeSectionData({
+          sections: []
+        });
+      } finally {
+        setIsSectionLoading(false);
+      }
+    };
 
     const fetchBrands = async () => {
         setIsBrandsLoading(true);
@@ -246,25 +246,24 @@ const fetchHomeSections = async () => {
     };
 
     const fetchCategories = async () => {
-        try {
-            const response = await fetch("/api/categories/get");
-            const data = await response.json();
-            setCategories(data);
-           const rootIds = data
-  .filter(cat => cat.parentid === "none" && cat.status === "Active")
-  .map(cat => cat._id);
-console.log(rootIds);
-// 2. Get only categories whose parentid is in rootIds → second level
-const secondLevelCategories = data.filter(
-  cat => rootIds.includes(cat.parentid) && cat.status === "Active"
-);
-console.log(secondLevelCategories);
-  setParentCategories(secondLevelCategories);
-  
-            setSelectedCategory(secondLevelCategories[0]);
-        } catch (error) {
-            console.error("Error fetching categories:", error);
-        }
+      try {
+        const response = await fetch("/api/categories/get");
+        const data    = await response.json();
+        setCategories(data);
+        const rootIds = data
+        .filter(cat => cat.parentid === "none" && cat.status === "Active")
+        .map(cat => cat._id);
+        console.log(rootIds);
+        // 2. Get only categories whose parentid is in rootIds → second level
+        const secondLevelCategories = data.filter(
+          cat => rootIds.includes(cat.parentid) && cat.status === "Active"
+        );
+        console.log(secondLevelCategories);
+        setParentCategories(secondLevelCategories);
+        setSelectedCategory(secondLevelCategories[0]);
+      } catch (error) {
+          console.error("Error fetching categories:", error);
+      }
     };
 
     const fetchProducts = async () => {
@@ -277,132 +276,132 @@ console.log(secondLevelCategories);
         }
     };
 
-const fetchCategoryBanners = async () => {
-  try {
-    const response = await fetch("/api/categorybanner"); 
-    const res = await response.json();
+    const fetchCategoryBanners = async () => {
+      try {
+        const response = await fetch("/api/categorybanner"); 
+        const res = await response.json();
 
-    if (res.success && res.categoryBanners && res.categoryBanners.banners) {
-      const formatted = res.categoryBanners.banners
-        .filter(banner => res.categoryBanners.status === "Active") // 👈 only if whole doc is Active
-        .map((banner) => ({
-          imageUrl: banner.banner_image,
-          redirectUrl: banner.redirect_url,
-        }));
-      setCategoryBanner(formatted);
-    }
-  } catch (error) {
-    console.error("Error fetching category banners:", error);
-  }
-};
-const fetchSingleBannerData = async () => {
-  setIsSingleBannerLoading(true);
-  try {
-    const response = await fetch("/api/singlebanner");
-    const data = await response.json();
+        if (res.success && res.categoryBanners && res.categoryBanners.banners) {
+          const formatted = res.categoryBanners.banners
+            .filter(banner => res.categoryBanners.status === "Active") // 👈 only if whole doc is Active
+            .map((banner) => ({
+              imageUrl: banner.banner_image,
+              redirectUrl: banner.redirect_url,
+            }));
+          setCategoryBanner(formatted);
+        }
+      } catch (error) {
+        console.error("Error fetching category banners:", error);
+      }
+    };
 
-    if (data.success && data.banners?.length > 0) {
-      const singleBannerItems = data.banners
-        .filter((banner) => banner.status === "Active") // ✅ only Active
-        .map((banner) => ({
-          id: banner._id,
-         redirect_url: banner.redirect_url || "/shop",
-          bgImageUrl: banner.banner_image,
-          singleBannerImageUrl: banner.banner_image,
-        }));
+    const fetchSingleBannerData = async () => {
+      setIsSingleBannerLoading(true);
+      try {
+        const response = await fetch("/api/singlebanner");
+        const data = await response.json();
 
-      setSingleBannerData({
-        singlebanner: { items: singleBannerItems },
-      });
-    } else {
-      // if no data, fallback default
-      setSingleBannerData({
-        singlebanner: {
-          items: [
-            {
-              id: 1,
-              buttonLink: "/shop",
-              bgImageUrl: "/images/singlebanner-img1.png",
-              singleBannerImageUrl: "/images/singlebanner-product.png",
+        if (data.success && data.banners?.length > 0) {
+          const singleBannerItems = data.banners
+            .filter((banner) => banner.status === "Active") // ✅ only Active
+            .map((banner) => ({
+              id: banner._id,
+            redirect_url: banner.redirect_url || "/shop",
+              bgImageUrl: banner.banner_image,
+              singleBannerImageUrl: banner.banner_image,
+            }));
+
+          setSingleBannerData({
+            singlebanner: { items: singleBannerItems },
+          });
+        } else {
+          // if no data, fallback default
+          setSingleBannerData({
+            singlebanner: {
+              items: [
+                {
+                  id: 1,
+                  buttonLink: "/shop",
+                  bgImageUrl: "/images/singlebanner-img1.png",
+                  singleBannerImageUrl: "/images/singlebanner-product.png",
+                },
+              ],
             },
-          ],
-        },
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching single banner data:", error);
-    setSingleBannerData({
-      singlebanner: {
-        items: [
-          {
-            id: 1,
-            buttonLink: "/shop",
-            bgImageUrl: "/images/singlebanner-img1.png",
-            singleBannerImageUrl: "/images/singlebanner-product.png",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching single banner data:", error);
+        setSingleBannerData({
+          singlebanner: {
+            items: [
+              {
+                id: 1,
+                buttonLink: "/shop",
+                bgImageUrl: "/images/singlebanner-img1.png",
+                singleBannerImageUrl: "/images/singlebanner-product.png",
+              },
+            ],
           },
-        ],
-      },
-    });
-  } finally {
-    setIsSingleBannerLoading(false);
-  }
-};
-const fetchSingleBannerDatatwo = async () => {
-  setIsSingleBannerLoading(true);
-  try {
-    const response = await fetch("/api/singlebanner-two");
-    const data = await response.json();
+        });
+      } finally {
+        setIsSingleBannerLoading(false);
+      }
+    };
 
-    if (data.success && data.banners?.length > 0) {
-      const singleBannerItems = data.banners
-        .filter((banner) => banner.status === "Active")
-        .map((banner) => ({
-          id: banner._id,
-          redirect_url: banner.redirect_url || "/shop",
-          bgImageUrl: banner.banner_image,
-          singleBannerImageUrl: banner.banner_image,
-        }));
+    const fetchSingleBannerDatatwo = async () => {
+      setIsSingleBannerLoading(true);
+      try {
+        const response = await fetch("/api/singlebanner-two");
+        const data = await response.json();
 
-      setSingleBannerData((prev) => ({
-        ...prev,
-        singlebannerTwo: { items: singleBannerItems },
-      }));
-    } else {
-      setSingleBannerData((prev) => ({
-        ...prev,
-        singlebannerTwo: {
-          items: [
-            {
-              id: 1,
-              redirect_url: "/shop",
-              bgImageUrl: "/images/singlebanner-img1.png",
-              singleBannerImageUrl: "/images/singlebanner-product.png",
+        if (data.success && data.banners?.length > 0) {
+          const singleBannerItems = data.banners
+            .filter((banner) => banner.status === "Active")
+            .map((banner) => ({
+              id: banner._id,
+              redirect_url: banner.redirect_url || "/shop",
+              bgImageUrl: banner.banner_image,
+              singleBannerImageUrl: banner.banner_image,
+            }));
+
+          setSingleBannerData((prev) => ({
+            ...prev,
+            singlebannerTwo: { items: singleBannerItems },
+          }));
+        } else {
+          setSingleBannerData((prev) => ({
+            ...prev,
+            singlebannerTwo: {
+              items: [
+                {
+                  id: 1,
+                  redirect_url: "/shop",
+                  bgImageUrl: "/images/singlebanner-img1.png",
+                  singleBannerImageUrl: "/images/singlebanner-product.png",
+                },
+              ],
             },
-          ],
-        },
-      }));
-    }
-  } catch (error) {
-    console.error("Error fetching single banner-two data:", error);
-    setSingleBannerData((prev) => ({
-      ...prev,
-      singlebannerTwo: {
-        items: [
-          {
-            id: 1,
-            redirect_url: "/shop",
-            bgImageUrl: "/images/singlebanner-img1.png",
-            singleBannerImageUrl: "/images/singlebanner-product.png",
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching single banner-two data:", error);
+        setSingleBannerData((prev) => ({
+          ...prev,
+          singlebannerTwo: {
+            items: [
+              {
+                id: 1,
+                redirect_url: "/shop",
+                bgImageUrl: "/images/singlebanner-img1.png",
+                singleBannerImageUrl: "/images/singlebanner-product.png",
+              },
+            ],
           },
-        ],
-      },
-    }));
-  } finally {
-    setIsSingleBannerLoading(false);
-  }
-};
-
-
+        }));
+      } finally {
+        setIsSingleBannerLoading(false);
+      }
+    };
 
     // Call all fetch functions
     fetchCategoryBanners();
@@ -411,15 +410,16 @@ const fetchSingleBannerDatatwo = async () => {
     fetchBrands();
     fetchCategories();
     fetchProducts();
-fetchSingleBannerData();
-fetchSingleBannerDatatwo();
+    fetchSingleBannerData();
+    fetchSingleBannerDatatwo();
     const timer = setTimeout(() => {
         setIsLoading(false);
     }, 2000);
 
     return () => clearTimeout(timer);
 }, []);
- const fetchHomeSections = async () => {
+
+const fetchHomeSections = async () => {
     setIsSectionLoading(true);
     try {
       const response = await fetch("/api/home-sections");
@@ -444,7 +444,7 @@ fetchSingleBannerDatatwo();
     } finally {
       setIsSectionLoading(false);
     }
-  };
+};
 
   useEffect(() => {
     fetchHomeSections();
@@ -530,15 +530,28 @@ fetchSingleBannerDatatwo();
         <button onClick={onClick} className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-3 rounded-full shadow-md z-10 hover:bg-gray-600"> ▶ </button>
     );
 
+    // const settings = {
+    //     dots: false,
+    //     infinite: true,
+    //     speed: 500,
+    //     slidesToShow: 1,
+    //     slidesToScroll: 1,
+    //     autoplay: true,
+    //     autoplaySpeed: 5000,
+    //     arrows: true,
+    //     prevArrow: <CustomPrevArrow />,
+    //     nextArrow: <CustomNextArrow />,
+    // };
+
     const settings = {
-        dots: false,
+        dots: true,
         infinite: true,
         speed: 500,
         slidesToShow: 1,
         slidesToScroll: 1,
         autoplay: true,
         autoplaySpeed: 5000,
-        arrows: true,
+        arrows: false,
         prevArrow: <CustomPrevArrow />,
         nextArrow: <CustomNextArrow />,
     };
