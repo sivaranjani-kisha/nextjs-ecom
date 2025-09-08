@@ -24,21 +24,9 @@ export default function BulkUploadPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate required files - only Excel is required now
+    // Validate required files
     if (!excelFile || !validateFile(excelFile, [".xlsx", ".csv"])) {
       toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
-      return;
-    }
-
-    // Validate optional image ZIP file
-    if (imageZip && !validateFile(imageZip, [".zip"])) {
-      toast.error("Please upload a valid .zip file for product images.");
-      return;
-    }
-
-    // Validate optional Overview ZIP file
-    if (overviewZip && !validateFile(overviewZip, [".zip"])) {
-      toast.error("Please upload a valid .zip file for overview images.");
       return;
     }
 
@@ -51,7 +39,7 @@ export default function BulkUploadPage() {
     if (overviewZip) formData.append("overview", overviewZip);
 
     try {
-      const response = await fetch("/api/product/bulk-upload", {
+      const response = await fetch("/api/product/status-bulk-upload", {
         method: "POST",
         body: formData,
       });
@@ -76,16 +64,12 @@ export default function BulkUploadPage() {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Bulk Product Upload</h1>
           <p className="text-gray-600">Upload products in bulk using Excel/CSV and ZIP files</p>
+          <p className="text-sm text-gray-500 mt-2">
+            For status-only updates, include only Item Code and Status columns
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg overflow-hidden p-6 space-y-8">
-          <Link
-            href="/admin/product/status_bulk"
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150 inline-block"
-          >
-            Status bulkupload
-          </Link>
-          
           {/* Excel File Section */}
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
@@ -102,43 +86,53 @@ export default function BulkUploadPage() {
                 type="file"
                 accept=".xlsx,.csv"
                 onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-blue-700 hover:file:bg-red-100"
                 required
               />
-              <Link
-                href="/uploads/files/test_upload.xlsx"
-                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download Sample Format
-              </Link>
+            
+
+<Link href="/uploads/files/test_upload.xlsx" passHref legacyBehavior>
+  <a
+    download="test.xlsx"
+    className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+  >
+    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+      />
+    </svg>
+    Download Sample Format
+  </a>
+</Link>
+
             </div>
           </div>
 
-          {/* Product Images Section - Now Optional */}
-          <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
+          {/* Product Images Section */}
+          {/* <div className="border border-gray-200 rounded-lg p-6 hover:border-red-500 transition-colors">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 Product Images (ZIP)
-                <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Optional</span>
               </h3>
-              <p className="text-sm text-gray-500 mt-1">Upload compressed product images (optional). If not provided, existing images will be preserved.</p>
+              <p className="text-sm text-gray-500 mt-1">Upload compressed product images</p>
+              <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Optional</span>
             </div>
             <div className="space-y-4">
               <input
                 type="file"
                 accept=".zip"
                 onChange={(e) => setImageZip(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-blue-700 hover:file:bg-red-100"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               />
               <Link
                 href="/uploads/files/Sample.zip"
-                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                className="inline-flex items-center text-sm text-red-600 hover:text-red-800 transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -146,10 +140,10 @@ export default function BulkUploadPage() {
                 Download Sample ZIP
               </Link>
             </div>
-          </div>
+          </div> */}
 
           {/* Overview Images Section */}
-          <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
+          {/* <div className="border border-gray-200 rounded-lg p-6 hover:border-red-500 transition-colors">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,22 +152,22 @@ export default function BulkUploadPage() {
                 Overview Images (ZIP)
                 <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Optional</span>
               </h3>
-              <p className="text-sm text-gray-500 mt-1">Upload additional overview images (optional). If not provided, existing images will be preserved.</p>
+              <p className="text-sm text-gray-500 mt-1">Upload additional overview images</p>
             </div>
             <input
               type="file"
               accept=".zip"
               onChange={(e) => setOverviewZip(e.target.files?.[0] || null)}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-blue-700 hover:file:bg-red-100"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
             />
-          </div>
+          </div> */}
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="px-6 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {isLoading ? (
                 <span className="flex items-center">

@@ -480,11 +480,10 @@ export default function BrandPage() {
                   }
                   alt={brandData.brand.banners[currentBannerIndex].banner_name}
                   fill
-                  className="object-cover"
+                  className="object-fill w-full h-full"
                   unoptimized
                 />
                 
-                {/* Banner Navigation Arrows */}
                 {brandData.brand.banners.length > 1 && (
                   <>
                     {/* <button
@@ -860,7 +859,7 @@ export default function BrandPage() {
 
                           <div className="mt-auto flex items-center justify-between gap-2 ccs">
                             <Addtocart
-                              productId={product._id} stockQuantity={product.quantity}
+                              productId={product._id} stockQuantity={product.quantity} special_price={product.special_price}
                               className="w-full text-xs sm:text-sm py-1.5"
                             />
                             <a
