@@ -712,20 +712,24 @@ useEffect(() => {
                           {children}
                         </div>
                       )}
-                      renderThumb={({ props, index }) => (
-                        <div
-                          {...props}
-                          className={`w-4 h-4 rounded-full border-2 border-black shadow cursor-pointer ${
-                            index === 0 ? "bg-blue-500 z-10" : "bg-green-500 z-20"
-                          }`}
-                        >
-                          {/*}
+                      renderThumb={({ props, index }) => {
+                        const { key, ...rest } = props; // remove key from spread
+
+                        return (
+                          <div
+                            key={key} // assign key directly
+                            {...rest} // spread remaining props
+                            className={`w-4 h-4 rounded-full border-2 border-black shadow cursor-pointer relative
+                              ${index === 0 ? "bg-blue-500 z-10" : "bg-green-500 z-20"}`}
+                          >
+                            {/*
                             <span className="absolute -top-6 text-xs bg-gray-700 text-white px-2 py-1 rounded">
                               {index === 0 ? "Min" : "Max"}
                             </span>
                             */}
-                        </div>
-                      )}
+                          </div>
+                        );
+                      }}
                     />
               
                     <div className="flex justify-between text-sm text-gray-600 mt-6">
