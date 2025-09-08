@@ -5,13 +5,13 @@ import { motion } from 'framer-motion';
 import Link from "next/link";
 import Image from 'next/image';
 
-import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX } from "react-icons/fi";
+import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX, FiPhoneCall, FiMessageSquare } from "react-icons/fi";
 import { FaBars, FaShoppingBag, FaUserShield } from "react-icons/fa";
 import { FaHeart, FaShoppingCart, FaSearch } from 'react-icons/fa';
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { IoLogOut } from "react-icons/io5";
-import { FaCircleChevronLeft, FaCircleChevronRight, FaLocationDot } from "react-icons/fa6";
+import { FaCircleChevronLeft, FaCircleChevronRight, FaLocationDot, FaPhone } from "react-icons/fa6";
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from "@/context/WishlistContext";
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -677,6 +677,16 @@ const renderFlatItem = (item, hoveredCategory) => {
                         <button onClick={toggleMobileMenu} className="sm:hidden text-customBlue">
                             <FiSearch size={20} />
                         </button>
+
+                        {/* Feedback Icon */}
+                        <Link href="/feedback" className="hidden sm:flex items-center relative">
+                            <FiMessageSquare size={18} className="text-customBlue" />
+                        </Link>
+
+                        {/* Contact Icon */}
+                        <Link href="/contact" className="hidden sm:flex items-center relative">
+                            <FiPhoneCall size={18} className="text-customBlue" />
+                        </Link>
 
                         {/* Location (Hidden on mobile) */}
                         <Link href="/location" className="hidden sm:flex items-center relative">
