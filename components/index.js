@@ -1117,7 +1117,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     );
                 case 'features':
                     return (
-                   <section className="px-4 sm:px-6 md:px-6 pt-14" id="features" >
+                   <section className="px-0 sm:px-0 md:px-0 pt-14" id="features" >
                     <div
                       className="grid grid-cols-2 gap-4 
                                 md:flex md:flex-nowrap md:justify-center md:gap-6 
