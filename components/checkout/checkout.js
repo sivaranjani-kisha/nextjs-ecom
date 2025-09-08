@@ -196,6 +196,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
     try {
       const decoded = jwtDecode(token);
       const userId = decoded.userId;
+      const buyNowData = localStorage.getItem('buyNowData'); 
        const checkoutData = localStorage.getItem('checkoutData');
         console.log(checkoutData);
         if (checkoutData) {
@@ -216,6 +217,37 @@ const [isSubmitting, setIsSubmitting] = useState(false);
       const cartData = await cartResponse.json();
       setCartItems(cartData.cart.items);
     }
+    
+    
+    // Check for buy now data first
+      if (buyNowData) {
+        const parsedData = JSON.parse(buyNowData);
+        setCartItems(parsedData.cart.items);
+        localStorage.removeItem('buyNowData'); // Clean up after use
+      }
+      // Then check for checkout data
+      else if (checkoutData) {
+        const parsedData = JSON.parse(checkoutData);
+        setCartItems(parsedData.cart.items);
+      }
+      // Fallback to fetching the cart from the API
+      else {
+        const cartResponse = await fetch('/api/cart', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+ 
+        if (!cartResponse.ok) {
+          throw new Error('Failed to fetch cart data');
+        }
+ 
+        const cartData = await cartResponse.json();
+        setCartItems(cartData.cart.items);
+      }
+      
+      
+      
       // Fetch user address
       const addressResponse = await fetch(`/api/useraddress?user_id=${userId}`);
       if (!addressResponse.ok) {

@@ -1,23 +1,30 @@
 'use client';
 import ProductDetailsSection from "@/components/ProductDetailsSection";
 // import RelatedProducts from "@/components/RelatedProducts";
-import {  useEffect, useState, useRef } from "react";
+import {  useEffect, useState, useRef, useCallback } from "react";
+import { Icon } from '@iconify/react';
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { FaStore } from "react-icons/fa";
 import { FaShoppingCart, FaHeart, FaShareAlt, FaRupeeSign, FaCartPlus, FaBell } from "react-icons/fa";
 import { FiShoppingCart } from "react-icons/fi";
 import { TbTruckDelivery } from "react-icons/tb";
 import { IoFastFoodOutline, IoReload, IoCardOutline, IoShieldCheckmark, IoStorefront } from "react-icons/io5";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
+import ProductAddtoCart from "@/components/ProductAddtoCart"
 import Addtocart from "@/components/AddToCart";
 import ProductBreadcrumb from "@/components/ProductBreadcrumb";
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import RelatedProducts from "@/components/RelatedProducts";
 import RazorpayOffers from "@/components/RazorpayOffers";
 
-export default function ProductPage() {
+export default function ProductPage(currentProductId) {
+  const router = useRouter(); 
   const { slug } = useParams();
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [brand, setBrand] = useState([]);
+   const [selectedRelatedProducts, setSelectedRelatedProducts] = useState([]);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
   const [showFeatures, setShowFeatures] = useState(false);
   const [showHighlights, setShowHighlights] = useState(false);
@@ -41,6 +48,31 @@ const handleIncrease = () => {
   }
 };
 
+const handleBuyNow = () => {
+  const checkoutData = {
+    cart: {
+      items: [{
+        product: product._id,
+        quantity: quantity,
+        price: product.special_price || product.price,
+        warranty: selectedWarranty,
+        extendedWarranty: selectedExtendedWarranty,
+        name: product.name,
+        images: product.images,
+      }],
+    },
+    // Include other necessary data like total price, discounts, etc.
+  };
+
+  // Save the data to local storage under a new key
+  localStorage.setItem("buyNowData", JSON.stringify(checkoutData));
+
+  // Redirect the user to the checkout page
+  router.push("/checkout");
+};
+
+
+
 
 
   // In your ProductPage component, add these state variables near the top:
@@ -63,20 +95,64 @@ const toggleFrequentProduct = (product) => {
   });
 };
 
+ // Fetch related products
+  // Fetch related products
+  const fetchRelatedProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/product/related?productId=${product._id}`);
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status} ${res.statusText}`);
+      }
+
+      if (res.ok && data.success) {
+        setRelatedProducts(data.products || []);
+      }
+    } catch (error) {
+      console.error("Error fetching related products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (product?._id) {
+      fetchRelatedProducts(product._id);
+    }
+  }, [product]);
+
+  const toggleRelatedProduct = (product) => {
+    setSelectedRelatedProducts(prev => {
+      const existingIndex = prev.findIndex(p => p._id === product._id);
+      if (existingIndex >= 0) {
+        return prev.filter(p => p._id !== product._id);
+      } else {
+        return [...prev, product];
+      }
+    });
+  };
+
 //  Add this useEffect to calculate the cart total whenever selected products change
-useEffect(() => {
-  let total = product ? (product.special_price || product.price) * quantity : 0;
+ // Calculate cart total
+  useEffect(() => {
+    let total = product ? (product.special_price || product.price) * quantity : 0;
 
-  selectedFrequentProducts.forEach(item => {
-    total += (item.special_price || item.price);
-  });
+    selectedFrequentProducts.forEach(item => {
+      total += (item.special_price || item.price);
+    });
+    
+    // NEW: Add selected related products to total
+    selectedRelatedProducts.forEach(item => {
+      total += (item.special_price || item.price);
+    });
 
-  if (selectedWarranty) total += selectedWarranty;
-  if (selectedExtendedWarranty) total += selectedExtendedWarranty;
+    if (selectedWarranty) total += selectedWarranty;
+    if (selectedExtendedWarranty) total += selectedExtendedWarranty;
 
-  setCartTotal(total);
-}, [selectedFrequentProducts, product, quantity, selectedWarranty, selectedExtendedWarranty]);
-
+    setCartTotal(total);
+  }, [selectedFrequentProducts, selectedRelatedProducts, product, quantity, selectedWarranty, selectedExtendedWarranty]);
 
 useEffect(() => {
   const fetchFeaturedProducts = async () => {
@@ -105,7 +181,6 @@ useEffect(() => {
 }, [featuredProducts]);
 
 
-
   const [selectedImage, setSelectedImage] = useState(null);
 
       useEffect(() => {
@@ -113,34 +188,15 @@ useEffect(() => {
           setSelectedImage(`/uploads/products/${product.images[0]}`);
         }
       }, [product]);
-  const [zoomPosition, setZoomPosition] = useState({
-  visible: false,
-  x: 0,
-  y: 0,
-  boxWidth: 0,
-  boxHeight: 0,
-});
+  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0, visible: false });
   const imgRef = useRef(null);
-const handleMouseMove = (e) => {
-  const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-  const x = e.clientX - left;
-  const y = e.clientY - top;
-
-  setZoomPosition({
-    visible: true,
-    x,
-    y,
-    boxWidth: width,
-    boxHeight: height,
-  });
-};
-
-
-const handleMouseLeave = () => {
-  setZoomPosition({ visible: false, x: 0, y: 0, boxWidth: 0, boxHeight: 0 });
-};
-
+  const [isZoomed, setIsZoomed] = useState(false);
   const zoomContainerRef = useRef(null);
+  const [showZoomLens, setShowZoomLens] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+   const zoomLensRef = useRef(null);
+   const zoomResultRef = useRef(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showReplacementModal, setShowReplacementModal] = useState(false);
   const [showWarrantyModal, setshowWarrantyModal] = useState(false);
   const [showGstInvoiceModal, setshowGstInvoiceModal] = useState(false);
@@ -264,6 +320,70 @@ const fetchBrand = async () => {
   }
 };
 
+  // Handle mouse movement for zoom lens
+  const handleMouseMove = (e) => {
+    if (!imgRef.current || !zoomLensRef.current || !zoomResultRef.current) return;
+    
+    const { left, top, width, height } = imgRef.current.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    
+    // Keep position within bounds
+    const boundedX = Math.max(0, Math.min(100, x));
+    const boundedY = Math.max(0, Math.min(100, y));
+    
+    setZoomPosition({ x: boundedX, y: boundedY });
+    
+    // Position the lens
+    zoomLensRef.current.style.left = `calc(${boundedX}% - 75px)`;
+    zoomLensRef.current.style.top = `calc(${boundedY}% - 75px)`;
+    
+    // Update the zoom result
+    zoomResultRef.current.style.backgroundPosition = `${boundedX}% ${boundedY}%`;
+  };
+
+  const handleMouseEnter = () => {
+    setShowZoomLens(true);
+  };
+
+  const handleMouseLeave = () => {
+    setShowZoomLens(false);
+  };
+
+  const openLightbox = (index = 0) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+    setSelectedImage(images[index]);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
+
+  const navigateLightbox = (direction) => {
+    let newIndex;
+    if (direction === 'prev') {
+      newIndex = (lightboxIndex - 1 + images.length) % images.length;
+    } else {
+      newIndex = (lightboxIndex + 1) % images.length;
+    }
+    setLightboxIndex(newIndex);
+    setSelectedImage(images[newIndex]);
+  };
+
+  // Handle keyboard events for lightbox
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (lightboxOpen) {
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') navigateLightbox('prev');
+        if (e.key === 'ArrowRight') navigateLightbox('next');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, lightboxIndex]);
 
   if (loading) {
     return (
@@ -327,7 +447,10 @@ const fetchBrand = async () => {
               <div 
                 className="relative aspect-square w-full px-7"
                 onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onClick={() => openLightbox(0)}
+            ref={zoomContainerRef}
               >
                 <img
                   src={selectedImage || "/no-image.jpg"}
@@ -341,77 +464,180 @@ const fetchBrand = async () => {
                 />
 
                 {/* 🔹 Lens Overlay */}
-            {zoomPosition.visible && (
-              <div
-                className="absolute border border-blue-400 bg-blue-200 bg-opacity-30 rounded-md pointer-events-none"
+           {/* Zoom lens (shown on hover) */}
+            {showZoomLens && (
+              <div 
+                className="absolute border-2 border-white bg-white bg-opacity-30 pointer-events-none"
                 style={{
-                  width: "120px",
-                  height: "120px",
-                  left: `${zoomPosition.x - 60}px`,
-                  top: `${zoomPosition.y - 60}px`,
+                  width: '150px',
+                  height: '150px',
+                  left: 0,
+                  top: 0,
+                  borderRadius: '50%',
+                  transform: 'translateZ(0)',
+                  zIndex: 10,
+                  display: 'block'
                 }}
+                ref={zoomLensRef}
               />
             )}
+            
 
 
               </div>
 
               {/* Zoom Box */}
-              {zoomPosition.visible && (
-                <div
-                  className="absolute left-full top-0 ml-4 w-[400px] h-[400px] border border-gray-300 bg-white shadow-lg overflow-hidden"
-                >
-                <img
-              src={selectedImage || "/no-image.jpg"}
-              alt="Zoomed"
-              className="absolute object-contain"
-              style={{
-                width: "200%",
-                height: "200%",
-                left: `-${(zoomPosition.x / zoomPosition.boxWidth) * 100}%`,
-                top: `-${(zoomPosition.y / zoomPosition.boxHeight) * 100}%`,
-              }}
-            />
+              {/* Zoom Box */}
+{/* Zoom result (shown on hover) */}
+            {showZoomLens && (
+  <div 
+    className="absolute hidden md:block left-full ml-4 top-0 w-full bg-no-repeat bg-white border rounded-lg overflow-hidden"
+    style={{
+      backgroundImage: `url(${selectedImage})`,
+      backgroundSize: '200%',
+      backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+      zIndex: 20,
+      height: '400px', // 🔹 increased height slightly
+      width: '525px'   // optional: keep zoom box proportional
+    }}
+    ref={zoomResultRef}
+  />
+)}
 
-                </div>
-              )}
+
+
+{/* {showZoomLens && (
+  <div 
+    className="absolute hidden md:block left-full ml-4 top-0 w-full h-3/4 bg-no-repeat bg-white border rounded-lg overflow-hidden"
+    style={{
+      backgroundImage: `url(${selectedImage})`,
+      backgroundSize: '200%',
+      backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+      zIndex: 20,
+      maxHeight: '300px' // Added max height limit
+    }}
+    ref={zoomResultRef}
+  />
+)} */}
+            {/* {showZoomLens && (
+              <div 
+                className="absolute hidden md:block left-full ml-4 top-0 w-full h-full bg-no-repeat bg-white  rounded-lg overflow-hidden"
+                style={{
+                  backgroundImage: `url(${selectedImage})`,
+                  backgroundSize: '200%',
+                  backgroundPosition: '0% 0%',
+                  zIndex: 20
+                }}
+                ref={zoomResultRef}
+              />
+            )} */}
             </div>
 
             
            
         
 
-              {/* Thumbnails */}
-              <div className="flex gap-2 mt-3 overflow-x-auto pb-2 -mt-1">
-                {product.images?.length > 0 ? (
-                  product.images.map((image, index) => (
-                    <div key={index} className="flex-shrink-0">
-                      <img
-                        src={
-                                            product.images[index]?.startsWith('http') ||
-                                            product.images[index]?.startsWith('blob:') ||
-                                            product.images[index]?.startsWith('data:')
-                                              ? product.images[index]
-                                              : `/uploads/products/${product.images[index] || 'no-image.jpg'}`
-                                          }
-                        alt={`Thumbnail ${index + 1}`}
-                        className="w-20 h-20 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300 object-cover"
-                        onClick={() => handleThumbnailClick(index)}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "/no-image.jpg";
-                        }}
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <img
-                    src="/no-image.jpg"
-                    alt="No Thumbnail"
-                    className="w-20 h-20 border border-gray-400 rounded-lg object-cover"
-                  />
-                )}
-              </div>
+        {/* Thumbnails */}
+       {/* Thumbnails */}
+<div className="flex gap-2 mt-3 overflow-x-auto pb-2 -mt-1">
+  {product.images && product.images.length > 0 ? (
+    product.images.map((image, index) => (
+      <div key={index} className="flex-shrink-0">
+        <img
+          src={
+            image.startsWith("http") ||
+            image.startsWith("blob:") ||
+            image.startsWith("data:")
+              ? image
+              : `/uploads/products/${image || "no-image.jpg"}`
+          }
+          alt={`Thumbnail ${index + 1}`}
+          className="w-20 h-20 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300 object-cover"
+          onClick={() => handleThumbnailClick(index)}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "/no-image.jpg";
+          }}
+        />
+      </div>
+    ))
+  ) : (
+    <img
+      src="/no-image.jpg"
+      alt="No Thumbnail"
+      className="w-20 h-20 border border-gray-400 rounded-lg object-cover"
+    />
+  )}
+</div>
+
+{/* Lightbox Modal */}
+{lightboxOpen && (
+  <div className={styles.lightbox}>
+    {/* Close button */}
+    <button 
+      className={styles.closeButton}
+      onClick={closeLightbox}
+    >
+      &times;
+    </button>
+
+    {/* Prev button */}
+    <button 
+      className={`${styles.navButton} ${styles.prev}`}
+      onClick={() => navigateLightbox("prev")}
+    >
+      &#8249;
+    </button>
+
+    {/* Next button */}
+    <button 
+      className={`${styles.navButton} ${styles.next}`}
+      onClick={() => navigateLightbox("next")}
+    >
+      &#8250;
+    </button>
+
+    <div className={styles.lightboxContent}>
+      <img
+        src={selectedImage}
+        alt={product?.name || "Product"}
+        className={styles.lightboxImage}
+      />
+
+      {/* Lightbox thumbnails */}
+      {product.images && product.images.length > 1 && (
+        <div className={styles.lightboxThumbnails}>
+          {product.images.map((image, index) => (
+            <button
+              key={index}
+              className={`${styles.lightboxThumbnail} ${
+                lightboxIndex === index ? styles.active : ""
+              }`}
+              onClick={() => {
+                setLightboxIndex(index);
+                setSelectedImage(image);
+              }}
+            >
+              <img
+                src={
+                  image.startsWith("http") ||
+                  image.startsWith("blob:") ||
+                  image.startsWith("data:")
+                    ? image
+                    : `/uploads/products/${image}`
+                }
+                alt={`Thumbnail ${index + 1}`}
+                className={styles.lightboxThumbnailImage}
+              />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+
           </div>
 
 
@@ -462,7 +688,6 @@ const fetchBrand = async () => {
                       <Addtocart
                         productId={product._id}
                         stockQuantity={product.quantity}
-                        special_price={product.special_price}
                         quantity={quantity}
                         additionalProducts={selectedFrequentProducts.map(p => p._id)}
                         warranty={selectedWarranty}
@@ -481,7 +706,8 @@ const fetchBrand = async () => {
                 <meta property="og:description" content={product.description} />
                 <meta
           property="og:image"
-          content={selectedImage || "https://bea.divinfosys.com/no-image.jpg"}
+          content={"https://bea.divinfosys.com/no-image.jpg"
+          }
         />
 
 
@@ -491,29 +717,9 @@ const fetchBrand = async () => {
             
                   {/* Action Buttons */}
                   <div className="flex items-center gap-1" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check this out: https://bea.divinfosys.com/product/${product.slug}`)}`, '_blank')}>
-                    <button
-                      className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-blue-200 hover:bg-blue-600 text-blue-500 hover:text-white"
-                      onClick={() => window.open(
-                        `https://wa.me/?text=${encodeURIComponent(
-                          `Check this out: ${product.name}\n${selectedImage || "https://bea.divinfosys.com/no-image.jpg"}\nhttps://bea.divinfosys.com/product/${product.slug}`
-                        )}`,
-                        '_blank'
-                      )}
-                    >
+                    <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-blue-200 hover:bg-blue-600 text-blue-500 hover:text-white">
+
                       <FaShareAlt size={10} />
-                    </button>
-                    <button
-                      className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-green-200 hover:bg-green-600 text-green-500 hover:text-white ml-2"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = selectedImage || "https://bea.divinfosys.com/no-image.jpg";
-                        link.download = product.name ? `${product.name.replace(/\s+/g, '_')}.jpg` : 'product.jpg';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                    >
-                      <span className="text-xs font-bold">↓</span>
                     </button>
 
                     {/* <button className="w-6 h-6 flex items-center justify-center rounded-full transition duration-300 ease-in-out bg-gray-200 hover:bg-blue-600 text-blue-600 hover:text-white">
@@ -581,7 +787,14 @@ const fetchBrand = async () => {
               ) : (
                 <p className="font-semibold text-green-600">✅ In stock. Order anytime.</p>
               )}
-              <p className="text-gray-600 text-sm mt-1">Available only: <span className="font-bold">{product.quantity}</span></p>
+              <p className="text-gray-600 text-sm mt-1">
+  {product.quantity && product.quantity > 0 ? (
+    <>Available only: <span className="font-bold">{product.quantity}</span></>
+  ) : (
+    <span className="text-red-600 font-bold">No stock</span>
+  )}
+</p>
+
             </div>
 
             {/* Add this code right after the Stock Alert section */}
@@ -872,17 +1085,42 @@ const fetchBrand = async () => {
               </div>
 
               {showHighlights && (
-                <div className="mt-3">
-                  {product.product_highlights && product.product_highlights.length > 0 ? (
-                    <ol className="list-decimal pl-5 space-y-1 text-xs text-gray-600">
-                      {product.product_highlights.map((item, index) => (
-                        <li key={index}>{item.trim()}</li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className="text-xs text-gray-500">No highlights available.</p>
-                  )}
-                </div>
+                <div className="mt-3 overflow-auto">
+    {Array.isArray(product.product_highlights) &&
+    product.product_highlights
+      .flatMap(item => item.split(/[\n,]+/).map(i => i.trim()))
+      .filter(item => item.length > 0).length > 0 ? (
+      <table className="w-full text-xs text-left text-gray-700 border border-gray-200">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="border px-3 py-2">Key</th>
+            <th className="border px-3 py-2">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {product.product_highlights
+            .flatMap(item => item.split(/[\n,]+/).map(i => i.trim()))
+            .filter(item => item.length > 0)
+            .map((item, index) => {
+              const cleanedItem = item
+                .replace(/[\[\]{}"]/g, '') // <-- removes curly braces, square brackets, quotes
+                .replace(/\s+/g, ' ')
+                .trim();
+              const [key, ...rest] = cleanedItem.split(':');
+              const value = rest.join(':').trim();
+              return (
+                <tr key={index} className="bg-white even:bg-gray-50">
+                  <td className="border px-3 py-2 font-medium">{key?.trim()}</td>
+                  <td className="border px-3 py-2">{value || '-'}</td>
+                </tr>
+              );
+            })}
+        </tbody>
+      </table>
+    ) : (
+      <p className="text-gray-500 text-xs">No highlights available.</p>
+    )}
+  </div>
               )}
             </div>
 
@@ -915,7 +1153,9 @@ const fetchBrand = async () => {
       className="flex items-start bg-blue-50 border border-blue-200 rounded-md p-4 w-full md:w-1/3 shadow-sm cursor-pointer"
       onClick={() => setShowReplacementModal(true)}
     >
-      <span className="text-blue-500 text-xl mr-3 mt-1">🔁</span>
+     <span className="text-3xl mr-3 mt-1">
+  <Icon icon="mdi:refresh" className="text-blue-600" />
+</span>
       <div>
         <div className="text-sm font-semibold text-blue-800">Replacement</div>
         <div className="text-xs text-blue-600">in 7 days</div>
@@ -927,7 +1167,9 @@ const fetchBrand = async () => {
       className="flex items-start bg-blue-50 border border-blue-200 rounded-md p-4 w-full md:w-1/3 shadow-sm cursor-pointer"
       onClick={() => setshowWarrantyModal(true)}
     >
-      <span className="text-green-500 text-xl mr-3 mt-1">🛡️</span>
+      <span className="text-3xl mr-3 mt-1">
+  <Icon icon="mdi:shield" className="text-blue-500" />
+</span>
       <div>
         <div className="text-sm font-semibold text-blue-800">Warranty</div>
         <div className="text-xs text-blue-600">in 1 Year</div>
@@ -1086,203 +1328,257 @@ const fetchBrand = async () => {
           </div>
 
           {/* Right Section - Seller Info */}
-          <div className="md:col-span-3 border border-gray-300 rounded-lg shadow-md bg-white mb-14 w-full max-w-sm max-h-[490px] overflow-y-scroll scrollbar-hide">
-      {/* Update the frequently bought together section to include AddToCart functionality: */}
-{featuredProducts?.length > 0 && (
-  <div className="px-4 py-4"> 
-    <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
-      Frequently Bought Togetherr:
-    </h3>
+          <div 
+  className={`md:col-span-3 border border-gray-300 rounded-lg shadow-md bg-white mb-14 w-full max-w-sm overflow-y-scroll scrollbar-hide ${
+    (featuredProducts?.length > 0 || 
+     (product?.warranty || product?.extended_warranty) || 
+     relatedProducts.length > 0) ? 
+    'max-h-[500px]' : 'max-h-[500px]'
+  }`}
+>
+  {/* Update the frequently bought together section to include AddToCart functionality: */}
+  {featuredProducts?.length > 0 && (
+    <div className="px-4 py-4"> 
+      <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
+        Frequently Bought Together:
+      </h3>
 
-    {featuredProducts.map((item) => (
-      <div key={item._id} className="flex items-start mb-4">
-        <input 
-          type="checkbox" 
-          className="mt-2 mr-3" 
-          checked={selectedFrequentProducts.some(p => p._id === item._id)}
-          onChange={() => toggleFrequentProduct(item)}
-        />
-        <div className="flex items-start gap-3">
-          {item.images?.[0] && (
-            <img
-              src={`/uploads/products/${item.images[0]}`}
-              alt={item.name}
-              className="w-16 h-16 object-contain"
-            />
-          )}
-          <div className="text-sm">
-            <div className="text-gray-800 font-medium">
-              {item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name.padEnd(20, ' ')}
-            </div>
-            <div className="text-orange-600 font-medium">Buy Together for</div>
-            <div className="text-gray-800 font-semibold">
-              ₹ {item.special_price || item.price}
-            </div>
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
-)}
-
-
-
-            {/* Protection Plan */}
-           {(product?.warranty || product?.extended_warranty) && (
-  <div className="border-t border-gray-300 px-4 py-4">
-    <h4 className="text-sm font-semibold text-orange-600 mb-2">
-      Want to protect your product?
-    </h4>
-
-    {product?.warranty && (
-      <>
-        <p className="text-sm font-bold text-gray-800 underline mb-2">
-          Accidental and Liquid Damage Protection Plan
-        </p>
-        <div className="text-sm text-gray-800 space-y-2 mb-4">
-          <div className="flex items-center">
-             <input
-              type="radio"
-              name="protection"
-              className="mr-2"
-              checked={selectedWarranty === product.warranty}
-              onClick={() =>
-                setSelectedWarranty(prev =>
-                  prev === product.warranty ? null : product.warranty
-                )
-              }
-              readOnly
-            />
-            <label>
-              1 Year Accidental And Liquid Damage
-              <span className="text-green-600 font-bold ml-2">
-                ₹ {product.warranty}
-              </span>
-            </label>
-          </div>
-        </div>
-      </>
-    )}
-
-    {product?.extended_warranty && (
-      <>
-        <p className="text-sm font-bold text-gray-800 underline mb-2">
-          Extended Warranty
-        </p>
-        <div className="text-sm text-gray-800">
-          <div className="flex items-center">
-            <input
-              type="radio"
-              name="extended"
-              className="mr-2"
-              checked={selectedExtendedWarranty === product.extended_warranty}
-              onClick={() =>
-                setSelectedExtendedWarranty(prev =>
-                  prev === product.extended_warranty ? null : product.extended_warranty
-                )
-              }
-              readOnly
-            />
-            <label>
-              1 Year Extended Warranty Protectionnnn
-              <span className="text-green-600 font-bold ml-2">
-                ₹ {product.extended_warranty}
-              </span>
-            </label>
-          </div>
-        </div>
-      </>
-    )}
-  </div>
-)}
-            {/* <div className="mt-4 px-4">
-              <div className="flex items-center justify-between bg-customBlue text-white px-3 py-2 rounded-full">
-                <div className="flex items-center gap-2">
-                  <div className="bg-white p-1.5 rounded-full flex items-center justify-center w-8 h-8">
-                    <IoStorefront className="text-blue-600 text-lg" />
-                  </div>
-                  <span className="text-sm font-medium whitespace-nowrap">By {product.brand || "Marketpro"}</span>
-                </div>
-                <div className="flex-shrink-0">
-                  <button className="bg-white text-blue-600 text-xs font-medium px-3 py-1 rounded-full border border-white whitespace-nowrap">
-                    View Store
-                  </button>
-                </div>
+      {featuredProducts.map((item) => (
+        <div key={item._id} className="flex items-start mb-4">
+          <input 
+            type="checkbox" 
+            className="mt-2 mr-3" 
+            checked={selectedFrequentProducts.some(p => p._id === item._id)}
+            onChange={() => toggleFrequentProduct(item)}
+          />
+          <div className="flex items-start gap-3">
+            {item.images?.[0] && (
+              <img
+                src={`/uploads/products/${item.images[0]}`}
+                alt={item.name}
+                className="w-16 h-16 object-contain"
+              />
+            )}
+            <div className="text-sm">
+              <div className="text-gray-800 font-medium">
+                {item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name.padEnd(20, ' ')}
               </div>
-            </div> */}
-
-      <div className="mt-5 px-2">
-  <div className="flex items-center justify-between bg-customBlue text-white px-4 py-2 rounded-full shadow-sm w-full">
-
-    {/* Left - Cart Icon + Label */}
-    <div className="flex items-center space-x-2">
-      <FaCartPlus  className="text-white w-5 h-5" />
-      <span className="text-lg font-semibold">Cart Total</span>
-    </div>
-
-    {/* Right - Price + View Cart link below */}
-    <div className="flex flex-col items-end leading-tight">
-      <span className="text-md font-semibold">₹{cartTotal.toLocaleString()}</span>
-      <Link href="/cart" className="text-[12px] text-blue-100 hover:underline mt-0.5">
-        View Cart
-      </Link>
-    </div>
-
-  </div>
-</div>
-
-
-            <div className="border-b border-gray-300 w-full mt-4"></div>
-
-            <div className="rounded-b-lg w-full bg-gray-100">
-              {[
-                { icon: TbTruckDelivery, title: "Fast Deliveryy", desc: "Lightning-fast shipping, guaranteed." },
-                { icon: IoReload, title: "Free 90-day returns", desc: "Shop risk-free with easy returns." },
-                { icon: IoStorefront, title: "Pickup available", desc: "Usually ready in 24 hours" },
-                { icon: IoCardOutline, title: "Payment", desc: "Secure online and cash payments." },
-                { icon: IoShieldCheckmark, title: "Warranty", desc: product.warranty || "Guaranteed product quality." },
-              ].map(({ icon: Icon, title, desc }, index) => (
-                <div key={index}>
-                  {index !== 0 && <div className="border-b border-gray-400 w-full mt-1"></div>}
-                  <div className="flex items-center gap-4 px-6 py-4 w-full">
-                    <div className="bg-white p-3 rounded-full border border-gray-300 shadow-sm flex items-center justify-center">
-                      <Icon className="text-lg text-blue-600" />
-                    </div>
-                    <div className="flex-1 w-full min-w-0">
-                      <h4 className="text-sm font-bold text-gray-900 break-words">{title}</h4>  
-                      <p className="text-sm text-gray-700 break-words">{desc}</p>  
-                    </div>
-                  </div>
-                </div>
-              ))}
+              <div className="text-blue-600 font-medium">Buy Together for</div>
+              <div className="text-gray-800 font-semibold">
+                ₹ {item.special_price || item.price}
+              </div>
             </div>
           </div>
         </div>
+      ))}
+    </div>
+  )}
 
-        {/* <ProductDetailsSection product={product} /> */}
-            {/* <RelatedProducts 
-              currentProductId={product._id} 
-              categoryId={product.category?._id || product.category} 
-            /> */}
+  {/* Protection Plan */}
+  {(product?.warranty || product?.extended_warranty) && (
+    <div className="border-t border-gray-300 px-4 py-4">
+      <h4 className="text-sm font-semibold text-blue-600 mb-2">
+        Want to protect your product?
+      </h4>
+
+      {product?.warranty && (
+        <>
+          <p className="text-sm font-bold text-gray-800 underline mb-2">
+            Accidental and Liquid Damage Protection Plan
+          </p>
+          <div className="text-sm text-gray-800 space-y-2 mb-4">
+            <div className="flex items-center">
+              <input
+                type="radio"
+                name="protection"
+                className="mr-2"
+                checked={selectedWarranty === product.warranty}
+                onClick={() =>
+                  setSelectedWarranty(prev =>
+                    prev === product.warranty ? null : product.warranty
+                  )
+                }
+                readOnly
+              />
+              <label>
+                1 Year Accidental And Liquid Damage
+                <span className="text-green-600 font-bold ml-2">
+                  ₹ {product.warranty}
+                </span>
+              </label>
+            </div>
+          </div>
+        </>
+      )}
+
+      {product?.extended_warranty && (
+        <>
+          <p className="text-sm font-bold text-gray-800 underline mb-2">
+            Extended Warranty
+          </p>
+          <div className="text-sm text-gray-800">
+            <div className="flex items-center">
+              <input
+                type="radio"
+                name="extended"
+                className="mr-2"
+                checked={selectedExtendedWarranty === product.extended_warranty}
+                onClick={() =>
+                  setSelectedExtendedWarranty(prev =>
+                    prev === product.extended_warranty ? null : product.extended_warranty
+                  )
+                }
+                readOnly
+              />
+              <label>
+                1 Year Extended Warranty Protection
+                <span className="text-green-600 font-bold ml-2">
+                  ₹ {product.extended_warranty}
+                </span>
+              </label>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )}
+
+  {/* Related Products Section */}
+  {relatedProducts.length > 0 && (
+    <div className="border-t border-gray-300 px-4 py-4">
+      <h2 className="text-sm font-bold text-customBlue underline mb-2">
+        Related Products
+      </h2>
+      
+      {relatedProducts.slice(0, 3).map((item) => (
+        <div key={item._id} className="flex items-start mb-4">
+          <input
+            type="checkbox"
+            className="mt-2 mr-3"
+            checked={selectedRelatedProducts.some(p => p._id === item._id)}
+            onChange={() => toggleRelatedProduct(item)}
+          />
+          <div className="flex items-start gap-3">
+            {item.images?.[0] && (
+              <img
+                src={`/uploads/products/${item.images[0]}`}
+                alt={item.name}
+                className="w-16 h-16 object-contain"
+              />
+            )}
+            <div className="text-sm">
+              <div className="text-gray-800 font-medium">
+                {item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name}
+              </div>
+              <div className="text-gray-800 font-semibold">
+                ₹ {item.special_price || item.price}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  {/* Action Buttons inside the box */}
+  <div className="border-t border-gray-300 px-4 py-4 space-y-3">
+    {/* Buy Now */}
+    <button
+      onClick={() => {
+        const productIds = [
+          product._id,
+          ...selectedFrequentProducts.map((p) => p._id),
+          ...selectedRelatedProducts.map((p) => p._id),
+        ];
+        const productDetails = [
+          { ...product, quantity },
+          ...selectedFrequentProducts.map((p) => ({ ...p, quantity: 1 })),
+          ...selectedRelatedProducts.map((p) => ({ ...p, quantity: 1 })),
+        ];
+        localStorage.setItem(
+          "buyNowData",
+          JSON.stringify({
+            cart: {
+              items: [
+                { ...product, quantity },
+                ...selectedFrequentProducts.map(p => ({ ...p, quantity: 1 })),
+                ...selectedRelatedProducts.map(p => ({ ...p, quantity: 1 })),
+              ],
+            },
+            total: cartTotal,
+          })
+        );
+        window.location.href = "/checkout";
+      }}
+      className="w-full bg-gradient-to-r bg-white hover:bg-customBlue hover:text-white text-customBlue border border-blue-200 font-semibold py-3 rounded-md shadow-md flex items-center justify-center gap-3"
+    >
+      <FaStore className="h-5 w-5" />
+      <span>Buy Now</span>
+    </button>
+
+    {/* Add to Cart */}
+    <div className="w-full">
+      <ProductAddtoCart
+        productId={product._id}
+        stockQuantity={product.quantity}
+        quantity={quantity}
+        additionalProducts={selectedFrequentProducts.map((p) => p._id)}
+        warranty={selectedWarranty}
+        extendedWarranty={selectedExtendedWarranty}
+        selectedFrequentProducts={selectedFrequentProducts}
+        className="w-full bg-gradient-to-r bg-customBlue hover:bg-customBlue hover:text-white text-white border border-blue-200 font-semibold py-3 rounded-md shadow-md text-center"
+      />
+      <div className="rounded-b-lg w-full bg-gray-100 mt-4">
+  {[
+    { icon: TbTruckDelivery, title: "Fast Delivery", desc: "Lightning-fast shipping, guaranteed." },
+    { icon: IoReload, title: "Free 90-day returns", desc: "Shop risk-free with easy returns." },
+    { icon: IoStorefront, title: "Pickup available", desc: "Usually ready in 24 hours" },
+    { icon: IoCardOutline, title: "Payment", desc: "Secure online and cash payments." },
+    { icon: IoShieldCheckmark, title: "Warranty", desc: product.warranty ? `${product.warranty} warranty` : "Guaranteed product quality." },
+  ].map(({ icon: Icon, title, desc }, index) => (
+    <div key={index}>
+      {index !== 0 && <div className="border-b border-gray-300 w-full"></div>}
+      <div className="flex items-center gap-4 px-6 py-4 w-full">
+        <div className="bg-white p-3 rounded-full border border-gray-300 shadow-sm flex items-center justify-center">
+          <Icon className="text-lg text-customBlue" />
+        </div>
+        <div className="flex-1 w-full min-w-0">
+          <h4 className="text-sm font-bold text-gray-900 break-words">{title}</h4>  
+          <p className="text-sm text-gray-700 break-words">{desc}</p>  
+        </div>
       </div>
-     <div className="space-y-8">
-  <ProductDetailsSection product={product} />
-  <RecentlyViewedProducts className="w-full" />
-
-  {product?.related_products?.length > 0 && (
-  <RelatedProducts
-    className="w-full"
-    currentProductId={product._id}
-  />
-)}
-
-
-
-
+    </div>
+  ))}
 </div>
+    </div>
+  </div>
+</div>
+        </div>
+        
+       
+      </div>
+     
+
+         <div className="space-y-8">
+           <ProductDetailsSection product={product} />
+           <RecentlyViewedProducts className="w-full" />
+         
+           {product?.related_products?.length > 0 && (
+           <RelatedProducts
+             className="w-full"
+             currentProductId={product._id}
+           />
+         )}
+         
+         
+         
+         
+         </div>
       
     </div>
     
+    
   );
 }
+
 
