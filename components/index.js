@@ -530,19 +530,6 @@ const fetchHomeSections = async () => {
         <button onClick={onClick} className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-3 rounded-full shadow-md z-10 hover:bg-gray-600"> ▶ </button>
     );
 
-    // const settings = {
-    //     dots: false,
-    //     infinite: true,
-    //     speed: 500,
-    //     slidesToShow: 1,
-    //     slidesToScroll: 1,
-    //     autoplay: true,
-    //     autoplaySpeed: 5000,
-    //     arrows: true,
-    //     prevArrow: <CustomPrevArrow />,
-    //     nextArrow: <CustomNextArrow />,
-    // };
-
     const settings = {
         dots: true,
         infinite: true,
@@ -555,6 +542,19 @@ const fetchHomeSections = async () => {
         prevArrow: <CustomPrevArrow />,
         nextArrow: <CustomNextArrow />,
     };
+
+    // const settings = {
+    //     dots: true,
+    //     infinite: true,
+    //     speed: 500,
+    //     slidesToShow: 1,
+    //     slidesToScroll: 1,
+    //     autoplay: true,
+    //     autoplaySpeed: 5000,
+    //     arrows: false,
+    //     prevArrow: <CustomPrevArrow />,
+    //     nextArrow: <CustomNextArrow />,
+    // };
 
     const flashSalesSettings = {
         dots: false,
