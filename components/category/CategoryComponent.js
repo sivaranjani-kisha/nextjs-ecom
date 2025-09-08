@@ -675,7 +675,7 @@ useEffect(() => {
               )}
 
               {/* Categories Tree */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 text-sm text-gray-600">
                 <h3 className="text-base font-semibold mb-3 text-gray-700">Categories</h3>
                 {categoryData.categoryTree?.length > 0 ? (
                   <CategoryTree categories={categoryData.categoryTree} selectedFilters={selectedFilters.categories}
@@ -712,20 +712,24 @@ useEffect(() => {
                           {children}
                         </div>
                       )}
-                      renderThumb={({ props, index }) => (
-                        <div
-                          {...props}
-                          className={`w-4 h-4 rounded-full border-2 border-black shadow cursor-pointer ${
-                            index === 0 ? "bg-blue-500 z-10" : "bg-green-500 z-20"
-                          }`}
-                        >
-                          {/*}
+                      renderThumb={({ props, index }) => {
+                        const { key, ...rest } = props; // remove key from spread
+
+                        return (
+                          <div
+                            key={key} // assign key directly
+                            {...rest} // spread remaining props
+                            className={`w-4 h-4 rounded-full border-2 border-black shadow cursor-pointer relative
+                              ${index === 0 ? "bg-blue-500 z-10" : "bg-green-500 z-20"}`}
+                          >
+                            {/*
                             <span className="absolute -top-6 text-xs bg-gray-700 text-white px-2 py-1 rounded">
                               {index === 0 ? "Min" : "Max"}
                             </span>
                             */}
-                        </div>
-                      )}
+                          </div>
+                        );
+                      }}
                     />
               
                     <div className="flex justify-between text-sm text-gray-600 mt-6">
@@ -746,6 +750,7 @@ useEffect(() => {
                   <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
                     {categoryData.brands.map(brand => (
                       <li key={brand._id} className="flex items-center">
+                        <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
                         <input
                         type="checkbox"
                         checked={selectedFilters.brands.includes(brand._id)}
@@ -765,8 +770,8 @@ useEffect(() => {
                             </div>
                           )}
                             */}
-                          <span>{brand.brand_name} ({brand.count})</span>
-                        
+                          <span className="text-sm text-gray-600">{brand.brand_name} ({brand.count})</span>
+                        </label>
                       </li>
                     ))}
                   </ul>
