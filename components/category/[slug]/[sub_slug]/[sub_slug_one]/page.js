@@ -764,6 +764,7 @@ const STEP = 100;
                 <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
                   {categoryData.brands.map(brand => (
                     <li key={brand._id} className="flex items-center">
+                      <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
                       <input
                         type="checkbox"
                         checked={selectedFilters.brands.includes(brand._id)}
@@ -783,8 +784,8 @@ const STEP = 100;
                           </div>
                         )}
                           */}
-                        <span>{brand.brand_name} ({brand.count})</span>
-                      
+                        <span className="text-sm text-gray-600">{brand.brand_name} ({brand.count})</span>
+                      </label>
                     </li>
                   ))}
                 </ul>

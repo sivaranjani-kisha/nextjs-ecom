@@ -672,7 +672,7 @@ export default function CategoryPage() {
           )}
 
               {/* Categories Tree */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 text-sm text-gray-600">
                 <h3 className="text-base font-semibold mb-3 text-gray-700">Categories</h3>
                 {categoryData.categoryTree?.length > 0 ? (
                   <CategoryTree categories={categoryData.categoryTree} selectedFilters={selectedFilters.categories}
@@ -736,43 +736,44 @@ export default function CategoryPage() {
                   </div>
 
               {/* Brand Filter */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
-                <div className="flex items-center justify-between pb-2">
-                  <h3 className="text-base font-semibold text-gray-700">Brands</h3>
-                  <button onClick={toggleBrands} className="text-gray-500 hover:text-gray-700">
-                    {isBrandsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                  </button>
-                </div>
-                {isBrandsExpanded && (
-                  <ul className="mt-2 space-y-2">
-                    {categoryData.brands.map(brand => (
-                      <li key={brand._id} className="flex items-center">
-                        <button
-                          onClick={() => handleFilterChange('brands', brand._id)}
-                          className={`flex items-center w-full text-left p-2 rounded-md text-sm ${
-                            selectedFilters.brands.includes(brand._id) 
-                              ? 'bg-blue-50 text-blue-600' 
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {brand.image && (
-                            <div className="w-6 h-6 mr-2 relative">
-                              <Image
-                                src={brand.image.startsWith('http') ? brand.image : `/uploads/Brands/${brand.image}`}
-                                alt={brand.brand_name}
-                                fill
-                                className="object-contain"
-                                unoptimized
-                              />
-                            </div>
-                          )}
-                          <span>{brand.brand_name}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+                    <div className="flex items-center justify-between pb-2">
+                      <h3 className="text-base font-semibold text-gray-700">Brands</h3>
+                      <button onClick={toggleBrands} className="text-gray-500 hover:text-gray-700">
+                        {isBrandsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                      </button>
+                    </div>
+                    {isBrandsExpanded && (
+                      <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
+                        {categoryData.brands.map(brand => (
+                          <li key={brand._id} className="flex items-center">
+                              <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={selectedFilters.brands.includes(brand._id)}
+                              onChange={() => handleFilterChange("brands", brand._id)}
+                              className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                            />
+                              {/*
+                              {brand.image && (
+                                <div className="w-6 h-6 mr-2 relative">
+                                  <Image
+                                    src={brand.image.startsWith('http') ? brand.image : `/uploads/Brands/${brand.image}`}
+                                    alt={brand.brand_name}
+                                    fill
+                                    className="object-contain"
+                                    unoptimized
+                                  />
+                                </div>
+                              )}
+                              */}
+                              <span className="text-sm text-gray-600">{brand.brand_name} ({brand.count})</span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
 
               {/* Dynamic Filters */}
               <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
