@@ -55,28 +55,27 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
         
         {/* Contact Details (Moved to Left) */}
-        {/* <div>
-          <h2 className="text-3xl font-bold mb-6">Feedback</h2>
-          <p className="font-semibold">You may contact us using the information below:</p>
-          <p className="mt-1"><b>Registered Address: </b>383, 100 Feet Road, Gandhipuram, Coimbatore, Tamilnadu 641012</p>
-          <p className="mt-1"><b>Operational Address:</b> 383, 100 Feet Road, Gandhipuram, Coimbatore, Tamilnadu 641012</p>
-          <p className="mt-1"><b>Telephone No: </b> 9842344323</p>
-          <p className="mt-1"><b>E-Mail ID: </b>customercare@bharathelectronics.in</p>
-          <p className="mt-1"><b>Merchant Legal Entity Name:</b> Bharath Electronics and Appliances</p>
-        </div> */}
+        <div className="text-center">
+
+          <h1 className="text-2xl font-bold mb-6 text-center text-primary"> Thank you for Purchasing at Bharath Electronics & Appliances! </h1>
+          <h2 className="text-2xl font-bold mb-6 text-center"> Bharath Electronics – Feedback </h2>
+          <h3 className="text-center mb-6">Use the form below to get in touch with the sales team</h3>
+          
+          <h4 className="text-center mb-6">If you have any questions concerning our products / delivery, please call our customer service department at +91 98423 44323.</h4>
+          <button className="bg-blue-700 text-white px-2 py-2 ">
+            <a className="" href="tel:9865555000">Click to Call</a>
+          </button>
+    
+        </div>
 
         {/* Write Us Form (Now on Right) */}
         <div>
-          <h1 className="text-3xl font-bold mb-6 text-center text-primary"> Thank you for Purchasing at Bharath Electronics & Appliances! </h1>
-          <h2 className="text-3xl font-bold mb-6 text-center"> Bharath Electronics – Feedback </h2>
-          <h3 className="text-center">Use the form below to get in touch with the sales team</h3>
-
-          <form onSubmit={handleSubmit} className="px-8 mt-6">
+          <form onSubmit={handleSubmit} className="px-8 mt-6 grid grid-cols-2 md:grid-cols-2 gap-4">
             {/* Name */}
-            <div className="mb-4">
+            <div >
               <label className="block font-medium mb-1">
                 Name<span className="text-red-600">*</span>
               </label>
@@ -91,7 +90,7 @@ const handleSubmit = async (e) => {
             </div>
 
             {/* Email */}
-            <div className="mb-4">
+            <div >
               <label className="block font-medium mb-1">
                 Email<span className="text-red-600">*</span>
               </label>
@@ -106,7 +105,7 @@ const handleSubmit = async (e) => {
             </div>
 
             {/* Phone */}
-            <div className="mb-4">
+            <div >
               <label className="block font-medium mb-1">
                 Phone <span className="text-red-600">*</span>
               </label>
@@ -121,7 +120,7 @@ const handleSubmit = async (e) => {
             </div>
 
             {/* invoice_number */}
-            <div className="mb-4">
+            <div >
               <label className="block font-medium mb-1">
                 Invoice Number <span className="text-red-600">*</span>
               </label>
@@ -136,7 +135,7 @@ const handleSubmit = async (e) => {
             </div>
 
             {/* product */}
-            <div className="mb-4">
+            <div >
               <label className="block font-medium mb-1">
                 Products <span className="text-red-600">*</span>
               </label>
@@ -151,7 +150,7 @@ const handleSubmit = async (e) => {
             </div>
 
             {/* City */}
-            <div className="mb-4">
+            <div >
               <label className="block font-medium mb-1">
                 City <span className="text-red-600">*</span>
               </label>
@@ -166,7 +165,7 @@ const handleSubmit = async (e) => {
             </div>
 
             {/* Message - Full Width */}
-            <div className="md:col-span-2 mb-4">
+            <div className="md:col-span-2">
               <label className="block font-medium mb-1">
                 Feedback<span className="text-red-600">*</span>
               </label>
