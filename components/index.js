@@ -569,14 +569,14 @@ fetchSingleBannerDatatwo();
 
     const brandSettings = {
   infinite: true,
-  speed: 5000, // Continuous effect
-  slidesToShow: 7, // Default for large screens
+  speed: 3000, // Continuous effect
+  slidesToShow: 6, // Default for large screens
   slidesToScroll: 1,
   autoplay: true,
   autoplaySpeed: 0,
   cssEase: "linear",
   arrows: false,
-  pauseOnHover: false,
+  pauseOnHover: true,
 
   responsive: [
     {
@@ -771,7 +771,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                 case 'category_banner':
                     return (
                       <section id="category_banner">
-                        <div className="px-2 sm:px-2 lg:px-2 p-2">
+                        <div className="px-4 sm:px-6 md:px-6 pt-14">
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 {categoryBanner.map((banner, index) => (
                                     <div key={index} className="col-span-1">
@@ -998,10 +998,10 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             animate="visible"
                             variants={sectionVariants}
                             id="flash_sales"
-                            className=""
+                            className="px-4 sm:px-6 md:px-6 pt-14"
                         >
                             {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
-                                <div className="py-2">
+                                <div className="py-0">
                                     <motion.div
                                         variants={itemVariants}
                                         className="section-heading flex justify-between items-center mb-4 p-2"
@@ -1104,7 +1104,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     );
                 case 'features':
                     return (
-                   <section className="p-2" id="features" >
+                   <section className="px-4 sm:px-6 md:px-6 pt-14" id="features" >
                     <div
                       className="grid grid-cols-2 gap-4 
                                 md:flex md:flex-nowrap md:justify-center md:gap-6 
@@ -1142,7 +1142,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             initial={scrollDirection === 'down' ? 'hiddenDown' : 'hiddenUp'} 
                             animate= 'visible' 
                             variants={sectionVariants} 
-                            className="mb-2 py-4 px-2"
+                            className="px-4 sm:px-6 md:px-6 pt-14"
                         >
                             <div>
                                 <motion.div variants={containerVariants} className="rounded-lg bg-gray-100 rounded-[23px] p-2">
@@ -1163,7 +1163,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                         className="p-4 flex justify-center items-center"
                                                         whileHover={{ scale: 1.1 }}
                                                     >
-                                                    <div className="w-28 h-28 flex items-center justify-center overflow-hidden">
+                                                    <div className="w-24 h-24 flex items-center justify-center overflow-hidden">
                                                       <Link href={`/brand/${slugify(brand.brand_name)}`}>
                                                         <Image
                                                           src={`/uploads/Brands/${brand.image}`}
@@ -1261,7 +1261,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       initial="hidden"
                       animate="visible"
                       variants={containerVariants}
-                      className="overflow-hidden pt-0 m-0 "
+                      className="overflow-hidden pt-14"
                     >
                       <div className="relative">
                         {isSingleBannerLoading ? (
@@ -1300,27 +1300,22 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             </Slider>
                           ) : (
                             <motion.div
-                              className="relative w-full 
-                                        aspect-[16/9] max-h-[110px] 
-                                        sm:aspect-[16/6] sm:max-h-[180px]
-                                        md:aspect-[16/8] md:max-h-[200px]
-                                        lg:aspect-[16/9] lg:max-h-[300px]
-                                        xl:aspect-[16/10] xl:max-h-[400px]
-                                        2xl:aspect-[16/12] 2xl:max-h-[700px]"
+                              className="relative w-full "
                               variants={itemVariants}
                             >
                               <Link
                                 href={singleBannerData.singlebanner.items[0].redirect_url || "#"}
                                 className="block w-full h-full"
                               >
-                                <div className="absolute inset-0 flex justify-center items-center bg-white mb-4">
+                                <div className="relative w-full">
                                   <Image
                                     src={singleBannerData.singlebanner.items[0].bgImageUrl}
-                                    alt="Single Banner"
-                                    fill
-                                    quality={100}
-                                    className="object-fill w-full h-full"
-                                    priority
+                                     alt="Single Banner"
+                                     width={1920}
+                                     height={500}
+                                     quality={100}
+                                     className="w-full h-auto object-contain"
+                                     priority
                                   />
                                 </div>
                               </Link>
@@ -1341,7 +1336,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       initial="hidden"
                       animate="visible"
                       variants={containerVariants}
-                      className="overflow-hidden pt-0 m-0  "
+                      className="overflow-hidden pt-14"
                     >
                       <div className="relative">
                         {isSingleBannerLoading ? (
@@ -1354,13 +1349,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                               {singleBannerData.singlebannerTwo.items.map((item) => (
                                 <motion.div
                                   key={item.id}
-                                  className="relative w-full 
-                                            aspect-[16/9] max-h-[110px] 
-                                            sm:aspect-[16/6] sm:max-h-[180px]
-                                            md:aspect-[16/8] md:max-h-[200px]
-                                            lg:aspect-[16/9] lg:max-h-[300px]
-                                            xl:aspect-[16/10] xl:max-h-[400px]
-                                            2xl:aspect-[16/12] 2xl:max-h-[700px]"
+                                  className="relative w-full"
                                   variants={itemVariants}
                                 >
                                   <Link href={item.redirect_url || "#"} className="block w-full h-full">
@@ -1380,27 +1369,22 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             </Slider>
                           ) : (
                             <motion.div
-                              className="relative w-full 
-                                        aspect-[16/9] max-h-[110px] 
-                                        sm:aspect-[16/6] sm:max-h-[180px]
-                                        md:aspect-[16/8] md:max-h-[200px]
-                                        lg:aspect-[16/9] lg:max-h-[300px]
-                                        xl:aspect-[16/10] xl:max-h-[400px]
-                                        2xl:aspect-[16/12] 2xl:max-h-[700px]"
+                              className="relative w-full"
                               variants={itemVariants}
                             >
                               <Link
                                 href={singleBannerData.singlebannerTwo.items[0].redirect_url || "#"}
                                 className="block w-full h-full"
                               >
-                                <div className="absolute inset-0 flex justify-center items-center bg-white">
+                                <div className="relative w-full">
                                   <Image
                                     src={singleBannerData.singlebannerTwo.items[0].bgImageUrl}
-                                    alt="Single Banner"
-                                    fill
-                                    quality={100}
-                                    className="object-fill w-full h-full"
-                                    priority
+                                    alt="Single Banner two"
+                                     width={1920}
+                                     height={500}
+                                     quality={100}
+                                     className="w-full h-auto object-contain"
+                                     priority
                                   />
                                 </div>
                               </Link>
@@ -1422,9 +1406,9 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
                       transition={{ duration: 0.6 }}
-                      className="px-2  pt-15 mb-5 mt-4"
+                      className="px-4 sm:px-6 md:px-6 pt-14"
                     >
-                      <div className="bg-gray-100 rounded-2xl p-6">
+                      <div className="bg-gray-100 rounded-2xl p-3">
                         {/* Header */}
                         <div className="flex justify-between items-center mb-6">
                           <h5 className="text-xl font-bold">What's Trending</h5>

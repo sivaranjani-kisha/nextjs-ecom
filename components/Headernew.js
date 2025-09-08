@@ -608,7 +608,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                     </div>
 
                     {/* Logo (Hidden on mobile) */}
-                    <div className="hidden sm:block mr-12 bg-white p-2 rounded-lg">
+                    <div className="hidden sm:block mr-12 bg-white py-2 rounded-lg">
                         <Link href="/index" className="mx-auto">
                             <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={100} height={30} />
                         </Link>

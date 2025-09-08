@@ -186,4 +186,18 @@ body::-webkit-scrollbar {
   border-collapse: separate;
   border-spacing: 0;
 }
-
+.pt-10 
+{ 
+  padding-top: 2.5rem;   /* 40px */
+ }
+.pt-10   { padding-top: 2.5rem;   /* 40px */ }
+.pt-11   { padding-top: 2.75rem;  /* 44px */ }
+.pt-12   { padding-top: 3rem;     /* 48px */ }
+.pt-14   { padding-top: 3.5rem;   /* 56px */ }
+.pt-16   { padding-top: 4rem;     /* 64px */ }
+.pt-20   { padding-top: 5rem;     /* 80px */ }
+.pt-24   { padding-top: 6rem;     /* 96px */ }
+.pt-28   { padding-top: 7rem;     /* 112px */ }
+.pt-32   { padding-top: 8rem;     /* 128px */ }
+.pt-36   { padding-top: 9rem;     /* 144px */ }
+.pt-40   { padding-top: 10rem;    /* 160px */ }

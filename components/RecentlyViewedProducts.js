@@ -130,7 +130,7 @@ const RecentlyViewedProducts = () => {
         </div>
       )}
       
-      <section className="mb-10 px-4">
+      <section className="mb-14 px-4 sm:px-6 md:px-6 pt-14">
         <div className="bg-gray-100 rounded-2xl p-6">
           <div className="flex justify-between items-center mb-6">
             <h5 className="text-xl font-bold">Recently Visited</h5>
