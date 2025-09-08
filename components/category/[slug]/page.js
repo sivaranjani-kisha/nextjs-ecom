@@ -42,6 +42,7 @@ export default function CategoryPage() {
   const [nofound,setNofound]=useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0);
   // Pagination state
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -520,15 +521,117 @@ const handleProductClick = (product) => {
  
   return(
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
+           {categoryData.banners && categoryData.banners.length > 0 && (
+        <div className="relative w-full mb-8 rounded-lg overflow-hidden shadow-md">
+          <div
+            className="relative h-48 md:h-64 lg:h-80 cursor-pointer"
+            onClick={() => {
+              const redirectUrl = categoryData.banners[currentCategoryBannerIndex].redirect_url;
+              if (redirectUrl) window.location.href = redirectUrl;
+            }}
+          >
+            <Image
+              src={
+                categoryData.banners[currentCategoryBannerIndex].banner_image.startsWith("http")
+                  ? categoryData.banners[currentCategoryBannerIndex].banner_image
+                  : `${categoryData.banners[currentCategoryBannerIndex].banner_image}`
+              }
+              alt={categoryData.banners[currentCategoryBannerIndex].banner_name}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+      
+            {/* Navigation Arrows */}
+            {categoryData.banners.length > 1 && (
+              <>
+                {/* <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentCategoryBannerIndex(
+                      (prev) =>
+                        prev === 0 ? categoryData.banners.length - 1 : prev - 1
+                    );
+                  }}
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-colors"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentCategoryBannerIndex(
+                      (prev) =>
+                        prev === categoryData.banners.length - 1 ? 0 : prev + 1
+                    );
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-colors"
+                >
+                  <ChevronRight size={24} />
+                </button> */}
+              </>
+            )}
+      
+            {/* Radio Button Indicators */}
+            {categoryData.banners.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                {categoryData.banners.map((_, index) => (
+                  <label
+                    key={index}
+                    className="flex items-center cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentCategoryBannerIndex(index);
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="category-banner-indicator"
+                      checked={index === currentCategoryBannerIndex}
+                      onChange={() => setCurrentCategoryBannerIndex(index)}
+                      className="sr-only"
+                    />
+                    <span
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        index === currentCategoryBannerIndex
+                          ? "bg-white border-white"
+                          : "bg-transparent border-white/70"
+                      }`}
+                    >
+                      {index === currentCategoryBannerIndex && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+      
+          {/* Banner Title */}
+          {/* {categoryData.banners[currentCategoryBannerIndex].banner_name && (
+            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-4">
+              <h2 className="text-xl font-semibold">
+                {categoryData.banners[currentCategoryBannerIndex].banner_name}
+              </h2>
+              {categoryData.banners[currentCategoryBannerIndex].redirect_url && (
+                <p className="text-sm mt-1 opacity-80">Click to explore</p>
+              )}
+            </div>
+          )} */}
+        </div>
+      )}
+
       <ToastContainer/>
+      
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
-        <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.category.category_name}</h1>
+        <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.category.category_name} </h1>
         </div>
         <div className="lg:col-span-3">
           {/* Sorting and Count */}
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <p className="text-sm text-gray-600">{products.length} products found</p>
+            <p className="text-sm text-gray-600">{products.length} products founds</p>
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-600">Sort by:</span>
               <select
@@ -536,7 +639,7 @@ const handleProductClick = (product) => {
                 onChange={(e) => setSortOption(e.target.value)}
                 className="px-4 py-2 border rounded-md text-sm bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">Featured</option>
+                <option value="">Featured </option>
                 <option value="price-low-high">Price: Low to High</option>
                 <option value="price-high-low">Price: High to Low</option>
                 <option value="name-a-z">Name: A-Z</option>

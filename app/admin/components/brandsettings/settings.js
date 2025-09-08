@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState,Fragment  } from "react";
+import { useEffect, useState, Fragment } from "react";
 
 export default function BrandBannerManager() {
   const [brands, setBrands] = useState([]);
@@ -17,6 +17,8 @@ export default function BrandBannerManager() {
   });
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(null); // ✅ delete confirmation
+  const [messageModal, setMessageModal] = useState(null); // ✅ success/error messages
 
   // Fetch brands
   const fetchBrands = async () => {
@@ -28,6 +30,14 @@ export default function BrandBannerManager() {
   useEffect(() => {
     fetchBrands();
   }, []);
+
+  // Auto-close message modal after 2s
+  useEffect(() => {
+    if (messageModal) {
+      const timer = setTimeout(() => setMessageModal(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [messageModal]);
 
   // Handle input change
   const handleInputChange = (key, value) => {
@@ -77,28 +87,35 @@ export default function BrandBannerManager() {
     setLoading(false);
 
     if (data.success) {
-      alert("Saved successfully!");
+      setMessageModal("Saved successfully!");
       closeModal();
       fetchBrands();
     } else {
-      alert("Error saving data");
+      setMessageModal("Error saving data");
     }
   };
 
-  // Delete brand or banner
-  const handleDelete = async (brandId, bannerId = null) => {
-    if (!confirm("Are you sure you want to delete?")) return;
+  // Open Delete Modal
+  const handleDeleteClick = (brandId, bannerId = null) => {
+    setDeleteModal({ brandId, bannerId });
+  };
 
+  // Confirm Delete
+  const confirmDelete = async () => {
+    if (!deleteModal) return;
     const res = await fetch("/api/brand/banner", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ brandId, bannerId }),
+      body: JSON.stringify(deleteModal),
     });
     const data = await res.json();
     if (data.success) {
-      alert("Deleted successfully!");
+      setMessageModal("Deleted successfully!");
       fetchBrands();
+    } else {
+      setMessageModal("Error deleting");
     }
+    setDeleteModal(null);
   };
 
   const closeModal = () => {
@@ -133,70 +150,70 @@ export default function BrandBannerManager() {
           </tr>
         </thead>
         <tbody key="tbody">
-            {brands.map((brand) => (
-                <Fragment key={brand._id}>
+          {brands.map((brand) => (
+            <Fragment key={brand._id}>
+              {/* Brand row */}
+              <tr key={brand._id + "-row"} className="bg-gray-50">
+                <td className="border px-3 py-2 font-bold">
+                  {brand.brand_name}
+                </td>
+                <td colSpan={2}></td>
+                <td className="border px-3 py-2 text-right">
+                  <button
+                    onClick={() => openModal(brand)}
+                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                  >
+                    + Add Banner
+                  </button>
+                </td>
+              </tr>
 
-                {/* Brand row */}
-                <tr key={brand._id + "-row"} className="bg-gray-50">
-                    <td className="border px-3 py-2 font-bold">{brand.brand_name}</td>
-                    <td colSpan={2}></td>
-                    <td className="border px-3 py-2 text-right">
-                    <button
-                        onClick={() => openModal(brand)}
-                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+              {/* Banner rows */}
+              {brand.banners?.map((banner) => (
+                <tr key={banner._id + "-banner"}>
+                  <td className="border px-3 py-2 text-center">
+                    <img
+                      src={banner.banner_image}
+                      alt="banner"
+                      className="h-12 w-24 object-contain mx-auto"
+                    />
+                  </td>
+                  <td className="border px-3 py-2">{banner.redirect_url}</td>
+                  <td className="border px-3 py-2 text-center">
+                    <span
+                      className={`px-2 py-1 text-xs rounded ${
+                        banner.banner_status === "Active"
+                          ? "bg-green-100 text-green-600"
+                          : "bg-red-100 text-red-600"
+                      }`}
                     >
-                        + Add Banner
-                    </button>
-                    </td>
+                      {banner.banner_status}
+                    </span>
+                  </td>
+                  <td className="border px-3 py-2 text-center">
+                    <div className="space-x-2">
+                      <button
+                        onClick={() => openModal(brand, banner)}
+                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(brand._id, banner._id)}
+                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-
-                {/* Banner rows */}
-                {brand.banners?.map((banner) => (
-                    <tr key={banner._id + "-banner"}>
-                    <td className="border px-3 py-2 text-center">
-                        <img
-                        src={banner.banner_image}
-                        alt="banner"
-                        className="h-12 w-24 object-contain mx-auto"
-                        />
-                    </td>
-                    <td className="border px-3 py-2">{banner.redirect_url}</td>
-                    <td className="border px-3 py-2 text-center">
-                        <span
-                        className={`px-2 py-1 text-xs rounded ${
-                            banner.banner_status === "Active"
-                            ? "bg-green-100 text-green-600"
-                            : "bg-red-100 text-red-600"
-                        }`}
-                        >
-                        {banner.banner_status}
-                        </span>
-                    </td>
-                    <td className="border px-3 py-2 text-center">
-                        <div className="space-x-2">
-                        <button
-                            onClick={() => openModal(brand, banner)}
-                            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                        >
-                            Edit
-                        </button>
-                        <button
-                            onClick={() => handleDelete(brand._id, banner._id)}
-                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                        >
-                            Delete
-                        </button>
-                        </div>
-                    </td>
-                    </tr>
-                ))}
-                </Fragment>
-            ))}
+              ))}
+            </Fragment>
+          ))}
         </tbody>
-
       </table>
 
-      {/* Modal */}
+      {/* ---- Add/Edit Modal ---- */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] relative">
@@ -225,18 +242,24 @@ export default function BrandBannerManager() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleInputChange("bannerImage", e.target.files[0])}
+                onChange={(e) =>
+                  handleInputChange("bannerImage", e.target.files[0])
+                }
               />
               <input
                 type="text"
                 placeholder="Redirect URL"
                 value={formData.redirectUrl}
-                onChange={(e) => handleInputChange("redirectUrl", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("redirectUrl", e.target.value)
+                }
                 className="w-full border px-2 py-1 rounded"
               />
               <select
                 value={formData.bannerStatus}
-                onChange={(e) => handleInputChange("bannerStatus", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("bannerStatus", e.target.value)
+                }
                 className="w-full border px-2 py-1 rounded"
               >
                 <option value="Active">Active</option>
@@ -251,6 +274,40 @@ export default function BrandBannerManager() {
                 {loading ? "Saving..." : "Save"}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Delete Confirmation Modal ---- */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg w-[400px] text-center">
+            <h3 className="text-lg font-semibold mb-4">
+              Are you sure you want to delete?
+            </h3>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setDeleteModal(null)}
+                className="bg-gray-400 text-white px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="bg-red-600 text-white px-4 py-2 rounded"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Success/Error Message Modal ---- */}
+      {messageModal && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+          <div className="bg-white p-4 rounded-lg w-[300px] text-center shadow-lg">
+            <p className="text-lg font-medium">{messageModal}</p>
           </div>
         </div>
       )}

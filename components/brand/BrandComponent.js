@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "react-feather";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
@@ -26,6 +26,7 @@ export default function BrandPage() {
   const [filterGroups, setFilterGroups] = useState({});
   const [loading, setLoading] = useState(true);
   const { slug } = useParams();
+  const router = useRouter();
   const [sortOption, setSortOption] = useState('');
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(true);
   const [isBrandsExpanded, setIsBrandsExpanded] = useState(true);
@@ -51,6 +52,9 @@ export default function BrandPage() {
     totalProducts: 0
   });
   const itemsPerPage = 20;
+
+  // Banner state
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   // Fetch initial data
   useEffect(() => {
@@ -104,6 +108,46 @@ export default function BrandPage() {
       setLoading(false);
     }
   };
+
+  // Banner navigation functions
+  const nextBanner = () => {
+    if (brandData.brand?.banners?.length > 0) {
+      setCurrentBannerIndex((prevIndex) => 
+        prevIndex === brandData.brand.banners.length - 1 ? 0 : prevIndex + 1
+      );
+    }
+  };
+
+  const prevBanner = () => {
+    if (brandData.brand?.banners?.length > 0) {
+      setCurrentBannerIndex((prevIndex) => 
+        prevIndex === 0 ? brandData.brand.banners.length - 1 : prevIndex - 1
+      );
+    }
+  };
+
+  // Handle banner click with redirect
+  const handleBannerClick = () => {
+    const currentBanner = brandData.brand?.banners[currentBannerIndex];
+    if (currentBanner?.redirect_url) {
+      if (currentBanner.redirect_url.startsWith('http')) {
+        window.open(currentBanner.redirect_url, '_blank');
+      } else {
+        router.push(currentBanner.redirect_url);
+      }
+    }
+  };
+
+  // Auto-rotate banners
+  useEffect(() => {
+    if (brandData.brand?.banners?.length > 1) {
+      const interval = setInterval(() => {
+        nextBanner();
+      }, 5000); // Change banner every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [brandData.brand?.banners]);
 
   const fetchFilteredProducts = useCallback(async (brandData, pageNum = 1, initialLoad = false) => {
     try {
@@ -421,6 +465,99 @@ export default function BrandPage() {
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
       {!nofound && products.length > 0 ? (
         <>
+          {/* Banner Section */}
+          {brandData.brand?.banners && brandData.brand.banners.length > 0 && (
+            <div className="relative w-full mb-8 rounded-lg overflow-hidden shadow-md">
+              <div 
+                className="relative h-48 md:h-64 lg:h-80 cursor-pointer"
+                onClick={handleBannerClick}
+              >
+                <Image
+                  src={
+                    brandData.brand.banners[currentBannerIndex].banner_image.startsWith("http")
+                      ? brandData.brand.banners[currentBannerIndex].banner_image
+                      : `${brandData.brand.banners[currentBannerIndex].banner_image}`
+                  }
+                  alt={brandData.brand.banners[currentBannerIndex].banner_name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+                
+                {/* Banner Navigation Arrows */}
+                {brandData.brand.banners.length > 1 && (
+                  <>
+                    {/* <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        prevBanner();
+                      }}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-colors"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        nextBanner();
+                      }}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-colors"
+                    >
+                      <ChevronRight size={24} />
+                    </button> */}
+                  </>
+                )}
+                
+                {/* Radio Button Indicators */}
+                {brandData.brand.banners.length > 1 && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                    {brandData.brand.banners.map((_, index) => (
+                      <label
+                        key={index}
+                        className="flex items-center cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentBannerIndex(index);
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="banner-indicator"
+                          checked={index === currentBannerIndex}
+                          onChange={() => setCurrentBannerIndex(index)}
+                          className="sr-only"
+                        />
+                        <span
+                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                            index === currentBannerIndex
+                              ? 'bg-white border-white'
+                              : 'bg-transparent border-white/70'
+                          }`}
+                        >
+                          {index === currentBannerIndex && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                          )}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Banner Title (Optional) */}
+              {/* {brandData.brand.banners[currentBannerIndex].banner_name && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-4">
+                  <h2 className="text-xl font-semibold">
+                    {brandData.brand.banners[currentBannerIndex].banner_name}
+                  </h2>
+                  {brandData.brand.banners[currentBannerIndex].redirect_url && (
+                    <p className="text-sm mt-1 opacity-80">Click to explore</p>
+                  )}
+                </div>
+              )} */}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-1 space-y-6">
               {brandData.brand?.image && (
