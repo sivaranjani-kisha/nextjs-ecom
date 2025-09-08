@@ -8,6 +8,7 @@ import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from 'react-toastify';
+import { Range as ReactRange } from "react-range";
 
 export default function CategoryPage() {
   const [categoryData, setCategoryData] = useState({
@@ -322,6 +323,21 @@ const handleProductClick = (product) => {
     price: { min, max }
   }));
 };
+
+const STEP = 100;
+  const MIN = priceRange[0];
+  const MAX = priceRange[1];
+
+  // slider local state
+  const [values, setValues] = useState([
+    selectedFilters.price.min,
+    selectedFilters.price.max,
+  ]);
+
+   // sync with external filters (e.g. reset button)
+    useEffect(() => {
+      setValues([selectedFilters.price.min, selectedFilters.price.max]);
+    }, [selectedFilters.price.min, selectedFilters.price.max]);
 
     const CategoryTree = ({ 
       categories, 
@@ -738,60 +754,53 @@ const handleProductClick = (product) => {
               </div>
 
           {/* Price Filter */}
-          <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
-            <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
-            <div className="space-y-4">
-              <div className="relative">
-                 <div className="relative mt-6 group">
-                <input
-                  type="range"
-                  min={priceRange[0]}
-                  max={priceRange[1]}
-                  step="100"
-                  value={selectedFilters.price.min}
-                  onChange={(e) => handlePriceChange([parseInt(e.target.value), selectedFilters.price.max])}
-                  className="w-full h-2 bg-gray-200 rounded-lg absolute appearance-none"
-                  style={{ zIndex: 2 }}
-                />
-                <div className="absolute -top-8 left-0 w-full flex justify-center pointer-events-none">
-                  <span className="px-2 py-1 text-xs text-white bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition">
-                    Min
-                  </span>
-                </div></div>
-                <br />
-                <div className="relative mt-6 group">
-                <input
-                  type="range"
-                  min={priceRange[0]}
-                  max={priceRange[1]}
-                  step="100"
-                  value={selectedFilters.price.max}
-                  onChange={(e) => handlePriceChange([selectedFilters.price.min, parseInt(e.target.value)])}
-                  className="w-full h-2 bg-gray-200 rounded-lg absolute appearance-none"
-                  style={{ zIndex: 1 }}
-                />
-                <div className="absolute -top-8 left-0 w-full flex justify-center pointer-events-none">
-                  <span className="px-2 py-1 text-xs text-white bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition">
-                    Max
-                  </span>
-                </div></div>
-                 <br />
-                <div
-                  className="absolute h-2 bg-green-500 rounded-lg"
-                  style={{
-                    left: `${((selectedFilters.price.min - priceRange[0]) / (priceRange[1] - priceRange[0])) * 100}%`,
-                    right: `${100 - ((selectedFilters.price.max - priceRange[0]) / (priceRange[1] - priceRange[0])) * 100}%`,
-                    top: 0,
-                    zIndex: 0,
-                  }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>₹{selectedFilters.price.min.toLocaleString()}</span>
-                <span>₹{selectedFilters.price.max.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
+                        <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+                    <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
+              
+                    <ReactRange
+                      values={values}
+                      step={STEP}
+                      min={MIN}
+                      max={MAX}
+                      onChange={(newValues) => setValues(newValues)} // move thumbs
+                      onFinalChange={(newValues) => handlePriceChange(newValues)} // apply on release
+                      renderTrack={({ props, children }) => (
+                        <div
+                          {...props}
+                          className="w-full h-2 rounded-lg bg-gray-200 relative"
+                        >
+                          {/* active green bar */}
+                          <div
+                            className="absolute h-2 bg-green-500 rounded-lg"
+                            style={{
+                              left: `${((values[0] - MIN) / (MAX - MIN)) * 100}%`,
+                              width: `${((values[1] - values[0]) / (MAX - MIN)) * 100}%`,
+                            }}
+                          />
+                          {children}
+                        </div>
+                      )}
+                      renderThumb={({ props, index }) => (
+                        <div
+                          {...props}
+                          className={`w-4 h-4 rounded-full border-2 border-black shadow cursor-pointer ${
+                            index === 0 ? "bg-blue-500 z-10" : "bg-green-500 z-20"
+                          }`}
+                        >
+                          {/*}
+                            <span className="absolute -top-6 text-xs bg-gray-700 text-white px-2 py-1 rounded">
+                              {index === 0 ? "Min" : "Max"}
+                            </span>
+                            */}
+                        </div>
+                      )}
+                    />
+              
+                    <div className="flex justify-between text-sm text-gray-600 mt-6">
+                      <span>₹{values[0].toLocaleString()}</span>
+                      <span>₹{values[1].toLocaleString()}</span>
+                    </div>
+                  </div>
 
           {/* Brand Filter */}
           <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">

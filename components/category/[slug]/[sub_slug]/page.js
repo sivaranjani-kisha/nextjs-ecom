@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "react-feather
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import { ToastContainer, toast } from 'react-toastify';
+import { Range as ReactRange } from "react-range";
 
 export default function CategoryPage() {
   const [categoryData, setCategoryData] = useState({
@@ -330,12 +331,36 @@ export default function CategoryPage() {
     });
   };
 
-  const handlePriceChange = (values) => {
-    setSelectedFilters(prev => ({
+
+    const handlePriceChange = (values) => {
+    let min = Math.max(1, values[0]);     // clamp to >= 1
+    let max = Math.max(1, values[1]);   // clamp to <= 100
+  
+    // Ensure min never exceeds max
+    if (min > max) {
+      min = max;
+    }
+  
+    setSelectedFilters((prev) => ({
       ...prev,
-      price: { min: values[0], max: values[1] }
+      price: { min, max }
     }));
   };
+  
+  const STEP = 100;
+    const MIN = priceRange[0];
+    const MAX = priceRange[1];
+  
+    // slider local state
+    const [values, setValues] = useState([
+      selectedFilters.price.min,
+      selectedFilters.price.max,
+    ]);
+  
+     // sync with external filters (e.g. reset button)
+      useEffect(() => {
+        setValues([selectedFilters.price.min, selectedFilters.price.max]);
+      }, [selectedFilters.price.min, selectedFilters.price.max]);
 
   const CategoryTree = ({ 
     categories, 
@@ -658,27 +683,53 @@ export default function CategoryPage() {
               </div>
 
               {/* Price Filter */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
-                <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
-                <div className="space-y-4">
-                  <input
-                    type="range"
-                    min={priceRange[0]}
-                    max={priceRange[1]}
-                    step="100"
-                    value={selectedFilters.price.max}
-                    onChange={(e) => handlePriceChange([
-                      selectedFilters.price.min, 
-                      parseInt(e.target.value)
-                    ])}
-                    className="w-full range accent-blue-600"
-                  />
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>₹{selectedFilters.price.min}</span>
-                    <span>₹{selectedFilters.price.max}</span>
+                        <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+                    <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
+              
+                    <ReactRange
+                      values={values}
+                      step={STEP}
+                      min={MIN}
+                      max={MAX}
+                      onChange={(newValues) => setValues(newValues)} // move thumbs
+                      onFinalChange={(newValues) => handlePriceChange(newValues)} // apply on release
+                      renderTrack={({ props, children }) => (
+                        <div
+                          {...props}
+                          className="w-full h-2 rounded-lg bg-gray-200 relative"
+                        >
+                          {/* active green bar */}
+                          <div
+                            className="absolute h-2 bg-green-500 rounded-lg"
+                            style={{
+                              left: `${((values[0] - MIN) / (MAX - MIN)) * 100}%`,
+                              width: `${((values[1] - values[0]) / (MAX - MIN)) * 100}%`,
+                            }}
+                          />
+                          {children}
+                        </div>
+                      )}
+                      renderThumb={({ props, index }) => (
+                        <div
+                          {...props}
+                          className={`w-4 h-4 rounded-full border-2 border-black shadow cursor-pointer ${
+                            index === 0 ? "bg-blue-500 z-10" : "bg-green-500 z-20"
+                          }`}
+                        >
+                          {/*}
+                            <span className="absolute -top-6 text-xs bg-gray-700 text-white px-2 py-1 rounded">
+                              {index === 0 ? "Min" : "Max"}
+                            </span>
+                            */}
+                        </div>
+                      )}
+                    />
+              
+                    <div className="flex justify-between text-sm text-gray-600 mt-6">
+                      <span>₹{values[0].toLocaleString()}</span>
+                      <span>₹{values[1].toLocaleString()}</span>
+                    </div>
                   </div>
-                </div>
-              </div>
 
               {/* Brand Filter */}
               <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
