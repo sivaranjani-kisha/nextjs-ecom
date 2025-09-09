@@ -855,7 +855,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       transition={{ duration: 0.6 }}
                       className="recommended-products px-4 sm:px-6 md:px-6 pt-14"
                     >
-                      <div className="bg-gray-100 rounded-[23px] px-2 py-4 p-2">
+                      <div className="rounded-[23px] px-2 py-4 p-2">
                         {/* Section Header */}
                         <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
                           <h5 className="text-xl sm:text-2xl font-bold">
