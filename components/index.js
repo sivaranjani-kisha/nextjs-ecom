@@ -19,7 +19,7 @@ import Addtocart from "@/components/AddToCart";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from "swiper/modules";
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
-
+import { ChevronRight } from "lucide-react";
 import 'swiper/css';
 import 'swiper/css/navigation';
 export default function HomeComponent() {
@@ -33,10 +33,10 @@ export default function HomeComponent() {
     .replace(/\-\-+/g, "-");     // collapse multiple -
 }
     const features = [
-        { icon: "🚗", title: "Free Shipping", description: "Free shipping all over the US" },
-        { icon: "🔒", title: "100% Satisfaction", description: "Guaranteed satisfaction with every order" },
-        { icon: "💼", title: "Secure Payments", description: "We ensure secure transactions" },
-        { icon: "💬", title: "24/7 Support", description: "We're here to help anytime" },
+        { image: "/images/delivery-truck.png", title: "Free Shipping", description: "Free shipping all over the US" },
+        { image: "/images/reputation.png", title: "100% Satisfaction", description: "Guaranteed satisfaction with every order" },
+        { image: "/images/payment-protection.png", title: "Secure Payments", description: "We ensure secure transactions" },
+        { image: "/images/support.png", title: "24/7 Support", description: "We're here to help anytime" },
     ];
     const scrollContainerRef = useRef(null);
     const containerRef = useRef(null);
@@ -1005,148 +1005,134 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     );
                 case 'flash_sales':
                     return (
-                        <motion.section
-                            ref={refs.flashSales}
-                            initial="hiddenDown"
-                            animate="visible"
-                            variants={sectionVariants}
-                            id="flash_sales"
-                            className="px-0 sm:px-0 md:px-0 pt-6"
-                        >
-                            {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
-                                <div className="py-0">
-                                    <motion.div
-                                        variants={itemVariants}
-                                        className="section-heading flex justify-between items-center mb-4 p-2 md:px-6"
-                                    >
-                                        <h5 className="text-2xl font-bold">Categories</h5>
-                                    </motion.div>
-    
-                                    {isFlashSalesLoading ? (
-                                        <div className="flex justify-center items-center h-64">
-                                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-                                        </div>
-                                    ) : flashSalesData.length === 1 && flashSalesData[0].bgImage && flashSalesData[0].productImage ? (
-                                        <motion.div variants={itemVariants} className="px-2">
-                                            <motion.div
-                                                whileHover={{ y: -5 }}
-                                                className="relative p-6  shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
-                                                style={{
-                                                    backgroundImage: `url(${flashSalesData[0].bgImage})`,
-                                                    backgroundSize: "cover",
-                                                    backgroundPosition: "center",
-                                                }}
-                                            >
-                                                <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-center">
-                                                    <div className="w-full md:w-1/2 flex justify-center items-center overflow-hidden">
-                                                        <Image
-                                                            src={flashSalesData[0].productImage}
-                                                            alt={flashSalesData[0].title}
-                                                            width={180}
-                                                            height={180}
-                                                            className="object-contain max-h-[180px] transform transition-transform duration-300 hover:scale-110"
-                                                        />
-                                                    </div>
-                                                    <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center mt-4 md:mt-0 md:pl-4">
-                                                        <h6 className="text-xl font-semibold mb-2 text-gray-900">{flashSalesData[0].title}</h6>
-                                                        <motion.a
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                            href={flashSalesData[0].redirectUrl}
-                                                            className="mt-auto px-4 py-2 bg-blue-600 text-white rounded-full text-center hover:bg-blue-700 transition"
-                                                        >
-                                                            Shop Now →
-                                                        </motion.a>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        </motion.div>
-                                    ) : (
-                                        <motion.div variants={itemVariants}>
-                                            <Slider {...flashSalesSettings} className="flash-sales-slider relative">
-                                                {flashSalesData
-                                                    .filter(item => item.bgImage && item.productImage)
-                                                    .map(item => (
-                                                        <div key={item.id} className="px-2">
-                                                            <motion.div
-                                                                className="relative p-6  shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
-                                                                style={{
-                                                                    backgroundImage: `url(${item.bgImage})`,
-                                                                    backgroundSize: "cover",
-                                                                    backgroundPosition: "center",
-                                                                }}
-                                                            >
-                                                                <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-center">
-                                                                    <div className="w-full md:w-1/2 flex justify-center items-center overflow-hidden">
-                                                                        <Image
-                                                                            src={item.productImage}
-                                                                            alt={item.title}
-                                                                            width={180}
-                                                                            height={180}
-                                                                            className="object-contain max-h-[180px] transform transition-transform duration-300 hover:scale-110"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center mt-4 md:mt-0 md:pl-4">
-                                                                        <motion.h6
-                                                                            className="text-xl font-semibold mb-2 text-gray-900"
-                                                                            whileHover={{ scale: 1.05 }}
-                                                                            whileTap={{ scale: 1.1 }}
-                                                                            transition={{ type: "spring", stiffness: 300, damping: 10 }}
-                                                                        >
-                                                                            {item.title}
-                                                                        </motion.h6>
-                                                                        <motion.a
-                                                                            whileHover={{ scale: 1.05 }}
-                                                                            whileTap={{ scale: 0.95 }}
-                                                                            href={item.redirectUrl}
-                                                                            className="mt-auto px-4 py-2 bg-blue-600 text-white rounded-full text-center hover:bg-blue-700 transition"
-                                                                        >
-                                                                            Shop Now →
-                                                                        </motion.a>
-                                                                    </div>
-                                                                </div>
-                                                            </motion.div>
-                                                        </div>
-                                                    ))}
-                                            </Slider>
-                                        </motion.div>
-                                    )}
-                                </div>
-                            )}
-                        </motion.section>
+                       <motion.section
+  ref={refs.flashSales}
+  initial="hiddenDown"
+  animate="visible"
+  variants={sectionVariants}
+  id="flash_sales"
+  className="px-0 sm:px-0 md:px-0 pt-6"
+>
+  {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
+    <div className="py-0">
+      <motion.div
+        variants={itemVariants}
+        className="section-heading flex justify-between items-center  p-2 md:px-6"
+      >
+        {/* Optional Heading */}
+      </motion.div>
+
+      {isFlashSalesLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+   <div className="grid grid-cols-12 gap-4">
+  {flashSalesData
+    .filter(item => item.bgImage && item.productImage)
+    .map((item, index) => (
+      <motion.div
+        key={item.id}
+        whileHover={{ y: -5 }}
+        className={`relative p-6 shadow-lg h-full min-h-[250px] flex items-center overflow-hidden 
+          ${index === 0 ? "col-span-3" : index === 1 ? "col-span-6" : "col-span-3"}`}
+        style={{
+          backgroundImage: `url(${item.bgImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div
+          className={`relative z-10 w-full flex flex-col items-center text-center md:flex-row  ${
+            index === 0
+              ? "items-start text-left"
+              : index === 1
+              ? "items-center text-center"
+              : "items-end text-right"
+          }`}
+        >
+          <div className="p-1 text-left">
+            <h6 className="text-lg font-semibold mt-3 text-gray-900">
+            {item.title}
+          </h6>
+          <motion.a
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            href={item.redirectUrl}
+            className="mt-2 inline-flex items-center text-sm font-medium text-gray-800 hover:text-black transition"
+          >
+            Shop Now
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </motion.a>
+          </div>
+          <div className="p-1 ">
+          <Image
+            src={item.productImage}
+            alt={item.title}
+            width={index === 1 ? 200 : 120}
+            height={index === 1 ? 200 : 120}
+            className="object-contain max-h-[200px] transform transition-transform duration-300 hover:scale-110"
+          />
+          </div>
+        </div>
+      </motion.div>
+    ))}
+</div>
+
+      )}
+    </div>
+  )}
+</motion.section>
+
                     );
                 case 'features':
                     return (
-                   <section className="px-0 sm:px-0 md:px-0 pt-7" id="features" >
-                    <div
-                      className="grid grid-cols-2 gap-4 
-                                md:flex md:flex-nowrap md:justify-center md:gap-6 
-                                w-full"
-                    >
-                      {features.map((feature, index) => (
-                        <div
-                          key={index}
-                          className="flex flex-col md:flex-row 
-                                    items-center md:items-start 
-                                    p-6  shadow-md 
-                                    bg-gradient-to-br from-[#deb9b9] to-[#73a0e0] 
-                                    flex-1 min-w-0"
-                        >
-                          <div className="bg-white p-3 rounded-full text-2xl flex items-center justify-center shrink-0">
-                            {feature.icon}
-                          </div>
-                          <div className="mt-4 md:mt-0 md:ml-4 text-center md:text-left min-w-0">
-                            <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">
-                              {feature.title}
-                            </h3>
-                            <p className="text-sm text-gray-700 break-words">
-                              {feature.description}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                <section className="pt-7" id="features">
+  <div className="max-w-7xl mx-auto px-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+      {features.map((feature, index) => (
+        <div
+          key={index}
+          className="flex flex-col items-center cursor-pointer group"
+          onMouseEnter={(e) => {
+            const img = e.currentTarget.querySelector(".img-flip");
+            if (img) img.style.transform = "rotateY(180deg)";
+          }}
+          onMouseLeave={(e) => {
+            const img = e.currentTarget.querySelector(".img-flip");
+            if (img) img.style.transform = "rotateY(0deg)";
+          }}
+        >
+          {/* Image instead of Icon */}
+          <div
+            className="mb-4 img-flip"
+            style={{
+              transition: "transform 0.5s",
+              transformStyle: "preserve-3d",
+            }}
+          >
+            <img
+              src={feature.image}
+              alt={feature.title}
+              className="w-16 h-16 object-contain"
+            />
+          </div>
+
+          {/* Title */}
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:transition-colors duration-300">
+            {feature.title}
+          </h3>
+
+          {/* Description */}
+          <p className="text-gray-600 text-sm leading-relaxed max-w-[250px] group-hover:transition-colors duration-300">
+            {feature.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
                     );
                 case 'brands':
                     return (
