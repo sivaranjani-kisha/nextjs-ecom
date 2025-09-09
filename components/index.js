@@ -924,7 +924,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                       >
                                         <FiChevronRight size={18} />
                                       </button>
-                                      <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth">
+                                      <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth border-black p-4 rounded-md">
                                         {categoryProducts.slice(0, 6).map((product) => (
                                           <div  key={product._id} className="relative border shadow bg-white flex-shrink-0 w-64 flex flex-col justify-between p-4">
                                             <div className="absolute top-3 left-3">
