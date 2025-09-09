@@ -82,8 +82,34 @@ const scrollCategories = (direction) => {
     });
   }
 };
+  const [brandMap, setBrandMap] = useState([]);
 
 
+ const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
+const fetchBrand = async () => {
+  try {
+    const response = await fetch("/api/brand");
+    const result = await response.json();
+    if (result.error) {
+      console.error(result.error);
+    } else {
+      const data = result.data;
+ 
+      // Store as map for quick access
+      const map = {};
+      data.forEach((b) => {
+        map[b._id] = b.brand_name;
+      });
+      setBrandMap(map);
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+};
+ 
+useEffect(() => {
+  fetchBrand();
+}, []);
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -657,12 +683,25 @@ const [singleBannerData, setSingleBannerData] = useState({
 });
 const [isSingleBannerLoading, setIsSingleBannerLoading] = useState(false);
 
-    const scrollLeft = () => {
-        scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
-    };
+    // const scrollLeft = () => {
+    //     scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
+    // };
       
-    const scrollRight = () => {
-        scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" });
+    // const scrollRight = () => {
+    //     scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" });
+    // };
+
+    const categoryScrollRefs = useRef({});
+      const scrollLeft = (categoryId) => {
+    if (categoryScrollRefs.current[categoryId]) {
+      categoryScrollRefs.current[categoryId].scrollBy({ left: -300, behavior: "smooth" });
+    }
+    };
+
+    const scrollRight = (categoryId) => {
+    if (categoryScrollRefs.current[categoryId]) {
+      categoryScrollRefs.current[categoryId].scrollBy({ left: 300, behavior: "smooth" });
+    }
     };
     
     const getSubcategorySlugs = (parentId) => {
@@ -806,203 +845,179 @@ const handleCategoryClick = useCallback((category) => (e) => {
                         </div>
                         </section>
                     );
-                case 'product' :
+                case 'product':
                   return (
-                       <motion.section id="product"
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.6 }}
-                    className="recommended-products px-0 sm:px-0 md:px-0 pt-7"
-                >
-                    <div className="rounded-[23px] px-0 py-4 p-2">
-
-                      {/* Section Header */}
-                      <div className="flex justify-between items-center flex-wrap gap-4 mb-6 md:px-6">
-                        <h5 className="text-xl sm:text-2xl font-bold">
-                          Recommended for you
-                        </h5>
-                      </div>
-                      {/* Category Tabs */}
-                      <div className="flex items-center gap-2 mb-6">
-                        {/* Left Arrow */}
-                        <button
-                          onClick={() => scrollCategories("left")}
-                          className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition shrink-0"
-                        >
-                          <FiChevronLeft size={18} />
-                        </button>
-
-                        {/* Scroll Wrapper */}
-                        <div
-                          className="
-                            w-[420px]       // 👈 3 x 140px = 420px on small screens
-                            sm:w-[640px]    // ~4–5 on tablets
-                            md:w-[800px]    // ~5+ on md
-                            lg:w-full
-                            overflow-hidden
-                          "
-                        >
-                          {/* Scrollable Category Row */}
-                          <div
-                            ref={categoryScrollRef}
-                            className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-2 scrollbar-hide"
-                            style={{
-                              scrollbarWidth: "none",
-                              msOverflowStyle: "none",
-                            }}
-                          >
-                            {parentCategories.map((category) => (
-                              <button
-                                key={category._id}
-                                className={`snap-center flex-shrink-0 w-[140px] px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                                  selectedCategory?._id === category._id
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-white text-gray-700 hover:bg-gray-200"
-                                }`}
-                                onClick={() => setSelectedCategory(category)}
-                              >
-                                {category.category_name}
-                              </button>
-                            ))}
-                          </div>
+                    <motion.section
+                      id="product"
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.3 }}
+                      transition={{ duration: 0.6 }}
+                      className="recommended-products px-4 sm:px-6 md:px-6 pt-14"
+                    >
+                      <div className="bg-gray-100 rounded-[23px] px-2 py-4 p-2">
+                        {/* Section Header */}
+                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                          <h5 className="text-xl sm:text-2xl font-bold">
+                            Shop by Category
+                          </h5>
                         </div>
-
-                        {/* Right Arrow */}
-                        <button
-                          onClick={() => scrollCategories("right")}
-                          className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition shrink-0"
-                        >
-                          <FiChevronRight size={18} />
-                        </button>
-                    </div>
-
-                      
-                      {/* Product List */}
-                      {filteredProducts.length === 0 ? (
-                        <div className="text-center font-bold text-gray-500 text-lg py-10">
-                          No Product Found for this Category..!
-                        </div>
-                      ) : (
                         
-                      <div className="py-6">
-                        <div className="max-w-7xl mx-auto border border-gray-200  bg-white overflow-hidden">
-                          <div className="flex flex-col md:flex-row">
-                            {/* Left Banner */}
-                            {selectedCategory && (
-                            <div className="flex-shrink-0 w-full md:w-1/3 relative">
-                              <div className="hidden md:block absolute inset-0"  style={{ backgroundImage: `url(${selectedCategory.image})` }}></div>
-                            
-                              <div className="relative z-10 h-full flex flex-col p-6 text-white">
-                                <h2 className="text-2xl font-bold">{selectedCategory.category_name}</h2>
+                        {/* Category-based Product Display */}
+                        <div className="space-y-8">            
+                          {parentCategories
+                            .filter(category => priorityCategories.includes(category.category_slug))
+                            .sort((a, b) => {
+                              // Sort by the order in priorityCategories array
+                              return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
+                            })
+                            .map((category, index) => {
+                              // Get products for this category
+                              const categoryProducts = (() => {
+                                const subCategories = categories.filter(
+                                  cat => cat.parentid === category._id
+                                );
+                          
+                                const validCategoryIds = [
+                                  category._id,
+                                  ...subCategories.map(sub => sub._id)
+                                ];
+                          
+                                const allProducts = products.filter(product => 
+                                  product.category && 
+                                  validCategoryIds.includes(product.category.toString())
+                                );
                                 
-                                <Link  href={`/category/${selectedCategory.category_slug || selectedCategory._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
-                              </div>
-                            </div>
-                            )}
-
-                            {/* Right Scrollable Products */}
-                            <div className="relative flex-1 pt-2 pb-2 pr-2 bg-[#1e3a8a]/95 overflow-hidden group">
-                              {/* Left Arrow */}
-                              <button
-                                onClick={scrollLeft}
-                                className="absolute left-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                              >
-                                <FiChevronLeft size={18} />
-                              </button>
-
-                              {/* Right Arrow */}
-                              <button
-                                onClick={scrollRight}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                              >
-                                <FiChevronRight size={18} />
-                              </button>
-
-                              {/* Scrollable Grid */}
-                              <div
-                                ref={scrollContainerRef}
-                                className="flex overflow-x-auto scrollbar-hide scroll-smooth"
-                              >
-                                {filteredProducts.map((product) => (
-
-                                <div  key={product._id} className="relative border shadow bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4">
-                                  <div className="absolute top-3 left-3">
-                                    
-                                      {product.special_price && product.price > product.special_price ? (
-                                      (() => {
-                                        const discount = Math.floor(
-                                          ((product.price - product.special_price) / product.price) * 100
-                                        );
-
-                                        return discount && discount > 0 ? (
-
-                                            <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
-                                              {discount}% OFF
-                                            </span>
-                                        
-                                        ) : (
-                                          null
-                                        );
-                                      })()
-                                    ) : (
-                                      null
-                                    )}
-
+                                return allProducts.slice(0, 50);
+                              })();
+                          
+                              // Skip empty categories
+                              if (categoryProducts.length === 0) return null;
+                          
+                              return (
+                                <div  key={category._id}  className={`bg-white rounded-lg p-6 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
+                                  {/* Category Banner */}
+                                  <div className="flex-shrink-0 w-full md:w-1/3 relative">
+                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${'/uploads/small-appliance-banner.webp'})` }}></div>
+                                    <div className="relative z-10 h-full flex flex-col p-6 text-white">
+                                      <h2 className="text-2xl font-bold">{category.category_name}</h2>
+                                      
+                                      <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
+                                    </div>
                                   </div>
-                                  <div className="h-28 flex items-center justify-center mt-4">
-                                    <img
-                                      src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
-                                      alt={product.images?.[0] || "Product image"} 
-                                      className="max-h-full max-w-full object-contain"
-                                      onError={(e) => { 
-                                        e.target.onerror = null; 
-                                        e.target.src = "/uploads/products/placeholder.jpg";
-                                      }} 
-                                    />
-                                  </div>
-                                  <h3 className="mt-3 font-semibold group-hover:text-blue-600 line-clamp-2 min-h-[3rem] leading-snug">
-                                    {product.name}
-                                  </h3>
-                                  <div className="mt-2 text-lg font-bold text-blue-600">
-                                      Rs. {product.special_price || product.price}
-                                    <span className="line-through text-gray-400 text-sm ml-1">
-                                      Rs. {product.price}
-                                    </span>
-                                  </div>
-                                  <p className={`text-sm mt-1 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
-                                    {product.quantity > 0
-                                      ? `In stock, ${product.quantity} units`
-                                      : "Out of stock"}
-                                  </p>
 
-                                  <div className="mt-3 flex items-center justify-between gap-2">
-                              <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
-                              <a 
-                                href={`https://wa.me/?text=Check this out: ${product.name}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
-                              >
-                                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
-                                  <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-                                </svg>
-                              </a>
-                            </div>
+                                  {/* Products Grid */}
+                                  <div className="w-full md:w-2/3">
+                                    <div className={` relative flex-1 pt-2 pb-2 ${index % 2 === 1 ? 'pl-2' : 'pr-2'} bg-[#1e3a8a]/95 overflow-hidden group`} >
+                                      {/* Left Arrow */}
+                                      <button
+                                          onClick={() => scrollLeft(category._id)}
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                      >
+                                        <FiChevronLeft size={18} />
+                                      </button>
+
+                                      {/* Right Arrow */}
+                                      <button
+                                            onClick={() => scrollRight(category._id)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                      >
+                                        <FiChevronRight size={18} />
+                                      </button>
+                                      <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth">
+                                        {categoryProducts.slice(0, 6).map((product) => (
+                                          <div  key={product._id} className="relative border shadow bg-white flex-shrink-0 w-64 flex flex-col justify-between p-4">
+                                            <div className="absolute top-3 left-3">
+                                              
+                                                {product.special_price && product.price > product.special_price ? (
+                                                (() => {
+                                                  const discount = Math.floor(
+                                                    ((product.price - product.special_price) / product.price) * 100
+                                                  );
+
+                                                  console.log(product);
+
+                                                  return discount && discount > 0 ? (
+
+                                                      <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
+                                                        {discount}% OFF
+                                                      </span>
+                                                  
+                                                  ) : (
+                                                    null
+                                                  );
+                                                })()
+                                              ) : (
+                                                null
+                                              )}
+
+                                            </div>
+                                            <div className="h-28 flex items-center justify-center mt-4">
+                                              <img
+                                                src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
+                                                alt={product.images?.[0] || "Product image"} 
+                                                className="max-h-full max-w-full object-contain"
+                                                onError={(e) => { 
+                                                  e.target.onerror = null; 
+                                                  e.target.src = "/uploads/products/placeholder.jpg";
+                                                }} 
+                                              />
+                                            </div>
+
+                                            <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
+                                              <Link
+                                                href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                                                className="hover:text-blue-600"
+                                              >
+                                                {brandMap[product.brand] || ""}
+                                              </Link>
+                                            </h4>
+                                            <Link
+                                              href={`/product/${product.slug || product._id}`}
+                                              className="block mb-2"
+                                            >
+                                            <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                                              {product.name}
+                                            </h3>
+                                            </Link>
+                                            <div className="mt-2 text-lg font-bold text-blue-600">
+                                                Rs. {product.special_price || product.price}
+                                              <span className="line-through text-gray-400 text-sm ml-1">
+                                                Rs. {product.price}
+                                              </span>
+                                            </div>
+                                            <p className={`text-sm mt-1 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
+                                              {product.quantity > 0
+                                                ? `In stock, ${product.quantity} units`
+                                                : "Out of stock"}
+                                            </p>
+
+                                            <div className="mt-3 flex items-center justify-between gap-2">
+                                              <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
+                                              <a 
+                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: https://bea.divinfosys.com/product/${product.slug}`)}`} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer" 
+                                              className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
+                                              >
+                                                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
+                                                    <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
+                                                </svg>
+                                              </a>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                                ))}
-
-                                {/* Duplicate more products here… */}
-                              </div>
-                            </div>
-                          </div>
+                              );
+                            })
+                          }
                         </div>
                       </div>
-
-                      )}
-                    </div>
-                  </motion.section>
-                    );
+                    </motion.section>
+                  );
                 case 'flash_sales':
                     return (
                        <motion.section
