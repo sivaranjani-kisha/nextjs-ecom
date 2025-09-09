@@ -49,23 +49,47 @@ const handleIncrease = () => {
   }
 };
 
-
-// Function to fetch category products
-  useEffect(() => {
-    const fetchCategoryProducts = async () => {
+const categoryId = product?.category;
+  const currentProductId = product?._id;
+useEffect(() => {
+    const fetchRelatedProducts = async () => {
       try {
-        const res = await fetch(`/api/product/category/${categoryId}?limit=5`);
+        const res = await fetch(`/api/product/related?category=${categoryId}&exclude=${currentProductId}&limit=5`);
         const data = await res.json();
-        if (data.success) {
-          setCategoryProducts(data.products);
-        }
-      } catch (error) {
-        console.error("Error fetching category products:", error);
+        if (res.ok) {
+  if (data.success && data.products) {
+    setRelatedProducts(data.products);
+  } else if (data.relatedProducts) {
+    setRelatedProducts(data.relatedProducts);
+  } else {
+    setRelatedProducts([]);
+  }
+}
+      } catch (err) {
+        console.error(err);
       }
     };
 
-    if (categoryId) fetchCategoryProducts();
-  }, [categoryId]);
+    if (categoryId) fetchRelatedProducts();
+  }, [categoryId, currentProductId]); // De
+
+
+// // Function to fetch category products
+//   useEffect(() => {
+//     const fetchCategoryProducts = async () => {
+//       try {
+//         const res = await fetch(`/api/product/category/${categoryId}?limit=5`);
+//         const data = await res.json();
+//         if (data.success) {
+//           setCategoryProducts(data.products);
+//         }
+//       } catch (error) {
+//         console.error("Error fetching category products:", error);
+//       }
+//     };
+
+//     if (categoryId) fetchCategoryProducts();
+//   }, [categoryId]);
 
 
 
@@ -1478,85 +1502,82 @@ const fetchBrand = async () => {
       </div>
     )}
  
-    {/* Related Products Section */}
- 
- 
-{relatedProducts.length > 0 && (
-  <div className="px-4 py-4">
-    <h2 className="text-sm font-bold text-customBlue underline mb-2">
-      Related Products
-    </h2>
-    {relatedProducts.slice(0, 3).map((item) => (
-      <div key={item._id} className="flex items-start mb-4">
-        <input
-          type="checkbox"
-          className="mt-2 mr-3"
-          checked={selectedRelatedProducts.some(p => p._id === item._id)}
-          onChange={() => toggleRelatedProduct(item)}
-        />
-        <div className="flex items-start gap-3">
-          {item.images?.[0] && (
-  <img
-    src={'/uploads/products/' + item.images[0]} // Change this line
-    alt={item.name}
-    className="w-16 h-16 object-contain"
-  />
-)}
-          <div className="text-sm">
-            {/* Product Name with slug link */}
-            <Link
-              href={`/product/${item.slug}`}
-              className="block mb-1"
-              onClick={() => handleProductClick(item)}
-            >
-              <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                {item.name}
-              </h3>
-            </Link>
- 
-            {/* Price with strike-through if special price */}
-            <div className="flex items-center gap-2">
-              <span className="text-base font-semibold text-red-600">
-                ₹ {(
-                  item.special_price &&
-                  item.special_price > 0 &&
-                  item.special_price !== "0" &&
-                  item.special_price < item.price
-                    ? item.special_price
-                    : item.price
-                ).toLocaleString()}
-              </span>
- 
-              {item.special_price &&
-                item.special_price > 0 &&
-                item.special_price !== "0" &&
-                item.special_price < item.price && (
-                  <span className="text-xs text-gray-500 line-through">
-                    ₹ {item.price.toLocaleString()}
-                  </span>
-                )}
-            </div>
- 
-            {/* Stock Status + Units */}
-            <h4
-              className={`text-xs ${
-                item.stock_status === "In Stock"
-                  ? "text-green-600"
-                  : "text-red-600"
-              }`}
-            >
-              {item.stock_status}
-              {item.stock_status === "In Stock" && item.quantity
-                ? `, ${item.quantity} units`
-                : ""}
-            </h4>
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
-)}
- 
+   {/* // Then update your JSX to show loading/empty states: */}
+   {relatedProductsLoading ? (
+     <div className="px-4 py-4 border-t border-gray-300">
+       <div className="animate-pulse">
+         <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
+         {[1, 2, 3].map((i) => (
+           <div key={i} className="flex items-start mb-4">
+             <div className="w-16 h-16 bg-gray-200 rounded mr-3"></div>
+             <div className="flex-1">
+               <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+               <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+             </div>
+           </div>
+         ))}
+       </div>
+     </div>
+   ) : relatedProducts.filter(item => item.quantity > 0).length > 0 ? (
+     <div className="px-4 py-4 border-t border-gray-300">
+       <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
+         Related Products
+       </h3>
+       {relatedProducts
+         .filter(item => item.quantity > 0) // ✅ only in-stock
+         .map((item) => (
+           <div key={item._id} className="flex items-start mb-4">
+             <input
+               type="checkbox"
+               className="mt-2 mr-3"
+               checked={selectedRelatedProducts.some(p => p._id === item._id)}
+               onChange={() => toggleRelatedProduct(item)}
+             />
+             {item.images?.[0] && (
+               <img
+                 src={`/uploads/products/${item.images[0]}`}
+                 alt={item.name}
+                 className="w-16 h-16 object-contain mr-3 border rounded"
+                 onError={(e) => {
+                   e.target.onerror = null;
+                   e.target.src = "/no-image.jpg";
+                 }}
+               />
+             )}
+             <div className="flex-1 min-w-0">
+               <Link 
+                 href={`/product/${item.slug}`} 
+                 className="block mb-1 hover:underline"
+               >
+                 <h3 className="text-xs font-medium text-blue-600 line-clamp-2">
+                   {item.name}
+                 </h3>
+               </Link>
+               <div className="flex items-center gap-2 mt-1">
+                 <span className="text-sm font-semibold text-red-600">
+                   ₹{item.special_price && item.special_price < item.price 
+                     ? item.special_price.toLocaleString() 
+                     : item.price.toLocaleString()}
+                 </span>
+                 {item.special_price && item.special_price < item.price && (
+                   <span className="text-xs text-gray-500 line-through">
+                     ₹{item.price.toLocaleString()}
+                   </span>
+                 )}
+               </div>
+               <p className="text-xs text-green-600 mt-1">
+                 In Stock ({item.quantity} units)
+               </p>
+             </div>
+           </div>
+         ))}
+     </div>
+   ) : (
+     <div className="px-4 py-4 border-t border-gray-300">
+       <p className="text-sm text-gray-500">No related products found</p>
+     </div>
+   )}
+   
  
   </div>
  
@@ -1607,12 +1628,12 @@ const fetchBrand = async () => {
            <ProductDetailsSection product={product} />
            <RecentlyViewedProducts className="w-full" />
          
-           {product?.related_products?.length > 0 && (
+           
            <RelatedProducts
              className="w-full"
              currentProductId={product._id}
            />
-         )}
+         
          
          
          
