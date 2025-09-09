@@ -121,7 +121,7 @@ export default function ContactForm() {
           />
         </div>
         <div className="relative text-left px-4">
-          <h1 className="text-3xl md:text-5xl font-bold">Contact Bea</h1>
+          <h1 className="text-3xl md:text-5xl font-bold">Contact BEA</h1>
         </div>
       </section>
 
@@ -299,28 +299,125 @@ export default function ContactForm() {
           </div>
         </div>
 
-        {storeGroups.map((group, idx) => (
-          <section key={idx} className="bg-white py-6">
-            <div className="max-w-7xl mx-auto px-4">
-              <h2 className="text-2xl font-bold text-center mb-3">
-                SHOWROOMS IN {group.city.toUpperCase()}
-              </h2>
+        {/** --- Coimbatore --- */}
+        {storeGroups
+          .filter(group => group.city.toLowerCase() === "coimbatore")
+          .map((group, idx) => (
+            <section key={idx} className="bg-white py-6">
+              <div className="max-w-7xl mx-auto px-4">
+                <h2 className="text-2xl font-bold text-center mb-3">
+                  SHOWROOMS IN {group.city.toUpperCase()}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {group.stores.map((store) => (
+                    <div key={store._id} className="bg-gray-100 p-6 rounded-lg shadow">
+                      <h3 className="text-lg font-bold text-blue-900 mb-2">
+                        {store.organisation_name}
+                      </h3>
+                      <p className="text-sm text-gray-700">{store.address},</p>
+                      {/* <p className="text-sm text-gray-700">
+                        {store.city} - {store.zipcode}.
+                      </p> */}
+                      <p className="text-sm text-gray-800">{store.phone}</p>
+                      <p className="text-sm text-blue-600 underline mb-4">
+                        <a
+                          href={`mailto:${store.email}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {store.email}
+                        </a>
+                      </p>
+                      <a
+                        href={`https://wa.me/${store.phone}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded"
+                      >
+                        Whatsapp
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ))
+        }
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {group.stores.map((store) => (
-                  <div key={store._id} className="bg-gray-100 p-6 rounded-lg shadow" >
+        {/** --- Salem --- */}
+        {storeGroups
+          .filter(group => group.city.toLowerCase() === "salem")
+          .map((group, idx) => (
+            <section key={idx} className="bg-white py-6">
+              <div className="max-w-7xl mx-auto px-4">
+                <h2 className="text-2xl font-bold text-center mb-3">
+                  SHOWROOMS IN {group.city.toUpperCase()}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {group.stores.map((store) => (
+                    <div key={store._id} className="bg-gray-100 p-6 rounded-lg shadow">
+                      <h3 className="text-lg font-bold text-blue-900 mb-2">
+                        {store.organisation_name}
+                      </h3>
+                      <p className="text-sm text-gray-700">{store.address},</p>
+                      {/* <p className="text-sm text-gray-700">
+                        {store.city} - {store.zipcode}.
+                      </p> */}
+                      <p className="text-sm text-gray-800">{store.phone}</p>
+                      <p className="text-sm text-blue-600 underline mb-4">
+                        <a
+                          href={`mailto:${store.email}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {store.email}
+                        </a>
+                      </p>
+                      <a
+                        href={`https://wa.me/${store.phone}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded"
+                      >
+                        Whatsapp
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ))
+        }
+
+        {/** --- Remaining Cities as "Around Tamilnadu" --- */}
+        <section className="bg-white py-6">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="text-2xl font-bold text-center mb-3">
+              SHOWROOMS AROUND TAMILNADU
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {storeGroups
+                .filter(
+                  group =>
+                    !["coimbatore", "salem"].includes(group.city.toLowerCase())
+                )
+                .flatMap(group => group.stores)
+                .map(store => (
+                  <div key={store._id} className="bg-gray-100 p-6 rounded-lg shadow">
                     <h3 className="text-lg font-bold text-blue-900 mb-2">
                       {store.organisation_name}
                     </h3>
-                    <p className="text-sm text-gray-700">
-                      {store.address},
-                    </p>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700">{store.address},</p>
+                    {/* <p className="text-sm text-gray-700">
                       {store.city} - {store.zipcode}.
-                    </p>
+                    </p> */}
                     <p className="text-sm text-gray-800">{store.phone}</p>
                     <p className="text-sm text-blue-600 underline mb-4">
-                      <a href={`mailto:${store.email}`} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={`mailto:${store.email}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {store.email}
                       </a>
                     </p>
@@ -334,10 +431,9 @@ export default function ContactForm() {
                     </a>
                   </div>
                 ))}
-              </div>
             </div>
-          </section>
-        ))}        
+          </div>
+        </section>     
 
       </div>
     </>
