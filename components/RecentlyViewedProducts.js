@@ -1,18 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // components/RecentlyViewedProducts.jsx
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -167,7 +152,7 @@ const RecentlyViewedProducts = () => {
                           : `/uploads/products/${product.images[0]}`
                       }
                       alt={product.name}
-                      className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105 w-full h-full"
+                      className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105 h-60 w-60" 
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = "/uploads/products/placeholder.jpg";
