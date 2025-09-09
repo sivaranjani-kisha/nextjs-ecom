@@ -1566,51 +1566,59 @@ const fetchBrand = async () => {
       ))}
     </div>
   </div>
-) : relatedProducts.length > 0 ? (
+) : relatedProducts.filter(item => item.quantity > 0).length > 0 ? (
   <div className="px-4 py-4 border-t border-gray-300">
     <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
       Related Products
     </h3>
-    {relatedProducts.map((item) => (
-      <div key={item._id} className="flex items-start mb-4">
-        {item.images?.[0] && (
-          <img
-            src={`/uploads/products/${item.images[0]}`}
-            alt={item.name}
-            className="w-16 h-16 object-contain mr-3 border rounded"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "/no-image.jpg";
-            }}
+    {relatedProducts
+      .filter(item => item.quantity > 0) // ✅ only in-stock
+      .map((item) => (
+        <div key={item._id} className="flex items-start mb-4">
+          <input
+            type="checkbox"
+            className="mt-2 mr-3"
+            checked={selectedRelatedProducts.some(p => p._id === item._id)}
+            onChange={() => toggleRelatedProduct(item)}
           />
-        )}
-        <div className="flex-1 min-w-0">
-          <Link 
-            href={`/product/${item.slug}`} 
-            className="block mb-1 hover:underline"
-          >
-            <h3 className="text-xs font-medium text-blue-600 line-clamp-2">
-              {item.name}
-            </h3>
-          </Link>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm font-semibold text-red-600">
-              ₹{item.special_price && item.special_price < item.price 
-                ? item.special_price.toLocaleString() 
-                : item.price.toLocaleString()}
-            </span>
-            {item.special_price && item.special_price < item.price && (
-              <span className="text-xs text-gray-500 line-through">
-                ₹{item.price.toLocaleString()}
+          {item.images?.[0] && (
+            <img
+              src={`/uploads/products/${item.images[0]}`}
+              alt={item.name}
+              className="w-16 h-16 object-contain mr-3 border rounded"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/no-image.jpg";
+              }}
+            />
+          )}
+          <div className="flex-1 min-w-0">
+            <Link 
+              href={`/product/${item.slug}`} 
+              className="block mb-1 hover:underline"
+            >
+              <h3 className="text-xs font-medium text-blue-600 line-clamp-2">
+                {item.name}
+              </h3>
+            </Link>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm font-semibold text-red-600">
+                ₹{item.special_price && item.special_price < item.price 
+                  ? item.special_price.toLocaleString() 
+                  : item.price.toLocaleString()}
               </span>
-            )}
+              {item.special_price && item.special_price < item.price && (
+                <span className="text-xs text-gray-500 line-through">
+                  ₹{item.price.toLocaleString()}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-green-600 mt-1">
+              In Stock ({item.quantity} units)
+            </p>
           </div>
-          <p className="text-xs text-gray-600 mt-1">
-            {item.quantity > 0 ? 'In Stock' : 'Out of Stock'}
-          </p>
         </div>
-      </div>
-    ))}
+      ))}
   </div>
 ) : (
   <div className="px-4 py-4 border-t border-gray-300">
@@ -1671,13 +1679,19 @@ const fetchBrand = async () => {
            <ProductDetailsSection product={product} />
            <RecentlyViewedProducts className="w-full" />
          
-           {product?.related_products?.length > 0 && (
+           {/* {product?.related_products?.length > 0 && (
            <RelatedProducts
              className="w-full"
              currentProductId={product._id}
              categoryId={product.category}
            />
-         )}
+         )} */}
+
+         <RelatedProducts
+             className="w-full"
+             currentProductId={product._id}
+             categoryId={product.category}
+           />
          
          
          
