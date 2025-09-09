@@ -687,7 +687,7 @@ const [isSingleBannerLoading, setIsSingleBannerLoading] = useState(false);
         );
     })() : products;
 
-
+console.log("Filtered Products:", filteredProducts);
 
     const handleProductClick = (product) => {
         if (navigating) return;
@@ -784,11 +784,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                 case 'category_banner':
                     return (
                       <section id="category_banner">
-                        <div className="px-0  pt-14">
+                        <div className="px-0  pt-7">
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 {categoryBanner.map((banner, index) => (
                                     <div key={index} className="col-span-1">
-                                        <div className="card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                        <div className="card  overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                                             <Link href={banner.redirectUrl || "#"} className="no-underline">
                                                 <img
                                                     src={banner.imageUrl}
@@ -813,10 +813,10 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.6 }}
-                    className="recommended-products px-0 sm:px-0 md:px-0 pt-14"
+                    className="recommended-products px-0 sm:px-0 md:px-0 pt-7"
                 >
-                    <div className="bg-gray-100 rounded-[23px] px-0 py-4 p-2">
-                      
+                    <div className="rounded-[23px] px-0 py-4 p-2">
+
                       {/* Section Header */}
                       <div className="flex justify-between items-center flex-wrap gap-4 mb-6 md:px-6">
                         <h5 className="text-xl sm:text-2xl font-bold">
@@ -885,8 +885,8 @@ const handleCategoryClick = useCallback((category) => (e) => {
                         </div>
                       ) : (
                         
-                      <div className="bg-gray-100 py-6">
-                        <div className="max-w-7xl mx-auto border border-gray-200 rounded-lg bg-white overflow-hidden">
+                      <div className="py-6">
+                        <div className="max-w-7xl mx-auto border border-gray-200  bg-white overflow-hidden">
                           <div className="flex flex-col md:flex-row">
                             {/* Left Banner */}
                             {selectedCategory && (
@@ -1011,7 +1011,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             animate="visible"
                             variants={sectionVariants}
                             id="flash_sales"
-                            className="px-0 sm:px-0 md:px-0 pt-14"
+                            className="px-0 sm:px-0 md:px-0 pt-6"
                         >
                             {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
                                 <div className="py-0">
@@ -1030,7 +1030,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                         <motion.div variants={itemVariants} className="px-2">
                                             <motion.div
                                                 whileHover={{ y: -5 }}
-                                                className="relative p-6 rounded-lg shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
+                                                className="relative p-6  shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
                                                 style={{
                                                     backgroundImage: `url(${flashSalesData[0].bgImage})`,
                                                     backgroundSize: "cover",
@@ -1069,7 +1069,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                     .map(item => (
                                                         <div key={item.id} className="px-2">
                                                             <motion.div
-                                                                className="relative p-6 rounded-lg shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
+                                                                className="relative p-6  shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
                                                                 style={{
                                                                     backgroundImage: `url(${item.bgImage})`,
                                                                     backgroundSize: "cover",
@@ -1117,7 +1117,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     );
                 case 'features':
                     return (
-                   <section className="px-0 sm:px-0 md:px-0 pt-14" id="features" >
+                   <section className="px-0 sm:px-0 md:px-0 pt-7" id="features" >
                     <div
                       className="grid grid-cols-2 gap-4 
                                 md:flex md:flex-nowrap md:justify-center md:gap-6 
@@ -1128,7 +1128,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                           key={index}
                           className="flex flex-col md:flex-row 
                                     items-center md:items-start 
-                                    p-6 rounded-xl shadow-md 
+                                    p-6  shadow-md 
                                     bg-gradient-to-br from-[#deb9b9] to-[#73a0e0] 
                                     flex-1 min-w-0"
                         >
@@ -1155,10 +1155,10 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             initial={scrollDirection === 'down' ? 'hiddenDown' : 'hiddenUp'} 
                             animate= 'visible' 
                             variants={sectionVariants} 
-                            className="px-0 sm:px-0 md:px-0 pt-14"
+                            className="px-0 sm:px-0 md:px-0 pt-7"
                         >
                             <div>
-                                <motion.div variants={containerVariants} className="rounded-lg bg-gray-100 rounded-[23px] p-2 md:px-6">
+                                <motion.div variants={containerVariants} className="  rounded-[23px] p-2 md:px-6">
                                     <motion.div variants={itemVariants} className="flex justify-between items-center mb-4">
                                         <h5 className= "text-lg font-semibold">Shop by Brands</h5>
                                     </motion.div>
@@ -1274,7 +1274,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       initial="hidden"
                       animate="visible"
                       variants={containerVariants}
-                      className="overflow-hidden pt-14"
+                      className="overflow-hidden pt-7"
                     >
                       <div className="relative">
                         {isSingleBannerLoading ? (
@@ -1349,7 +1349,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       initial="hidden"
                       animate="visible"
                       variants={containerVariants}
-                      className="overflow-hidden pt-14"
+                      className="overflow-hidden pt-7"
                     >
                       <div className="relative">
                         {isSingleBannerLoading ? (
@@ -1419,9 +1419,9 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
                       transition={{ duration: 0.6 }}
-                      className="px-0 sm:px-0 md:px-0 pt-14"
+                      className="px-0 sm:px-0 md:px-0 pt-7"
                     >
-                      <div className="bg-gray-100 rounded-2xl p-3">
+                      <div className=" rounded-2xl p-3">
                         {/* Header */}
                         <div className="flex justify-between items-center mb-6 md:px-4">
                           <h5 className="text-xl font-bold">What's Trending</h5>
@@ -1465,7 +1465,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
       <motion.div
         key={video._id}
         whileHover={{ scale: 1.05 }}
-        className="min-w-[320px] rounded-xl shadow-md bg-white overflow-hidden"
+        className="min-w-[320px]  shadow-md bg-white overflow-hidden"
       >
         {/* 👉 Thumbnail click = same as title click */}
         <div
@@ -1502,7 +1502,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                         {/* ✅ Modal for YouTube video */}
                         {activeVideo && (
                           <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-                            <div className="bg-white rounded-lg overflow-hidden relative w-[90%] md:w-[700px] h-[400px]">
+                            <div className="bg-white  overflow-hidden relative w-[90%] md:w-[700px] h-[400px]">
                               {/* Close Button */}
                               <button
                                 className="absolute top-2 right-2 bg-black text-white rounded-full p-1"
@@ -1554,7 +1554,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
 
             {navigating && (
             <div className="fixed inset-0 z-[9999] flex justify-center items-center bg-black bg-opacity-30">
-              <div className="p-4 rounded-lg shadow-lg">
+              <div className="p-4  shadow-lg">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
               </div>
             </div>
@@ -1626,7 +1626,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                           {offerProducts.slice(0, 4).map((product, index) => (
                             <div
                               key={product._id}
-                              className={`card rounded-lg shadow-sm h-[140px] min-h-[140px] flex overflow-hidden ${bgClasses[index % bgClasses.length]}`}
+                              className={`card  shadow-sm h-[140px] min-h-[140px] flex overflow-hidden ${bgClasses[index % bgClasses.length]}`}
                             >
                               <div className="flex items-center">
                                 <div className="w-1/3 p-2">
@@ -1684,7 +1684,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             {offerProducts.map((product, index) => (
                               <SwiperSlide key={product._id}>
                                 <div
-                                  className={`card rounded-lg shadow-sm h-[140px] min-h-[140px] flex overflow-hidden ${bgClasses[index % bgClasses.length]}`}
+                                  className={`card  shadow-sm h-[140px] min-h-[140px] flex overflow-hidden ${bgClasses[index % bgClasses.length]}`}
                                 >
                                   <div className="flex items-center">
                                     <div className="w-1/3 p-2">

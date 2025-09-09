@@ -345,12 +345,13 @@ const capitalizeFirstLetter = (str) =>
                             <span className="ml-2  text-gray-500">
                               {mainCat.brands.map((brand, i) => (
                                 <span key={brand._id}>
-                                  <Link
+                                 <Link
                                     href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
-                                    className="hover:text-white hover:underline "
+                                    className="hover:text-white hover:underline"
                                   >
-                                    {capitalizeFirstLetter(brand.brand_name)}
+                                    {brand.brand_name.charAt(0).toUpperCase() + brand.brand_name.slice(1).toLowerCase()}
                                   </Link>
+
                                   {i < mainCat.brands.length - 1 && " / "}
                                 </span>
                               ))}
@@ -373,10 +374,11 @@ const capitalizeFirstLetter = (str) =>
             <div>
               <div className="container mx-auto px-3 flex flex-col md:flex-column">
                 <h4 className="text-white font-medium mb-2 md:mb-0">Our Locations:</h4>
-                <p >
+               <p className="text-sm text-gray-500" style={{ fontSize: "small" }}>
+
                   {stores.map((store, index) => (
-                    <span key={index}>
-                      {store.organisation_name}
+                    <span key={index}> 
+                      {store.organisation_name},
                      
                     </span>
                   ))}
