@@ -69,6 +69,7 @@ export default function HomeComponent() {
    const [homeSectionData, setHomeSectionData] = useState({ sections: [] });
   //const [isSectionLoading, setIsSectionLoading] = useState(false);
   const [isSectionLoading, setIsSectionLoading] = useState(false);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     // Cateogry Scroll
     const categoryScrollRef = useRef(null);
 const [videos, setVideos] = useState([]);
@@ -995,7 +996,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                             <div className="mt-3 flex items-center justify-between gap-2">
                                               <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
                                               <a 
-                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: https://bea.divinfosys.com/product/${product.slug}`)}`} 
+                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
                                               target="_blank" 
                                               rel="noopener noreferrer" 
                                               className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
