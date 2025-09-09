@@ -1117,7 +1117,6 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     );
                 case 'features':
                     return (
-<<<<<<< HEAD
                    <section className="px-0 sm:px-0 md:px-0 pt-7" id="features" >
                     <div
                       className="grid grid-cols-2 gap-4 
@@ -1143,49 +1142,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             <p className="text-sm text-gray-700 break-words">
                               {feature.description}
                             </p>
-=======
-                      <section className="py-14" id="features">
-                        <div className="max-w-7xl mx-auto px-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-                            {features.map((feature, index) => (
-                              <div
-                                key={index}
-                                className="flex flex-col items-center cursor-pointer group"
-                                onMouseEnter={(e) => {
-                                  const icon = e.currentTarget.querySelector(".icon-flip");
-                                  if (icon) icon.style.transform = "rotateY(180deg)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  const icon = e.currentTarget.querySelector(".icon-flip");
-                                  if (icon) icon.style.transform = "rotateY(0deg)";
-                                }}
-                              >
-                                {/* Icon */}
-                                <div
-                                  className="text-5xl text-gray-800 mb-4 icon-flip"
-                                  style={{
-                                    transition: "transform 0.5s",
-                                    transformStyle: "preserve-3d",
-                                  }}
-                                >
-                                  {feature.icon}
-                                </div>
-
-                                {/* Title */}
-                                <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:transition-colors duration-300">
-                                  {feature.title}
-                                </h3>
-
-                                {/* Description */}
-                                <p className="text-gray-600 text-sm leading-relaxed max-w-[250px] group-hover:transition-colors duration-300">
-                                  {feature.description}
-                                </p>
-                              </div>
-                            ))}
->>>>>>> aa8181833b3a18177534613b694eed8eddf2e820
                           </div>
                         </div>
-                      </section>
+                      ))}
+                    </div>
+                  </section>
                     );
                 case 'brands':
                     return (
