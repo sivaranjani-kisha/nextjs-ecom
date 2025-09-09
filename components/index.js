@@ -853,11 +853,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
                       transition={{ duration: 0.6 }}
-                      className="recommended-products px-4 sm:px-6 md:px-6 pt-14"
+                      className="recommended-products px-4 sm:px-0 md:px-0 pt-14"
                     >
-                      <div className="rounded-[23px] px-2 py-4 p-2">
+                      <div className="rounded-[23px] px-0 py-4 p-2">
                         {/* Section Header */}
-                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6 md:px-6">
                           <h5 className="text-xl sm:text-2xl font-bold">
                             Shop by Category
                           </h5>
@@ -895,7 +895,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                               if (categoryProducts.length === 0) return null;
                           
                               return (
-                                <div  key={category._id}  className={`bg-white rounded-lg p-6 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
+                                <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
                                   {/* Category Banner */}
                                   <div className="flex-shrink-0 w-full md:w-1/3 relative">
                                     <div className="absolute inset-0"  style={{ backgroundImage: `url(${'/uploads/small-appliance-banner.webp'})` }}></div>
@@ -924,7 +924,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                       >
                                         <FiChevronRight size={18} />
                                       </button>
-                                      <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth border-black p-4 rounded-md">
+                                      <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth">
                                         {categoryProducts.slice(0, 6).map((product) => (
                                           <div  key={product._id} className="relative border shadow bg-white flex-shrink-0 w-64 flex flex-col justify-between p-4">
                                             <div className="absolute top-3 left-3">
