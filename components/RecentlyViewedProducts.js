@@ -143,34 +143,43 @@ const RecentlyViewedProducts = () => {
                 key={product._id}
                 className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
               >
-                <div className="relative aspect-square bg-gray-50 items-center justify-center">
-                  {product.images?.[0] && (
-                    <img
-                      src={
-                        product.images[0].startsWith("http")
-                          ? product.images[0]
-                          : `/uploads/products/${product.images[0]}`
-                      }
-                      alt={product.name}
-                      className="object-contain  transition-transform duration-300 group-hover:scale-105 flex  h-60 w-60 " 
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/uploads/products/placeholder.jpg";
-                      }}
-                    />
+               <div className="relative aspect-square w-58 h-58 bg-gray-50 flex items-center justify-center rounded-md overflow-hidden">
+                {product.images?.[0] ? (
+                  <img
+                    src={
+                      product.images[0].startsWith("http")
+                        ? product.images[0]
+                        : `/uploads/products/${product.images[0]}`
+                    }
+                    alt={product.name}
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/uploads/products/placeholder.jpg";
+                    }}
+                  />
+                ) : (
+                  <img
+                    src="/uploads/products/placeholder.jpg"
+                    alt="placeholder"
+                    className="w-full h-full object-contain"
+                  />
+                )}
+
+                {Number(product.special_price) > 0 &&
+                  Number(product.special_price) < Number(product.price) && (
+                    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                      {Math.round(
+                        100 - (Number(product.special_price) / Number(product.price)) * 100
+                      )}
+                      % OFF
+                    </span>
                   )}
 
-                  {Number(product.special_price) > 0 &&
-                    Number(product.special_price) < Number(product.price) && (
-                      <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
-                        {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
-                      </span>
-                    )}
-
-                  <div className="absolute top-2 right-2">
-                    <ProductCard productId={product._id} />
-                  </div>
+                <div className="absolute top-2 right-2">
+                  <ProductCard productId={product._id} />
                 </div>
+              </div>
 
                 <div className="p-2 md:p-4 flex flex-col h-full">
                   <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
