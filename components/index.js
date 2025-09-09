@@ -69,6 +69,7 @@ export default function HomeComponent() {
    const [homeSectionData, setHomeSectionData] = useState({ sections: [] });
   //const [isSectionLoading, setIsSectionLoading] = useState(false);
   const [isSectionLoading, setIsSectionLoading] = useState(false);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     // Cateogry Scroll
     const categoryScrollRef = useRef(null);
 const [videos, setVideos] = useState([]);
@@ -853,11 +854,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
                       transition={{ duration: 0.6 }}
-                      className="recommended-products px-4 sm:px-6 md:px-6 pt-14"
+                      className="recommended-products px-4 sm:px-0 md:px-0 pt-14"
                     >
-                      <div className="bg-gray-100 rounded-[23px] px-2 py-4 p-2">
+                      <div className="rounded-[23px] px-0 py-4 p-2">
                         {/* Section Header */}
-                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6 md:px-6">
                           <h5 className="text-xl sm:text-2xl font-bold">
                             Shop by Category
                           </h5>
@@ -895,7 +896,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                               if (categoryProducts.length === 0) return null;
                           
                               return (
-                                <div  key={category._id}  className={`bg-white rounded-lg p-6 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
+                                <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
                                   {/* Category Banner */}
                                   <div className="flex-shrink-0 w-full md:w-1/3 relative">
                                     <div className="absolute inset-0"  style={{ backgroundImage: `url(${'/uploads/small-appliance-banner.webp'})` }}></div>
@@ -993,7 +994,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                             <div className="mt-3 flex items-center justify-between gap-2">
                                               <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
                                               <a 
-                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: https://bea.divinfosys.com/product/${product.slug}`)}`} 
+                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
                                               target="_blank" 
                                               rel="noopener noreferrer" 
                                               className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"

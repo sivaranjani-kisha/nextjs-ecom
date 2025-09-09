@@ -42,6 +42,7 @@ export default function CategoryPage() {
     setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
   };
   const [nofound,setNofound]=useState(false);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -914,7 +915,7 @@ export default function CategoryPage() {
                               className="w-full text-xs sm:text-sm py-1.5"
                             />
                             <a
-                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: https://bea.divinfosys.com/product/${product.slug}`)}`} 
+                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product:${apiUrl}/product/${product.slug}`)}`} 
                               target="_blank"
                               rel="noopener noreferrer"
                               className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
