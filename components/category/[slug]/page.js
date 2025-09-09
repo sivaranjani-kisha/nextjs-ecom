@@ -743,6 +743,7 @@ const STEP = 100;
           )}
 
           {/* Categories Tree */}
+           {/*
               <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 text-sm text-gray-600">
                 <h3 className="text-base font-semibold mb-3 text-gray-700">Categories</h3>
                 {categoryData.categoryTree?.length > 0 ? (
@@ -752,7 +753,7 @@ const STEP = 100;
                   <p className="text-gray-500 text-sm">No subcategories</p>
                 )}
               </div>
-
+          */}
           {/* Price Filter */}
                         <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
                     <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
