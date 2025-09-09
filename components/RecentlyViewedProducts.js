@@ -143,7 +143,7 @@ const RecentlyViewedProducts = () => {
                 key={product._id}
                 className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
               >
-               <div className="relative aspect-square w-58 h-58 bg-gray-50 flex items-center justify-center rounded-md overflow-hidden">
+               <div className="relative aspect-square w-58 h-58 bg-white flex items-center justify-center rounded-md overflow-hidden">
                 {product.images?.[0] ? (
                   <img
                     src={
