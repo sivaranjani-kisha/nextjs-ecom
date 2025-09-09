@@ -321,13 +321,13 @@ const capitalizeFirstLetter = (str) =>
 
                           {/* Sub-Sub Categories */}
                           {groupedCategories.subs[subcat._id]?.length > 0 && (
-                            <span className="ml-1  text-gray-500">
+                            <span className="ml-2  text-gray-500">
                               {/* {" ("} */}
                               {groupedCategories.subs[subcat._id].map((child, j) => (
                                 <span key={child._id}>
                                   <Link
                                     href={`/category/${mainCat.category_slug}/${subcat.category_slug}/${child.category_slug}`}
-                                    className="hover:text-white hover:underline pl-2 pr-2"
+                                    className="hover:text-white hover:underline"
                                   >
                                     {capitalizeFirstLetter(child.category_name)}
                                   </Link>
@@ -341,13 +341,13 @@ const capitalizeFirstLetter = (str) =>
                           {mainCat.brands.length > 0 && (
                           <>
                             <br /> {/* 👈 Force new line before brands */}
-                            <span className="font-semibold text-white">Brands:</span>
-                            <span className="text-gray-500">
+                            <span className="font-semibold text-white">Brands :</span>
+                            <span className="ml-2  text-gray-500">
                               {mainCat.brands.map((brand, i) => (
                                 <span key={brand._id}>
                                   <Link
                                     href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
-                                    className="hover:text-white hover:underline pl-2 pr-2"
+                                    className="hover:text-white hover:underline "
                                   >
                                     {capitalizeFirstLetter(brand.brand_name)}
                                   </Link>
@@ -369,21 +369,24 @@ const capitalizeFirstLetter = (str) =>
               </div>
             </div>
           </div>
-           {stores.length > 0 && (
-                  <>
-                    {/* <hr className="border-gray-600 my-3" /> */}
-                    <div >
-                      <div className="container mx-auto px-3 flex flex-col md:flex-row">
-                        <h4 className="text-white font-medium mb-2">Our Locations:</h4>
-                        <p className="pl-2">
-                          {stores.map(store => store.organisation_name).join(', ')}
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                )}
+         {stores.length > 0 && (
+            <div>
+              <div className="container mx-auto px-3 flex flex-col md:flex-row">
+                <h4 className="text-white font-medium mb-2 md:mb-0">Our Locations:</h4>
+                <p className="pl-2">
+                  {stores.map((store, index) => (
+                    <span key={index}>
+                      {store.organisation_name}
+                      <br />
+                    </span>
+                  ))}
+                </p>
+              </div>
+            </div>
+          )}
+
         </div>
-        <div class="px-4 py-8 space-y-10">
+        <div className="px-4 py-8 space-y-10">
 
   
   <div>
