@@ -1,4 +1,6 @@
 'use client';
+
+
 import ProductDetailsSection from "@/components/ProductDetailsSection";
 // import RelatedProducts from "@/components/RelatedProducts";
 import {  useEffect, useState, useRef, useCallback } from "react";
@@ -19,13 +21,15 @@ import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import RelatedProducts from "@/components/RelatedProducts";
 import RazorpayOffers from "@/components/RazorpayOffers";
 
-export default function ProductClient(currentProductId, categoryId) {
+
+
+
+export default function ProductClient(currentProductId) {
   const router = useRouter(); 
   const { slug } = useParams();
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [brand, setBrand] = useState([]);
    const [selectedRelatedProducts, setSelectedRelatedProducts] = useState([]);
-   const [categoryProducts, setCategoryProducts] = useState([]);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
   const [showFeatures, setShowFeatures] = useState(false);
   const [showHighlights, setShowHighlights] = useState(false);
@@ -48,50 +52,6 @@ const handleIncrease = () => {
     setQuantityWarning(true); // show warning if exceeding
   }
 };
-
-const categoryId = product?.category;
-  const currentProductId = product?._id;
-useEffect(() => {
-    const fetchRelatedProducts = async () => {
-      try {
-        const res = await fetch(`/api/product/related?category=${categoryId}&exclude=${currentProductId}&limit=5`);
-        const data = await res.json();
-        if (res.ok) {
-  if (data.success && data.products) {
-    setRelatedProducts(data.products);
-  } else if (data.relatedProducts) {
-    setRelatedProducts(data.relatedProducts);
-  } else {
-    setRelatedProducts([]);
-  }
-}
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    if (categoryId) fetchRelatedProducts();
-  }, [categoryId, currentProductId]); // De
-
-
-// // Function to fetch category products
-//   useEffect(() => {
-//     const fetchCategoryProducts = async () => {
-//       try {
-//         const res = await fetch(`/api/product/category/${categoryId}?limit=5`);
-//         const data = await res.json();
-//         if (data.success) {
-//           setCategoryProducts(data.products);
-//         }
-//       } catch (error) {
-//         console.error("Error fetching category products:", error);
-//       }
-//     };
-
-//     if (categoryId) fetchCategoryProducts();
-//   }, [categoryId]);
-
-
 
 const handleBuyNow = () => {
   const checkoutData = {
@@ -247,7 +207,6 @@ useEffect(() => {
   const [showGstInvoiceModal, setshowGstInvoiceModal] = useState(false);
   useEffect(() => {
     const fetchProduct = async () => {
-
       try {
         setLoading(true);
         const response = await fetch(`/api/product/${slug}`);
@@ -730,7 +689,7 @@ const fetchBrand = async () => {
       
                   {/* Add to Cart Button */}
                   <div className="flex gap-4 flex-wrap items-start">
-                    {/* <div className="flex-shrink-0">
+                    <div className="flex-shrink-0">
                       <Addtocart
                         productId={product._id}
                         stockQuantity={product.quantity}
@@ -740,7 +699,7 @@ const fetchBrand = async () => {
                         extendedWarranty={selectedExtendedWarranty}
                         selectedFrequentProducts={selectedFrequentProducts}
                       />
-                    </div> */}
+                    </div>
 
                     <div className="flex-grow mt-2">
                       <ProductCard productId={product._id} />
@@ -1349,6 +1308,7 @@ const fetchBrand = async () => {
 
           </div>
 
+          {/* Right Section - Seller Info */}
           <div className="md:col-span-3 w-full max-w-sm flex flex-col space-y-4">
  
   {/* ================= Box: Featured + Warranty + Related ================= */}
@@ -1502,82 +1462,85 @@ const fetchBrand = async () => {
       </div>
     )}
  
-   {/* // Then update your JSX to show loading/empty states: */}
-   {relatedProductsLoading ? (
-     <div className="px-4 py-4 border-t border-gray-300">
-       <div className="animate-pulse">
-         <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
-         {[1, 2, 3].map((i) => (
-           <div key={i} className="flex items-start mb-4">
-             <div className="w-16 h-16 bg-gray-200 rounded mr-3"></div>
-             <div className="flex-1">
-               <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-               <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-             </div>
-           </div>
-         ))}
-       </div>
-     </div>
-   ) : relatedProducts.filter(item => item.quantity > 0).length > 0 ? (
-     <div className="px-4 py-4 border-t border-gray-300">
-       <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
-         Related Products
-       </h3>
-       {relatedProducts
-         .filter(item => item.quantity > 0) // ✅ only in-stock
-         .map((item) => (
-           <div key={item._id} className="flex items-start mb-4">
-             <input
-               type="checkbox"
-               className="mt-2 mr-3"
-               checked={selectedRelatedProducts.some(p => p._id === item._id)}
-               onChange={() => toggleRelatedProduct(item)}
-             />
-             {item.images?.[0] && (
-               <img
-                 src={`/uploads/products/${item.images[0]}`}
-                 alt={item.name}
-                 className="w-16 h-16 object-contain mr-3 border rounded"
-                 onError={(e) => {
-                   e.target.onerror = null;
-                   e.target.src = "/no-image.jpg";
-                 }}
-               />
-             )}
-             <div className="flex-1 min-w-0">
-               <Link 
-                 href={`/product/${item.slug}`} 
-                 className="block mb-1 hover:underline"
-               >
-                 <h3 className="text-xs font-medium text-blue-600 line-clamp-2">
-                   {item.name}
-                 </h3>
-               </Link>
-               <div className="flex items-center gap-2 mt-1">
-                 <span className="text-sm font-semibold text-red-600">
-                   ₹{item.special_price && item.special_price < item.price 
-                     ? item.special_price.toLocaleString() 
-                     : item.price.toLocaleString()}
-                 </span>
-                 {item.special_price && item.special_price < item.price && (
-                   <span className="text-xs text-gray-500 line-through">
-                     ₹{item.price.toLocaleString()}
-                   </span>
-                 )}
-               </div>
-               <p className="text-xs text-green-600 mt-1">
-                 In Stock ({item.quantity} units)
-               </p>
-             </div>
-           </div>
-         ))}
-     </div>
-   ) : (
-     <div className="px-4 py-4 border-t border-gray-300">
-       <p className="text-sm text-gray-500">No related products found</p>
-     </div>
-   )}
-   
+    {/* Related Products Section */}
+ 
+ 
+{relatedProducts.length > 0 && (
+  <div className="px-4 py-4">
+    <h2 className="text-sm font-bold text-customBlue underline mb-2">
+      Related Products
+    </h2>
+    {relatedProducts.slice(0, 3).map((item) => (
+      <div key={item._id} className="flex items-start mb-4">
+        <input
+          type="checkbox"
+          className="mt-2 mr-3"
+          checked={selectedRelatedProducts.some(p => p._id === item._id)}
+          onChange={() => toggleRelatedProduct(item)}
+        />
+        <div className="flex items-start gap-3">
+          {item.images?.[0] && (
+  <img
+    src={'/uploads/products/' + item.images[0]} // Change this line
+    alt={item.name}
+    className="w-16 h-16 object-contain"
+  />
+)}
+          <div className="text-sm">
+            {/* Product Name with slug link */}
+            <Link
+              href={`/product/${item.slug}`}
+              className="block mb-1"
+              onClick={() => handleProductClick(item)}
+            >
+              <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                {item.name}
+              </h3>
+            </Link>
+ 
+            {/* Price with strike-through if special price */}
+            <div className="flex items-center gap-2">
+              <span className="text-base font-semibold text-red-600">
+                ₹ {(
+                  item.special_price &&
+                  item.special_price > 0 &&
+                  item.special_price !== "0" &&
+                  item.special_price < item.price
+                    ? item.special_price
+                    : item.price
+                ).toLocaleString()}
+              </span>
+ 
+              {item.special_price &&
+                item.special_price > 0 &&
+                item.special_price !== "0" &&
+                item.special_price < item.price && (
+                  <span className="text-xs text-gray-500 line-through">
+                    ₹ {item.price.toLocaleString()}
+                  </span>
+                )}
+            </div>
+ 
+            {/* Stock Status + Units */}
+            <h4
+              className={`text-xs ${
+                item.stock_status === "In Stock"
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {item.stock_status}
+              {item.stock_status === "In Stock" && item.quantity
+                ? `, ${item.quantity} units`
+                : ""}
+            </h4>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+ 
  
   </div>
  
@@ -1616,9 +1579,7 @@ const fetchBrand = async () => {
     />
   </div>
 </div>
-
         </div>
-        
         
        
       </div>
@@ -1628,12 +1589,12 @@ const fetchBrand = async () => {
            <ProductDetailsSection product={product} />
            <RecentlyViewedProducts className="w-full" />
          
-           
+           {product?.related_products?.length > 0 && (
            <RelatedProducts
              className="w-full"
              currentProductId={product._id}
            />
-         
+         )}
          
          
          

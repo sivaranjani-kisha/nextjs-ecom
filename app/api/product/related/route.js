@@ -1,35 +1,34 @@
-// app/api/products/related/route.js
-import { NextResponse } from "next/server";
-import dbConnect from "@/lib/db"; // your DB connection
-import Product from "@/models/product";
+import connectDB from "@/lib/db";
+import Product from "@/models/product"; 
 
 export async function GET(req) {
   try {
-    await dbConnect();
-
+    await connectDB();
     const { searchParams } = new URL(req.url);
-    const categoryId = searchParams.get("category"); // category ID
-    const excludeId = searchParams.get("exclude"); // optional product to exclude
-    const limit = parseInt(searchParams.get("limit")) || 5; // default 5
+    const productId = searchParams.get("productId");
 
-    if (!categoryId) {
-      return NextResponse.json({ error: "Category ID is required" }, { status: 400 });
+    if (!productId) {
+      return new Response(JSON.stringify({ success: false, error: "Product ID is required" }), { status: 400 });
     }
 
-    const query = { category: categoryId };
-    if (excludeId) query._id = { $ne: excludeId }; // exclude current product
+    // Get the product to find its related_products
+    const product = await Product.findById(productId).lean();
+    if (!product) {
+      return new Response(JSON.stringify({ success: false, error: "Product not found" }), { status: 404 });
+    }
 
-    const relatedProducts = await Product.find(query)
-      .limit(limit)
-      .sort({ createdAt: -1 }); // latest products first
+    if (!product.related_products || product.related_products.length === 0) {
+      return new Response(JSON.stringify({ success: true, products: [] }), { status: 200 });
+    }
 
-    return NextResponse.json({
-  success: true,
-  products: relatedProducts, // ✅ match frontend expectation
-});
+    // Fetch related products
+    const relatedProducts = await Product.find({ _id: { $in: product.related_products } });
 
+     console.log("Fetched related products:", relatedProducts);
+
+    return new Response(JSON.stringify({ success: true, products: relatedProducts }), { status: 200 });
   } catch (error) {
-    console.error("Error fetching related products:", error);
-    return NextResponse.json({ error: "Failed to fetch related products" }, { status: 500 });
+    console.error(error);
+    return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500 });
   }
 }
