@@ -143,14 +143,6 @@ console.log(main);
     setIsLoggedIn(false);
     setUserData(null);
   };
-  const groupedStores = stores.reduce((acc, store) => {
-  const city = store.city; // or store.store_city based on your API
-  if (!acc[city]) {
-    acc[city] = [];
-  }
-  acc[city].push(store.organisation_name);
-  return acc;
-}, {});
 const capitalizeFirstLetter = (str) =>
   str.charAt(0).toUpperCase() + str.slice(1);
   const groupCategories = (categories) => {
@@ -169,7 +161,7 @@ const capitalizeFirstLetter = (str) =>
 
   return (
     <>
-      <footer className="bg-[#2e2a2a] text-gray-300 text-sm py-5 md:px-4 mt-6">
+      <footer className="bg-[#2e2a2a] text-gray-300 text-sm py-5 md:px-4">
        <div className="bg-[#2e2a2a] text-gray-400  border-white ">
   <div className="w-full flex justify-center">
     <div className="w-full container mx-auto px-3  grid grid-cols-1 md:grid-cols-3 gap-16 justify-between">
@@ -284,8 +276,7 @@ const capitalizeFirstLetter = (str) =>
 
 
         {/* Bottom Section */}
-        {/* <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 md:grid-cols-[70%_30%]">  */}
-        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 "> 
+        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 md:grid-cols-[70%_30%]"> 
           <div className="">
             <div className="mb-2 container mx-auto px-3 flex flex-col md:flex-row justify-between items-center gap-6 ">
               <div className="text-center md:text-left ml-1 mb-1">
@@ -379,25 +370,25 @@ const capitalizeFirstLetter = (str) =>
               </div>
             </div>
           </div>
-          <div className="container mx-auto px-4  space-y-4">
-            <h3 className="text-white font-semibold flex text-lg mb-4 mt-4">Our Location</h3>
+         {stores.length > 0 && (
+            <div>
+              <div className="container mx-auto px-3 flex flex-col md:flex-column">
+                <h4 className="text-white font-medium mb-2 md:mb-0">Our Locations:</h4>
+               <p className="text-sm text-gray-500" style={{ fontSize: "small" }}>
+
+                  {stores.map((store, index) => (
+                    <span key={index}> 
+                      {store.organisation_name},
+                     
+                    </span>
+                  ))}
+                </p>
+              </div>
             </div>
-        {Object.entries(groupedStores).map(([city, orgs], index) => (
-        <div key={index} className="container mx-auto px-4  space-y-4">
-        
-         <h5 className="text-white font-medium flex items-center gap-2 mb-2">
-  Showroom in {city}:
-  <span className="text-sm text-gray-500">
-    {orgs.join(", ")}
-  </span>
-</h5>
-
-          
-        </div>
-      ))}
+          )}
 
         </div>
-        <div className="container mx-auto px-4 py-4 space-y-4">
+        <div className="px-4 py-4 space-y-10">
 
   
   <div>
