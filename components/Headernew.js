@@ -1,10 +1,8 @@
 // components/Header.jsx
 'use client';
-
 import { motion } from 'framer-motion';
 import Link from "next/link";
 import Image from 'next/image';
-
 import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX, FiPhoneCall, FiMessageSquare } from "react-icons/fi";
 import { FaBars, FaShoppingBag, FaUserShield } from "react-icons/fa";
 import { FaHeart, FaShoppingCart, FaSearch } from 'react-icons/fa';
@@ -19,11 +17,9 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { useRouter, usePathname } from 'next/navigation';
 import { Play } from "lucide-react";
-
 import { Navigation } from 'swiper/modules';
 import SideNavbar from '@/components/sideNavbar';
 import { useHeaderdetails } from "@/context/HeaderContext";
-
 const Header = () => {
     const router = useRouter();
     const pathname = usePathname();
@@ -31,7 +27,6 @@ const Header = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { wishlistCount } = useWishlist();
     const { cartCount, updateCartCount } = useCart();
-    
     const handleCategoryClick = useCallback((categorySlug, categoryName) => {
         const path = `/category/${categorySlug}`;
         setSelectedCategory(categoryName);
@@ -48,6 +43,58 @@ const Header = () => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
     const [searchQuery, setSearchQuery] = useState("");
+    const [placeholder, setPlaceholder] = useState("");
+    const [words, setWords] = useState([]);
+    const [categorieslist, setCategorieslist] = useState([]);
+    const wordIndex = useRef(0);
+    const charIndex = useRef(0);
+    const isDeleting = useRef(false);
+
+    useEffect(() => {
+      const fetchCategories = async () => {
+        try {
+          const response = await fetch("/api/categories/get");
+          const data = await response.json();
+          setCategorieslist(data);
+          setWords(data.map((cat) => cat.category_name));
+        } catch (error) {
+          console.error("Error fetching categories:", error);
+        }
+      };
+
+      fetchCategories();
+    }, []);
+
+    useEffect(() => {
+      const typeEffect = () => {
+        if (words.length === 0) return;
+
+        const currentWord = words[wordIndex.current];
+        const updatedText = isDeleting.current
+          ? currentWord.substring(0, charIndex.current - 1)
+          : currentWord.substring(0, charIndex.current + 1);
+
+        setPlaceholder(updatedText);
+
+        charIndex.current = isDeleting.current
+          ? charIndex.current - 1
+          : charIndex.current + 1;
+
+        if (!isDeleting.current && charIndex.current === currentWord.length) {
+          isDeleting.current = true;
+          setTimeout(typeEffect, 1000); // pause before deleting
+        } else if (isDeleting.current && charIndex.current === 0) {
+          isDeleting.current = false;
+          wordIndex.current = (wordIndex.current + 1) % words.length;
+          setTimeout(typeEffect, 500); // pause before typing next
+        } else {
+          setTimeout(typeEffect, isDeleting.current ? 60 : 100);
+        }
+      };
+
+      typeEffect();
+    }, [words]);
+
     const [showAuthModal, setShowAuthModal] = useState(false);
     const { headerdetails, updateHeaderdetails } = useHeaderdetails();
 
@@ -57,7 +104,7 @@ const Header = () => {
     const [dropdownLeft, setDropdownLeft] = useState(0);
     const [dropdownTop, setDropdownTop] = useState(0);
     const slideRefs = useRef({});
- const [suggestions, setSuggestions] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
     // Toggle mobile menu
     const toggleMobileMenu = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -65,7 +112,6 @@ const Header = () => {
     // Track step
     const [forgotStep, setForgotStep] = useState(1); // 1: enter email, 2: enter OTP and new password
     const [resetStep, setResetStep] = useState(1);// 1: enter email, 2: enter OTP, 3: new password
-
     const [resetEmail, setResetEmail] = useState('');
     const [resetOtp, setResetOtp] = useState('');
     const [resetPassword, setResetPassword] = useState('');
@@ -81,6 +127,7 @@ const Header = () => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     // Close mobile menu when clicking outside
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -92,6 +139,7 @@ const Header = () => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
+        
     }, []);
 
     const checkAuthStatus = async () => {
@@ -129,6 +177,7 @@ const Header = () => {
 
     // Add this search handler function
    const handleSearch = () => {
+
     if (!searchQuery.trim() && selectedCategory === "All Categories") return;
 
     const params = new URLSearchParams();
@@ -631,7 +680,7 @@ const renderFlatItem = (item, hoveredCategory) => {
 
       <input
         type="text"
-        placeholder="Search products..."
+        placeholder={placeholder || "Search products..."}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         className="flex-1 px-3 py-2 text-sm outline-none"
@@ -766,7 +815,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                          style={{ touchAction: 'auto', userSelect: 'auto', WebkitUserSelect: 'auto' }}>
                         {/* Mobile Search Bar */}
                         <div className="flex items-center bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
-                            <input type="text" tabIndex={0} autoFocus placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none bg-white" />
+                            <input type="text" tabIndex={0} autoFocus placeholder={placeholder || "Search products..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none bg-white" />
                             <button className="px-3 text-customBlue" onClick={handleSearch} tabIndex={0}>
                                 <FaSearch />
                             </button>

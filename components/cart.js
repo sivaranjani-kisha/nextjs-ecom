@@ -676,183 +676,91 @@ const validateCoupon = async () => {
         
         {/* Left Side - Cart Table (big width) */}
         <div className="lg:col-span-2">
+          {/* Updated table for responsiveness */}
           <div className="overflow-x-auto bg-white rounded-lg border">
-              <table className="min-w-full border">
-                      <thead className="bg-white-50 border-b">
-                        <tr>
-                          <th className="py-3 px-4 text-center text-gray-500 text-sm font-semibold cursor-pointer ">Product</th>
-                          <th className="text-center text-gray-500 text-sm font-semibold cursor-pointer ">Quantity</th>
-                          <th className="text-center text-gray-500 text-sm font-semibold cursor-pointer ">Subtotal</th>
-                          <th className="text-center text-gray-500 text-sm font-semibold cursor-pointer ">&emsp;</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cartData.items.map((item) => (
-                          <Fragment key={item.productId}>
-                            {/* Product Row */}
-                         
-                            <tr className="border-b px-0 py-8">
-                                <td className="flex items-center py-4 px-4 gap-3">
-                                <Image
-                                  src={`/uploads/products/${item.image}`}
-                                  alt={item.name}
-                                  width={100}
-                                  height={100}
-                                  className="rounded-md"
-                                />
-                                <div className="relative group w-full  py-0">
-                                  {/* Vertical stack for item info */}
-                                  <div className="flex flex-col gap-1">
-                                    {/* Item Code */}
-                                    <h3 className="py-1 text-gray-500 text-xs font-semibold cursor-pointer hover:text-[#00badb]"cstyle={{ fontSize: ".95rem" }}>
-                                      {item.item_code}
-                                    </h3>
-
-                                    {/* Product Name */}
-                                    <Link href={`/product/${slugify(item.name)}`}>
-                                      <p className="py-1  font-semibold text-xs  text-[#0069c6] hover:text-[#00badb] break-words whitespace-normal" style={{ fontSize: ".95rem" }}>
-                                        {item.name.length > 35 ? item.name.slice(0, 35) + "..." : item.name}
-                                      </p>
-                                    </Link>
-
-                                    {/* Tooltip for full name */}
-                                    <div className="py-1 absolute z-10 hidden group-hover:block bg-black text-white text-sm px-2 py-1 rounded shadow-md top-full mt-1 max-w-xs w-max whitespace-normal" style={{ fontSize: ".95rem" }}>
-                                      {item.name}
-                                    </div>
-
-                                    {/* Prices */}
-                                    <div className="flex items-center gap-2 ">
-                                      <h3 className="text-gray-500 text-sm font-semibold" style={{ fontSize: ".85rem" }}>₹{item.price.toFixed(2)}</h3>
-                                      <h3 className="text-gray-400 text-sm line-through" style={{ fontSize: ".85rem" }} >₹{item.price.toFixed(2)}</h3>
-                                    </div>
-                                  </div>
-                                </div>
-                                </td>
-                                
-                                <td className="py-4 px-4 text-center ">
-                                  <div className="flex justify-center items-center gap-2 border border-gray-300 rounded p-1">
-                                    <button
-                                      className="px-2 py-1 text-black  hover:text-[#0069c6] transition-colors rounded"
-                                      onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
-                                      disabled={item.quantity <= 1}
-                                    >
-                                      −
-                                    </button>
-                                    <span>{item.quantity}</span>
-                                    <button
-                                      className="px-2 py-1 text-black  hover:text-[#0069c6] transition-colors rounded"
-                                      onClick={() =>
-                                        updateQuantity(item.productId, item.quantity + 1, item.original_quantity)
-                                      }
-                                    >
-                                      +
-                                    </button>
-                                    
-                                  </div>
-                                  <button
-                                    className="text-gray-500 text-xs font-semibold cursor-pointer hover:text-[#00badb]"
-                                    onClick={() => confirmRemoveItem(item.productId)}
-                                  >
-                                    Remove
-                                  </button>
-                                </td>
-                                <td className=" text-center font-semibold text-gray-900 text-sm font-semibold cursor-pointer ">
-                                  ₹{(item.price * item.quantity).toFixed(2)}  
-                                </td>
-                                <td className="mt-2 py-4  text-center ">
-                                    &emsp;
-                                    </td>
-                                
-                            </tr>
-                         
-                              {(item.warranty > 0 || item.extendedWarranty > 0) && (
-                                <tr className="border-b px-0 py-8 bg-gray-200">
-                                    <td className="mt-2 py-4  text-center ">
-                                    
-                                    </td>
-                                  
-                                    <td className="mt-2 py-4   text-center ">
-                                      <h3 className="text-center  text-gray-500 text-sm  font-semibold cursor-pointer py-1 ">
-                                          Product Subtotal<br />
-                                      </h3>
-                                      <h3 className="text-center  text-gray-500 text-sm  font-semibold cursor-pointer py-1 ">
-                                          Warranty<br />
-                                      </h3>
-                                      <h3 className="text-center  text-gray-500 text-sm  font-semibold cursor-pointer py-1 ">
-                                          Extended Warranty<br />
-                                      </h3>
-                                      <h3 className="text-center  text-gray-500 text-sm  font-semibold cursor-pointer py-1 ">
-                                          Discount<br />
-                                      </h3>
-                                    
-                                    </td>
-
-                                    <td className="mt-2 py-4  text-center ">
-                                      <h3 className="text-center text-gray-500 text-sm font-semibold cursor-pointer py-1">
-                                          ₹{(item.price * item.quantity).toFixed(2)}<br />
-                                      </h3>
-                                      <h3 className="text-center font-semibold text-gray-500 text-sm font-semibold cursor-pointer py-1">
-                                          {item.warranty > 0 ? `₹${item.warranty.toFixed(2)}` : "-"}<br />
-                                      </h3>
-                                      <h3 className="text-center font-semibold text-gray-500 text-sm font-semibold cursor-pointer py-1">
-                                          {item.extendedWarranty > 0 ? `₹${item.extendedWarranty.toFixed(2)}` : "-"}<br />
-                                      </h3>
-                                      <h3 className="text-center font-semibold text-gray-500 text-sm font-semibold cursor-pointer py-1">
-                                          {item.discount > 0 ? `-₹${item.discount.toFixed(2)}` : "-"}
-                                      </h3>
-                                    
-                                    </td>
-                                    <td className="mt-2 py-4  text-center ">
-                                    &emsp;
-                                    </td>
-                                    
-                                </tr>
-                              )}
-                        
-
-                            {/* Breakdown Row */}
-                            {/* <tr className="bg-gray-50">
-                              <td colSpan={4} className="py-3 px-4 text-right text-sm font-medium text-gray-500">
-                                Product Subtotal
-                                {(item.warranty > 0 || item.extendedWarranty > 0 || item.discount > 0) && (
-                                  <>
-                                    {item.warranty > 0 && <><br />Warranty</>}
-                                    {item.extendedWarranty > 0 && <><br />Extended Warranty</>}
-                                    {item.discount > 0 && <><br />Discount</>}
-                                  </>
-                                )}
-                              </td>
-                              <td className="py-3 px-4 text-center text-sm font-semibold">
-                                ₹{(item.price * item.quantity).toFixed(2)}
-                                {(item.warranty > 0 || item.extendedWarranty > 0 || item.discount > 0) && (
-                                  <>
-                                    {item.warranty > 0 && <><br />₹{item.warranty.toFixed(2)}</>}
-                                    {item.extendedWarranty > 0 && <><br />₹{item.extendedWarranty.toFixed(2)}</>}
-                                    {item.discount > 0 && <><br />-₹{item.discount.toFixed(2)}</>}
-                                  </>
-                                )}
-                              </td>
-                            </tr> */}
-                          </Fragment>
-                        ))}
-
-                        {/* ✅ Final Item Total Row (only once) */}
-                        {/* <tr className="border-t bg-gray-100">
-                          <td colSpan={4} className="py-3 px-4 text-right font-bold">Item Total:
-      ₹{cartData.items.reduce(
-                              (acc, item) =>
-                                acc +
-                                (item.price * item.quantity) +
-                                (item.warranty || 0) +
-                                (item.extendedWarranty || 0) -
-                                (item.discount || 0),
-                              0
-                            ).toFixed(2)}
-
-                          </td>
-                        </tr> */}
-                      </tbody>
-              </table>
+            <table className="min-w-full border">
+              <thead className="bg-white-50 border-b">
+                <tr>
+                  <th className="py-3 px-4 text-left text-gray-500 text-sm font-semibold">Product</th>
+                  <th className="text-center text-gray-500 text-sm font-semibold">Quantity</th>
+                  <th className="text-center text-gray-500 text-sm font-semibold">Subtotal</th>
+                  <th className="text-center text-gray-500 text-sm font-semibold">&emsp;</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cartData.items.map((item) => (
+                  <Fragment key={item.productId}>
+                    <tr className="border-b">
+                      <td className="flex items-center py-4 px-4 gap-3">
+                        <Image
+                          src={`/uploads/products/${item.image}`}
+                          alt={item.name}
+                          width={100}
+                          height={100}
+                          className="rounded-md"
+                        />
+                        <div className="flex flex-col gap-1 text-sm md:text-base">
+                          <h3 className="text-gray-500 text-xs font-semibold">{item.item_code}</h3>
+                          <Link href={`/product/${slugify(item.name)}`}>
+                            <p className="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                              {item.name.length > 50 ? item.name.slice(0, 50) + "..." : item.name}
+                            </p>
+                          </Link>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-gray-500 text-sm font-semibold">₹{item.price.toFixed(2)}</h3>
+                            <h3 className="text-gray-400 text-sm line-through">₹{item.actual_price.toFixed(2)}</h3>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <div className="flex justify-center items-center gap-2 border border-gray-300 rounded p-1">
+                          <button
+                            className="px-2 py-1 text-black hover:text-blue-600"
+                            onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
+                            disabled={item.quantity <= 1}
+                          >
+                            −
+                          </button>
+                          <span>{item.quantity}</span>
+                          <button
+                            className="px-2 py-1 text-black hover:text-blue-600"
+                            onClick={() => updateQuantity(item.productId, item.quantity + 1, item.original_quantity)}
+                          >
+                            +
+                          </button>
+                        </div>
+                        <button
+                          className="text-gray-500 text-xs font-semibold hover:text-blue-600"
+                          onClick={() => confirmRemoveItem(item.productId)}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                      <td className="py-4 px-4 text-center font-semibold text-gray-900">
+                        ₹{(item.price * item.quantity).toFixed(2)}
+                      </td>
+                      <td className="py-4 px-4 text-center">&emsp;</td>
+                    </tr>
+                    {(item.warranty > 0 || item.extendedWarranty > 0) && (
+                      <tr className="border-b bg-gray-100">
+                        <td className="py-4 px-4 text-center">&emsp;</td>
+                        <td className="py-4 px-4 text-center">
+                          <h3 className="text-gray-500 text-sm font-semibold">Warranty</h3>
+                          <h3 className="text-gray-500 text-sm font-semibold">Extended Warranty</h3>
+                          <h3 className="text-gray-500 text-sm font-semibold">Discount</h3>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <h3 className="text-gray-500 text-sm font-semibold">₹{item.warranty.toFixed(2)}</h3>
+                          <h3 className="text-gray-500 text-sm font-semibold">₹{item.extendedWarranty.toFixed(2)}</h3>
+                          <h3 className="text-gray-500 text-sm font-semibold">₹{item.discount.toFixed(2)}</h3>
+                        </td>
+                        <td className="py-4 px-4 text-center">&emsp;</td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
             {/* Continue Shopping Button */}
           {/* <div className="flex justify-between items-center mt-6 flex-wrap gap-2">

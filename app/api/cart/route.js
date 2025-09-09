@@ -102,6 +102,7 @@ console.log("Selected extended warranty:", selectedExtendedWarranty);
       image: product.images[0],
       warranty: selectedWarranty,
       extendedWarranty: selectedExtendedWarranty,
+      actual_price: product.special_price,
       // upsells: upsellProducts
     });
   }
@@ -118,7 +119,8 @@ console.log("Selected extended warranty:", selectedExtendedWarranty);
       image: product.images[0],
       warranty: selectedWarranty,
       extendedWarranty: selectedExtendedWarranty,
-      upsells: upsellProducts
+      upsells: upsellProducts,
+      actual_price: product.special_price,
     }]
   });
 }
@@ -172,6 +174,7 @@ export async function GET(req) {
 
       const items = await Promise.all(
       cart.items.map(async (item) => {
+       // console.log(item);
         const original_quantity = await getQuantity(item.productId.item_code);
         return {
           original_quantity,
@@ -183,6 +186,7 @@ export async function GET(req) {
           quantity: item.quantity,
           warranty: item.warranty || 0,
           extendedWarranty: item.extendedWarranty || 0,
+          actual_price: item.productId.price,
         };
       })
     );
