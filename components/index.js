@@ -935,8 +935,6 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                     ((product.price - product.special_price) / product.price) * 100
                                                   );
 
-                                                  console.log(product);
-
                                                   return discount && discount > 0 ? (
 
                                                       <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
@@ -964,7 +962,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                               />
                                             </div>
 
-                                            <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
+                                            <h4 className="text-xs text-gray-500 mt-6 mb-2 uppercase hover:text-blue-600">
                                               <Link
                                                 href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
                                                 className="hover:text-blue-600"
@@ -980,13 +978,13 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                               {product.name}
                                             </h3>
                                             </Link>
-                                            <div className="mt-2 text-lg font-bold text-blue-600">
-                                                Rs. {product.special_price || product.price}
-                                              <span className="line-through text-gray-400 text-sm ml-1">
-                                                Rs. {product.price}
+                                            <div className="text-base font-semibold text-red-600">
+                                                ₹ {product.special_price || product.price}
+                                              <span className="text-xs text-gray-500 line-through ml-1">
+                                                ₹ {product.price}
                                               </span>
                                             </div>
-                                            <p className={`text-sm mt-1 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
+                                            <p className={`text-xs mt-1 mb-3 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
                                               {product.quantity > 0
                                                 ? `In stock, ${product.quantity} units`
                                                 : "Out of stock"}

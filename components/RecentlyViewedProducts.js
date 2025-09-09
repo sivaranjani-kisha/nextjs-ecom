@@ -116,7 +116,7 @@ const RecentlyViewedProducts = () => {
       )}
       
       <section className="mb-14 px-0 sm:px-0 md:px-0 pt-14">
-        <div className="bg-gray-100 rounded-2xl p-6">
+        <div className="p-6">
           <div className="flex justify-between items-center mb-6 ">
             <h5 className="text-xl font-bold">Recently Visited</h5>
             <div className="flex gap-3">
