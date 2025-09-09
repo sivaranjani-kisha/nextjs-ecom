@@ -542,11 +542,11 @@ export default function CheckoutPage() {
 
                 <div className="grid grid-cols-2 gap-4 mt-3">
                   <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
-                  <input type="text" name="state" placeholder="State/Province" value={formData.state} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
+                  <input type="text" name="state" placeholder="Tamil Nadu" value={formData.state} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
                 </div>
 
                 <input type="text" name="postCode" placeholder="Post Code" value={formData.postCode} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
-                <input type="text" name="phonenumber" placeholder="phonenumber" value={formData.phonenumber} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" />
+                <input type="text" name="phonenumber" placeholder="phonenumber" value={formData.phonenumber} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" maxLength={10}/>
                 <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" />
 
                 <h3 className="text-lg font-semibold text-gray-700 mt-6 mb-2">Additional Information</h3>

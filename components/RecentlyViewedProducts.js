@@ -143,7 +143,7 @@ const RecentlyViewedProducts = () => {
                 key={product._id}
                 className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
               >
-                <div className="relative aspect-square bg-gray-50">
+                <div className="relative aspect-square bg-gray-50 items-center justify-center">
                   {product.images?.[0] && (
                     <img
                       src={
@@ -152,7 +152,7 @@ const RecentlyViewedProducts = () => {
                           : `/uploads/products/${product.images[0]}`
                       }
                       alt={product.name}
-                      className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105 h-60 w-60" 
+                      className="object-contain  transition-transform duration-300 group-hover:scale-105 flex  h-60 w-60 " 
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = "/uploads/products/placeholder.jpg";
