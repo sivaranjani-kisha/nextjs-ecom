@@ -278,7 +278,7 @@ const capitalizeFirstLetter = (str) =>
         {/* Bottom Section */}
         <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 md:grid-cols-[70%_30%]"> 
           <div className="">
-            <div className="container mx-auto px-3 flex flex-col md:flex-row justify-between items-center gap-6 ">
+            <div className="mb-2 container mx-auto px-3 flex flex-col md:flex-row justify-between items-center gap-6 ">
               <div className="text-center md:text-left ml-1 mb-1">
                 <p>
                   <a href="#" className="hover:underline text-white">Bharath Electronics ©</a> 2025 All rights reserved.
@@ -297,7 +297,7 @@ const capitalizeFirstLetter = (str) =>
             </div>
               
           <div className="bg-[#2e2a2a]">
-              <div className="container mx-auto px-4 text-base font-medium space-y-4">
+              <div className="container mx-auto px-4  space-y-4">
                 {groupedCategories.main.map((mainCat) => (
                   <div key={mainCat._id}>
                     {/* Main Category */}
@@ -371,13 +371,13 @@ const capitalizeFirstLetter = (str) =>
           </div>
          {stores.length > 0 && (
             <div>
-              <div className="container mx-auto px-3 flex flex-col md:flex-row">
+              <div className="container mx-auto px-3 flex flex-col md:flex-column">
                 <h4 className="text-white font-medium mb-2 md:mb-0">Our Locations:</h4>
-                <p className="pl-2">
+                <p >
                   {stores.map((store, index) => (
                     <span key={index}>
                       {store.organisation_name}
-                      <br />
+                     
                     </span>
                   ))}
                 </p>
@@ -386,14 +386,14 @@ const capitalizeFirstLetter = (str) =>
           )}
 
         </div>
-        <div className="px-4 py-8 space-y-10">
+        <div className="px-4 py-4 space-y-10">
 
   
   <div>
-  <h2 className="text-2xl font-bold text-white mb-4">
+  <h2 className="text-white ">
     Buy Best Laptops & Gadgets Online
   </h2>
-  <p className="text-white leading-relaxed">
+  <p className="text-gray-400 py-2">
     Unleash the Power of Technology with{" "}
     <span className="font-semibold text-white">
       Bharath Electronics' Laptop & Computers Collection
@@ -409,16 +409,12 @@ const capitalizeFirstLetter = (str) =>
   </p>
 </div>
 
-<div className="mt-8">
-  <h2 className="text-2xl font-bold text-white mb-4">
+<div className="mt-4">
+  <h2 className=" text-white ">
     Buy Kitchen Appliances at Best Prices Online – Shop Now
   </h2>
-  <p className="text-white leading-relaxed">
-    Revolutionize Your Kitchen with{" "}
-    <span className="font-semibold text-white">
-      Bharath Electronics' Kitchen Appliances Collection
-    </span>
-    . Explore a Wide Range of Colours, Sizes, Manufacturers, and Types to
+  <p className="text-gray-400 py-2">
+    Revolutionize Your Kitchen with Bharath Electronics' Kitchen Appliances Collection. Explore a Wide Range of Colours, Sizes, Manufacturers, and Types to
     Find the Perfect Appliances for Your Culinary Needs. From Multi-Functional
     Mixer Juicer Grinders to Energy-Efficient Electric Cookers, Kitchen
     Chimneys, Gas Stoves, Induction Stoves, Water Purifiers, Microwave Ovens,
