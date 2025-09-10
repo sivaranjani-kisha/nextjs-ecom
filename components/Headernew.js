@@ -308,6 +308,9 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
         return;
       }
 
+      // Ensure dropdown becomes visible as soon as user types (even for one char)
+      setSearchDropdownVisible(true);
+
       // Immediate fetch for the first character, otherwise debounce for performance
       if (q.length === 1) {
         fetchSuggestions(q);
@@ -701,7 +704,7 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
         }
     };
     // 🔹 Render flattened category item
-// const renderFlatItem = (item, hoveredCategory) => {
+// const renderFlatItem = (item, hoveredCategory) {
 
 //     // Use uniqueKey instead of _id for the key prop
 //     const itemKey = item.uniqueKey || item._id;
@@ -905,21 +908,23 @@ const renderFlatItem = (item, hoveredCategory) => {
                           {Array.isArray(suggestions) && suggestions.length > 0 ? (
                             <ul className="p-3 space-y-2">
                               {suggestions.map((product) => (
-                                <li key={product._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
-                                  {product.images?.[0] ? (
-                                    <img
-                                      src={product.images[0].startsWith('http') ? product.images[0] : `/uploads/products/${product.images[0]}`}
-                                      alt={product.name}
-                                      className="w-12 h-12 object-cover rounded"
-                                    />
-                                  ) : (
-                                    <div className="w-12 h-12 bg-gray-100 rounded" />
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <Link href={`/product/${product.slug}`} className="block text-sm font-medium text-gray-800 hover:text-blue-600 truncate">
-                                      {product.name}
-                                    </Link>
-                                    <div className="text-xs text-gray-500">₹{(product.special_price ?? product.price ?? 0).toLocaleString()}</div>
+                                <li key={product._id} className="p-0">
+                                  <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded min-h-[60px]" style={{ height: '81px', backgroundColor: '#d3d3d3b8' }}>
+                                    {product.images?.[0] ? (
+                                      <img
+                                        src={product.images[0].startsWith('http') ? product.images[0] : `/uploads/products/${product.images[0]}`}
+                                        alt={product.name}
+                                        className="w-12 h-12 object-cover rounded"
+                                      />
+                                    ) : (
+                                      <div className="w-12 h-12 bg-gray-100 rounded" />
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <Link href={`/product/${product.slug}`} className="block text-sm font-medium text-gray-800 hover:text-blue-600 truncate">
+                                        {product.name}
+                                      </Link>
+                                      <div className="text-xs text-gray-500">₹{(product.special_price ?? product.price ?? 0).toLocaleString()}</div>
+                                    </div>
                                   </div>
                                 </li>
                               ))}
