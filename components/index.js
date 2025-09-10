@@ -1741,7 +1741,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
 
                   
 
-                  <RecentlyViewedProducts />
+                  <RecentlyViewedProducts /> 
                   
 
                 
