@@ -1736,15 +1736,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     </div>
                     </section>
                   )}
-
-
-
-                  
-
                   <RecentlyViewedProducts /> 
-                  
-
-                
             </div>
         </>
     );

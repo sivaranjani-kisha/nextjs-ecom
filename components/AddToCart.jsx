@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useModal } from '@/context/ModalContext';
 import { useHeaderdetails } from '@/context/HeaderContext';
+import { trackAddToCart } from "@/utils/nextjs-event-tracking.js";
 
 import { FaShoppingCart} from "react-icons/fa";
 
@@ -17,6 +18,7 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
   const isOutOfStock = stockQuantity <= 0;
     const isprice = special_price <= 0;
   const { cartCount, updateCartCount } = useCart();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const handleAddToCart = async () => {
      if (isOutOfStock) return;
 
@@ -57,6 +59,15 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
             setIsAdmin(true);
           }
         }
+
+        const proresponse = await fetch(`/api/product/get/${productId}`);
+       
+        if (!proresponse.ok) {
+          throw new Error(`HTTP error! status: ${proresponse.status}`);
+        }
+        
+        const productData = await proresponse.json();
+
   
         // Add main product to cart
         const cartResponse = await fetch('/api/cart', {
@@ -93,6 +104,24 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
   
         const responseData = await cartResponse.json();
         updateCartCount(responseData.cart.totalItems + additionalProducts.length);
+
+        // Event Tracking
+      trackAddToCart({
+        user: {
+          name: data.user.name,
+          phone: data.phone,
+          email: data.user.email,
+        },
+        product: {
+          id: productId,
+          name: responseData.cart.items[0].name,
+          price: responseData.cart.items[0].price,
+          link: `${apiUrl}/product/${productData.data.slug}`,
+          image: `${apiUrl}/uploads/products/`+responseData.cart.items[0].image,
+          qty: responseData.cart.items[0].quantity,
+          currency: "INR",
+        },
+      });
 
         // ✅ Store selected product IDs for persistence
 if (selectedFrequentProducts?.length > 0) {
