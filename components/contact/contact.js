@@ -286,7 +286,7 @@ export default function ContactForm() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-blue-700 text-white px-6 py-2 rounded-md"
+                  className="bg-green-600 text-white px-6 py-2 rounded-md"
                 >
                   {loading ? "Submitting..." : "Submit"}
                 </button>
