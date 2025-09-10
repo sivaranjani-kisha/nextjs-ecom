@@ -1479,75 +1479,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       </div>
                     </motion.section>
                   )
-                case 'singlebanner-two':
-                  return (
-                    <motion.section id="singlebanner-two"
-                      ref={refs.singlebanner}
-                      initial="hidden"
-                      animate="visible"
-                      variants={containerVariants}
-                      className="overflow-hidden pt-7 px-4 sm:px-6 md:px-6"
-                    >
-                      <div className="relative">
-                        {isSingleBannerLoading ? (
-                          <div className="p-2 flex justify-center items-center h-64">
-                            <div className="animate-spin rounded-full border-t-2 border-b-2 border-blue-600"></div>
-                          </div>
-                        ) : singleBannerData.singlebannerTwo?.items?.length > 0 ? (
-                          singleBannerData.singlebannerTwo.items.length > 1 ? (
-                            <Slider {...settings} className="relative">
-                              {singleBannerData.singlebannerTwo.items.map((item) => (
-                                <motion.div
-                                  key={item.id}
-                                  className="relative w-full"
-                                  variants={itemVariants}
-                                >
-                                  <Link href={item.redirect_url || "#"} className="block w-full h-full">
-                                    <div className="absolute inset-0 flex justify-center items-center bg-white mb-4">
-                                      <Image
-                                        src={item.bgImageUrl}
-                                        alt="Single Banner"
-                                        fill
-                                        quality={100}
-                                        className="object-fill w-full h-full"
-                                        priority
-                                      />
-                                    </div>
-                                  </Link>
-                                </motion.div>
-                              ))}
-                            </Slider>
-                          ) : (
-                            <motion.div
-                              className="relative w-full"
-                              variants={itemVariants}
-                            >
-                              <Link
-                                href={singleBannerData.singlebannerTwo.items[0].redirect_url || "#"}
-                                className="block w-full h-full"
-                              >
-                                <div className="relative w-full">
-                                  <Image
-                                    src={singleBannerData.singlebannerTwo.items[0].bgImageUrl}
-                                    alt="Single Banner two"
-                                     width={1920}
-                                     height={500}
-                                     quality={100}
-                                     className="w-full h-auto object-contain"
-                                     priority
-                                  />
-                                </div>
-                              </Link>
-                            </motion.div>
-                          )
-                        ) : (
-                          <div className="">
-                           
-                          </div>
-                        )}
-                      </div>
-                    </motion.section>
-                  );
+                
 
                 case 'videocard':
                   return(
