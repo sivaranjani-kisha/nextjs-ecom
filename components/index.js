@@ -1215,7 +1215,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                 .map((item) => (
                                   <div
                                     key={item.id}
-                                    className="col-span-12 md:col-span-4 relative rounded-lg shadow-md overflow-hidden flex items-center p-6"
+                                    className="col-span-12 md:col-span-4 relative shadow-md overflow-hidden flex items-center p-6"
                                     style={{
                                       backgroundImage: `url(${item.bgImage})`,
                                       backgroundSize: "cover",
