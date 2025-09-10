@@ -11,11 +11,12 @@ export async function GET(req) {
   try {
     // Implement your token verification logic
     const decoded = verifyToken(token);
-    const userRole = await User.findOne({ _id: decoded.userId }, 'user_type');
+    const userRole = await User.findOne({ _id: decoded.userId }, {name: 1, email: 1, mobile: 1, user_type: 1});
     return Response.json({
       loggedIn: true,
       user: decoded, // optional
-      role:userRole.user_type
+      role:userRole.user_type,
+      phone:userRole.mobile
     }, { status: 200 });
   } catch (error) {
     return Response.json({ loggedIn: false }, { status: 200 });
