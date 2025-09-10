@@ -855,31 +855,40 @@ const renderFlatItem = (item, hoveredCategory) => {
 
                     {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
                     <div className="relative hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden border border-gray-300">
-                      
-
-                      <input
-                        type="text"
-                       
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        ref={searchInputRef}
-                        onFocus={() => {
-                          if (searchInputRef.current) {
-                            const rect = searchInputRef.current.getBoundingClientRect();
-                            setSearchDropdownLeft(rect.left);
-                            setSearchDropdownTop(rect.bottom + window.scrollY);
-                            setSearchDropdownWidth(rect.width);
-                          }
-                          if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
-                          setSearchDropdownVisible(true);
-                        }}
-                        className="flex-1 px-3 py-2 text-sm outline-none relative"
-                      />
+                      {/* grouped select + input on the left */}
+                      <div className="flex items-center w-full">
+                        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2.5 text-xs sm:text-sm text-gray-700 bg-gray-100 border-r border-gray-300 outline-none rounded-l-md">
+                            <option value="All Categories">All Categories</option>
+                            {categories.map((cat) => (
+                                <option key={cat._id} value={cat.category_name}>
+                                    {cat.category_name}
+                                </option>
+                            ))}
+                        </select>
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          ref={searchInputRef}
+                          onFocus={() => {
+                            if (searchInputRef.current) {
+                              const rect = searchInputRef.current.getBoundingClientRect();
+                              setSearchDropdownLeft(rect.left);
+                              setSearchDropdownTop(rect.bottom + window.scrollY);
+                              setSearchDropdownWidth(rect.width);
+                            }
+                            if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
+                            setSearchDropdownVisible(true);
+                          }}
+                          onKeyDown={handleKeyPress}
+                          className="flex-1 px-3 py-2 text-sm outline-none relative rounded-r-md"
+                        />
+                      </div>
 
                       {/* fake placeholder overlay: shows Search For "<bold updatedText>" when input empty */}
                       {searchQuery.trim() === "" && (
                         <div className="absolute left-3 top-2 pointer-events-none select-none">
-                          <span className="text-sm text-gray-600 font-bold">Search For</span>
+                          <span className="text-sm text-gray-600 font-bold">&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;&nbsp;&nbsp;Search For</span>
                           <span className="text-sm text-gray-600"> {"\""}</span>
                           <span className="text-sm text-gray-600">{typedPreview}</span>
                           <span className="text-sm text-gray-600">{"\""}</span>
@@ -898,7 +907,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                           style={{
                             top: `${searchDropdownTop}px`,
                             left: `${searchDropdownLeft}px`,
-                            width: `${searchDropdownWidth}px`,
+                            width: `${searchDropdownWidth + 120}px`,
                             maxHeight: '420px',
                             overflow: 'auto'
                           }}
@@ -1420,32 +1429,41 @@ const renderFlatItem = (item, hoveredCategory) => {
                         onMouseLeave={() => startHide(120)}
                     >
                         <div className="flex flex-wrap bg-white h-[390px]">
-                            {chunkFlatList(
-                                flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
-                                11
-                            ).map((chunk, index) => (
-                                <div
-                                    key={index}
-                                    className="min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start" // 👈 h-[250px] remove panniten
-                                >
-                                    {chunk.map(item => renderFlatItem(item, hoveredCategory))}
-                                </div>
-                            ))}
+                            {(() => {
+                                const dropdownChunksLocal = chunkFlatList(
+                                    flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+                                    11
+                                );
 
-                            {(hoveredCategory.navImage || hoveredCategory.image) && (
-                                <div className="min-w-[220px] max-w-[250px] flex items-center justify-center h-full ">
-                                    <Link href={``} className="w-full h-full">
-                                        <Image
-                                            src={hoveredCategory.navImage || hoveredCategory.image}
-                                            alt="Category Navigation Image"
-                                            width={220}
-                                            height={390}
-                                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                                            className="object-cover rounded"
-                                        />
-                                    </Link>
-                                </div>
-                            )}
+                                return dropdownChunksLocal.map((chunk, index) => {
+                                    const isLast = index === dropdownChunksLocal.length - 1;
+                                    const scrollableClass = chunk.length > 10 ? ' max-h-[320px] pr-2' : '';
+                                    return (
+                                        <div
+                                            key={index}
+                                            className={`min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start ${scrollableClass}`}
+                                        >
+                                            {chunk.map(item => renderFlatItem(item, hoveredCategory))}
+
+                                            {/* Render image only inside the last column if available */}
+                                            {isLast && (hoveredCategory.navImage || hoveredCategory.image) && (
+                                                <div className="mt-2 w-full h-[180px] flex items-center justify-center">
+                                                    <Link href={``} className="w-full h-full block">
+                                                        <Image
+                                                            src={hoveredCategory.navImage || hoveredCategory.image}
+                                                            alt="Category Navigation Image"
+                                                            width={220}
+                                                            height={390}
+                                                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                                                            className="object-cover rounded"
+                                                        />
+                                                    </Link>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
 
                     </div>
