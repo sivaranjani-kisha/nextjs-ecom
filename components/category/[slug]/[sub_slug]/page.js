@@ -709,7 +709,7 @@ export default function CategoryPage() {
                         >
                           {/* active green bar */}
                           <div
-                            className="absolute h-2 bg-green-500 rounded-lg"
+                            className="absolute h-2 bg-gray-400 rounded-lg"
                             style={{
                               left: `${((values[0] - MIN) / (MAX - MIN)) * 100}%`,
                               width: `${((values[1] - values[0]) / (MAX - MIN)) * 100}%`,
