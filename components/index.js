@@ -116,9 +116,10 @@ const writeCache = (section, data) => {
   }
 };
  
+const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
 const fetchBrand = async () => {
-  // brandMap: store as map id->name in cache
   try {
+    // try cached map first
     const cached = readCache('brand_map');
     if (cached) {
       setBrandMap(cached);
@@ -126,7 +127,6 @@ const fetchBrand = async () => {
     }
   } catch (e) {}
 
-<<<<<<< HEAD
   try {
     const response = await fetch('/api/brand');
     const result = await response.json();
@@ -138,26 +138,7 @@ const fetchBrand = async () => {
     const map = {};
     data.forEach((b) => { map[b._id] = b.brand_name; });
     setBrandMap(map);
-    writeCache('brand_map', map);
-=======
- const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
-const fetchBrand = async () => {
-  try {
-    const response = await fetch("/api/brand");
-    const result = await response.json();
-    if (result.error) {
-      console.error(result.error);
-    } else {
-      const data = result.data;
- 
-      // Store as map for quick access
-      const map = {};
-      data.forEach((b) => {
-        map[b._id] = b.brand_name;
-      });
-      setBrandMap(map);
-    }
->>>>>>> cab90a096927106b619c84a07a094d8d0ca52f39
+    try { writeCache('brand_map', map); } catch (e) { /* ignore cache errors */ }
   } catch (error) {
     console.error(error.message);
   }
@@ -886,19 +867,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
                       transition={{ duration: 0.6 }}
-<<<<<<< HEAD
-                      className="recommended-products px-4 sm:px-0 md:px-0 pt-14"
-                    >
-                      <div className="rounded-[23px] px-0 py-4 p-2">
-                        {/* Section Header */}
-                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6 md:px-6">
-=======
                       className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
                     >
                       <div className="rounded-[23px] py-4 p-2">
                         {/* Section Header */}
                         <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
->>>>>>> cab90a096927106b619c84a07a094d8d0ca52f39
                           <h5 className="text-xl sm:text-2xl font-bold">
                             Shop by Category
                           </h5>
@@ -949,13 +922,6 @@ const handleCategoryClick = useCallback((category) => (e) => {
 
                                   {/* Products Grid */}
                                   <div className="w-full md:w-2/3">
-<<<<<<< HEAD
-                                    <div className={` relative flex-1 pt-2 pb-2 ${index % 2 === 1 ? 'pl-2' : 'pr-2'} bg-[#1e3a8a]/95 overflow-hidden group`} >
-                                      {/* Left Arrow */}
-                                      <button
-                                          onClick={() => scrollLeft(category._id)}
-                                        className="absolute left-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-=======
                                     <div className={` relative flex-1 pt-2 pb-2 ${index % 2 === 1 ? 'pr-4' : ' pl-4'} overflow-hidden group`} >
                                       {/* Left Arrow */}
                                       <button
@@ -965,23 +931,12 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                   rounded-full bg-white text-black border border-gray 
                                                   hover:bg-black hover:text-white hover:border-white
                                                   shadow-sm z-20 transition-all duration-300"
->>>>>>> cab90a096927106b619c84a07a094d8d0ca52f39
                                       >
                                         <FiChevronLeft size={18} />
                                       </button>
 
                                       {/* Right Arrow */}
                                       <button
-<<<<<<< HEAD
-                                            onClick={() => scrollRight(category._id)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                      >
-                                        <FiChevronRight size={18} />
-                                      </button>
-                                      <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth">
-                                        {categoryProducts.slice(0, 6).map((product) => (
-                                          <div  key={product._id} className="relative border shadow bg-white flex-shrink-0 w-64 flex flex-col justify-between p-4">
-=======
                                         onClick={() => scrollRight(category._id)}
                                         className="absolute right-0 top-1/2 -translate-y-1/2 
                                                   w-8 h-8 flex items-center justify-center 
@@ -994,7 +949,6 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
                                         {categoryProducts.slice(0, 6).map((product) => (
                                           <div  key={product._id} className="relative border border-gray-300 shadow bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  transition-all duration-300 hover:border-blue-500 group rounded">
->>>>>>> cab90a096927106b619c84a07a094d8d0ca52f39
                                             <div className="absolute top-3 left-3">
                                               
                                                 {product.special_price && product.price > product.special_price ? (
@@ -1024,11 +978,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                               <img
                                                 src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
                                                 alt={product.images?.[0] || "Product image"} 
-<<<<<<< HEAD
                                                 className="max-h-full max-w-full object-contain"
-=======
-                                                className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
->>>>>>> cab90a096927106b619c84a07a094d8d0ca52f39
                                                 onError={(e) => { 
                                                   e.target.onerror = null; 
                                                   e.target.src = "/uploads/products/placeholder.jpg";
@@ -1067,11 +1017,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                             <div className="mt-3 flex items-center justify-between gap-2">
                                               <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
                                               <a 
-<<<<<<< HEAD
                                               href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: https://bea.divinfosys.com/product/${product.slug}`)}`} 
-=======
-                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
->>>>>>> cab90a096927106b619c84a07a094d8d0ca52f39
                                               target="_blank" 
                                               rel="noopener noreferrer" 
                                               className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
@@ -1102,11 +1048,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
   animate="visible"
   variants={sectionVariants}
   id="flash_sales"
-<<<<<<< HEAD
-  className="px-0 sm:px-0 md:px-0 pt-6"
-=======
   className="px-4 sm:px-6 md:px-6 pt-6"
->>>>>>> cab90a096927106b619c84a07a094d8d0ca52f39
 >
   {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
     <div className="py-0">
@@ -1182,11 +1124,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     );
                 case 'features':
                     return (
-<<<<<<< HEAD
-                <section className="pt-7" id="features">
-=======
                 <section className="pt-7 px-4 sm:px-6 md:px-6" id="features">
->>>>>>> cab90a096927106b619c84a07a094d8d0ca52f39
   <div className="max-w-7xl mx-auto px-4">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
       {features.map((feature, index) => (
@@ -1195,11 +1133,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
           className="flex flex-col items-center cursor-pointer group"
           onMouseEnter={(e) => {
             const img = e.currentTarget.querySelector(".img-flip");
-<<<<<<< HEAD
-            if (img) img.style.transform = "rotateY(180deg)";
-=======
             if (img) img.style.transform = "rotateY(360deg)";
->>>>>>> cab90a096927106b619c84a07a094d8d0ca52f39
           }}
           onMouseLeave={(e) => {
             const img = e.currentTarget.querySelector(".img-flip");
