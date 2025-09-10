@@ -22,7 +22,6 @@ import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { ChevronRight } from "lucide-react";
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { getProducts } from '@/lib/productApi';
 export default function HomeComponent() {
   function slugify(text) {
   return text
@@ -74,9 +73,33 @@ export default function HomeComponent() {
     // Cateogry Scroll
     const categoryScrollRef = useRef(null);
 const [videos, setVideos] = useState([]);
- const [activeVideo, setActiveVideo] = useState(null);
-  const scrollRef = useRef(null);
-const scrollCategories = (direction) => {
+const [activeVideo, setActiveVideo] = useState(null);
+
+// commit: added localStorage read/write helpers for daily cache
+const DAILY_CACHE_KEY = 'site_daily_cache_v1';
+const _todayStr = () => new Date().toISOString().slice(0,10);
+const readDailyCache = () => {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem(DAILY_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.date !== _todayStr()) return null; // expired or different day
+    return parsed.payload || null;
+  } catch (e) {
+    return null;
+  }
+};
+const writeDailyCache = (payload) => {
+  try {
+    if (typeof window === 'undefined') return;
+    const obj = { date: _todayStr(), payload };
+    localStorage.setItem(DAILY_CACHE_KEY, JSON.stringify(obj));
+  } catch (e) {
+    // ignore
+  }
+};
+  const scrollCategories = (direction) => {
   if (categoryScrollRef.current) {
     categoryScrollRef.current.scrollBy({
       left: direction === "left" ? -200 : 200,
@@ -86,59 +109,24 @@ const scrollCategories = (direction) => {
 };
   const [brandMap, setBrandMap] = useState([]);
 
-// Add per-section localStorage cache helpers (24h TTL)
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
-const cacheKey = (section) => `cache_${section}`;
-const readCache = (section) => {
-  try {
-    if (typeof window === 'undefined') return null;
-    const raw = localStorage.getItem(cacheKey(section));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || !parsed.timestamp || typeof parsed.data === 'undefined') return null;
-    if (Date.now() - parsed.timestamp > CACHE_TTL) {
-      try { localStorage.removeItem(cacheKey(section)); } catch (e) {}
-      return null;
-    }
-    return parsed.data;
-  } catch (err) {
-    console.error('readCache error', err);
-    return null;
-  }
-};
-const writeCache = (section, data) => {
-  try {
-    if (typeof window === 'undefined') return;
-    const payload = { timestamp: Date.now(), data };
-    localStorage.setItem(cacheKey(section), JSON.stringify(payload));
-  } catch (err) {
-    console.error('writeCache error', err);
-  }
-};
- 
-const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
+
+ const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
 const fetchBrand = async () => {
   try {
-    // try cached map first
-    const cached = readCache('brand_map');
-    if (cached) {
-      setBrandMap(cached);
-      return;
-    }
-  } catch (e) {}
-
-  try {
-    const response = await fetch('/api/brand');
+    const response = await fetch("/api/brand");
     const result = await response.json();
     if (result.error) {
       console.error(result.error);
-      return;
+    } else {
+      const data = result.data;
+ 
+      // Store as map for quick access
+      const map = {};
+      data.forEach((b) => {
+        map[b._id] = b.brand_name;
+      });
+      setBrandMap(map);
     }
-    const data = result.data || [];
-    const map = {};
-    data.forEach((b) => { map[b._id] = b.brand_name; });
-    setBrandMap(map);
-    try { writeCache('brand_map', map); } catch (e) { /* ignore cache errors */ }
   } catch (error) {
     console.error(error.message);
   }
@@ -148,26 +136,18 @@ useEffect(() => {
   fetchBrand();
 }, []);
 
-useEffect(() => {
-  const fetchVideos = async () => {
-    try {
-      const cached = readCache('videos');
-      if (cached) {
-        setVideos(cached);
-        return;
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const res = await fetch("/api/videocard");
+        const data = await res.json();
+        if (data.success) setVideos(data.videoCards);
+      } catch (err) {
+        console.error("Error fetching videos:", err);
       }
-
-      const res = await fetch('/api/videocard');
-      const data = await res.json();
-      const videoCards = data.success ? data.videoCards || [] : [];
-      setVideos(videoCards);
-      writeCache('videos', videoCards);
-    } catch (err) {
-      console.error('Error fetching videos:', err);
-    }
-  };
-  fetchVideos();
-}, []);
+    };
+    fetchVideos();
+  }, []);
 
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -193,32 +173,35 @@ useEffect(() => {
     const fetchBannerData = async () => {
         setIsBannerLoading(true);
         try {
-            const cached = readCache('banner');
-            if (cached) {
-                setBannerData({ banner: { items: cached } });
-                setIsBannerLoading(false);
-                return;
-            }
-
             const response = await fetch('/api/topbanner');
             const data = await response.json();
 
             if (data.success && data.banners?.length > 0) {
                 const bannerItems = data.banners
-                    .filter(banner => banner.status === 'Active')
+                    .filter(banner => banner.status === "Active") // ✅ only Active
                     .map(banner => ({
                         id: banner._id,
-                        buttonLink: banner.redirect_url || '/shop',
+                        buttonLink: banner.redirect_url || "/shop",
                         bgImageUrl: banner.banner_image,
                         bannerImageUrl: banner.banner_image
                     }));
 
-                setBannerData({ banner: { items: bannerItems } });
-                writeCache('banner', bannerItems);
+                setBannerData({
+                    banner: { items: bannerItems }
+                });
             }
         } catch (error) {
-            console.error('Error fetching banner data:', error);
-            setBannerData({ banner: { items: [{ id: 1, buttonLink: '/shop', bgImageUrl: '/images/banner-img1.png', bannerImageUrl: '/images/banner-product.png' }] } });
+            console.error("Error fetching banner data:", error);
+            setBannerData({
+                banner: {
+                    items: [{
+                        id: 1,
+                        buttonLink: "/shop",
+                        bgImageUrl: "/images/banner-img1.png",
+                        bannerImageUrl: "/images/banner-product.png"
+                    }]
+                }
+            });
         } finally {
             setIsBannerLoading(false);
         }
@@ -227,39 +210,39 @@ useEffect(() => {
     const fetchFlashSales = async () => {
       setIsFlashSalesLoading(true);
       try {
-        const cached = readCache('flash_sales');
-        if (cached) {
-          setFlashSalesData(cached);
-          setIsFlashSalesLoading(false);
-          return;
-        }
-
-        const response = await fetch('/api/flashsale');
+        const response = await fetch("/api/flashsale");
         const data = await response.json();
 
-        const salesItems = (data.success && data.flashSales?.length > 0)
-          ? data.flashSales.filter(item => item.status === 'Active').map(item => ({
+        if (data.success && data.flashSales.length > 0) {
+          const salesItems = data.flashSales
+            .filter(item => item.status === "Active")   // ✅ only active
+            .map((item) => ({
               id: item._id,
               title: item.title,
               productImage: item.banner_image,
               bgImage: item.background_image,
-              redirectUrl: item.redirect_url || '/shop',
-            }))
-          : [];
-
-        if (salesItems.length > 0) {
+              redirectUrl: item.redirect_url || "/shop",
+            }));
           setFlashSalesData(salesItems);
-          writeCache('flash_sales', salesItems);
-        } else {
-          // fallback sample if API returned empty
-          const fallback = [
-            { id: 'fs1', title: 'Summer Fruits Special', productImage: '/images/summer-fruits.png', bgImage: '/images/sale-bg1.jpg', redirectUrl: '/summer-sale' },
-            { id: 'fs2', title: 'Organic Vegetables', productImage: '/images/veggies.png', bgImage: '/images/sale-bg2.jpg', redirectUrl: '/vegetables' }
-          ];
-          setFlashSalesData(fallback);
         }
       } catch (error) {
-        console.error('Error fetching flash sales:', error);
+        console.error("Error fetching flash sales:", error);
+        setFlashSalesData([
+          {
+            id: "fs1",
+            title: "Summer Fruits Special",
+            productImage: "/images/summer-fruits.png",
+            bgImage: "/images/sale-bg1.jpg",
+            redirectUrl: "/summer-sale",
+          },
+          {
+            id: "fs2",
+            title: "Organic Vegetables",
+            productImage: "/images/veggies.png",
+            bgImage: "/images/sale-bg2.jpg",
+            redirectUrl: "/vegetables",
+          },
+        ]);
       } finally {
         setIsFlashSalesLoading(false);
       }
@@ -268,29 +251,27 @@ useEffect(() => {
     const fetchHomeSections = async () => {
       setIsSectionLoading(true);
       try {
-        const cached = readCache('home_sections');
-        if (cached) {
-          setHomeSectionData({ sections: cached });
-          setIsSectionLoading(false);
-          return;
-        }
-
-        const response = await fetch('/api/home-sections');
+        const response = await fetch("/api/home-sections");
         const data = await response.json();
 
         if (data.success && data.data?.length > 0) {
           const sectionItems = data.data
-            .filter(section => section.status === 'active')
-            .map(section => ({ id: section._id, name: section.name, position: section.position }));
+            .filter(section => section.status === "active") // ✅ only active
+            .map(section => ({
+              id: section._id,
+              name: section.name,
+              position: section.position
+            }));
 
-          setHomeSectionData({ sections: sectionItems });
-          writeCache('home_sections', sectionItems);
-        } else {
-          setHomeSectionData({ sections: [] });
+          setHomeSectionData({
+            sections: sectionItems
+          });
         }
       } catch (error) {
-        console.error('Error fetching home sections:', error);
-        setHomeSectionData({ sections: [] });
+        console.error("Error fetching home sections:", error);
+        setHomeSectionData({
+          sections: []
+        });
       } finally {
         setIsSectionLoading(false);
       }
@@ -299,21 +280,16 @@ useEffect(() => {
     const fetchBrands = async () => {
         setIsBrandsLoading(true);
         try {
-            const cached = readCache('brands');
-            if (cached) {
-              setBrands(cached);
-              setIsBrandsLoading(false);
-              return;
-            }
-
             const response = await fetch('/api/brand/get');
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
             const data = await response.json();
-            const list = data.success ? data.brands || [] : [];
-            setBrands(list);
-            writeCache('brands', list);
+            if (data.success) {
+                setBrands(data.brands || []);
+            }
         } catch (error) {
-            console.error('Error fetching brands:', error);
+            console.error("Error fetching brands:", error);
             setBrands([]);
         } finally {
             setIsBrandsLoading(false);
@@ -322,90 +298,102 @@ useEffect(() => {
 
     const fetchCategories = async () => {
       try {
-        const cached = readCache('categories');
-        if (cached) {
-          setCategories(cached);
-          // derive parentCategories from cached data similar to original
-          const rootIds = cached.filter(cat => cat.parentid === 'none' && cat.status === 'Active').map(cat => cat._id);
-          const secondLevelCategories = cached.filter(cat => rootIds.includes(cat.parentid) && cat.status === 'Active');
-          setParentCategories(secondLevelCategories);
-          setSelectedCategory(secondLevelCategories[0]);
-          return;
-        }
-
-        const response = await fetch('/api/categories/get');
-        const data = await response.json();
+        const response = await fetch("/api/categories/get");
+        const data    = await response.json();
         setCategories(data);
-        writeCache('categories', data);
-
-        const rootIds = data.filter(cat => cat.parentid === 'none' && cat.status === 'Active').map(cat => cat._id);
-        const secondLevelCategories = data.filter(cat => rootIds.includes(cat.parentid) && cat.status === 'Active');
+        const rootIds = data
+        .filter(cat => cat.parentid === "none" && cat.status === "Active")
+        .map(cat => cat._id);
+        console.log(rootIds);
+        // 2. Get only categories whose parentid is in rootIds → second level
+        const secondLevelCategories = data.filter(
+          cat => rootIds.includes(cat.parentid) && cat.status === "Active"
+        );
+        console.log(secondLevelCategories);
         setParentCategories(secondLevelCategories);
         setSelectedCategory(secondLevelCategories[0]);
       } catch (error) {
-          console.error('Error fetching categories:', error);
+          console.error("Error fetching categories:", error);
       }
     };
 
     const fetchProducts = async () => {
         try {
-            const data = await getProducts();
+            const response = await fetch("/api/product/get");
+            const data = await response.json();
             setProducts(data);
         } catch (error) {
-            console.error('Error fetching products:', error);
+            console.error("Error fetching products:", error);
         }
     };
 
     const fetchCategoryBanners = async () => {
       try {
-        const cached = readCache('category_banners');
-        if (cached) {
-          setCategoryBanner(cached);
-          return;
-        }
-
-        const response = await fetch('/api/categorybanner');
+        const response = await fetch("/api/categorybanner"); 
         const res = await response.json();
 
         if (res.success && res.categoryBanners && res.categoryBanners.banners) {
           const formatted = res.categoryBanners.banners
-            .filter(banner => res.categoryBanners.status === 'Active')
-            .map(banner => ({ imageUrl: banner.banner_image, redirectUrl: banner.redirect_url }));
+            .filter(banner => res.categoryBanners.status === "Active") // 👈 only if whole doc is Active
+            .map((banner) => ({
+              imageUrl: banner.banner_image,
+              redirectUrl: banner.redirect_url,
+            }));
           setCategoryBanner(formatted);
-          writeCache('category_banners', formatted);
         }
       } catch (error) {
-        console.error('Error fetching category banners:', error);
+        console.error("Error fetching category banners:", error);
       }
     };
 
     const fetchSingleBannerData = async () => {
       setIsSingleBannerLoading(true);
       try {
-        const cached = readCache('singlebanner');
-        if (cached) {
-          setSingleBannerData({ singlebanner: { items: cached }, ...singleBannerData });
-          setIsSingleBannerLoading(false);
-          return;
-        }
-
-        const response = await fetch('/api/singlebanner');
+        const response = await fetch("/api/singlebanner");
         const data = await response.json();
 
         if (data.success && data.banners?.length > 0) {
           const singleBannerItems = data.banners
-            .filter(banner => banner.status === 'Active')
-            .map(banner => ({ id: banner._id, redirect_url: banner.redirect_url || '/shop', bgImageUrl: banner.banner_image, singleBannerImageUrl: banner.banner_image }));
+            .filter((banner) => banner.status === "Active") // ✅ only Active
+            .map((banner) => ({
+              id: banner._id,
+            redirect_url: banner.redirect_url || "/shop",
+              bgImageUrl: banner.banner_image,
+              singleBannerImageUrl: banner.banner_image,
+            }));
 
-          setSingleBannerData({ singlebanner: { items: singleBannerItems } });
-          writeCache('singlebanner', singleBannerItems);
+          setSingleBannerData({
+            singlebanner: { items: singleBannerItems },
+          });
         } else {
-          const fallback = [{ id: 1, buttonLink: '/shop', bgImageUrl: '/images/singlebanner-img1.png', singleBannerImageUrl: '/images/singlebanner-product.png' }];
-          setSingleBannerData({ singlebanner: { items: fallback } });
-          writeCache('singlebanner', fallback);
+          // if no data, fallback default
+          setSingleBannerData({
+            singlebanner: {
+              items: [
+                {
+                  id: 1,
+                  buttonLink: "/shop",
+                  bgImageUrl: "/images/singlebanner-img1.png",
+                  singleBannerImageUrl: "/images/singlebanner-product.png",
+                },
+              ],
+            },
+          });
         }
       } catch (error) {
-        console.error('Error fetching single banner data:', error);
+        console.error("Error fetching single banner data:", error);
+        setSingleBannerData({
+          singlebanner: {
+            items: [
+              {
+                id: 1,
+                buttonLink: "/shop",
+                bgImageUrl: "/images/singlebanner-img1.png",
+                singleBannerImageUrl: "/images/singlebanner-product.png",
+              },
+            ],
+          },
+        });
       } finally {
         setIsSingleBannerLoading(false);
       }
@@ -414,30 +402,53 @@ useEffect(() => {
     const fetchSingleBannerDatatwo = async () => {
       setIsSingleBannerLoading(true);
       try {
-        const cached = readCache('singlebanner_two');
-        if (cached) {
-          setSingleBannerData(prev => ({ ...prev, singlebannerTwo: { items: cached } }));
-          setIsSingleBannerLoading(false);
-          return;
-        }
-
-        const response = await fetch('/api/singlebanner-two');
+        const response = await fetch("/api/singlebanner-two");
         const data = await response.json();
 
         if (data.success && data.banners?.length > 0) {
           const singleBannerItems = data.banners
-            .filter(banner => banner.status === 'Active')
-            .map(banner => ({ id: banner._id, redirect_url: banner.redirect_url || '/shop', bgImageUrl: banner.banner_image, singleBannerImageUrl: banner.banner_image }));
+            .filter((banner) => banner.status === "Active")
+            .map((banner) => ({
+              id: banner._id,
+              redirect_url: banner.redirect_url || "/shop",
+              bgImageUrl: banner.banner_image,
+              singleBannerImageUrl: banner.banner_image,
+            }));
 
-          setSingleBannerData(prev => ({ ...prev, singlebannerTwo: { items: singleBannerItems } }));
-          writeCache('singlebanner_two', singleBannerItems);
+          setSingleBannerData((prev) => ({
+            ...prev,
+            singlebannerTwo: { items: singleBannerItems },
+          }));
         } else {
-          const fallback = [{ id: 1, redirect_url: '/shop', bgImageUrl: '/images/singlebanner-img1.png', singleBannerImageUrl: '/images/singlebanner-product.png' }];
-          setSingleBannerData(prev => ({ ...prev, singlebannerTwo: { items: fallback } }));
-          writeCache('singlebanner_two', fallback);
+          setSingleBannerData((prev) => ({
+            ...prev,
+            singlebannerTwo: {
+              items: [
+                {
+                  id: 1,
+                  redirect_url: "/shop",
+                  bgImageUrl: "/images/singlebanner-img1.png",
+                  singleBannerImageUrl: "/images/singlebanner-product.png",
+                },
+              ],
+            },
+          }));
         }
       } catch (error) {
-        console.error('Error fetching single banner-two data:', error);
+        console.error("Error fetching single banner-two data:", error);
+        setSingleBannerData((prev) => ({
+          ...prev,
+          singlebannerTwo: {
+            items: [
+              {
+                id: 1,
+                redirect_url: "/shop",
+                bgImageUrl: "/images/singlebanner-img1.png",
+                singleBannerImageUrl: "/images/singlebanner-product.png",
+              },
+            ],
+          },
+        }));
       } finally {
         setIsSingleBannerLoading(false);
       }
@@ -459,65 +470,129 @@ useEffect(() => {
     return () => clearTimeout(timer);
 }, []);
 
-const fetchHomeSections = async () => {
-    setIsSectionLoading(true);
-    try {
-      const response = await fetch("/api/home-sections");
-      const data = await response.json();
+useEffect(() => {
+    // commit: consolidated first-load daily cache logic
+    let mounted = true;
 
-      if (data.success && data.data?.length > 0) {
-        const sectionItems = data.data
-          .filter((section) => section.status === "active") // only active
-          .map((section) => ({
-            id: section._id,
-            name: section.name,
-            position: section.position,
-          }));
-
-        setHomeSectionData({ sections: sectionItems });
-      } else {
-        setHomeSectionData({ sections: [] });
-      }
-    } catch (error) {
-      console.error("Error fetching home sections:", error);
-      setHomeSectionData({ sections: [] });
-    } finally {
-      setIsSectionLoading(false);
-    }
-};
-
-  useEffect(() => {
-    fetchHomeSections();
-  }, []);
-    useEffect(() => {
-        setHasMounted(true);
-      }, []);
-    
-      useEffect(() => {
-        if (!hasMounted) return;
-      
-        const savedCategories = localStorage.getItem('headerCategories');
-        if (savedCategories) {
-          setCategories(JSON.parse(savedCategories));
+    const populateFromCache = (payload) => {
+      try {
+        // Banners
+        if (payload.banners) {
+          const data = payload.banners;
+          const bannerItems = (data.banners || data.items || []).filter(b => b.status !== 'Inactive').map(b => ({ id: b._id || b.id, redirect_url: b.redirect_url || b.buttonLink, banner_image: b.banner_image || b.bgImageUrl, status: b.status }));
+          setBannerData({ banner: { items: bannerItems } });
         }
-      
-        const fetchCategories = async () => {
-          try {
-            const response = await fetch('/api/categories/get');
-            const data = await response.json();
-            const parentCategories = data.filter(
-              (category) => category.parentid === "none" && category.status === "Active"
-            );
-            setCategories(parentCategories);
-            localStorage.setItem('headerCategories', JSON.stringify(parentCategories));
-          } catch (error) {
-            console.error("Error fetching categories:", error);
-          }
+
+        // Flash sales
+        if (payload.flashsales) {
+          const data = payload.flashsales;
+          const sales = (data.flashSales || data.items || []).filter(s => s.status !== 'Inactive').map(s => ({ id: s._id || s.id, title: s.title, banner_image: s.banner_image || s.productImage, background_image: s.background_image || s.bgImage, redirect_url: s.redirect_url || s.redirectUrl, status: s.status }));
+          setFlashSalesData(sales);
+        }
+
+        // Brands
+        if (payload.brands) {
+          const data = payload.brands;
+          const list = (data.brands || data.data || data) || [];
+          setBrands(list);
+        }
+
+        // Categories
+        if (payload.categories) {
+          const data = payload.categories;
+          const cats = Array.isArray(data) ? data : (data.data || []);
+          setCategories(cats);
+          const rootIds = cats.filter(cat => cat.parentid === 'none' && cat.status === 'Active').map(cat => cat._id);
+          const secondLevel = cats.filter(cat => rootIds.includes(cat.parentid) && cat.status === 'Active');
+          setParentCategories(secondLevel);
+          setSelectedCategory(secondLevel[0]);
+        }
+
+        // Products
+        if (payload.products) {
+          const data = payload.products;
+          const prods = Array.isArray(data) ? data : (data.data || []);
+          setProducts(prods);
+        }
+
+        // Category banners
+        if (payload.categoryBanners) {
+          const data = payload.categoryBanners;
+          const formatted = (data.banners || data.items || []).map(b => ({ imageUrl: b.banner_image, redirectUrl: b.redirect_url }));
+          setCategoryBanner(formatted);
+        }
+
+        // Single banners
+        if (payload.singlebanner) {
+          setSingleBannerData(prev => ({ ...prev, singlebanner: { items: payload.singlebanner.banners || payload.singlebanner.items || payload.singlebanner } }));
+        }
+        if (payload.singlebannerTwo) {
+          setSingleBannerData(prev => ({ ...prev, singlebannerTwo: { items: payload.singlebannerTwo.banners || payload.singlebannerTwo.items || payload.singlebannerTwo } }));
+        }
+
+        // Home sections
+        if (payload.homeSections) {
+          const data = payload.homeSections;
+          const secs = data.data || data.sections || data || [];
+          setHomeSectionData({ sections: Array.isArray(secs) ? secs : [] });
+        }
+
+        // Videos
+        if (payload.videos) {
+          const data = payload.videos;
+          const vids = data.videoCards || data || [];
+          setVideos(vids);
+        }
+      } catch (e) {
+        console.error('populateFromCache error', e);
+      }
+    };
+
+    const loadAll = async () => {
+      const cached = readDailyCache();
+      if (cached) {
+        populateFromCache(cached);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch in parallel
+        const endpoints = {
+          banners: '/api/topbanner',
+          flashsales: '/api/flashsale',
+          brands: '/api/brand/get',
+          categories: '/api/categories/get',
+          products: '/api/product/get',
+          categoryBanners: '/api/categorybanner',
+          singlebanner: '/api/singlebanner',
+          singlebannerTwo: '/api/singlebanner-two',
+          homeSections: '/api/home-sections',
+          videos: '/api/videocard'
         };
-      
-        fetchCategories();
-        checkAuthStatus();
-      }, [hasMounted]);
+
+        const keys = Object.keys(endpoints);
+        const promises = keys.map(k => fetch(endpoints[k]).then(r => r.ok ? r.json().catch(() => null) : null).catch(() => null));
+        const results = await Promise.all(promises);
+        const payload = {};
+        keys.forEach((k, i) => { payload[k] = results[i]; });
+
+        // write daily cache
+        writeDailyCache(payload); // commit: write daily cache after first-load fetch
+
+        if (!mounted) return;
+        populateFromCache(payload);
+      } catch (err) {
+        console.error('loadAll error', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAll();
+
+    return () => { mounted = false; };
+}, []);
 
     // Animation controls
     const controls = useAnimation();
@@ -978,7 +1053,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                               <img
                                                 src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
                                                 alt={product.images?.[0] || "Product image"} 
-                                                className="max-h-full max-w-full object-contain"
+                                                className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
                                                 onError={(e) => { 
                                                   e.target.onerror = null; 
                                                   e.target.src = "/uploads/products/placeholder.jpg";
@@ -1017,7 +1092,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                             <div className="mt-3 flex items-center justify-between gap-2">
                                               <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
                                               <a 
-                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: https://bea.divinfosys.com/product/${product.slug}`)}`} 
+                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
                                               target="_blank" 
                                               rel="noopener noreferrer" 
                                               className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
@@ -1749,7 +1824,15 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     </div>
                     </section>
                   )}
+
+
+
+                  
+
                   <RecentlyViewedProducts />
+                  
+
+                
             </div>
         </>
     );
