@@ -556,8 +556,7 @@ export default function CategoryPage() {
 
   return (
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
-    {!nofound && categoryData.products.length > 0 ? (
-      <>
+    
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
           <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.main_category.category_name}</h1>
@@ -832,7 +831,8 @@ export default function CategoryPage() {
                 )}
               </div>
             </div>
-
+            {!nofound && categoryData.products.length > 0 ? (
+            <>
             {/* Products Section */}
             <div className="flex-1">
               {products.length > 0 ? (
@@ -961,10 +961,10 @@ export default function CategoryPage() {
                 </div>
               )}
             </div>
-          </div>
+          
         </>
       ) : (
-        <div className="text-center py-10">
+        <div className="text-center py-10 mx-auto">
           <img 
             src="/images/no-productbox.png" 
             alt="No Products" 
@@ -973,6 +973,7 @@ export default function CategoryPage() {
         </div>
       )}
       <ToastContainer />
+      </div>
     </div>
   );
 }
