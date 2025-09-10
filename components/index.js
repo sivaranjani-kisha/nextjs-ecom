@@ -19,9 +19,10 @@ import Addtocart from "@/components/AddToCart";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from "swiper/modules";
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
-
+import { ChevronRight } from "lucide-react";
 import 'swiper/css';
 import 'swiper/css/navigation';
+import { getProducts } from '@/lib/productApi';
 export default function HomeComponent() {
   function slugify(text) {
   return text
@@ -33,10 +34,10 @@ export default function HomeComponent() {
     .replace(/\-\-+/g, "-");     // collapse multiple -
 }
     const features = [
-        { icon: "🚗", title: "Free Shipping", description: "Free shipping all over the US" },
-        { icon: "🔒", title: "100% Satisfaction", description: "Guaranteed satisfaction with every order" },
-        { icon: "💼", title: "Secure Payments", description: "We ensure secure transactions" },
-        { icon: "💬", title: "24/7 Support", description: "We're here to help anytime" },
+        { image: "/images/delivery-truck.png", title: "Free Shipping", description: "Free shipping all over the US" },
+        { image: "/images/reputation.png", title: "100% Satisfaction", description: "Guaranteed satisfaction with every order" },
+        { image: "/images/payment-protection.png", title: "Secure Payments", description: "We ensure secure transactions" },
+        { image: "/images/support.png", title: "24/7 Support", description: "We're here to help anytime" },
     ];
     const scrollContainerRef = useRef(null);
     const containerRef = useRef(null);
@@ -82,21 +83,89 @@ const scrollCategories = (direction) => {
     });
   }
 };
+  const [brandMap, setBrandMap] = useState([]);
 
+// Add per-section localStorage cache helpers (24h TTL)
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+const cacheKey = (section) => `cache_${section}`;
+const readCache = (section) => {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem(cacheKey(section));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.timestamp || typeof parsed.data === 'undefined') return null;
+    if (Date.now() - parsed.timestamp > CACHE_TTL) {
+      try { localStorage.removeItem(cacheKey(section)); } catch (e) {}
+      return null;
+    }
+    return parsed.data;
+  } catch (err) {
+    console.error('readCache error', err);
+    return null;
+  }
+};
+const writeCache = (section, data) => {
+  try {
+    if (typeof window === 'undefined') return;
+    const payload = { timestamp: Date.now(), data };
+    localStorage.setItem(cacheKey(section), JSON.stringify(payload));
+  } catch (err) {
+    console.error('writeCache error', err);
+  }
+};
+ 
+const fetchBrand = async () => {
+  // brandMap: store as map id->name in cache
+  try {
+    const cached = readCache('brand_map');
+    if (cached) {
+      setBrandMap(cached);
+      return;
+    }
+  } catch (e) {}
 
+  try {
+    const response = await fetch('/api/brand');
+    const result = await response.json();
+    if (result.error) {
+      console.error(result.error);
+      return;
+    }
+    const data = result.data || [];
+    const map = {};
+    data.forEach((b) => { map[b._id] = b.brand_name; });
+    setBrandMap(map);
+    writeCache('brand_map', map);
+  } catch (error) {
+    console.error(error.message);
+  }
+};
+ 
+useEffect(() => {
+  fetchBrand();
+}, []);
 
-  useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        const res = await fetch("/api/videocard");
-        const data = await res.json();
-        if (data.success) setVideos(data.videoCards);
-      } catch (err) {
-        console.error("Error fetching videos:", err);
+useEffect(() => {
+  const fetchVideos = async () => {
+    try {
+      const cached = readCache('videos');
+      if (cached) {
+        setVideos(cached);
+        return;
       }
-    };
-    fetchVideos();
-  }, []);
+
+      const res = await fetch('/api/videocard');
+      const data = await res.json();
+      const videoCards = data.success ? data.videoCards || [] : [];
+      setVideos(videoCards);
+      writeCache('videos', videoCards);
+    } catch (err) {
+      console.error('Error fetching videos:', err);
+    }
+  };
+  fetchVideos();
+}, []);
 
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -122,35 +191,32 @@ useEffect(() => {
     const fetchBannerData = async () => {
         setIsBannerLoading(true);
         try {
+            const cached = readCache('banner');
+            if (cached) {
+                setBannerData({ banner: { items: cached } });
+                setIsBannerLoading(false);
+                return;
+            }
+
             const response = await fetch('/api/topbanner');
             const data = await response.json();
 
             if (data.success && data.banners?.length > 0) {
                 const bannerItems = data.banners
-                    .filter(banner => banner.status === "Active") // ✅ only Active
+                    .filter(banner => banner.status === 'Active')
                     .map(banner => ({
                         id: banner._id,
-                        buttonLink: banner.redirect_url || "/shop",
+                        buttonLink: banner.redirect_url || '/shop',
                         bgImageUrl: banner.banner_image,
                         bannerImageUrl: banner.banner_image
                     }));
 
-                setBannerData({
-                    banner: { items: bannerItems }
-                });
+                setBannerData({ banner: { items: bannerItems } });
+                writeCache('banner', bannerItems);
             }
         } catch (error) {
-            console.error("Error fetching banner data:", error);
-            setBannerData({
-                banner: {
-                    items: [{
-                        id: 1,
-                        buttonLink: "/shop",
-                        bgImageUrl: "/images/banner-img1.png",
-                        bannerImageUrl: "/images/banner-product.png"
-                    }]
-                }
-            });
+            console.error('Error fetching banner data:', error);
+            setBannerData({ banner: { items: [{ id: 1, buttonLink: '/shop', bgImageUrl: '/images/banner-img1.png', bannerImageUrl: '/images/banner-product.png' }] } });
         } finally {
             setIsBannerLoading(false);
         }
@@ -159,39 +225,39 @@ useEffect(() => {
     const fetchFlashSales = async () => {
       setIsFlashSalesLoading(true);
       try {
-        const response = await fetch("/api/flashsale");
+        const cached = readCache('flash_sales');
+        if (cached) {
+          setFlashSalesData(cached);
+          setIsFlashSalesLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/flashsale');
         const data = await response.json();
 
-        if (data.success && data.flashSales.length > 0) {
-          const salesItems = data.flashSales
-            .filter(item => item.status === "Active")   // ✅ only active
-            .map((item) => ({
+        const salesItems = (data.success && data.flashSales?.length > 0)
+          ? data.flashSales.filter(item => item.status === 'Active').map(item => ({
               id: item._id,
               title: item.title,
               productImage: item.banner_image,
               bgImage: item.background_image,
-              redirectUrl: item.redirect_url || "/shop",
-            }));
+              redirectUrl: item.redirect_url || '/shop',
+            }))
+          : [];
+
+        if (salesItems.length > 0) {
           setFlashSalesData(salesItems);
+          writeCache('flash_sales', salesItems);
+        } else {
+          // fallback sample if API returned empty
+          const fallback = [
+            { id: 'fs1', title: 'Summer Fruits Special', productImage: '/images/summer-fruits.png', bgImage: '/images/sale-bg1.jpg', redirectUrl: '/summer-sale' },
+            { id: 'fs2', title: 'Organic Vegetables', productImage: '/images/veggies.png', bgImage: '/images/sale-bg2.jpg', redirectUrl: '/vegetables' }
+          ];
+          setFlashSalesData(fallback);
         }
       } catch (error) {
-        console.error("Error fetching flash sales:", error);
-        setFlashSalesData([
-          {
-            id: "fs1",
-            title: "Summer Fruits Special",
-            productImage: "/images/summer-fruits.png",
-            bgImage: "/images/sale-bg1.jpg",
-            redirectUrl: "/summer-sale",
-          },
-          {
-            id: "fs2",
-            title: "Organic Vegetables",
-            productImage: "/images/veggies.png",
-            bgImage: "/images/sale-bg2.jpg",
-            redirectUrl: "/vegetables",
-          },
-        ]);
+        console.error('Error fetching flash sales:', error);
       } finally {
         setIsFlashSalesLoading(false);
       }
@@ -200,27 +266,29 @@ useEffect(() => {
     const fetchHomeSections = async () => {
       setIsSectionLoading(true);
       try {
-        const response = await fetch("/api/home-sections");
+        const cached = readCache('home_sections');
+        if (cached) {
+          setHomeSectionData({ sections: cached });
+          setIsSectionLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/home-sections');
         const data = await response.json();
 
         if (data.success && data.data?.length > 0) {
           const sectionItems = data.data
-            .filter(section => section.status === "active") // ✅ only active
-            .map(section => ({
-              id: section._id,
-              name: section.name,
-              position: section.position
-            }));
+            .filter(section => section.status === 'active')
+            .map(section => ({ id: section._id, name: section.name, position: section.position }));
 
-          setHomeSectionData({
-            sections: sectionItems
-          });
+          setHomeSectionData({ sections: sectionItems });
+          writeCache('home_sections', sectionItems);
+        } else {
+          setHomeSectionData({ sections: [] });
         }
       } catch (error) {
-        console.error("Error fetching home sections:", error);
-        setHomeSectionData({
-          sections: []
-        });
+        console.error('Error fetching home sections:', error);
+        setHomeSectionData({ sections: [] });
       } finally {
         setIsSectionLoading(false);
       }
@@ -229,16 +297,21 @@ useEffect(() => {
     const fetchBrands = async () => {
         setIsBrandsLoading(true);
         try {
+            const cached = readCache('brands');
+            if (cached) {
+              setBrands(cached);
+              setIsBrandsLoading(false);
+              return;
+            }
+
             const response = await fetch('/api/brand/get');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
-            if (data.success) {
-                setBrands(data.brands || []);
-            }
+            const list = data.success ? data.brands || [] : [];
+            setBrands(list);
+            writeCache('brands', list);
         } catch (error) {
-            console.error("Error fetching brands:", error);
+            console.error('Error fetching brands:', error);
             setBrands([]);
         } finally {
             setIsBrandsLoading(false);
@@ -247,102 +320,90 @@ useEffect(() => {
 
     const fetchCategories = async () => {
       try {
-        const response = await fetch("/api/categories/get");
-        const data    = await response.json();
+        const cached = readCache('categories');
+        if (cached) {
+          setCategories(cached);
+          // derive parentCategories from cached data similar to original
+          const rootIds = cached.filter(cat => cat.parentid === 'none' && cat.status === 'Active').map(cat => cat._id);
+          const secondLevelCategories = cached.filter(cat => rootIds.includes(cat.parentid) && cat.status === 'Active');
+          setParentCategories(secondLevelCategories);
+          setSelectedCategory(secondLevelCategories[0]);
+          return;
+        }
+
+        const response = await fetch('/api/categories/get');
+        const data = await response.json();
         setCategories(data);
-        const rootIds = data
-        .filter(cat => cat.parentid === "none" && cat.status === "Active")
-        .map(cat => cat._id);
-        console.log(rootIds);
-        // 2. Get only categories whose parentid is in rootIds → second level
-        const secondLevelCategories = data.filter(
-          cat => rootIds.includes(cat.parentid) && cat.status === "Active"
-        );
-        console.log(secondLevelCategories);
+        writeCache('categories', data);
+
+        const rootIds = data.filter(cat => cat.parentid === 'none' && cat.status === 'Active').map(cat => cat._id);
+        const secondLevelCategories = data.filter(cat => rootIds.includes(cat.parentid) && cat.status === 'Active');
         setParentCategories(secondLevelCategories);
         setSelectedCategory(secondLevelCategories[0]);
       } catch (error) {
-          console.error("Error fetching categories:", error);
+          console.error('Error fetching categories:', error);
       }
     };
 
     const fetchProducts = async () => {
         try {
-            const response = await fetch("/api/product/get");
-            const data = await response.json();
+            const data = await getProducts();
             setProducts(data);
         } catch (error) {
-            console.error("Error fetching products:", error);
+            console.error('Error fetching products:', error);
         }
     };
 
     const fetchCategoryBanners = async () => {
       try {
-        const response = await fetch("/api/categorybanner"); 
+        const cached = readCache('category_banners');
+        if (cached) {
+          setCategoryBanner(cached);
+          return;
+        }
+
+        const response = await fetch('/api/categorybanner');
         const res = await response.json();
 
         if (res.success && res.categoryBanners && res.categoryBanners.banners) {
           const formatted = res.categoryBanners.banners
-            .filter(banner => res.categoryBanners.status === "Active") // 👈 only if whole doc is Active
-            .map((banner) => ({
-              imageUrl: banner.banner_image,
-              redirectUrl: banner.redirect_url,
-            }));
+            .filter(banner => res.categoryBanners.status === 'Active')
+            .map(banner => ({ imageUrl: banner.banner_image, redirectUrl: banner.redirect_url }));
           setCategoryBanner(formatted);
+          writeCache('category_banners', formatted);
         }
       } catch (error) {
-        console.error("Error fetching category banners:", error);
+        console.error('Error fetching category banners:', error);
       }
     };
 
     const fetchSingleBannerData = async () => {
       setIsSingleBannerLoading(true);
       try {
-        const response = await fetch("/api/singlebanner");
+        const cached = readCache('singlebanner');
+        if (cached) {
+          setSingleBannerData({ singlebanner: { items: cached }, ...singleBannerData });
+          setIsSingleBannerLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/singlebanner');
         const data = await response.json();
 
         if (data.success && data.banners?.length > 0) {
           const singleBannerItems = data.banners
-            .filter((banner) => banner.status === "Active") // ✅ only Active
-            .map((banner) => ({
-              id: banner._id,
-            redirect_url: banner.redirect_url || "/shop",
-              bgImageUrl: banner.banner_image,
-              singleBannerImageUrl: banner.banner_image,
-            }));
+            .filter(banner => banner.status === 'Active')
+            .map(banner => ({ id: banner._id, redirect_url: banner.redirect_url || '/shop', bgImageUrl: banner.banner_image, singleBannerImageUrl: banner.banner_image }));
 
-          setSingleBannerData({
-            singlebanner: { items: singleBannerItems },
-          });
+          setSingleBannerData({ singlebanner: { items: singleBannerItems } });
+          writeCache('singlebanner', singleBannerItems);
         } else {
-          // if no data, fallback default
-          setSingleBannerData({
-            singlebanner: {
-              items: [
-                {
-                  id: 1,
-                  buttonLink: "/shop",
-                  bgImageUrl: "/images/singlebanner-img1.png",
-                  singleBannerImageUrl: "/images/singlebanner-product.png",
-                },
-              ],
-            },
-          });
+          const fallback = [{ id: 1, buttonLink: '/shop', bgImageUrl: '/images/singlebanner-img1.png', singleBannerImageUrl: '/images/singlebanner-product.png' }];
+          setSingleBannerData({ singlebanner: { items: fallback } });
+          writeCache('singlebanner', fallback);
         }
       } catch (error) {
-        console.error("Error fetching single banner data:", error);
-        setSingleBannerData({
-          singlebanner: {
-            items: [
-              {
-                id: 1,
-                buttonLink: "/shop",
-                bgImageUrl: "/images/singlebanner-img1.png",
-                singleBannerImageUrl: "/images/singlebanner-product.png",
-              },
-            ],
-          },
-        });
+        console.error('Error fetching single banner data:', error);
       } finally {
         setIsSingleBannerLoading(false);
       }
@@ -351,53 +412,30 @@ useEffect(() => {
     const fetchSingleBannerDatatwo = async () => {
       setIsSingleBannerLoading(true);
       try {
-        const response = await fetch("/api/singlebanner-two");
+        const cached = readCache('singlebanner_two');
+        if (cached) {
+          setSingleBannerData(prev => ({ ...prev, singlebannerTwo: { items: cached } }));
+          setIsSingleBannerLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/singlebanner-two');
         const data = await response.json();
 
         if (data.success && data.banners?.length > 0) {
           const singleBannerItems = data.banners
-            .filter((banner) => banner.status === "Active")
-            .map((banner) => ({
-              id: banner._id,
-              redirect_url: banner.redirect_url || "/shop",
-              bgImageUrl: banner.banner_image,
-              singleBannerImageUrl: banner.banner_image,
-            }));
+            .filter(banner => banner.status === 'Active')
+            .map(banner => ({ id: banner._id, redirect_url: banner.redirect_url || '/shop', bgImageUrl: banner.banner_image, singleBannerImageUrl: banner.banner_image }));
 
-          setSingleBannerData((prev) => ({
-            ...prev,
-            singlebannerTwo: { items: singleBannerItems },
-          }));
+          setSingleBannerData(prev => ({ ...prev, singlebannerTwo: { items: singleBannerItems } }));
+          writeCache('singlebanner_two', singleBannerItems);
         } else {
-          setSingleBannerData((prev) => ({
-            ...prev,
-            singlebannerTwo: {
-              items: [
-                {
-                  id: 1,
-                  redirect_url: "/shop",
-                  bgImageUrl: "/images/singlebanner-img1.png",
-                  singleBannerImageUrl: "/images/singlebanner-product.png",
-                },
-              ],
-            },
-          }));
+          const fallback = [{ id: 1, redirect_url: '/shop', bgImageUrl: '/images/singlebanner-img1.png', singleBannerImageUrl: '/images/singlebanner-product.png' }];
+          setSingleBannerData(prev => ({ ...prev, singlebannerTwo: { items: fallback } }));
+          writeCache('singlebanner_two', fallback);
         }
       } catch (error) {
-        console.error("Error fetching single banner-two data:", error);
-        setSingleBannerData((prev) => ({
-          ...prev,
-          singlebannerTwo: {
-            items: [
-              {
-                id: 1,
-                redirect_url: "/shop",
-                bgImageUrl: "/images/singlebanner-img1.png",
-                singleBannerImageUrl: "/images/singlebanner-product.png",
-              },
-            ],
-          },
-        }));
+        console.error('Error fetching single banner-two data:', error);
       } finally {
         setIsSingleBannerLoading(false);
       }
@@ -657,12 +695,25 @@ const [singleBannerData, setSingleBannerData] = useState({
 });
 const [isSingleBannerLoading, setIsSingleBannerLoading] = useState(false);
 
-    const scrollLeft = () => {
-        scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
-    };
+    // const scrollLeft = () => {
+    //     scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
+    // };
       
-    const scrollRight = () => {
-        scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" });
+    // const scrollRight = () => {
+    //     scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" });
+    // };
+
+    const categoryScrollRefs = useRef({});
+      const scrollLeft = (categoryId) => {
+    if (categoryScrollRefs.current[categoryId]) {
+      categoryScrollRefs.current[categoryId].scrollBy({ left: -300, behavior: "smooth" });
+    }
+    };
+
+    const scrollRight = (categoryId) => {
+    if (categoryScrollRefs.current[categoryId]) {
+      categoryScrollRefs.current[categoryId].scrollBy({ left: 300, behavior: "smooth" });
+    }
     };
     
     const getSubcategorySlugs = (parentId) => {
@@ -806,347 +857,309 @@ const handleCategoryClick = useCallback((category) => (e) => {
                         </div>
                         </section>
                     );
-                case 'product' :
+                case 'product':
                   return (
-                       <motion.section id="product"
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.6 }}
-                    className="recommended-products px-0 sm:px-0 md:px-0 pt-7"
-                >
-                    <div className="rounded-[23px] px-0 py-4 p-2">
-
-                      {/* Section Header */}
-                      <div className="flex justify-between items-center flex-wrap gap-4 mb-6 md:px-6">
-                        <h5 className="text-xl sm:text-2xl font-bold">
-                          Recommended for you
-                        </h5>
-                      </div>
-                      {/* Category Tabs */}
-                      <div className="flex items-center gap-2 mb-6">
-                        {/* Left Arrow */}
-                        <button
-                          onClick={() => scrollCategories("left")}
-                          className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition shrink-0"
-                        >
-                          <FiChevronLeft size={18} />
-                        </button>
-
-                        {/* Scroll Wrapper */}
-                        <div
-                          className="
-                            w-[420px]       // 👈 3 x 140px = 420px on small screens
-                            sm:w-[640px]    // ~4–5 on tablets
-                            md:w-[800px]    // ~5+ on md
-                            lg:w-full
-                            overflow-hidden
-                          "
-                        >
-                          {/* Scrollable Category Row */}
-                          <div
-                            ref={categoryScrollRef}
-                            className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-2 scrollbar-hide"
-                            style={{
-                              scrollbarWidth: "none",
-                              msOverflowStyle: "none",
-                            }}
-                          >
-                            {parentCategories.map((category) => (
-                              <button
-                                key={category._id}
-                                className={`snap-center flex-shrink-0 w-[140px] px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                                  selectedCategory?._id === category._id
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-white text-gray-700 hover:bg-gray-200"
-                                }`}
-                                onClick={() => setSelectedCategory(category)}
-                              >
-                                {category.category_name}
-                              </button>
-                            ))}
-                          </div>
+                    <motion.section
+                      id="product"
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.3 }}
+                      transition={{ duration: 0.6 }}
+                      className="recommended-products px-4 sm:px-0 md:px-0 pt-14"
+                    >
+                      <div className="rounded-[23px] px-0 py-4 p-2">
+                        {/* Section Header */}
+                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6 md:px-6">
+                          <h5 className="text-xl sm:text-2xl font-bold">
+                            Shop by Category
+                          </h5>
                         </div>
-
-                        {/* Right Arrow */}
-                        <button
-                          onClick={() => scrollCategories("right")}
-                          className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition shrink-0"
-                        >
-                          <FiChevronRight size={18} />
-                        </button>
-                    </div>
-
-                      
-                      {/* Product List */}
-                      {filteredProducts.length === 0 ? (
-                        <div className="text-center font-bold text-gray-500 text-lg py-10">
-                          No Product Found for this Category..!
-                        </div>
-                      ) : (
                         
-                      <div className="py-6">
-                        <div className="max-w-7xl mx-auto border border-gray-200  bg-white overflow-hidden">
-                          <div className="flex flex-col md:flex-row">
-                            {/* Left Banner */}
-                            {selectedCategory && (
-                            <div className="flex-shrink-0 w-full md:w-1/3 relative">
-                              <div className="hidden md:block absolute inset-0"  style={{ backgroundImage: `url(${selectedCategory.image})` }}></div>
-                            
-                              <div className="relative z-10 h-full flex flex-col p-6 text-white">
-                                <h2 className="text-2xl font-bold">{selectedCategory.category_name}</h2>
+                        {/* Category-based Product Display */}
+                        <div className="space-y-8">            
+                          {parentCategories
+                            .filter(category => priorityCategories.includes(category.category_slug))
+                            .sort((a, b) => {
+                              // Sort by the order in priorityCategories array
+                              return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
+                            })
+                            .map((category, index) => {
+                              // Get products for this category
+                              const categoryProducts = (() => {
+                                const subCategories = categories.filter(
+                                  cat => cat.parentid === category._id
+                                );
+                          
+                                const validCategoryIds = [
+                                  category._id,
+                                  ...subCategories.map(sub => sub._id)
+                                ];
+                          
+                                const allProducts = products.filter(product => 
+                                  product.category && 
+                                  validCategoryIds.includes(product.category.toString())
+                                );
                                 
-                                <Link  href={`/category/${selectedCategory.category_slug || selectedCategory._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
-                              </div>
-                            </div>
-                            )}
-
-                            {/* Right Scrollable Products */}
-                            <div className="relative flex-1 pt-2 pb-2 pr-2 bg-[#1e3a8a]/95 overflow-hidden group">
-                              {/* Left Arrow */}
-                              <button
-                                onClick={scrollLeft}
-                                className="absolute left-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                              >
-                                <FiChevronLeft size={18} />
-                              </button>
-
-                              {/* Right Arrow */}
-                              <button
-                                onClick={scrollRight}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                              >
-                                <FiChevronRight size={18} />
-                              </button>
-
-                              {/* Scrollable Grid */}
-                              <div
-                                ref={scrollContainerRef}
-                                className="flex overflow-x-auto scrollbar-hide scroll-smooth"
-                              >
-                                {filteredProducts.map((product) => (
-
-                                <div  key={product._id} className="relative border shadow bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4">
-                                  <div className="absolute top-3 left-3">
-                                    
-                                      {product.special_price && product.price > product.special_price ? (
-                                      (() => {
-                                        const discount = Math.floor(
-                                          ((product.price - product.special_price) / product.price) * 100
-                                        );
-
-                                        return discount && discount > 0 ? (
-
-                                            <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
-                                              {discount}% OFF
-                                            </span>
-                                        
-                                        ) : (
-                                          null
-                                        );
-                                      })()
-                                    ) : (
-                                      null
-                                    )}
-
+                                return allProducts.slice(0, 50);
+                              })();
+                          
+                              // Skip empty categories
+                              if (categoryProducts.length === 0) return null;
+                          
+                              return (
+                                <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
+                                  {/* Category Banner */}
+                                  <div className="flex-shrink-0 w-full md:w-1/3 relative">
+                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${'/uploads/small-appliance-banner.webp'})` }}></div>
+                                    <div className="relative z-10 h-full flex flex-col p-6 text-white">
+                                      <h2 className="text-2xl font-bold">{category.category_name}</h2>
+                                      
+                                      <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
+                                    </div>
                                   </div>
-                                  <div className="h-28 flex items-center justify-center mt-4">
-                                    <img
-                                      src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
-                                      alt={product.images?.[0] || "Product image"} 
-                                      className="max-h-full max-w-full object-contain"
-                                      onError={(e) => { 
-                                        e.target.onerror = null; 
-                                        e.target.src = "/uploads/products/placeholder.jpg";
-                                      }} 
-                                    />
-                                  </div>
-                                  <h3 className="mt-3 font-semibold group-hover:text-blue-600 line-clamp-2 min-h-[3rem] leading-snug">
-                                    {product.name}
-                                  </h3>
-                                  <div className="mt-2 text-lg font-bold text-blue-600">
-                                      Rs. {product.special_price || product.price}
-                                    <span className="line-through text-gray-400 text-sm ml-1">
-                                      Rs. {product.price}
-                                    </span>
-                                  </div>
-                                  <p className={`text-sm mt-1 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
-                                    {product.quantity > 0
-                                      ? `In stock, ${product.quantity} units`
-                                      : "Out of stock"}
-                                  </p>
 
-                                  <div className="mt-3 flex items-center justify-between gap-2">
-                              <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
-                              <a 
-                                href={`https://wa.me/?text=Check this out: ${product.name}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
-                              >
-                                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
-                                  <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-                                </svg>
-                              </a>
-                            </div>
+                                  {/* Products Grid */}
+                                  <div className="w-full md:w-2/3">
+                                    <div className={` relative flex-1 pt-2 pb-2 ${index % 2 === 1 ? 'pl-2' : 'pr-2'} bg-[#1e3a8a]/95 overflow-hidden group`} >
+                                      {/* Left Arrow */}
+                                      <button
+                                          onClick={() => scrollLeft(category._id)}
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                      >
+                                        <FiChevronLeft size={18} />
+                                      </button>
+
+                                      {/* Right Arrow */}
+                                      <button
+                                            onClick={() => scrollRight(category._id)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-[3.5rem] h-[3.5rem] flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                      >
+                                        <FiChevronRight size={18} />
+                                      </button>
+                                      <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth">
+                                        {categoryProducts.slice(0, 6).map((product) => (
+                                          <div  key={product._id} className="relative border shadow bg-white flex-shrink-0 w-64 flex flex-col justify-between p-4">
+                                            <div className="absolute top-3 left-3">
+                                              
+                                                {product.special_price && product.price > product.special_price ? (
+                                                (() => {
+                                                  const discount = Math.floor(
+                                                    ((product.price - product.special_price) / product.price) * 100
+                                                  );
+
+                                                  console.log(product);
+
+                                                  return discount && discount > 0 ? (
+
+                                                      <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
+                                                        {discount}% OFF
+                                                      </span>
+                                                  
+                                                  ) : (
+                                                    null
+                                                  );
+                                                })()
+                                              ) : (
+                                                null
+                                              )}
+
+                                            </div>
+                                            <div className="h-28 flex items-center justify-center mt-4">
+                                              <img
+                                                src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
+                                                alt={product.images?.[0] || "Product image"} 
+                                                className="max-h-full max-w-full object-contain"
+                                                onError={(e) => { 
+                                                  e.target.onerror = null; 
+                                                  e.target.src = "/uploads/products/placeholder.jpg";
+                                                }} 
+                                              />
+                                            </div>
+
+                                            <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
+                                              <Link
+                                                href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                                                className="hover:text-blue-600"
+                                              >
+                                                {brandMap[product.brand] || ""}
+                                              </Link>
+                                            </h4>
+                                            <Link
+                                              href={`/product/${product.slug || product._id}`}
+                                              className="block mb-2"
+                                            >
+                                            <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                                              {product.name}
+                                            </h3>
+                                            </Link>
+                                            <div className="mt-2 text-lg font-bold text-blue-600">
+                                                Rs. {product.special_price || product.price}
+                                              <span className="line-through text-gray-400 text-sm ml-1">
+                                                Rs. {product.price}
+                                              </span>
+                                            </div>
+                                            <p className={`text-sm mt-1 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
+                                              {product.quantity > 0
+                                                ? `In stock, ${product.quantity} units`
+                                                : "Out of stock"}
+                                            </p>
+
+                                            <div className="mt-3 flex items-center justify-between gap-2">
+                                              <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
+                                              <a 
+                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: https://bea.divinfosys.com/product/${product.slug}`)}`} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer" 
+                                              className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
+                                              >
+                                                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
+                                                    <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
+                                                </svg>
+                                              </a>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                                ))}
-
-                                {/* Duplicate more products here… */}
-                              </div>
-                            </div>
-                          </div>
+                              );
+                            })
+                          }
                         </div>
                       </div>
-
-                      )}
-                    </div>
-                  </motion.section>
-                    );
+                    </motion.section>
+                  );
                 case 'flash_sales':
                     return (
-                        <motion.section
-                            ref={refs.flashSales}
-                            initial="hiddenDown"
-                            animate="visible"
-                            variants={sectionVariants}
-                            id="flash_sales"
-                            className="px-0 sm:px-0 md:px-0 pt-6"
-                        >
-                            {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
-                                <div className="py-0">
-                                    <motion.div
-                                        variants={itemVariants}
-                                        className="section-heading flex justify-between items-center mb-4 p-2 md:px-6"
-                                    >
-                                        <h5 className="text-2xl font-bold">Categories</h5>
-                                    </motion.div>
-    
-                                    {isFlashSalesLoading ? (
-                                        <div className="flex justify-center items-center h-64">
-                                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-                                        </div>
-                                    ) : flashSalesData.length === 1 && flashSalesData[0].bgImage && flashSalesData[0].productImage ? (
-                                        <motion.div variants={itemVariants} className="px-2">
-                                            <motion.div
-                                                whileHover={{ y: -5 }}
-                                                className="relative p-6  shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
-                                                style={{
-                                                    backgroundImage: `url(${flashSalesData[0].bgImage})`,
-                                                    backgroundSize: "cover",
-                                                    backgroundPosition: "center",
-                                                }}
-                                            >
-                                                <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-center">
-                                                    <div className="w-full md:w-1/2 flex justify-center items-center overflow-hidden">
-                                                        <Image
-                                                            src={flashSalesData[0].productImage}
-                                                            alt={flashSalesData[0].title}
-                                                            width={180}
-                                                            height={180}
-                                                            className="object-contain max-h-[180px] transform transition-transform duration-300 hover:scale-110"
-                                                        />
-                                                    </div>
-                                                    <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center mt-4 md:mt-0 md:pl-4">
-                                                        <h6 className="text-xl font-semibold mb-2 text-gray-900">{flashSalesData[0].title}</h6>
-                                                        <motion.a
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                            href={flashSalesData[0].redirectUrl}
-                                                            className="mt-auto px-4 py-2 bg-blue-600 text-white rounded-full text-center hover:bg-blue-700 transition"
-                                                        >
-                                                            Shop Now →
-                                                        </motion.a>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        </motion.div>
-                                    ) : (
-                                        <motion.div variants={itemVariants}>
-                                            <Slider {...flashSalesSettings} className="flash-sales-slider relative">
-                                                {flashSalesData
-                                                    .filter(item => item.bgImage && item.productImage)
-                                                    .map(item => (
-                                                        <div key={item.id} className="px-2">
-                                                            <motion.div
-                                                                className="relative p-6  shadow-lg h-full min-h-[250px] flex items-center overflow-hidden"
-                                                                style={{
-                                                                    backgroundImage: `url(${item.bgImage})`,
-                                                                    backgroundSize: "cover",
-                                                                    backgroundPosition: "center",
-                                                                }}
-                                                            >
-                                                                <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-center">
-                                                                    <div className="w-full md:w-1/2 flex justify-center items-center overflow-hidden">
-                                                                        <Image
-                                                                            src={item.productImage}
-                                                                            alt={item.title}
-                                                                            width={180}
-                                                                            height={180}
-                                                                            className="object-contain max-h-[180px] transform transition-transform duration-300 hover:scale-110"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center mt-4 md:mt-0 md:pl-4">
-                                                                        <motion.h6
-                                                                            className="text-xl font-semibold mb-2 text-gray-900"
-                                                                            whileHover={{ scale: 1.05 }}
-                                                                            whileTap={{ scale: 1.1 }}
-                                                                            transition={{ type: "spring", stiffness: 300, damping: 10 }}
-                                                                        >
-                                                                            {item.title}
-                                                                        </motion.h6>
-                                                                        <motion.a
-                                                                            whileHover={{ scale: 1.05 }}
-                                                                            whileTap={{ scale: 0.95 }}
-                                                                            href={item.redirectUrl}
-                                                                            className="mt-auto px-4 py-2 bg-blue-600 text-white rounded-full text-center hover:bg-blue-700 transition"
-                                                                        >
-                                                                            Shop Now →
-                                                                        </motion.a>
-                                                                    </div>
-                                                                </div>
-                                                            </motion.div>
-                                                        </div>
-                                                    ))}
-                                            </Slider>
-                                        </motion.div>
-                                    )}
-                                </div>
-                            )}
-                        </motion.section>
+                       <motion.section
+  ref={refs.flashSales}
+  initial="hiddenDown"
+  animate="visible"
+  variants={sectionVariants}
+  id="flash_sales"
+  className="px-0 sm:px-0 md:px-0 pt-6"
+>
+  {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
+    <div className="py-0">
+      <motion.div
+        variants={itemVariants}
+        className="section-heading flex justify-between items-center  p-2 md:px-6"
+      >
+        {/* Optional Heading */}
+      </motion.div>
+
+      {isFlashSalesLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+   <div className="grid grid-cols-12 gap-4">
+  {flashSalesData
+    .filter(item => item.bgImage && item.productImage)
+    .map((item, index) => (
+      <motion.div
+        key={item.id}
+        whileHover={{ y: -5 }}
+        className={`relative p-6 shadow-lg h-full min-h-[250px] flex items-center overflow-hidden 
+          ${index === 0 ? "col-span-3" : index === 1 ? "col-span-6" : "col-span-3"}`}
+        style={{
+          backgroundImage: `url(${item.bgImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div
+          className={`relative z-10 w-full flex flex-col items-center text-center md:flex-row  ${
+            index === 0
+              ? "items-start text-left"
+              : index === 1
+              ? "items-center text-center"
+              : "items-end text-right"
+          }`}
+        >
+          <div className="p-1 text-left">
+            <h6 className="text-lg font-semibold mt-3 text-gray-900">
+            {item.title}
+          </h6>
+          <motion.a
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            href={item.redirectUrl}
+            className="mt-2 inline-flex items-center text-sm font-medium text-gray-800 hover:text-black transition"
+          >
+            Shop Now
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </motion.a>
+          </div>
+          <div className="p-1 ">
+          <Image
+            src={item.productImage}
+            alt={item.title}
+            width={index === 1 ? 200 : 120}
+            height={index === 1 ? 200 : 120}
+            className="object-contain max-h-[200px] transform transition-transform duration-300 hover:scale-110"
+          />
+          </div>
+        </div>
+      </motion.div>
+    ))}
+</div>
+
+      )}
+    </div>
+  )}
+</motion.section>
+
                     );
                 case 'features':
                     return (
-                   <section className="px-0 sm:px-0 md:px-0 pt-7" id="features" >
-                    <div
-                      className="grid grid-cols-2 gap-4 
-                                md:flex md:flex-nowrap md:justify-center md:gap-6 
-                                w-full"
-                    >
-                      {features.map((feature, index) => (
-                        <div
-                          key={index}
-                          className="flex flex-col md:flex-row 
-                                    items-center md:items-start 
-                                    p-6  shadow-md 
-                                    bg-gradient-to-br from-[#deb9b9] to-[#73a0e0] 
-                                    flex-1 min-w-0"
-                        >
-                          <div className="bg-white p-3 rounded-full text-2xl flex items-center justify-center shrink-0">
-                            {feature.icon}
-                          </div>
-                          <div className="mt-4 md:mt-0 md:ml-4 text-center md:text-left min-w-0">
-                            <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">
-                              {feature.title}
-                            </h3>
-                            <p className="text-sm text-gray-700 break-words">
-                              {feature.description}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                <section className="pt-7" id="features">
+  <div className="max-w-7xl mx-auto px-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+      {features.map((feature, index) => (
+        <div
+          key={index}
+          className="flex flex-col items-center cursor-pointer group"
+          onMouseEnter={(e) => {
+            const img = e.currentTarget.querySelector(".img-flip");
+            if (img) img.style.transform = "rotateY(180deg)";
+          }}
+          onMouseLeave={(e) => {
+            const img = e.currentTarget.querySelector(".img-flip");
+            if (img) img.style.transform = "rotateY(0deg)";
+          }}
+        >
+          {/* Image instead of Icon */}
+          <div
+            className="mb-4 img-flip"
+            style={{
+              transition: "transform 0.5s",
+              transformStyle: "preserve-3d",
+            }}
+          >
+            <img
+              src={feature.image}
+              alt={feature.title}
+              className="w-16 h-16 object-contain"
+            />
+          </div>
+
+          {/* Title */}
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:transition-colors duration-300">
+            {feature.title}
+          </h3>
+
+          {/* Description */}
+          <p className="text-gray-600 text-sm leading-relaxed max-w-[250px] group-hover:transition-colors duration-300">
+            {feature.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
                     );
                 case 'brands':
                     return (
@@ -1297,10 +1310,10 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                   variants={itemVariants}
                                 >
                                   <Link href={item.redirect_url || "#"} className="block w-full h-full">
-                                    <div className="absolute inset-0 flex justify-center items-center bg-white mb-4">
+                                    <div className="absolute inset-0 flex justify-center items-center bg-white">
                                       <Image
                                         src={item.bgImageUrl}
-                                        alt="Single Banner"
+                                        alt="Banner"
                                         fill
                                         quality={100}
                                         className="object-fill w-full h-full"
@@ -1726,15 +1739,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     </div>
                     </section>
                   )}
-
-
-
-                  
-
                   <RecentlyViewedProducts />
-                  
-
-                
             </div>
         </>
     );

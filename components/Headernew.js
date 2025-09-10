@@ -7,7 +7,7 @@ import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX, FiPho
 import { FaBars, FaShoppingBag, FaUserShield } from "react-icons/fa";
 import { FaHeart, FaShoppingCart, FaSearch } from 'react-icons/fa';
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { IoLogOut } from "react-icons/io5";
 import { FaCircleChevronLeft, FaCircleChevronRight, FaLocationDot, FaPhone } from "react-icons/fa6";
 import { useCart } from '@/context/CartContext';
@@ -20,6 +20,9 @@ import { Play } from "lucide-react";
 import { Navigation } from 'swiper/modules';
 import SideNavbar from '@/components/sideNavbar';
 import { useHeaderdetails } from "@/context/HeaderContext";
+import ProductCard from '@/components/ProductCard';
+import Addtocart from '@/components/AddToCart';
+import { getProducts } from '@/lib/productApi';
 const Header = () => {
     const router = useRouter();
     const pathname = usePathname();
@@ -43,12 +46,28 @@ const Header = () => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
     const [searchQuery, setSearchQuery] = useState("");
-    const [placeholder, setPlaceholder] = useState("");
+    const [placeholder, setPlaceholder] = useState("Search For");
+    const [typedPreview, setTypedPreview] = useState("");
     const [words, setWords] = useState([]);
     const [categorieslist, setCategorieslist] = useState([]);
     const wordIndex = useRef(0);
     const charIndex = useRef(0);
     const isDeleting = useRef(false);
+const getSortedProducts = () => {
+    const sortedProducts = [...products];
+    switch(sortOption) {
+      case 'price-low-high':
+        return sortedProducts.sort((a, b) => (a.special_price ?? a.price) - (b.special_price ?? b.price));
+      case 'price-high-low':
+        return sortedProducts.sort((a, b) => (b.special_price ?? b.price) - (a.special_price ?? a.price));
+      case 'name-a-z':
+        return sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-z-a':
+        return sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
+      default:
+        return sortedProducts;
+    }
+};
 
     useEffect(() => {
       const fetchCategories = async () => {
@@ -74,7 +93,8 @@ const Header = () => {
           ? currentWord.substring(0, charIndex.current - 1)
           : currentWord.substring(0, charIndex.current + 1);
 
-        setPlaceholder(updatedText);
+        // update typed preview (keep placeholder static)
+        setTypedPreview(updatedText || "");
 
         charIndex.current = isDeleting.current
           ? charIndex.current - 1
@@ -86,7 +106,7 @@ const Header = () => {
         } else if (isDeleting.current && charIndex.current === 0) {
           isDeleting.current = false;
           wordIndex.current = (wordIndex.current + 1) % words.length;
-          setTimeout(typeEffect, 500); // pause before typing next
+          setTimeout(typeEffect, 1000); // pause before typing next
         } else {
           setTimeout(typeEffect, isDeleting.current ? 60 : 100);
         }
@@ -100,11 +120,21 @@ const Header = () => {
 
     const [offers, setOffers] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [sortOption, setSortOption] = useState('');
     const [hoveredCategory, setHoveredCategory] = useState(null);
     const [dropdownLeft, setDropdownLeft] = useState(0);
     const [dropdownTop, setDropdownTop] = useState(0);
     const slideRefs = useRef({});
     const [suggestions, setSuggestions] = useState([]);
+    // refs & state for search dropdown positioning
+    const searchInputRef = useRef(null);
+    const debounceRef = useRef(null);
+    const searchDropdownRef = useRef(null);
+    const [searchDropdownVisible, setSearchDropdownVisible] = useState(false);
+    const [searchDropdownLeft, setSearchDropdownLeft] = useState(0);
+    const [searchDropdownTop, setSearchDropdownTop] = useState(0);
+    const [searchDropdownWidth, setSearchDropdownWidth] = useState(0);
     // Toggle mobile menu
     const toggleMobileMenu = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -188,33 +218,123 @@ const Header = () => {
 
     router.push(`/search?${params.toString()}`);
   };
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSuggestions([]);
-      return;
+  
+    // Load products once using shared util (for instant local filtering)
+useEffect(() => {
+  let mounted = true;
+  const loadProducts = async () => {
+    try {
+      const data = await getProducts();
+      if (!mounted) return;
+      setProducts(Array.isArray(data) ? data : (data?.data || []));
+    } catch (err) {
+      console.error('Error loading products in header', err);
     }
+  };
+  loadProducts();
+  return () => { mounted = false; };
+}, []);
 
-    const delay = setTimeout(async () => {
-      const res = await fetch(`/api/search/suggestions?q=${searchQuery}`);
-      const data = await res.json();
-      setSuggestions(data);
-    }, 400);
+// Memoized sorted products using existing getSortedProducts flow
+const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]);
 
-    return () => clearTimeout(delay);
-  }, [searchQuery]);
-
-  
-    // Auto-search when typing (debounced)
-    useEffect(() => {
-      if (searchQuery.trim() || selectedCategory !== "All Categories") {
-        const delayDebounce = setTimeout(() => {
-          handleSearch();
-        }, 500); // 500ms delay after typing stops
-  
-        return () => clearTimeout(delayDebounce);
+    // helper to fetch suggestions (safe JSON handling) - now uses local products for instant results
+    const fetchSuggestions = useCallback(async (q) => {
+      if (!q || q.trim().length < 1) {
+        setSuggestions([]);
+        return;
       }
-    }, [searchQuery, selectedCategory]);
 
+      // Use local products (sorted) for instant client-side suggestions
+      try {
+        if (Array.isArray(sortedProducts) && sortedProducts.length > 0) {
+          const ql = q.toLowerCase();
+          const filtered = sortedProducts.filter(p => {
+            const name = (p.name || '').toLowerCase();
+            const code = (p.item_code || '').toLowerCase();
+            const brand = ((p.brand_name || p.brand || '') + '').toLowerCase();
+            return name.includes(ql) || code.includes(ql) || brand.includes(ql);
+          }).slice(0, 12);
+
+          setSuggestions(filtered);
+          setSearchDropdownVisible(true);
+
+          if (searchInputRef.current) {
+            const rect = searchInputRef.current.getBoundingClientRect();
+            setSearchDropdownLeft(rect.left);
+            setSearchDropdownTop(rect.bottom + window.scrollY);
+            setSearchDropdownWidth(rect.width);
+          }
+          return;
+        }
+      } catch (err) {
+        console.error('Local filter error', err);
+      }
+
+      // Fallback: server-side suggestions
+      try {
+        const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(q)}`);
+        if (!res.ok) {
+          setSuggestions([]);
+          return;
+        }
+        const text = await res.text();
+        if (!text) { setSuggestions([]); return; }
+        let data;
+        try { data = JSON.parse(text); } catch { setSuggestions([]); return; }
+        const items = Array.isArray(data) ? data : (data?.results || []);
+        setSuggestions(items.slice(0, 12));
+        setSearchDropdownVisible(true);
+
+        if (searchInputRef.current) {
+          const rect = searchInputRef.current.getBoundingClientRect();
+          setSearchDropdownLeft(rect.left);
+          setSearchDropdownTop(rect.bottom + window.scrollY);
+          setSearchDropdownWidth(rect.width);
+        }
+      } catch (err) {
+        console.error('Error fetching suggestions:', err);
+        setSuggestions([]);
+      }
+    }, [sortedProducts]);
+  
+    // Debounced effect: call fetchSuggestions while typing
+    useEffect(() => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      const q = searchQuery.trim();
+      if (!q) {
+        setSuggestions([]);
+        setSearchDropdownVisible(false);
+        return;
+      }
+
+      // Immediate fetch for the first character, otherwise debounce for performance
+      if (q.length === 1) {
+        fetchSuggestions(q);
+        return;
+      }
+
+      debounceRef.current = setTimeout(() => fetchSuggestions(q), 200);
+      return () => clearTimeout(debounceRef.current);
+    }, [searchQuery, fetchSuggestions]);
+  
+    // Close search dropdown when clicking outside input or dropdown
+    useEffect(() => {
+      const handler = (e) => {
+        const target = e.target;
+        if (
+          searchDropdownVisible &&
+          searchInputRef.current &&
+          searchDropdownRef.current &&
+          !searchInputRef.current.contains(target) &&
+          !searchDropdownRef.current.contains(target)
+        ) {
+          setSearchDropdownVisible(false);
+        }
+      };
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }, [searchDropdownVisible]);
     // Modify the search button to use the handler
     // Also make the search work when pressing Enter in the input field
     const handleKeyPress = (e) => {
@@ -664,62 +784,85 @@ const renderFlatItem = (item, hoveredCategory) => {
                     </div>
 
                     {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
-    <div className="relative hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden !border !border-[#8c8c8c]">
-      <select
-        value={selectedCategory}
-        onChange={(e) => setSelectedCategory(e.target.value)}
-        className="px-3 py-2 text-xs sm:text-sm text-gray-700 bg-gray-100 border-r border-gray-300 outline-none"
-      >
-        <option value="All Categories">All Categories</option>
-        {categories.map((cat) => (
-          <option key={cat._id} value={cat.category_name}>
-            {cat.category_name}
-          </option>
-        ))}
-      </select>
+                    <div className="relative hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden border border-gray-300">
+                      
 
-      <input
-        type="text"
-        placeholder={placeholder || "Search products..."}
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="flex-1 px-3 py-2 text-sm outline-none"
-      />
+                      <input
+                        type="text"
+                       
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        ref={searchInputRef}
+                        onFocus={() => {
+                          if (searchInputRef.current) {
+                            const rect = searchInputRef.current.getBoundingClientRect();
+                            setSearchDropdownLeft(rect.left);
+                            setSearchDropdownTop(rect.bottom + window.scrollY);
+                            setSearchDropdownWidth(rect.width);
+                          }
+                          if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
+                          setSearchDropdownVisible(true);
+                        }}
+                        className="flex-1 px-3 py-2 text-sm outline-none relative"
+                      />
 
-      <button className="px-3 text-customBlue" onClick={handleSearch}>
-        <FaSearch />
-      </button>
+                      {/* fake placeholder overlay: shows Search For "<bold updatedText>" when input empty */}
+                      {searchQuery.trim() === "" && (
+                        <div className="absolute left-3 top-2 pointer-events-none select-none">
+                          <span className="text-sm text-gray-600 font-bold">Search For</span>
+                          <span className="text-sm text-gray-600"> {"\""}</span>
+                          <span className="text-sm text-gray-600">{typedPreview}</span>
+                          <span className="text-sm text-gray-600">{"\""}</span>
+                        </div>
+                      )}
 
-      {/* Suggestions dropdown */}
-      {suggestions.length > 0 && (
-        <div className="absolute top-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 z-50">
-          <div className="p-2 text-xs font-semibold text-gray-500">PRODUCTS</div>
-          {suggestions.map((p) => (
-            <Link
-              key={p._id}
-              href={`/product/${p.product_slug}`}
-              className="flex items-center gap-2 p-2 hover:bg-gray-100"
-            >
-              <img
-                src={p.product_image}
-                alt={p.product_name}
-                className="w-10 h-10 object-contain"
-              />
-              <div>
-                <div className="text-sm font-medium text-gray-800">{p.product_name}</div>
-                <div className="text-sm text-customBlue">Rs. {p.price}</div>
-              </div>
-            </Link>
-          ))}
-          <div
-            onClick={handleSearch}
-            className="block p-2 text-center text-sm text-customBlue hover:bg-gray-100 cursor-pointer"
-          >
-            View all results →
-          </div>
-        </div>
-      )}
-    </div>
+                      <button className="px-3 text-blue-600" onClick={handleSearch}>
+                        <FaSearch />
+                      </button>
+
+                      {/* Suggestions dropdown rendered as fixed so it won't be clipped */}
+                      {searchDropdownVisible && (
+                        <div
+                          ref={searchDropdownRef}
+                          className="fixed z-50 border-t border-gray-200 shadow-xl bg-white rounded"
+                          style={{
+                            top: `${searchDropdownTop}px`,
+                            left: `${searchDropdownLeft}px`,
+                            width: `${searchDropdownWidth}px`,
+                            maxHeight: '420px',
+                            overflow: 'auto'
+                          }}
+                        >
+                          <div className="px-3 py-2 text-xs text-gray-500 font-semibold">PRODUCTS</div>
+                          {/* product grid - uses suggestions computed from local products for instant results */}
+                          {Array.isArray(suggestions) && suggestions.length > 0 ? (
+                            <ul className="p-3 space-y-2">
+                              {suggestions.map((product) => (
+                                <li key={product._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+                                  {product.images?.[0] ? (
+                                    <img
+                                      src={product.images[0].startsWith('http') ? product.images[0] : `/uploads/products/${product.images[0]}`}
+                                      alt={product.name}
+                                      className="w-12 h-12 object-cover rounded"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 bg-gray-100 rounded" />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <Link href={`/product/${product.slug}`} className="block text-sm font-medium text-gray-800 hover:text-blue-600 truncate">
+                                      {product.name}
+                                    </Link>
+                                    <div className="text-xs text-gray-500">₹{(product.special_price ?? product.price ?? 0).toLocaleString()}</div>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div className="px-3 py-3 text-sm text-gray-500">No results found</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     {/* Icons Group */}
                     <div className="flex items-center gap-[2rem] sm:gap-4">
                         {/* Mobile Search Button (Hidden on desktop) */}
@@ -1162,28 +1305,27 @@ const renderFlatItem = (item, hoveredCategory) => {
                         onMouseLeave={() => startHide(120)}
                     >
                         <div className="flex flex-wrap bg-white h-auto max-h-[450px] overflow-y-auto">
-    {chunkFlatList(
-        flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
-        11
-    ).map((chunk, index) => (
-        <div
-            key={index}
-            className="min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start"
-        >
-            {chunk.map(item => renderFlatItem(item, hoveredCategory))}
-        </div>
-    ))}
+                        {chunkFlatList(
+                            flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+                            11
+                        ).map((chunk, index) => (
+                            <div
+                                key={index}
+                                className="min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start"
+                            >
+                                {chunk.map(item => renderFlatItem(item, hoveredCategory))}
+                            </div>
+                        ))}
 
                             {(hoveredCategory.navImage || hoveredCategory.image) && (
                                 <div className="min-w-[220px] max-w-[250px] flex items-center justify-center h-full ">
-                                    <Link href={``} className="w-full h-full">
+                                    <Link href={`/category/${hoveredCategory.category_slug}`} className="w-full h-full block">
                                         <Image
                                             src={hoveredCategory.navImage || hoveredCategory.image}
-                                            alt="Category Navigation Image"
+                                            alt={hoveredCategory.category_name || 'Category Image'}
                                             width={220}
                                             height={390}
-                                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                                            className="object-cover rounded"
+                                            className="object-cover rounded w-full h-full"
                                         />
                                     </Link>
                                 </div>
