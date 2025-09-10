@@ -473,114 +473,124 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
 
 
     // Flatten tree, but skip the main "Large Appliances"
-    // const flattenTree = (cat, rootCategory, level = 0) => {
-    //     let result = [];
-    //     result.push({ ...cat, rootCategory, level });
+    const flattenTree = (cat, rootCategory, level = 0) => {
+        let result = [];
+        result.push({ ...cat, rootCategory, level });
 
-    //     if (cat.subcategories?.length > 0) {
-    //         cat.subcategories.forEach(child => {
-    //             result = result.concat(flattenTree(child, rootCategory, level + 1));
-    //         });
-    //     }
-    //     return result;
-    // };
-const flattenTree = (cat, rootCategory, level = 0) => {
-    let result = [];
-    
-    // Add the category itself
-    result.push({ ...cat, rootCategory, level, type: 'category' });
-
-    // Add subcategories
-    if (cat.subcategories?.length > 0) {
-        cat.subcategories.forEach(child => {
-            result = result.concat(flattenTree(child, rootCategory, level + 1));
-        });
-    }
-    
-    return result;
-};
-
-    // Flatten all starting from actual visible categories (like Refrigerator, AC…)
-const flattenAllCategories = (cats) => {
-    let result = [];
-    let allBrands = [];
-    let brandCounter = 0; // Counter for unique keys
-    
-    cats.forEach(cat => {
-        // Add the category and its subcategories
-        result = result.concat(flattenTree(cat, cat.category_slug, 0));
-        
-        // Collect all brands from this category
-        if (cat.brands && cat.brands.length > 0) {
-            cat.brands.forEach(brand => {
-                allBrands.push({
-                    ...brand,
-                    type: 'brand',
-                    sourceCategory: cat.category_name,
-                    uniqueKey: `${brand._id}-${cat._id}-${brandCounter++}` // Truly unique key
-                });
+        if (cat.subcategories?.length > 0) {
+            cat.subcategories.forEach(child => {
+                result = result.concat(flattenTree(child, rootCategory, level + 1));
             });
         }
-    });
+        return result;
+    };
+// const flattenTree = (cat, rootCategory, level = 0) => {
+//     let result = [];
     
-    // Add a single brands header at the end
-    if (allBrands.length > 0) {
-        result.push({
-            _id: 'all-brands-header',
-            type: 'brands-header',
-            category_name: 'Brands',
-            level: 0,
-            uniqueKey: 'all-brands-header'
-        });
+//     // Add the category itself
+//     result.push({ ...cat, rootCategory, level, type: 'category' });
+
+//     // Add subcategories
+//     if (cat.subcategories?.length > 0) {
+//         cat.subcategories.forEach(child => {
+//             result = result.concat(flattenTree(child, rootCategory, level + 1));
+//         });
+//     }
+    
+//     return result;
+// };
+
+    // Flatten all starting from actual visible categories (like Refrigerator, AC…)
+// const flattenAllCategories = (cats) => {
+//     let result = [];
+//     let allBrands = [];
+//     let brandCounter = 0; // Counter for unique keys
+    
+//     cats.forEach(cat => {
+//         // Add the category and its subcategories
+//         result = result.concat(flattenTree(cat, cat.category_slug, 0));
         
-        // Add all collected brands with unique keys
-        result = result.concat(allBrands.map(brand => ({
-            ...brand,
-            level: 1,
-            uniqueKey: brand.uniqueKey
-        })));
-    }
+//         // Collect all brands from this category
+//         if (cat.brands && cat.brands.length > 0) {
+//             cat.brands.forEach(brand => {
+//                 allBrands.push({
+//                     ...brand,
+//                     type: 'brand',
+//                     sourceCategory: cat.category_name,
+//                     uniqueKey: `${brand._id}-${cat._id}-${brandCounter++}` // Truly unique key
+//                 });
+//             });
+//         }
+//     });
     
-    return result;
-};
+//     // Add a single brands header at the end
+//     if (allBrands.length > 0) {
+//         result.push({
+//             _id: 'all-brands-header',
+//             type: 'brands-header',
+//             category_name: 'Brands',
+//             level: 0,
+//             uniqueKey: 'all-brands-header'
+//         });
+        
+//         // Add all collected brands with unique keys
+//         result = result.concat(allBrands.map(brand => ({
+//             ...brand,
+//             level: 1,
+//             uniqueKey: brand.uniqueKey
+//         })));
+//     }
+    
+//     return result;
+// };
+
+   const flattenAllCategories = (cats) => {
+        let result = [];
+        cats.forEach(cat => {
+            // each top-level category is itself the root
+            result = result.concat(flattenTree(cat, cat.category_slug, 0));
+        });
+        return result;
+    };
+
 
     // 🔹 Split into columns (10 items max per column)
-    // const chunkFlatList = (flatList, size = 15) => {
-    //     const chunks = [];
-    //     for (let i = 0; i < flatList.length; i += size) {
-    //         chunks.push(flatList.slice(i, i + size));
-    //     }
-    //     return chunks;
-    // };
-const chunkFlatList = (flatList, size = 15) => {
-    const chunks = [];
-    
-    // Find where brands section starts
-    const brandsStartIndex = flatList.findIndex(item => item.type === 'brands-header');
-    
-    if (brandsStartIndex === -1) {
-        // No brands, just chunk normally
+    const chunkFlatList = (flatList, size = 15) => {
+        const chunks = [];
         for (let i = 0; i < flatList.length; i += size) {
             chunks.push(flatList.slice(i, i + size));
         }
         return chunks;
-    }
+    };
+// const chunkFlatList = (flatList, size = 15) => {
+//     const chunks = [];
     
-    // Chunk categories (before brands)
-    for (let i = 0; i < brandsStartIndex; i += size) {
-        chunks.push(flatList.slice(i, Math.min(i + size, brandsStartIndex)));
-    }
+//     // Find where brands section starts
+//     const brandsStartIndex = flatList.findIndex(item => item.type === 'brands-header');
     
-    // Chunk brands (keep brands together in their own column(s))
-    const brandsSection = flatList.slice(brandsStartIndex);
-    const brandsPerColumn = 12; // Adjust as needed
+//     if (brandsStartIndex === -1) {
+//         // No brands, just chunk normally
+//         for (let i = 0; i < flatList.length; i += size) {
+//             chunks.push(flatList.slice(i, i + size));
+//         }
+//         return chunks;
+//     }
     
-    for (let i = 0; i < brandsSection.length; i += brandsPerColumn) {
-        chunks.push(brandsSection.slice(i, i + brandsPerColumn));
-    }
+//     // Chunk categories (before brands)
+//     for (let i = 0; i < brandsStartIndex; i += size) {
+//         chunks.push(flatList.slice(i, Math.min(i + size, brandsStartIndex)));
+//     }
     
-    return chunks;
-};
+//     // Chunk brands (keep brands together in their own column(s))
+//     const brandsSection = flatList.slice(brandsStartIndex);
+//     const brandsPerColumn = 12; // Adjust as needed
+    
+//     for (let i = 0; i < brandsSection.length; i += brandsPerColumn) {
+//         chunks.push(brandsSection.slice(i, i + brandsPerColumn));
+//     }
+    
+//     return chunks;
+// };
 
     const cancelHide = () => {
         if (hideTimeout.current) {
@@ -609,6 +619,28 @@ const chunkFlatList = (flatList, size = 15) => {
         setDropdownTop(rect.bottom);
     };
     // After dropdown mounts, measure and adjust so it never overflows screen or hides under arrows
+    // useLayoutEffect(() => {
+    //     if (!hoveredCategory || !dropdownRef.current) return;
+    //     const ddRect = dropdownRef.current.getBoundingClientRect();
+    //     const screenWidth = window.innerWidth;
+    //     let left = dropdownLeft;
+
+    //     // If dropdown would overflow right edge, shift it left
+    //     if (left + ddRect.width > screenWidth - 10) {
+    //         left = Math.max(10, screenWidth - ddRect.width - 10);
+    //     }
+
+    //     // Ensure dropdown is at least after prev arrow
+    //     const prevBtn = document.querySelector(".custom-swiper-prev");
+    //     const prevRight = prevBtn?.getBoundingClientRect().right || 0;
+    //     if (left < prevRight + 8) left = prevRight + 8;
+
+    //     // Ensure dropdown doesn't go too far left
+    //     if (left < 8) left = 8;
+    //     if (left !== dropdownLeft) setDropdownLeft(left);
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [hoveredCategory, dropdownLeft]);
+
     useLayoutEffect(() => {
         if (!hoveredCategory || !dropdownRef.current) return;
         const ddRect = dropdownRef.current.getBoundingClientRect();
@@ -669,64 +701,99 @@ const chunkFlatList = (flatList, size = 15) => {
         }
     };
     // 🔹 Render flattened category item
-const renderFlatItem = (item, hoveredCategory) => {
+// const renderFlatItem = (item, hoveredCategory) => {
 
-    // Use uniqueKey instead of _id for the key prop
-    const itemKey = item.uniqueKey || item._id;
+//     // Use uniqueKey instead of _id for the key prop
+//     const itemKey = item.uniqueKey || item._id;
     
-    if (item.type === 'brands-header') {
-        return (
-            <div key={itemKey} className="" style={{ paddingLeft: `${item.level * 12}px` }}>
-                <h3 className="font-semibold text-sm text-blue-600 border-b border-gray-200 pb-1">
-                    {item.category_name}
-                </h3>
-            </div>
-        );
-    }
+//     if (item.type === 'brands-header') {
+//         return (
+//             <div key={itemKey} className="" style={{ paddingLeft: `${item.level * 12}px` }}>
+//                 <h3 className="font-semibold text-sm text-blue-600 border-b border-gray-200 pb-1">
+//                     {item.category_name}
+//                 </h3>
+//             </div>
+//         );
+//     }
     
-    if (item.type === 'brand') {
-        const href = `/category/brand/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.brand_slug)}`;
+//     if (item.type === 'brand') {
+//         const href = `/category/brand/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.brand_slug)}`;
         
+//         return (
+//             <div key={itemKey} style={{ paddingLeft: `${item.level * 12}px` }}>
+//                 <Link
+//                     href={href}
+//                     className="flex items-center mb-1 text-sm text-[#8c8c8c] p-[5px] hover:text-[#0e54e6]"
+//                 >
+//                     <span className="font-normal">{item.brand_name}</span>
+//                 </Link>
+//             </div>
+//         );
+//     }
+    
+//     // Original category rendering code
+//     const href = item.level === 0
+//         ? `/category/${encodeURIComponent(item.category_slug)}`
+//         : `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
+
+//     return (
+//         <div key={itemKey} style={{ paddingLeft: `${item.level * 12}px` }}>
+//             <Link
+//                 href={href}
+//                 className={`flex items-center justify-between mb-1 text-sm ${item.level === 0
+//                         ? "font-semibold text-blue-600"
+//                         : "text-[#8c8c8c] !p-[5px] hover:text-[#0e54e6]"
+//                     }`}
+//             >
+//                 <span className={item.level === 0 ? "font-bold" : "font-normal"}>
+//                     {item.category_name}
+//                 </span>
+//                 {item.level === 0 && (
+//                     <Play
+//                         size={14}
+//                         strokeWidth={0}
+//                         className="text-blue-600 fill-blue-600"
+//                     />
+//                 )}
+//             </Link>
+//         </div>
+//     );
+// };
+
+const renderFlatItem = (item, hoveredCategory) => {
+        console.log(hoveredCategory);
+        // if root (level 0) -> only /category/rootCategory
+        const href =
+            item.level === 0
+                ? `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}`
+                : `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
+
         return (
-            <div key={itemKey} style={{ paddingLeft: `${item.level * 12}px` }}>
+            <div key={item._id} style={{ paddingLeft: `${item.level * 12}px` }}>
                 <Link
                     href={href}
-                    className="flex items-center mb-1 text-sm text-[#8c8c8c] p-[5px] hover:text-[#0e54e6]"
+                    className={`flex items-center justify-between mb-1 text-sm ${item.level === 0
+                            ? "font-semibold text-blue-600"
+                            : "text-[#8c8c8c] !p-[5px] hover:text-[#0e54e6]"
+                        }`}
                 >
-                    <span className="font-normal">{item.brand_name}</span>
+                    {/* Category name with bold font */}
+                    <span className={item.level === 0 ? "font-bold" : "font-normal"}>
+                        {item.category_name}
+                    </span>
+
+                    {/* Show triangle icon only for top-level categories */}
+                    {item.level === 0 && (
+                        <Play
+                            size={14}
+                            strokeWidth={0} // remove outline
+                            className="text-blue-600 fill-blue-600"
+                        />
+                    )}
                 </Link>
             </div>
         );
-    }
-    
-    // Original category rendering code
-    const href = item.level === 0
-        ? `/category/${encodeURIComponent(item.category_slug)}`
-        : `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
-
-    return (
-        <div key={itemKey} style={{ paddingLeft: `${item.level * 12}px` }}>
-            <Link
-                href={href}
-                className={`flex items-center justify-between mb-1 text-sm ${item.level === 0
-                        ? "font-semibold text-blue-600"
-                        : "text-[#8c8c8c] !p-[5px] hover:text-[#0e54e6]"
-                    }`}
-            >
-                <span className={item.level === 0 ? "font-bold" : "font-normal"}>
-                    {item.category_name}
-                </span>
-                {item.level === 0 && (
-                    <Play
-                        size={14}
-                        strokeWidth={0}
-                        className="text-blue-600 fill-blue-600"
-                    />
-                )}
-            </Link>
-        </div>
-    );
-};
+    };
 
     return (
         <header className="sticky top-0 z-50">
@@ -1291,7 +1358,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                 </div>
 
                 {/* DROPDOWN OUTSIDE SWIPER (fixed so it won't be clipped) */}
-                {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
+                {/* {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
                     <div
                         ref={dropdownRef}
                         className="fixed z-50 border-t border-gray-200 shadow-xl"
@@ -1326,6 +1393,50 @@ const renderFlatItem = (item, hoveredCategory) => {
                                             width={220}
                                             height={390}
                                             className="object-cover rounded w-full h-full"
+                                        />
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+
+                    </div>
+                )} */}
+                {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
+                    <div
+                        ref={dropdownRef}
+                        className="fixed z-50 border-t border-gray-200 shadow-xl"
+                        style={{
+                            top: `${dropdownTop}px`,
+                            left: `${dropdownLeft}px`,
+                            maxWidth: "calc(100% - 20px)",
+
+                        }}
+                        onMouseEnter={cancelHide}
+                        onMouseLeave={() => startHide(120)}
+                    >
+                        <div className="flex flex-wrap bg-white h-[390px]">
+                            {chunkFlatList(
+                                flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+                                11
+                            ).map((chunk, index) => (
+                                <div
+                                    key={index}
+                                    className="min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start" // 👈 h-[250px] remove panniten
+                                >
+                                    {chunk.map(item => renderFlatItem(item, hoveredCategory))}
+                                </div>
+                            ))}
+
+                            {(hoveredCategory.navImage || hoveredCategory.image) && (
+                                <div className="min-w-[220px] max-w-[250px] flex items-center justify-center h-full ">
+                                    <Link href={``} className="w-full h-full">
+                                        <Image
+                                            src={hoveredCategory.navImage || hoveredCategory.image}
+                                            alt="Category Navigation Image"
+                                            width={220}
+                                            height={390}
+                                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                                            className="object-cover rounded"
                                         />
                                     </Link>
                                 </div>

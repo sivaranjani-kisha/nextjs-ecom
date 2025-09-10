@@ -87,6 +87,28 @@ const scrollCategories = (direction) => {
 
 
  const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
+ const categoryStyles = {
+  "air-conditioner": {
+    backgroundImage: "/uploads/categories/category-darling-img/air-conditioner.png",
+    borderColor: "#B48A60" 
+  },
+  "mobile-phones": {
+    backgroundImage: "/uploads/categories/category-darling-img/smartphone.png", 
+    borderColor: "#68778B"
+  },
+  "television": {
+    backgroundImage: "/uploads/categories/category-darling-img/television.png",
+    borderColor: "#A9A097" 
+  },
+  "refrigerator": {
+    backgroundImage: "/uploads/categories/category-darling-img/refirgrator.png",
+    borderColor: "#5C8B99" 
+  },
+  "washing-machine": {
+    backgroundImage: "/uploads/categories/category-darling-img/washine-machine.png",
+    borderColor: "#69AEA2"
+  }
+};
 const fetchBrand = async () => {
   try {
     const response = await fetch("/api/brand");
@@ -850,10 +872,8 @@ const handleCategoryClick = useCallback((category) => (e) => {
                   return (
                     <motion.section
                       id="product"
-                      initial={{ opacity: 0, y: 50 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, amount: 0.3 }}
-                      transition={{ duration: 0.6 }}
+                      initial="hiddenDown"
+                      animate="visible"
                       className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
                     >
                       <div className="rounded-[23px] py-4 p-2">
@@ -873,6 +893,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                               return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
                             })
                             .map((category, index) => {
+
+                              const categoryStyle = categoryStyles[category.category_slug] || {
+                                backgroundImage: '/uploads/small-appliance-banner.webp',
+                                borderColor: '#1F3A8C'
+                              };
                               // Get products for this category
                               const categoryProducts = (() => {
                                 const subCategories = categories.filter(
@@ -899,7 +924,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                 <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
                                   {/* Category Banner */}
                                   <div className="flex-shrink-0 w-full md:w-1/3 relative">
-                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${'/uploads/small-appliance-banner.webp'})` }}></div>
+                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
                                     <div className="relative z-10 h-full flex flex-col p-6 text-white">
                                       <h2 className="text-2xl font-bold">{category.category_name}</h2>
                                       
@@ -909,7 +934,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
 
                                   {/* Products Grid */}
                                   <div className="w-full md:w-2/3">
-                                    <div className={` relative flex-1 pt-2 pb-2 ${index % 2 === 1 ? 'pr-4' : ' pl-4'} overflow-hidden group`} >
+                                    <div className={` relative flex-1 pt-2 pb-2 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden group`}  style={{ border: `solid 6px ${categoryStyle.borderColor}` }}>
                                       {/* Left Arrow */}
                                       <button
                                         onClick={() => scrollLeft(category._id)}
@@ -935,84 +960,129 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                       </button>
                                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
                                         {categoryProducts.slice(0, 6).map((product) => (
-                                          <div  key={product._id} className="relative border border-gray-300 shadow bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  transition-all duration-300 hover:border-blue-500 group rounded">
-                                            <div className="absolute top-3 left-3">
-                                              
-                                                {product.special_price && product.price > product.special_price ? (
-                                                (() => {
-                                                  const discount = Math.floor(
-                                                    ((product.price - product.special_price) / product.price) * 100
-                                                  );
-
-                                                  console.log(product);
-
-                                                  return discount && discount > 0 ? (
-
-                                                      <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
-                                                        {discount}% OFF
-                                                      </span>
-                                                  
-                                                  ) : (
-                                                    null
-                                                  );
-                                                })()
-                                              ) : (
-                                                null
+                                        
+                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md">
+                                            
+                                            {/* Product Image */}
+                                            <div className="relative aspect-square bg-gray-50">
+                                              {product.images?.[0] && (
+                                              //   <img
+                                              //   src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
+                                              //   alt={product.images?.[0] || "Product image"} 
+                                              //   className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                                              //   onError={(e) => { 
+                                              //     e.target.onerror = null; 
+                                              //     e.target.src = "/uploads/products/placeholder.jpg";
+                                              //   }} 
+                                              // />
+                                                <Image
+                                                  src={
+                                                    product.images[0].startsWith("http")
+                                                      ? product.images[0]
+                                                      : `/uploads/products/${product.images[0]}`
+                                                  }
+                                                  alt={product.images[0]}
+                                                  fill
+                                                  className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105"
+                                                  sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                                                  unoptimized
+                                                  onError={(e) => { 
+                                                    e.target.onerror = null; 
+                                                    e.target.src = "/uploads/products/placeholder.jpg";
+                                                  }} 
+                                                />
                                               )}
-
+                          
+                                              {/* Discount Badge */}
+                                              {Number(product.special_price) > 0 &&
+                                                Number(product.special_price) < Number(product.price) && (
+                                                  <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                                                    {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
+                                                  </span>
+                                              )}
+                          
+                          
+                                              {/* Wishlist */}
+                                              <div className="absolute top-2 right-2">
+                                                <ProductCard productId={product._id} />
+                                              </div>
                                             </div>
-                                            <div className="h-28 flex items-center justify-center mt-4">
-                                              <img
-                                                src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
-                                                alt={product.images?.[0] || "Product image"} 
-                                                className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-                                                onError={(e) => { 
-                                                  e.target.onerror = null; 
-                                                  e.target.src = "/uploads/products/placeholder.jpg";
-                                                }} 
-                                              />
-                                            </div>
-
-                                            <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
+                          
+                                            {/* Product Info and Buttons */}
+                                            <div className="p-2 md:p-4 flex flex-col h-full">
+                                              <h4 className="text-xs text-gray-500 mb-2 uppercase">
+                                                <Link
+                                                  href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                                                  className="hover:text-blue-600"
+                                                >
+                                                  {brandMap[product.brand] || ""}
+                                                </Link>
+                                              </h4>
+                        
+                                              {/* Title with fixed height */}
                                               <Link
-                                                href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
-                                                className="hover:text-blue-600"
+                                                href={`/product/${product.slug}`}
+                                                className="block mb-2"
+                                                onClick={() => handleProductClick(product)}
                                               >
-                                                {brandMap[product.brand] || ""}
+                                                <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                                                  {product.name}
+                                                </h3>
                                               </Link>
-                                            </h4>
-                                            <Link
-                                              href={`/product/${product.slug || product._id}`}
-                                              className="block mb-2"
-                                            >
-                                            <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                                              {product.name}
-                                            </h3>
-                                            </Link>
-                                            <div className="mt-2 text-lg font-bold text-blue-600">
-                                                Rs. {product.special_price || product.price}
-                                              <span className="line-through text-gray-400 text-sm ml-1">
-                                                Rs. {product.price}
-                                              </span>
-                                            </div>
-                                            <p className={`text-sm mt-1 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
-                                              {product.quantity > 0
-                                                ? `In stock, ${product.quantity} units`
-                                                : "Out of stock"}
-                                            </p>
-
-                                            <div className="mt-3 flex items-center justify-between gap-2">
-                                              <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
-                                              <a 
-                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
-                                              target="_blank" 
-                                              rel="noopener noreferrer" 
-                                              className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
-                                              >
-                                                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
+                          
+                                              {/* Price Row (same level always) */}
+                                              <div className="flex items-center gap-2 mb-3">
+                                                <span className="text-base font-semibold text-red-600">
+                                                  ₹ {(
+                                                    product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
+                                                      ? product.special_price
+                                                      : product.price
+                                                  ).toLocaleString()}
+                                                </span>
+                          
+                          
+                                                {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
+                                                  product.special_price < product.price &&
+                                                  (
+                                                    <span className="text-xs text-gray-500 line-through">
+                                                      ₹ {product.price.toLocaleString()}
+                                                    </span>
+                                                )}
+                                              </div>
+                          
+                                              <h4
+                                                    className={`text-xs mb-3 ${
+                                                      product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
+                                                    }`}
+                                                  >
+                                                    {product.stock_status}
+                                                    {product.stock_status === "In Stock" && product.quantity
+                                                      ? `, ${product.quantity} units`
+                                                      : ""}
+                                                  </h4>
+                          
+                                              {/* Bottom Buttons */}
+                                              <div className="mt-auto flex items-center justify-between gap-2">
+                                                <Addtocart
+                                                  productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
+                                                  className="w-full text-xs sm:text-sm py-1.5"
+                                                />
+                                                <a
+                                                  href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
+                                                >
+                                                  <svg
+                                                    className="w-5 h-5"
+                                                    viewBox="0 0 32 32"
+                                                    fill="currentColor"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                  >
                                                     <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-                                                </svg>
-                                              </a>
+                                                  </svg>
+                                                </a>
+                                              </div>
                                             </div>
                                           </div>
                                         ))}
