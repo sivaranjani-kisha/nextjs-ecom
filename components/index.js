@@ -303,7 +303,7 @@ useEffect(() => {
         }
     };
 
-    const fetchCategoryBanners = async () => {
+    {/*const fetchCategoryBanners = async () => {
       try {
         const response = await fetch("/api/categorybanner"); 
         const res = await response.json();
@@ -316,6 +316,43 @@ useEffect(() => {
               redirectUrl: banner.redirect_url,
             }));
           setCategoryBanner(formatted);
+        }
+      } catch (error) {
+        console.error("Error fetching category banners:", error);
+      }
+    }; */}
+
+
+    const fetchCategoryBanners = async () => {
+      try {
+        const response = await fetch("/api/categorybanner"); 
+        const res = await response.json();
+
+        if (res.success && res.categoryBanners && res.categoryBanners.banners) {
+          const formatted = res.categoryBanners.banners
+            .filter(banner => res.categoryBanners.status === "Active") // 👈 only if whole doc is Active
+            .map((banner, index) => {
+      let obj = {
+        imageUrl: banner.banner_image,
+        redirectUrl: banner.redirect_url,
+      };
+
+      // ✅ add extra field only for 1st (index 0) and 3rd (index 2)
+      if (index === 0) {
+        obj.categoryname = "SMART PHONE";
+      }else if(index === 1){
+        obj.categoryname="AIR CONDITIONER";
+      }else if(index === 2){
+        obj.categoryname="REFRIGERATOR";
+      }else if(index === 3){
+        obj.categoryname="WASHING MACHINE";
+      }
+
+      return obj;
+    });
+
+          setCategoryBanner(formatted);
+          console.log("formatted",formatted);
         }
       } catch (error) {
         console.error("Error fetching category banners:", error);
@@ -819,32 +856,89 @@ const handleCategoryClick = useCallback((category) => (e) => {
     }, []);
   
         // Helper function to render sections in the correct order
+        
+        console.log(categoryBanner);
         const renderSection = (sectionName) => {
             switch(sectionName) {
                 case 'category_banner':
                     return (
+
+                      // <section id="category_banner">
+                      //   <div className="px-0  pt-7">
+                      //       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      //           {categoryBanner.map((banner, index) => (
+                      //               <div key={index} className="col-span-1">
+                      //                   <div className="card  overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      //                       <Link href={banner.redirectUrl || "#"} className="no-underline">
+                      //                           <img
+                      //                               src={banner.imageUrl}
+                      //                               alt={`Category Banner ${index + 1}`}
+                      //                               // title={`Category Banner ${index + 1}`}
+                      //                               className="w-full h-auto object-cover"
+                      //                               width={400}
+                      //                               height={400}
+                      //                           />
+                      //                       </Link>
+                      //                   </div>
+                      //               </div>
+                      //           ))}
+                      //       </div>
+                      //   </div>
+                      // </section>
+
                       <section id="category_banner">
-                        <div className="px-0  pt-7">
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                {categoryBanner.map((banner, index) => (
-                                    <div key={index} className="col-span-1">
-                                        <div className="card  overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                            <Link href={banner.redirectUrl || "#"} className="no-underline">
-                                                <img
-                                                    src={banner.imageUrl}
-                                                    alt={`Category Banner ${index + 1}`}
-                                                    // title={`Category Banner ${index + 1}`}
-                                                    className="w-full h-auto object-cover"
-                                                    width={400}
-                                                    height={400}
-                                                />
-                                            </Link>
-                                        </div>
-                                    </div>
-                                ))}
+                      <div className="px-4 md:px-6 py-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {categoryBanner.map((banner, index) => (
+                            
+                            <div key={index} className="col-span-1">
+                              <div className="relative group overflow-hidden  shadow-sm hover:shadow-md transition-shadow">
+ 
+                                {/* Image */}
+                                <img
+                                  src={banner.imageUrl}
+                                  alt={`Category Banner ${index + 1}`}
+                                  className="w-full h-[300px] object-cover transform group-hover:scale-105 transition duration-500 ease-in-out"
+                                  width={400}
+                                  height={400}
+                                />
+
+                                <div className="absolute top-1 mb-4 left-4 py-6">
+                                  <h3 className="text-lg md:text-xl font-bold">{banner.categoryname}</h3>
+                                </div>
+ 
+                                {/* Shop Now Link with Arrow */}
+                                <div className="absolute top-8 left-4 py-6">
+                                  <Link
+                                    href={banner.redirectUrl || "#"}
+                                    className="mt-2 inline-flex items-center text-sm font-medium text-gray-800 hover:text-black transition"
+                                  >
+                                    {banner.buttonText || "Shop Now"}
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="20"
+                                      height="20"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      className="ml-1 h-4 w-4"
+                                    >
+                                      <path d="m9 18 6-6-6-6" />
+                                    </svg>
+                                  </Link>
+                                </div>
+ 
+ 
+                              </div>
                             </div>
+                          ))}
                         </div>
-                        </section>
+                      </div>
+                    </section>
+
                     );
                 case 'product':
                   return (
@@ -1019,84 +1113,92 @@ const handleCategoryClick = useCallback((category) => (e) => {
                   );
                 case 'flash_sales':
                     return (
-                       <motion.section
-  ref={refs.flashSales}
-  initial="hiddenDown"
-  animate="visible"
-  variants={sectionVariants}
-  id="flash_sales"
-  className="px-0 sm:px-0 md:px-0 pt-6"
->
-  {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
-    <div className="py-0">
-      <motion.div
-        variants={itemVariants}
-        className="section-heading flex justify-between items-center  p-2 md:px-6"
-      >
-        {/* Optional Heading */}
-      </motion.div>
 
-      {isFlashSalesLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-        </div>
-      ) : (
-   <div className="grid grid-cols-12 gap-4">
-  {flashSalesData
-    .filter(item => item.bgImage && item.productImage)
-    .map((item, index) => (
-      <motion.div
-        key={item.id}
-        whileHover={{ y: -5 }}
-        className={`relative p-6 shadow-lg h-full min-h-[250px] flex items-center overflow-hidden 
-          ${index === 0 ? "col-span-3" : index === 1 ? "col-span-6" : "col-span-3"}`}
-        style={{
-          backgroundImage: `url(${item.bgImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div
-          className={`relative z-10 w-full flex flex-col items-center text-center md:flex-row  ${
-            index === 0
-              ? "items-start text-left"
-              : index === 1
-              ? "items-center text-center"
-              : "items-end text-right"
-          }`}
-        >
-          <div className="p-1 text-left">
-            <h6 className="text-lg font-semibold mt-3 text-gray-900">
-            {item.title}
-          </h6>
-          <motion.a
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            href={item.redirectUrl}
-            className="mt-2 inline-flex items-center text-sm font-medium text-gray-800 hover:text-black transition"
-          >
-            Shop Now
-            <ChevronRight className="ml-1 h-4 w-4" />
-          </motion.a>
-          </div>
-          <div className="p-1 ">
-          <Image
-            src={item.productImage}
-            alt={item.title}
-            width={index === 1 ? 200 : 120}
-            height={index === 1 ? 200 : 120}
-            className="object-contain max-h-[200px] transform transition-transform duration-300 hover:scale-110"
-          />
-          </div>
-        </div>
-      </motion.div>
-    ))}
-</div>
+                      <motion.section
+                        ref={refs.flashSales}
+                        initial="hiddenDown"
+                        animate="visible"
+                        variants={sectionVariants}
+                        id="flash_sales"
+                        className="px-4 md:px-6 py-8"
+                      >
+                        {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
+                          <div className="grid grid-cols-12 gap-6">
+                            {isFlashSalesLoading ? (
+                              <div className="flex justify-center items-center h-64 col-span-12">
+                                <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 animate-spin"></div>
+                              </div>
+                            ) : (
+                              flashSalesData
+                                .filter(item => item.bgImage && item.productImage)
+                                .slice(0, 3) // only take 3 items for 4/4/4
+                                .map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="col-span-12 md:col-span-4 relative rounded-lg shadow-md overflow-hidden flex items-center p-6"
+                                    style={{
+                                      backgroundImage: `url(${item.bgImage})`,
+                                      backgroundSize: "cover",
+                                      backgroundPosition: "center",
+                                    }}
+                                  >
+                                    {/* Overlay */}
+                                    <div className="absolute inset-0 bg-black bg-opacity-40"></div>
 
-      )}
-    </div>
-  )}
-</motion.section>
+                                    {/* Content Wrapper */}
+                                    <div className="relative z-10 flex items-center w-full">
+                                      {/* Image Left with animation */}
+                                      <motion.div
+                                        whileHover={{ scale: 1.1 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="w-1/2 flex justify-center"
+                                      >
+                                        <Image
+                                          src={item.productImage}
+                                          alt={item.title}
+                                          width={300}
+                                          height={300}
+                                          className="object-cover rounded-lg"
+                                        />
+                                      </motion.div>
+
+                                      {/* Text Right */}
+                                      <div className="w-1/2 pl-4 text-left text-white">
+                                        <h3 className="text-lg md:text-xl font-bold">{item.title}</h3>
+                                        <p className="text-sm mt-1 opacity-90">
+                                          {item.discountText || "Flat up to 30% discount"}
+                                        </p>
+                                        <motion.a
+                                          whileHover={{ scale: 1.05 }}
+                                          whileTap={{ scale: 0.95 }}
+                                          href={item.redirectUrl}
+                                          className="mt-2 inline-flex items-center text-sm font-medium text-gray-800 hover:text-black transition"
+                                        >
+                                          Shop Now
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="24"
+                                            height="24"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            className="lucide lucide-chevron-right ml-1 h-4 w-4"
+                                          >
+                                            <path d="M9 18l6-6-6-6" />
+                                          </svg>
+
+                                        </motion.a>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
+                            )}
+                          </div>
+                        )}
+                      </motion.section>
 
                     );
                 case 'features':
