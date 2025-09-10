@@ -96,9 +96,16 @@ const handleProductClick = (product) => {
       
       // Set initial price range based on products in category
       if (categoryData.products?.length > 0) {
-        const prices = categoryData.products.map(p => p.special_price );
-        const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
+        const prices = categoryData.products.map(p => p.special_price);
+        let minPrice = Math.min(...prices);
+        let maxPrice = Math.max(...prices);
+
+        // ✅ Fix: If only one product, add a small buffer
+        if (minPrice === maxPrice) {
+          minPrice = minPrice - 1; // or e.g., minPrice * 0.95
+          maxPrice = maxPrice + 1; // or e.g., maxPrice * 1.05
+        }
+
         setPriceRange([minPrice, maxPrice]);
         setSelectedFilters(prev => ({
           ...prev,
@@ -909,7 +916,7 @@ const STEP = 100;
                 {getSortedProducts().map(product => (
                   <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
                     {/* Product Image */}
-                    <div className="relative aspect-square bg-gray-50">
+                    <div className="relative aspect-square bg-white">
                       {product.images?.[0] && (
                         <Image
                           src={
