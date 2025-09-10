@@ -266,7 +266,7 @@ function SidebarItemWithDropdown({
 
       {/* Expanded mode submenu only if open */}
       {!collapsed && isOpen && (
-        <ul className="ml-8 mt-1 space-y-1">
+        <ul className="ml-2 mt-1 space-y-1">
           {item.submenu.map((sub) => (
             <li key={sub.label}>
               <button
