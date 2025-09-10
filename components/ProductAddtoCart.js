@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useModal } from '@/context/ModalContext';
 import { useHeaderdetails } from '@/context/HeaderContext';
+import { trackAddToCart } from "@/utils/nextjs-event-tracking.js";
 
 import { FaShoppingCart} from "react-icons/fa";
 
@@ -11,6 +12,7 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
   const { openAuthModal } = useModal();
   const { updateHeaderdetails, setIsLoggedIn, setUserData,setIsAdmin } = useHeaderdetails();
   const [isLoading, setIsLoading] = useState(false);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   // const [showAuthModal, setShowAuthModal] = useState(false);
   // const [authError, setAuthError] = useState('');
   const [cartSuccess, setCartSuccess] = useState(false);
@@ -57,6 +59,14 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
             setIsAdmin(true);
           }
         }
+
+        const proresponse = await fetch(`/api/product/get/${productId}`);
+       
+        if (!proresponse.ok) {
+          throw new Error(`HTTP error! status: ${proresponse.status}`);
+        }
+        
+        const productData = await proresponse.json();
   
         // Add main product to cart
         const cartResponse = await fetch('/api/cart', {
@@ -90,21 +100,11 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
             })
           );
         }
-
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
-        const proresponse = await fetch(`/api/product/get/${productId}`);
-       
-        if (!proresponse.ok) {
-          throw new Error(`HTTP error! status: ${proresponse.status}`);
-        }
-        
-        const productData = await proresponse.json();
   
         const responseData = await cartResponse.json();
         updateCartCount(responseData.cart.totalItems + additionalProducts.length);
 
-        // Event Tracking
+         // Event Tracking
               trackAddToCart({
                 user: {
                   name: data.user.name,
@@ -121,6 +121,7 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
                   currency: "INR",
                 },
               });
+        
 
         // ✅ Store selected product IDs for persistence
 if (selectedFrequentProducts?.length > 0) {
