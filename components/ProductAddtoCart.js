@@ -90,9 +90,37 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
             })
           );
         }
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+        const proresponse = await fetch(`/api/product/get/${productId}`);
+       
+        if (!proresponse.ok) {
+          throw new Error(`HTTP error! status: ${proresponse.status}`);
+        }
+        
+        const productData = await proresponse.json();
   
         const responseData = await cartResponse.json();
         updateCartCount(responseData.cart.totalItems + additionalProducts.length);
+
+        // Event Tracking
+              trackAddToCart({
+                user: {
+                  name: data.user.name,
+                  phone: data.phone,
+                  email: data.user.email,
+                },
+                product: {
+                  id: productId,
+                  name: responseData.cart.items[0].name,
+                  price: responseData.cart.items[0].price,
+                  link: `${apiUrl}/product/${productData.data.slug}`,
+                  image: `${apiUrl}/uploads/products/`+responseData.cart.items[0].image,
+                  qty: responseData.cart.items[0].quantity,
+                  currency: "INR",
+                },
+              });
 
         // ✅ Store selected product IDs for persistence
 if (selectedFrequentProducts?.length > 0) {
