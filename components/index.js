@@ -1307,10 +1307,10 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                   variants={itemVariants}
                                 >
                                   <Link href={item.redirect_url || "#"} className="block w-full h-full">
-                                    <div className="absolute inset-0 flex justify-center items-center bg-white mb-4">
+                                    <div className="absolute inset-0 flex justify-center items-center bg-white">
                                       <Image
                                         src={item.bgImageUrl}
-                                        alt="Single Banner"
+                                        alt="Banner"
                                         fill
                                         quality={100}
                                         className="object-fill w-full h-full"
