@@ -22,7 +22,7 @@ export async function generateMetadata({ params  }) {
   }
 
   const data = await response.json();
-  //console.log("Fetched product for metadata:", `${baseUrl}/product/${slug}`);
+  console.log("Fetched product for metadata:", `${baseUrl}/product/${slug}`);
 
   return {
   title: data.name,

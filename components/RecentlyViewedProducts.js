@@ -15,6 +15,8 @@ const RecentlyViewedProducts = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -116,7 +118,7 @@ const RecentlyViewedProducts = () => {
       )}
       
       <section className="mb-14 px-0 sm:px-0 md:px-0 pt-14">
-        <div className="bg-gray-100 rounded-2xl p-6">
+        <div className="p-6">
           <div className="flex justify-between items-center mb-6 ">
             <h5 className="text-xl font-bold">Recently Visited</h5>
             <div className="flex gap-3">
@@ -143,34 +145,43 @@ const RecentlyViewedProducts = () => {
                 key={product._id}
                 className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
               >
-                <div className="relative aspect-square bg-gray-50">
-                  {product.images?.[0] && (
-                    <img
-                      src={
-                        product.images[0].startsWith("http")
-                          ? product.images[0]
-                          : `/uploads/products/${product.images[0]}`
-                      }
-                      alt={product.name}
-                      className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105 h-60 w-60" 
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/uploads/products/placeholder.jpg";
-                      }}
-                    />
+               <div className="relative aspect-square w-58 h-58 bg-white flex items-center justify-center rounded-md overflow-hidden">
+                {product.images?.[0] ? (
+                  <img
+                    src={
+                      product.images[0].startsWith("http")
+                        ? product.images[0]
+                        : `/uploads/products/${product.images[0]}`
+                    }
+                    alt={product.name}
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/uploads/products/placeholder.jpg";
+                    }}
+                  />
+                ) : (
+                  <img
+                    src="/uploads/products/placeholder.jpg"
+                    alt="placeholder"
+                    className="w-full h-full object-contain"
+                  />
+                )}
+
+                {Number(product.special_price) > 0 &&
+                  Number(product.special_price) < Number(product.price) && (
+                    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                      {Math.round(
+                        100 - (Number(product.special_price) / Number(product.price)) * 100
+                      )}
+                      % OFF
+                    </span>
                   )}
 
-                  {Number(product.special_price) > 0 &&
-                    Number(product.special_price) < Number(product.price) && (
-                      <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
-                        {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
-                      </span>
-                    )}
-
-                  <div className="absolute top-2 right-2">
-                    <ProductCard productId={product._id} />
-                  </div>
+                <div className="absolute top-2 right-2">
+                  <ProductCard productId={product._id} />
                 </div>
+              </div>
 
                 <div className="p-2 md:p-4 flex flex-col h-full">
                   <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
@@ -226,7 +237,7 @@ const RecentlyViewedProducts = () => {
                       className="w-full text-xs sm:text-sm py-1.5"
                     />
                     <a
-                      href={`https://wa.me/?text=Check this out: ${product.name}`}
+                      href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
