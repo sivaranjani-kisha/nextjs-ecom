@@ -21,12 +21,10 @@ import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import RelatedProducts from "@/components/RelatedProducts";
 import RazorpayOffers from "@/components/RazorpayOffers";
 
-
-
-
-export default function ProductClient(currentProductId) {
+export default function ProductClient() {
   const router = useRouter(); 
   const { slug } = useParams();
+  const [relatedProductsLoading, setRelatedProductsLoading] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [brand, setBrand] = useState([]);
    const [selectedRelatedProducts, setSelectedRelatedProducts] = useState([]);
@@ -52,6 +50,28 @@ const handleIncrease = () => {
     setQuantityWarning(true); // show warning if exceeding
   }
 };
+
+
+
+
+// // Function to fetch category products
+//   useEffect(() => {
+//     const fetchCategoryProducts = async () => {
+//       try {
+//         const res = await fetch(`/api/product/category/${categoryId}?limit=5`);
+//         const data = await res.json();
+//         if (data.success) {
+//           setCategoryProducts(data.products);
+//         }
+//       } catch (error) {
+//         console.error("Error fetching category products:", error);
+//       }
+//     };
+
+//     if (categoryId) fetchCategoryProducts();
+//   }, [categoryId]);
+
+
 
 const handleBuyNow = () => {
   const checkoutData = {
@@ -101,32 +121,57 @@ const toggleFrequentProduct = (product) => {
 };
 
  // Fetch related products
-  // Fetch related products
-  const fetchRelatedProducts = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/product/related?productId=${product._id}`);
-      const data = await res.json();
+  // // Fetch related products
+  // const fetchRelatedProducts = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const res = await fetch(`/api/product/related?productId=${product._id}`);
+  //     const data = await res.json();
       
-      if (!res.ok) {
-        throw new Error(`API error: ${res.status} ${res.statusText}`);
-      }
+  //     if (!res.ok) {
+  //       throw new Error(`API error: ${res.status} ${res.statusText}`);
+  //     }
 
-      if (res.ok && data.success) {
-        setRelatedProducts(data.products || []);
-      }
-    } catch (error) {
-      console.error("Error fetching related products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     if (res.ok && data.success) {
+  //       setRelatedProducts(data.products || []);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching related products:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    if (product?._id) {
-      fetchRelatedProducts(product._id);
-    }
-  }, [product]);
+  // useEffect(() => {
+  //   if (product?._id) {
+  //     fetchRelatedProducts(product._id);
+  //   }
+  // }, [product]);
+
+
+  const categoryId = product?.category;
+  const currentProductId = product?._id;
+useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      try {
+        const res = await fetch(`/api/product/related?category=${categoryId}&exclude=${currentProductId}&limit=5`);
+        const data = await res.json();
+        if (res.ok) {
+  if (data.success && data.products) {
+    setRelatedProducts(data.products);
+  } else if (data.relatedProducts) {
+    setRelatedProducts(data.relatedProducts);
+  } else {
+    setRelatedProducts([]);
+  }
+}
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (categoryId) fetchRelatedProducts();
+  }, [categoryId, currentProductId]); // De
 
   const toggleRelatedProduct = (product) => {
     setSelectedRelatedProducts(prev => {
@@ -689,7 +734,7 @@ const fetchBrand = async () => {
       
                   {/* Add to Cart Button */}
                   <div className="flex gap-4 flex-wrap items-start">
-                    <div className="flex-shrink-0">
+                    {/* <div className="flex-shrink-0">
                       <Addtocart
                         productId={product._id}
                         stockQuantity={product.quantity}
@@ -699,7 +744,7 @@ const fetchBrand = async () => {
                         extendedWarranty={selectedExtendedWarranty}
                         selectedFrequentProducts={selectedFrequentProducts}
                       />
-                    </div>
+                    </div> */}
 
                     <div className="flex-grow mt-2">
                       <ProductCard productId={product._id} />
@@ -1470,7 +1515,7 @@ const fetchBrand = async () => {
     <h2 className="text-sm font-bold text-customBlue underline mb-2">
       Related Products
     </h2>
-    {relatedProducts.slice(0, 3).map((item) => (
+    {relatedProducts.filter(item => item.stock_status === "In Stock").slice(0, 3).map((item) => (
       <div key={item._id} className="flex items-start mb-4">
         <input
           type="checkbox"
@@ -1589,12 +1634,13 @@ const fetchBrand = async () => {
            <ProductDetailsSection product={product} />
            <RecentlyViewedProducts className="w-full" />
          
-           {product?.related_products?.length > 0 && (
+          
            <RelatedProducts
              className="w-full"
+             categoryId={product.category}
              currentProductId={product._id}
            />
-         )}
+         
          
          
          

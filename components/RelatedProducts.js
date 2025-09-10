@@ -8,30 +8,37 @@ import Addtocart from "@/components/AddToCart";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 
-const RelatedProducts = ({ currentProductId }) => {
+const RelatedProducts = ({ currentProductId,categoryId }) => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [navigating, setNavigating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  
-    const fetchRelatedProducts = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`/api/product/related?productId=${currentProductId}`);
-        const data = await res.json();
-        console.log(data);
+  const fetchRelatedProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/product/related?category=${categoryId}&exclude=${currentProductId}&limit=5`);
+      const data = await res.json();
+      console.log("Related products data:", data);
+      if (res.ok) {
+  if (data.success && data.products) {
+    setRelatedProducts(data.products);
+  } else if (data.relatedProducts) {
+    setRelatedProducts(data.relatedProducts);
+  } else {
+    setRelatedProducts([]);
+  }
+}
+    } catch (error) {
+      console.error("Error fetching related products:", error);
+      setRelatedProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (res.ok && data.success) {
-          setRelatedProducts(data.products || []);
-        }
-      } catch (error) {
-        console.error("Error fetching related products:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+     
     useEffect(() => {
     if (currentProductId) {
         fetchRelatedProducts();
