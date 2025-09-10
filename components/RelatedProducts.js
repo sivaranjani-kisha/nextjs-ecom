@@ -8,13 +8,12 @@ import Addtocart from "@/components/AddToCart";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 
-const RelatedProducts = ({ currentProductId, categoryId }) => {
+const RelatedProducts = ({ currentProductId,categoryId }) => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [navigating, setNavigating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [brandMap, setBrandMap] = useState({});
 
   const fetchRelatedProducts = async () => {
     try {
@@ -39,122 +38,114 @@ const RelatedProducts = ({ currentProductId, categoryId }) => {
     }
   };
 
-  useEffect(() => {
-    if (currentProductId && categoryId) {
-      fetchRelatedProducts();
-    }
-  }, [currentProductId, categoryId]);
-
-  const fetchBrand = async () => {
-    try {
-      const response = await fetch("/api/brand");
-      const result = await response.json();
-      if (result.error) {
-        console.error(result.error);
-      } else {
-        const data = result.data;
-        const map = {};
-        data.forEach((b) => {
-          map[b._id] = b.brand_name;
-        });
-        setBrandMap(map);
+     
+    useEffect(() => {
+    if (currentProductId) {
+        fetchRelatedProducts();
       }
-    } catch (error) {
-      console.error(error.message);
-    }
-  };
+    }, [currentProductId]);
 
-  useEffect(() => {
-    fetchBrand();
-  }, []);
 
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+     const [brandMap, setBrandMap] = useState([]);
+    
+    const fetchBrand = async () => {
+      try {
+        const response = await fetch("/api/brand");
+        const result = await response.json();
+        if (result.error) {
+          console.error(result.error);
+        } else {
+          const data = result.data;
+    
+          // Store as map for quick access
+          const map = {};
+          data.forEach((b) => {
+            map[b._id] = b.brand_name;
+          });
+          setBrandMap(map);
+        }
+      } catch (error) {
+        console.error(error.message);
+      }
     };
+    
+    useEffect(() => {
+      fetchBrand();
+    }, []);
 
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-
-    return () => {
-      window.removeEventListener('resize', checkIfMobile);
-    };
-  }, []);
-
-  const prev = () => {
+    const prev = () => {
     const step = isMobile ? 3 : 1;
     setStartIndex(Math.max(0, startIndex - step));
   };
 
   const next = () => {
     const step = isMobile ? 3 : 1;
-    setStartIndex(Math.min(startIndex + step, Math.max(0, relatedProducts.length - visibleCount)));
+    setStartIndex(Math.min(startIndex + step, relatedProducts.length - visibleCount));
   };
 
   const visibleCount = isMobile ? 3 : 5;
   const visibleProducts = relatedProducts.slice(startIndex, startIndex + visibleCount);
 
-  const handleProductClick = (product) => {
-    setNavigating(true);
-    window.location.href = `/product/${product.slug || product._id}`;
+    useEffect(() => {
+  const checkIfMobile = () => {
+    setIsMobile(window.innerWidth < 768);
   };
 
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="py-8">
-        <h2 className="text-lg sm:text-xl font-semibold text-center text-gray-600 bg-gray-50 border border-gray-200 rounded-lg py-4">
-          Loading related products...
-        </h2>
-      </div>
-    );
-  }
+  checkIfMobile();
+  window.addEventListener('resize', checkIfMobile);
 
-  // Show empty state only after loading is complete and no products
-  if (!loading && relatedProducts.length === 0) {
+  return () => {
+    window.removeEventListener('resize', checkIfMobile);
+  };
+}, []);
+
+
+  
+
+  if (!relatedProducts.length) {
     return (
-      <div className="py-8">
-        <h2 className="text-lg sm:text-xl font-semibold text-center text-gray-600 bg-gray-50 border border-gray-200 rounded-lg py-4">
-          No related products for this product
-        </h2>
-      </div>
+     <div className="py-8">
+  <h2 className="text-lg sm:text-xl font-semibold text-center text-gray-600 bg-gray-50 border border-gray-200 rounded-lg py-4">
+    No related products for this product
+  </h2>
+</div>
+
     );
   }
 
   return (
-    <>
+<>
       {navigating && (
         <div className="fixed inset-0 z-[9999] flex justify-center items-center bg-black bg-opacity-30">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
         </div>
       )}
-      
-      <section className="mb-10 px-4">
-        <div className="bg-gray-100 rounded-2xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h5 className="text-xl font-bold">Related Products</h5>
-            <div className="flex gap-3">
-              <button
-                onClick={prev}
-                disabled={startIndex === 0}
-                className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition disabled:opacity-50"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                onClick={next}
-                disabled={startIndex + visibleCount >= relatedProducts.length}
-                className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition disabled:opacity-50"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          </div>
+    <section className="mb-10 px-4">
+  <div className="bg-gray-100 rounded-2xl p-6">
+    <div className="flex justify-between items-center mb-6">
+      <h5 className="text-xl font-bold">Related Products</h5>
+      <div className="flex gap-3">
+        <button
+          onClick={prev}
+          disabled={startIndex === 0}
+          className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition disabled:opacity-50"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <button
+          onClick={next}
+          disabled={startIndex + visibleCount >= relatedProducts.length}
+          className="p-2 border border-gray-300 rounded-full hover:bg-blue-600 hover:text-white transition disabled:opacity-50"
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
+    </div>
 
-          {/* Wider grid layout */}
-          <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 overflow-x-auto sm:overflow-visible px-1">
-            {visibleProducts.map((product) => (
-              <div
+    {/* Wider grid layout */}
+    <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 overflow-x-auto sm:overflow-visible px-1">
+      {visibleProducts.map((product) => (
+        <div
                 key={product._id}
                 className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
               >
@@ -189,7 +180,7 @@ const RelatedProducts = ({ currentProductId, categoryId }) => {
 
                 <div className="p-2 md:p-4 flex flex-col h-full">
                   <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
-                    {brandMap[product.brand] || ""}
+                     {brandMap[product.brand] || ""}
                   </h4>
 
                   <Link
@@ -258,11 +249,11 @@ const RelatedProducts = ({ currentProductId, categoryId }) => {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </>
+      ))}
+    </div>
+  </div>
+</section>
+</>
   );
 };
 

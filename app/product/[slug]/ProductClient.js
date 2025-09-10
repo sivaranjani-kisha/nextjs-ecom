@@ -1,4 +1,6 @@
 'use client';
+
+
 import ProductDetailsSection from "@/components/ProductDetailsSection";
 // import RelatedProducts from "@/components/RelatedProducts";
 import {  useEffect, useState, useRef, useCallback } from "react";
@@ -19,13 +21,13 @@ import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import RelatedProducts from "@/components/RelatedProducts";
 import RazorpayOffers from "@/components/RazorpayOffers";
 
-export default function ProductClient(currentProductId, categoryId) {
+export default function ProductClient() {
   const router = useRouter(); 
   const { slug } = useParams();
+  const [relatedProductsLoading, setRelatedProductsLoading] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [brand, setBrand] = useState([]);
    const [selectedRelatedProducts, setSelectedRelatedProducts] = useState([]);
-   const [categoryProducts, setCategoryProducts] = useState([]);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
   const [showFeatures, setShowFeatures] = useState(false);
   const [showHighlights, setShowHighlights] = useState(false);
@@ -50,22 +52,24 @@ const handleIncrease = () => {
 };
 
 
-// Function to fetch category products
-  useEffect(() => {
-    const fetchCategoryProducts = async () => {
-      try {
-        const res = await fetch(`/api/product/category/${categoryId}?limit=5`);
-        const data = await res.json();
-        if (data.success) {
-          setCategoryProducts(data.products);
-        }
-      } catch (error) {
-        console.error("Error fetching category products:", error);
-      }
-    };
 
-    if (categoryId) fetchCategoryProducts();
-  }, [categoryId]);
+
+// // Function to fetch category products
+//   useEffect(() => {
+//     const fetchCategoryProducts = async () => {
+//       try {
+//         const res = await fetch(`/api/product/category/${categoryId}?limit=5`);
+//         const data = await res.json();
+//         if (data.success) {
+//           setCategoryProducts(data.products);
+//         }
+//       } catch (error) {
+//         console.error("Error fetching category products:", error);
+//       }
+//     };
+
+//     if (categoryId) fetchCategoryProducts();
+//   }, [categoryId]);
 
 
 
@@ -117,32 +121,57 @@ const toggleFrequentProduct = (product) => {
 };
 
  // Fetch related products
-  // Fetch related products
-  const fetchRelatedProducts = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/product/related?productId=${product._id}`);
-      const data = await res.json();
+  // // Fetch related products
+  // const fetchRelatedProducts = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const res = await fetch(`/api/product/related?productId=${product._id}`);
+  //     const data = await res.json();
       
-      if (!res.ok) {
-        throw new Error(`API error: ${res.status} ${res.statusText}`);
-      }
+  //     if (!res.ok) {
+  //       throw new Error(`API error: ${res.status} ${res.statusText}`);
+  //     }
 
-      if (res.ok && data.success) {
-        setRelatedProducts(data.products || []);
-      }
-    } catch (error) {
-      console.error("Error fetching related products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     if (res.ok && data.success) {
+  //       setRelatedProducts(data.products || []);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching related products:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    if (product?._id) {
-      fetchRelatedProducts(product._id);
-    }
-  }, [product]);
+  // useEffect(() => {
+  //   if (product?._id) {
+  //     fetchRelatedProducts(product._id);
+  //   }
+  // }, [product]);
+
+
+  const categoryId = product?.category;
+  const currentProductId = product?._id;
+useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      try {
+        const res = await fetch(`/api/product/related?category=${categoryId}&exclude=${currentProductId}&limit=5`);
+        const data = await res.json();
+        if (res.ok) {
+  if (data.success && data.products) {
+    setRelatedProducts(data.products);
+  } else if (data.relatedProducts) {
+    setRelatedProducts(data.relatedProducts);
+  } else {
+    setRelatedProducts([]);
+  }
+}
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (categoryId) fetchRelatedProducts();
+  }, [categoryId, currentProductId]); // De
 
   const toggleRelatedProduct = (product) => {
     setSelectedRelatedProducts(prev => {
@@ -223,7 +252,6 @@ useEffect(() => {
   const [showGstInvoiceModal, setshowGstInvoiceModal] = useState(false);
   useEffect(() => {
     const fetchProduct = async () => {
-
       try {
         setLoading(true);
         const response = await fetch(`/api/product/${slug}`);
@@ -1325,6 +1353,7 @@ const fetchBrand = async () => {
 
           </div>
 
+          {/* Right Section - Seller Info */}
           <div className="md:col-span-3 w-full max-w-sm flex flex-col space-y-4">
  
   {/* ================= Box: Featured + Warranty + Related ================= */}
@@ -1486,7 +1515,7 @@ const fetchBrand = async () => {
     <h2 className="text-sm font-bold text-customBlue underline mb-2">
       Related Products
     </h2>
-    {relatedProducts.slice(0, 3).map((item) => (
+    {relatedProducts.filter(item => item.stock_status === "In Stock").slice(0, 3).map((item) => (
       <div key={item._id} className="flex items-start mb-4">
         <input
           type="checkbox"
@@ -1595,9 +1624,7 @@ const fetchBrand = async () => {
     />
   </div>
 </div>
-
         </div>
-        
         
        
       </div>
@@ -1607,12 +1634,13 @@ const fetchBrand = async () => {
            <ProductDetailsSection product={product} />
            <RecentlyViewedProducts className="w-full" />
          
-           {product?.related_products?.length > 0 && (
+          
            <RelatedProducts
              className="w-full"
+             categoryId={product.category}
              currentProductId={product._id}
            />
-         )}
+         
          
          
          

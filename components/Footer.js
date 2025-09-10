@@ -143,6 +143,14 @@ console.log(main);
     setIsLoggedIn(false);
     setUserData(null);
   };
+  const groupedStores = stores.reduce((acc, store) => {
+  const city = store.city; // or store.store_city based on your API
+  if (!acc[city]) {
+    acc[city] = [];
+  }
+  acc[city].push(store.organisation_name);
+  return acc;
+}, {});
 const capitalizeFirstLetter = (str) =>
   str.charAt(0).toUpperCase() + str.slice(1);
   const groupCategories = (categories) => {
@@ -161,122 +169,137 @@ const capitalizeFirstLetter = (str) =>
 
   return (
     <>
-      <footer className="bg-[#2e2a2a] text-gray-300 text-sm py-5 md:px-4">
-       <div className="bg-[#2e2a2a] text-gray-400  border-white ">
-  <div className="w-full flex justify-center">
-    <div className="w-full container mx-auto px-3  grid grid-cols-1 md:grid-cols-3 gap-16 justify-between">
-      
-      {/* Corporate Office */}
-      <div className="space-y-3">
-  <h3 className="text-white font-semibold text-lg mb-4">Corporate Office</h3>
-  <p>
-    26/1 Drr. Alagappa Chettiyar Rd, Tatabad, Near Kovai Scan Centre,
-    Coimbatore-641012
-  </p>
+      <footer className="bg-[#2e2a2a] text-gray-300 text-sm py-5 md:px-4 p-6">
+        <div className="bg-[#2e2a2a] text-gray-400  border-white ">
+          <div className="w-full flex justify-center">
+            <div className="w-full container mx-auto px-3  grid grid-cols-1 md:grid-cols-3 gap-16 justify-between">
+              
+              {/* Corporate Office */}
+              <div className="space-y-3">
+          <h3 className="text-white font-semibold text-lg mb-4">Corporate Office</h3>
+          <p>
+            26/1 Drr. Alagappa Chettiyar Rd, Tatabad, Near Kovai Scan Centre,
+            Coimbatore-641012
+          </p>
 
-  <hr className="border-gray-600 my-3" />
+          <hr className="border-gray-600 my-3" />
 
-  <div className="flex items-center gap-2">
-    <FiPhone />
-    <a href="tel:9842344323" className="text-blue-600 hover:underline">
-      9842344323
-    </a>
-  </div>
+          <div className="flex items-center gap-2">
+            <FiPhone />
+            <a href="tel:9842344323" className="text-blue-600 hover:underline">
+              9842344323
+            </a>
+          </div>
 
-  <hr className="border-gray-600 my-3" />
+          <hr className="border-gray-600 my-3" />
 
-  <div className="flex items-center gap-2">
-    <FiMail />
-    <a
-      href="mailto:customercare@bharatelectronics.in"
-      className="text-blue-600 hover:underline"
-    >
-      customercare@bharatelectronics.in
-    </a>
-  </div>
+          <div className="flex items-center gap-2">
+            <FiMail />
+            <a
+              href="mailto:customercare@bharatelectronics.in"
+              className="text-blue-600 hover:underline"
+            >
+              customercare@bharatelectronics.in
+            </a>
+          </div>
 
-  <hr className="border-gray-600 my-3" />
+          <hr className="border-gray-600 my-3" />
 
-  <p>
-    <strong>Business Hours:</strong> 09:30AM - 09:30 PM (Mon to Sun)
-  </p>
-</div>
-
-
-      {/* My Account & Policy */}
-      <div className="flex flex-col space-y-6 md:mx-auto">
-        <div>
-          <h3 className="text-white font-semibold text-lg mb-4">My Account</h3>
-          <ul className="space-y-2">
-            {isLoggedIn ? (
-              <>
-                <li>
-                  <Link href="/order" className="hover:underline hover:text-white flex items-center gap-2">
-                    <FaShoppingBag /> My Orders
-                  </Link>
-                </li>
-                <li>
-                  <button 
-                    onClick={handleLogout}
-                    className="hover:underline hover:text-white flex items-center gap-2"
-                  >
-                    <IoLogOut /> Logout
-                  </button>
-                </li>
-              </>
-            ) : (
-              <li>
-                <button 
-                  onClick={() => setShowAuthModal(true)}
-                  className="hover:underline hover:text-white"
-                >
-                  Sign In / Register
-                </button>
-              </li>
-            )}
-          </ul>
+          <p>
+            <strong>Business Hours:</strong> 09:30AM - 09:30 PM (Mon to Sun)
+          </p>
         </div>
-        <div>
-          <h3 className="text-white font-semibold text-lg mb-4">Policy</h3>
-          <ul className="space-y-2">
-            <li><Link href="/privacypolicy" className="hover:underline hover:text-white">Privacy Policy</Link></li>
-            <li><Link href="/shipping" className="hover:underline hover:text-white">Shipping Policy</Link></li>
-            <li><Link href="/terms-and-condition" className="hover:underline hover:text-white">Terms and Conditions</Link></li>
-            <li><Link href="/cancellation-refund-policy" className="hover:underline hover:text-white">Cancellation and Refund Policy</Link></li>
-          </ul>
-        </div>
-      </div>
 
-      {/* Company & Social Media */}
-      <div className="md:ml-12">
-        <div className="mb-8">
-          <h3 className="text-white font-semibold text-lg mb-4">Company</h3>
-          <ul className="space-y-2">
-            <li><Link href="/aboutus" className="hover:underline hover:text-white">About Us</Link></li>
-            <li><Link href="/contact" className="hover:underline hover:text-white">Contact Us</Link></li>
-            <li><Link href="/blog" className="hover:underline hover:text-white">Blogs</Link></li>
-          </ul>
-        </div>
-        <div>
+
+              {/* My Account & Policy */}
+              <div className="flex flex-col space-y-6 md:mx-auto">
+                <div>
+                  <h3 className="text-white font-semibold text-lg mb-4">My Account</h3>
+                  <ul className="space-y-2">
+                    {isLoggedIn ? (
+                      <>
+                        <li>
+                          <Link href="/order" className="hover:underline hover:text-white flex items-center gap-2">
+                            <FaShoppingBag /> My Orders
+                          </Link>
+                        </li>
+                        <li>
+                          <button 
+                            onClick={handleLogout}
+                            className="hover:underline hover:text-white flex items-center gap-2"
+                          >
+                            <IoLogOut /> Logout
+                          </button>
+                        </li>
+                      </>
+                    ) : (
+                      <li>
+                        <button 
+                          onClick={() => setShowAuthModal(true)}
+                          className="hover:underline hover:text-white"
+                        >
+                          Sign In / Register
+                        </button>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg mb-4">Policy</h3>
+                  <ul className="space-y-2">
+                    <li><Link href="/privacypolicy" className="hover:underline hover:text-white">Privacy Policy</Link></li>
+                    <li><Link href="/shipping" className="hover:underline hover:text-white">Shipping Policy</Link></li>
+                    <li><Link href="/terms-and-condition" className="hover:underline hover:text-white">Terms and Conditions</Link></li>
+                    <li><Link href="/cancellation-refund-policy" className="hover:underline hover:text-white">Cancellation and Refund Policy</Link></li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Company & Social Media */}
+              <div className="md:ml-12">
+                <div className="mb-8">
+                  <h3 className="text-white font-semibold text-lg mb-4">Company</h3>
+                  <ul className="space-y-2">
+                    <li><Link href="/aboutus" className="hover:underline hover:text-white">About Us</Link></li>
+                    <li><Link href="/contact" className="hover:underline hover:text-white">Contact Us</Link></li>
+                    <li><Link href="/blog" className="hover:underline hover:text-white">Blogs</Link></li>
+                  </ul>
+                </div>
+              <div>
           <h3 className="text-white font-semibold text-lg mb-4">Connect With Us</h3>
-          <div className="flex space-x-4">
-            <Link href="https://web.whatsapp.com/send?phone=919842344323&amp;text=Hi"><FaWhatsapp className="text-xl text-green-500" /></Link>
-            <Link href="https://www.facebook.com/BharathElectronics/"><FaFacebookF className="text-xl text-customBlue" /></Link>
-            <Link href="https://www.instagram.com/bharathelectronics/"><FaInstagram className="text-xl text-pink-500" /></Link>
-            <Link href="https://www.youtube.com/@bharathelectronicsandappli3074"><FaYoutube className="text-xl text-red-500" /></Link>
-            <Link href="https://twitter.com/bharath_bea"><FaXTwitter className="text-xl text-black-500" /></Link>
-            <Link href="https://in.linkedin.com/company/bharath-electronics-and-appliances"><FaLinkedinIn className="text-xl text-customBlue" /></Link>
+          <div className="flex flex-wrap justify-center md:justify-start gap-4">
+            <Link href="https://web.whatsapp.com/send?phone=919842344323&amp;text=Hi">
+              <FaWhatsapp className="text-xl text-green-500" />
+            </Link>
+            <Link href="https://www.facebook.com/BharathElectronics/">
+              <FaFacebookF className="text-xl text-customBlue" />
+            </Link>
+            <Link href="https://www.instagram.com/bharathelectronics/">
+              <FaInstagram className="text-xl text-pink-500" />
+            </Link>
+            <Link href="https://www.youtube.com/@bharathelectronicsandappli3074">
+              <FaYoutube className="text-xl text-red-500" />
+            </Link>
+            <Link href="https://twitter.com/bharath_bea">
+              <FaXTwitter className="text-xl text-black" />
+            </Link>
+            <Link href="https://in.linkedin.com/company/bharath-electronics-and-appliances">
+              <FaLinkedinIn className="text-xl text-customBlue" />
+            </Link>
+          </div>
+        {/* </div> */}
+
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
-      </div>
-
-    </div>
-  </div>
-</div>
 
 
         {/* Bottom Section */}
-        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 md:grid-cols-[70%_30%]"> 
+        {/* <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 md:grid-cols-[70%_30%]">  */}
+        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 "> 
           <div className="">
             <div className="mb-2 container mx-auto px-3 flex flex-col md:flex-row justify-between items-center gap-6 ">
               <div className="text-center md:text-left ml-1 mb-1">
@@ -370,63 +393,63 @@ const capitalizeFirstLetter = (str) =>
               </div>
             </div>
           </div>
-         {stores.length > 0 && (
-            <div>
-              <div className="container mx-auto px-3 flex flex-col md:flex-column">
-                <h4 className="text-white font-medium mb-2 md:mb-0">Our Locations:</h4>
-               <p className="text-sm text-gray-500" style={{ fontSize: "small" }}>
-
-                  {stores.map((store, index) => (
-                    <span key={index}> 
-                      {store.organisation_name},
-                     
-                    </span>
-                  ))}
-                </p>
-              </div>
+          <div className="container mx-auto px-4  space-y-4">
+            <h3 className="text-white font-semibold flex text-lg mb-4">Our Location</h3>
             </div>
-          )}
+        {Object.entries(groupedStores).map(([city, orgs], index) => (
+        <div key={index} className="container mx-auto px-4  space-y-4">
+        
+         <h5 className="text-white font-medium flex items-center gap-2 mb-2">
+  Showroom in {city}:
+  <span className="text-sm text-gray-500">
+    {orgs.join(", ")}
+  </span>
+</h5>
+
+          
+        </div>
+      ))}
 
         </div>
-        <div className="px-4 py-4 space-y-10">
+        <div className="container mx-auto px-4 py-4 space-y-4">
 
   
-  <div>
-  <h2 className="text-white ">
-    Buy Best Laptops & Gadgets Online
-  </h2>
-  <p className="text-gray-400 py-2">
-    Unleash the Power of Technology with{" "}
-    <span className="font-semibold text-white">
-      Bharath Electronics' Laptop & Computers Collection
-    </span>
-    . Find the Perfect Device for Your Computing Needs, including Gaming
-    Laptops, Everyday Laptops, and Business Laptops. We Offer a Wide
-    Selection from Top Brands such as Samsung, Asus, Apple, HP, Lenovo, and
-    More. Our Laptops and Computers Boast Premium Design, High-Capacity RAM,
-    Latest Processors, Quality Graphics Cards, Excellent Battery Life, and
-    Incredible Display & Sound Features. Don’t Forget to Check Out our Range
-    of Smart Watches, Chargers, Power Banks, Headphones, and Bluetooth
-    Speakers for a Complete Tech Experience.
-  </p>
-</div>
+          <div>
+            <h2 className="text-white ">
+              Buy Best Laptops & Gadgets Online
+            </h2>
+            <p className="text-gray-400 py-2">
+              Unleash the Power of Technology with{" "}
+              <span className="font-semibold text-white">
+                Bharath Electronics' Laptop & Computers Collection
+              </span>
+              . Find the Perfect Device for Your Computing Needs, including Gaming
+              Laptops, Everyday Laptops, and Business Laptops. We Offer a Wide
+              Selection from Top Brands such as Samsung, Asus, Apple, HP, Lenovo, and
+              More. Our Laptops and Computers Boast Premium Design, High-Capacity RAM,
+              Latest Processors, Quality Graphics Cards, Excellent Battery Life, and
+              Incredible Display & Sound Features. Don’t Forget to Check Out our Range
+              of Smart Watches, Chargers, Power Banks, Headphones, and Bluetooth
+              Speakers for a Complete Tech Experience.
+            </p>
+          </div>
 
-<div className="mt-4">
-  <h2 className=" text-white ">
-    Buy Kitchen Appliances at Best Prices Online – Shop Now
-  </h2>
-  <p className="text-gray-400 py-2">
-    Revolutionize Your Kitchen with Bharath Electronics' Kitchen Appliances Collection. Explore a Wide Range of Colours, Sizes, Manufacturers, and Types to
-    Find the Perfect Appliances for Your Culinary Needs. From Multi-Functional
-    Mixer Juicer Grinders to Energy-Efficient Electric Cookers, Kitchen
-    Chimneys, Gas Stoves, Induction Stoves, Water Purifiers, Microwave Ovens,
-    and Pressure Cookers, we Offer a Diverse Selection. Upgrade Your Cooking
-    Experience Today with our Affordable and High-Quality Kitchen Appliances.
-  </p>
-</div>
+          <div className="mt-4">
+            <h2 className=" text-white ">
+              Buy Kitchen Appliances at Best Prices Online – Shop Now
+            </h2>
+            <p className="text-gray-400 py-2">
+              Revolutionize Your Kitchen with Bharath Electronics' Kitchen Appliances Collection. Explore a Wide Range of Colours, Sizes, Manufacturers, and Types to
+              Find the Perfect Appliances for Your Culinary Needs. From Multi-Functional
+              Mixer Juicer Grinders to Energy-Efficient Electric Cookers, Kitchen
+              Chimneys, Gas Stoves, Induction Stoves, Water Purifiers, Microwave Ovens,
+              and Pressure Cookers, we Offer a Diverse Selection. Upgrade Your Cooking
+              Experience Today with our Affordable and High-Quality Kitchen Appliances.
+            </p>
+          </div>
 
 
-</div>
+        </div>
 
 
       </footer>

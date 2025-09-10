@@ -13,7 +13,7 @@ export async function GET(req) {
     const limit = parseInt(searchParams.get("limit")) || 5; // default 5
 
     if (!categoryId) {
-      return NextResponse.json({ error: "Category ID is required" }, { status: 400 });
+      return NextResponse.json({ error: "Category ID is requiredd" }, { status: 400 });
     }
 
     const query = { category: categoryId };

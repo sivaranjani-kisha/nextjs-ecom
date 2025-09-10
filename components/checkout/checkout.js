@@ -5,6 +5,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'next/navigation';
 import { AuthModal } from '@/components/AuthModal';
+import { trackCheckout } from "@/utils/nextjs-event-tracking.js";
 
 // Dynamically load Razorpay script
 const loadRazorpay = () => {
@@ -708,6 +709,44 @@ const grandTotal = subtotal - totalDiscount;
           customerEmail: addressData.email,
           adminEmail: 'msivaranjani2036@gmail.com'
         };
+
+       // console.log(cartItems);
+
+        const proresponse = await fetch(`/api/product/get/${cartItems[0].productId}`);
+       
+        if (!proresponse.ok) {
+          throw new Error(`HTTP error! status: ${proresponse.status}`);
+        }
+        
+        const productData = await proresponse.json();
+
+        const authResponse = await fetch('/api/auth/check', {
+				method: 'GET',
+				headers: {
+				  'Content-Type': 'application/json',
+				  Authorization: token ? `Bearer ${token}` : '',
+				},
+			  });
+			  const authData = await authResponse.json();
+			  //console.log(cartItems);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        trackCheckout({
+          user: {
+            name: authData.user.name,
+            phone: authData.phone,
+            email: authData.user.email,
+          },
+          product: {
+            id: cartItems[0].productId,
+            name: productData.data.name,
+            price: cartItems[0].price,
+            link: `${apiUrl}/product/${productData.data.slug}`,
+            image: `${apiUrl}/uploads/products/`+cartItems[0].image,
+            qty: cartItems[0].quantity,
+            currency: "INR",
+          },
+        });
+        
         
         // Send confirmation emails
         const emailResponse = await fetch('/api/send-order-email', {

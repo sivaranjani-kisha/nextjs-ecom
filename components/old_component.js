@@ -73,9 +73,33 @@ export default function HomeComponent() {
     // Cateogry Scroll
     const categoryScrollRef = useRef(null);
 const [videos, setVideos] = useState([]);
- const [activeVideo, setActiveVideo] = useState(null);
-  const scrollRef = useRef(null);
-const scrollCategories = (direction) => {
+const [activeVideo, setActiveVideo] = useState(null);
+
+// commit: added localStorage read/write helpers for daily cache
+const DAILY_CACHE_KEY = 'site_daily_cache_v1';
+const _todayStr = () => new Date().toISOString().slice(0,10);
+const readDailyCache = () => {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem(DAILY_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.date !== _todayStr()) return null; // expired or different day
+    return parsed.payload || null;
+  } catch (e) {
+    return null;
+  }
+};
+const writeDailyCache = (payload) => {
+  try {
+    if (typeof window === 'undefined') return;
+    const obj = { date: _todayStr(), payload };
+    localStorage.setItem(DAILY_CACHE_KEY, JSON.stringify(obj));
+  } catch (e) {
+    // ignore
+  }
+};
+  const scrollCategories = (direction) => {
   if (categoryScrollRef.current) {
     categoryScrollRef.current.scrollBy({
       left: direction === "left" ? -200 : 200,
@@ -87,28 +111,6 @@ const scrollCategories = (direction) => {
 
 
  const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
- const categoryStyles = {
-  "air-conditioner": {
-    backgroundImage: "/uploads/categories/category-darling-img/air-conditioner.png",
-    borderColor: "#B48A60" 
-  },
-  "mobile-phones": {
-    backgroundImage: "/uploads/categories/category-darling-img/smartphone.png", 
-    borderColor: "#68778B"
-  },
-  "television": {
-    backgroundImage: "/uploads/categories/category-darling-img/television.png",
-    borderColor: "#A9A097" 
-  },
-  "refrigerator": {
-    backgroundImage: "/uploads/categories/category-darling-img/refirgrator.png",
-    borderColor: "#5C8B99" 
-  },
-  "washing-machine": {
-    backgroundImage: "/uploads/categories/category-darling-img/washine-machine.png",
-    borderColor: "#69AEA2"
-  }
-};
 const fetchBrand = async () => {
   try {
     const response = await fetch("/api/brand");
@@ -325,7 +327,7 @@ useEffect(() => {
         }
     };
 
-    {/*const fetchCategoryBanners = async () => {
+    const fetchCategoryBanners = async () => {
       try {
         const response = await fetch("/api/categorybanner"); 
         const res = await response.json();
@@ -338,43 +340,6 @@ useEffect(() => {
               redirectUrl: banner.redirect_url,
             }));
           setCategoryBanner(formatted);
-        }
-      } catch (error) {
-        console.error("Error fetching category banners:", error);
-      }
-    }; */}
-
-
-    const fetchCategoryBanners = async () => {
-      try {
-        const response = await fetch("/api/categorybanner"); 
-        const res = await response.json();
-
-        if (res.success && res.categoryBanners && res.categoryBanners.banners) {
-          const formatted = res.categoryBanners.banners
-            .filter(banner => res.categoryBanners.status === "Active") // 👈 only if whole doc is Active
-            .map((banner, index) => {
-      let obj = {
-        imageUrl: banner.banner_image,
-        redirectUrl: banner.redirect_url,
-      };
-
-      // ✅ add extra field only for 1st (index 0) and 3rd (index 2)
-      if (index === 0) {
-        obj.categoryname = "SMART PHONE";
-      }else if(index === 1){
-        obj.categoryname="AIR CONDITIONER";
-      }else if(index === 2){
-        obj.categoryname="REFRIGERATOR";
-      }else if(index === 3){
-        obj.categoryname="WASHING MACHINE";
-      }
-
-      return obj;
-    });
-
-          setCategoryBanner(formatted);
-          console.log("formatted",formatted);
         }
       } catch (error) {
         console.error("Error fetching category banners:", error);
@@ -505,65 +470,129 @@ useEffect(() => {
     return () => clearTimeout(timer);
 }, []);
 
-const fetchHomeSections = async () => {
-    setIsSectionLoading(true);
-    try {
-      const response = await fetch("/api/home-sections");
-      const data = await response.json();
+useEffect(() => {
+    // commit: consolidated first-load daily cache logic
+    let mounted = true;
 
-      if (data.success && data.data?.length > 0) {
-        const sectionItems = data.data
-          .filter((section) => section.status === "active") // only active
-          .map((section) => ({
-            id: section._id,
-            name: section.name,
-            position: section.position,
-          }));
-
-        setHomeSectionData({ sections: sectionItems });
-      } else {
-        setHomeSectionData({ sections: [] });
-      }
-    } catch (error) {
-      console.error("Error fetching home sections:", error);
-      setHomeSectionData({ sections: [] });
-    } finally {
-      setIsSectionLoading(false);
-    }
-};
-
-  useEffect(() => {
-    fetchHomeSections();
-  }, []);
-    useEffect(() => {
-        setHasMounted(true);
-      }, []);
-    
-      useEffect(() => {
-        if (!hasMounted) return;
-      
-        const savedCategories = localStorage.getItem('headerCategories');
-        if (savedCategories) {
-          setCategories(JSON.parse(savedCategories));
+    const populateFromCache = (payload) => {
+      try {
+        // Banners
+        if (payload.banners) {
+          const data = payload.banners;
+          const bannerItems = (data.banners || data.items || []).filter(b => b.status !== 'Inactive').map(b => ({ id: b._id || b.id, redirect_url: b.redirect_url || b.buttonLink, banner_image: b.banner_image || b.bgImageUrl, status: b.status }));
+          setBannerData({ banner: { items: bannerItems } });
         }
-      
-        const fetchCategories = async () => {
-          try {
-            const response = await fetch('/api/categories/get');
-            const data = await response.json();
-            const parentCategories = data.filter(
-              (category) => category.parentid === "none" && category.status === "Active"
-            );
-            setCategories(parentCategories);
-            localStorage.setItem('headerCategories', JSON.stringify(parentCategories));
-          } catch (error) {
-            console.error("Error fetching categories:", error);
-          }
+
+        // Flash sales
+        if (payload.flashsales) {
+          const data = payload.flashsales;
+          const sales = (data.flashSales || data.items || []).filter(s => s.status !== 'Inactive').map(s => ({ id: s._id || s.id, title: s.title, banner_image: s.banner_image || s.productImage, background_image: s.background_image || s.bgImage, redirect_url: s.redirect_url || s.redirectUrl, status: s.status }));
+          setFlashSalesData(sales);
+        }
+
+        // Brands
+        if (payload.brands) {
+          const data = payload.brands;
+          const list = (data.brands || data.data || data) || [];
+          setBrands(list);
+        }
+
+        // Categories
+        if (payload.categories) {
+          const data = payload.categories;
+          const cats = Array.isArray(data) ? data : (data.data || []);
+          setCategories(cats);
+          const rootIds = cats.filter(cat => cat.parentid === 'none' && cat.status === 'Active').map(cat => cat._id);
+          const secondLevel = cats.filter(cat => rootIds.includes(cat.parentid) && cat.status === 'Active');
+          setParentCategories(secondLevel);
+          setSelectedCategory(secondLevel[0]);
+        }
+
+        // Products
+        if (payload.products) {
+          const data = payload.products;
+          const prods = Array.isArray(data) ? data : (data.data || []);
+          setProducts(prods);
+        }
+
+        // Category banners
+        if (payload.categoryBanners) {
+          const data = payload.categoryBanners;
+          const formatted = (data.banners || data.items || []).map(b => ({ imageUrl: b.banner_image, redirectUrl: b.redirect_url }));
+          setCategoryBanner(formatted);
+        }
+
+        // Single banners
+        if (payload.singlebanner) {
+          setSingleBannerData(prev => ({ ...prev, singlebanner: { items: payload.singlebanner.banners || payload.singlebanner.items || payload.singlebanner } }));
+        }
+        if (payload.singlebannerTwo) {
+          setSingleBannerData(prev => ({ ...prev, singlebannerTwo: { items: payload.singlebannerTwo.banners || payload.singlebannerTwo.items || payload.singlebannerTwo } }));
+        }
+
+        // Home sections
+        if (payload.homeSections) {
+          const data = payload.homeSections;
+          const secs = data.data || data.sections || data || [];
+          setHomeSectionData({ sections: Array.isArray(secs) ? secs : [] });
+        }
+
+        // Videos
+        if (payload.videos) {
+          const data = payload.videos;
+          const vids = data.videoCards || data || [];
+          setVideos(vids);
+        }
+      } catch (e) {
+        console.error('populateFromCache error', e);
+      }
+    };
+
+    const loadAll = async () => {
+      const cached = readDailyCache();
+      if (cached) {
+        populateFromCache(cached);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch in parallel
+        const endpoints = {
+          banners: '/api/topbanner',
+          flashsales: '/api/flashsale',
+          brands: '/api/brand/get',
+          categories: '/api/categories/get',
+          products: '/api/product/get',
+          categoryBanners: '/api/categorybanner',
+          singlebanner: '/api/singlebanner',
+          singlebannerTwo: '/api/singlebanner-two',
+          homeSections: '/api/home-sections',
+          videos: '/api/videocard'
         };
-      
-        fetchCategories();
-        checkAuthStatus();
-      }, [hasMounted]);
+
+        const keys = Object.keys(endpoints);
+        const promises = keys.map(k => fetch(endpoints[k]).then(r => r.ok ? r.json().catch(() => null) : null).catch(() => null));
+        const results = await Promise.all(promises);
+        const payload = {};
+        keys.forEach((k, i) => { payload[k] = results[i]; });
+
+        // write daily cache
+        writeDailyCache(payload); // commit: write daily cache after first-load fetch
+
+        if (!mounted) return;
+        populateFromCache(payload);
+      } catch (err) {
+        console.error('loadAll error', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAll();
+
+    return () => { mounted = false; };
+}, []);
 
     // Animation controls
     const controls = useAnimation();
@@ -878,38 +907,12 @@ const handleCategoryClick = useCallback((category) => (e) => {
     }, []);
   
         // Helper function to render sections in the correct order
-        
-        console.log(categoryBanner);
         const renderSection = (sectionName) => {
             switch(sectionName) {
                 case 'category_banner':
                     return (
-
-                      // <section id="category_banner">
-                      //   <div className="px-0  pt-7">
-                      //       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                      //           {categoryBanner.map((banner, index) => (
-                      //               <div key={index} className="col-span-1">
-                      //                   <div className="card  overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                      //                       <Link href={banner.redirectUrl || "#"} className="no-underline">
-                      //                           <img
-                      //                               src={banner.imageUrl}
-                      //                               alt={`Category Banner ${index + 1}`}
-                      //                               // title={`Category Banner ${index + 1}`}
-                      //                               className="w-full h-auto object-cover"
-                      //                               width={400}
-                      //                               height={400}
-                      //                           />
-                      //                       </Link>
-                      //                   </div>
-                      //               </div>
-                      //           ))}
-                      //       </div>
-                      //   </div>
-                      // </section>
-
                       <section id="category_banner">
-                        <div className="px-0  pt-7">
+                        <div className="px-0 sm:px-6 md:px-6  pt-7">
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 {categoryBanner.map((banner, index) => (
                                     <div key={index} className="col-span-1">
@@ -935,8 +938,10 @@ const handleCategoryClick = useCallback((category) => (e) => {
                   return (
                     <motion.section
                       id="product"
-                      initial="hiddenDown"
-                      animate="visible"
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.3 }}
+                      transition={{ duration: 0.6 }}
                       className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
                     >
                       <div className="rounded-[23px] py-4 p-2">
@@ -956,11 +961,6 @@ const handleCategoryClick = useCallback((category) => (e) => {
                               return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
                             })
                             .map((category, index) => {
-
-                              const categoryStyle = categoryStyles[category.category_slug] || {
-                                backgroundImage: '/uploads/small-appliance-banner.webp',
-                                borderColor: '#1F3A8C'
-                              };
                               // Get products for this category
                               const categoryProducts = (() => {
                                 const subCategories = categories.filter(
@@ -987,7 +987,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                 <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
                                   {/* Category Banner */}
                                   <div className="flex-shrink-0 w-full md:w-1/3 relative">
-                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
+                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${'/uploads/small-appliance-banner.webp'})` }}></div>
                                     <div className="relative z-10 h-full flex flex-col p-6 text-white">
                                       <h2 className="text-2xl font-bold">{category.category_name}</h2>
                                       
@@ -997,7 +997,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
 
                                   {/* Products Grid */}
                                   <div className="w-full md:w-2/3">
-                                    <div className={` relative flex-1 pt-2 pb-2 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden group`}  style={{ border: `solid 6px ${categoryStyle.borderColor}` }}>
+                                    <div className={` relative flex-1 pt-2 pb-2 ${index % 2 === 1 ? 'pr-4' : ' pl-4'} overflow-hidden group`} >
                                       {/* Left Arrow */}
                                       <button
                                         onClick={() => scrollLeft(category._id)}
@@ -1023,129 +1023,84 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                       </button>
                                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
                                         {categoryProducts.slice(0, 6).map((product) => (
-                                        
-                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md">
-                                            
-                                            {/* Product Image */}
-                                            <div className="relative aspect-square bg-gray-50">
-                                              {product.images?.[0] && (
-                                              //   <img
-                                              //   src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
-                                              //   alt={product.images?.[0] || "Product image"} 
-                                              //   className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-                                              //   onError={(e) => { 
-                                              //     e.target.onerror = null; 
-                                              //     e.target.src = "/uploads/products/placeholder.jpg";
-                                              //   }} 
-                                              // />
-                                                <Image
-                                                  src={
-                                                    product.images[0].startsWith("http")
-                                                      ? product.images[0]
-                                                      : `/uploads/products/${product.images[0]}`
-                                                  }
-                                                  alt={product.images[0]}
-                                                  fill
-                                                  className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105"
-                                                  sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                                                  unoptimized
-                                                  onError={(e) => { 
-                                                    e.target.onerror = null; 
-                                                    e.target.src = "/uploads/products/placeholder.jpg";
-                                                  }} 
-                                                />
+                                          <div  key={product._id} className="relative border border-gray-300 shadow bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  transition-all duration-300 hover:border-blue-500 group rounded">
+                                            <div className="absolute top-3 left-3">
+                                              
+                                                {product.special_price && product.price > product.special_price ? (
+                                                (() => {
+                                                  const discount = Math.floor(
+                                                    ((product.price - product.special_price) / product.price) * 100
+                                                  );
+
+                                                  console.log(product);
+
+                                                  return discount && discount > 0 ? (
+
+                                                      <span className="px-2 py-1 text-xs text-white bg-red-500 rounded">
+                                                        {discount}% OFF
+                                                      </span>
+                                                  
+                                                  ) : (
+                                                    null
+                                                  );
+                                                })()
+                                              ) : (
+                                                null
                                               )}
-                          
-                                              {/* Discount Badge */}
-                                              {Number(product.special_price) > 0 &&
-                                                Number(product.special_price) < Number(product.price) && (
-                                                  <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
-                                                    {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
-                                                  </span>
-                                              )}
-                          
-                          
-                                              {/* Wishlist */}
-                                              <div className="absolute top-2 right-2">
-                                                <ProductCard productId={product._id} />
-                                              </div>
+
                                             </div>
-                          
-                                            {/* Product Info and Buttons */}
-                                            <div className="p-2 md:p-4 flex flex-col h-full">
-                                              <h4 className="text-xs text-gray-500 mb-2 uppercase">
-                                                <Link
-                                                  href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
-                                                  className="hover:text-blue-600"
-                                                >
-                                                  {brandMap[product.brand] || ""}
-                                                </Link>
-                                              </h4>
-                        
-                                              {/* Title with fixed height */}
+                                            <div className="h-28 flex items-center justify-center mt-4">
+                                              <img
+                                                src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
+                                                alt={product.images?.[0] || "Product image"} 
+                                                className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                                                onError={(e) => { 
+                                                  e.target.onerror = null; 
+                                                  e.target.src = "/uploads/products/placeholder.jpg";
+                                                }} 
+                                              />
+                                            </div>
+
+                                            <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
                                               <Link
-                                                href={`/product/${product.slug}`}
-                                                className="block mb-2"
-                                                onClick={() => handleProductClick(product)}
+                                                href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                                                className="hover:text-blue-600"
                                               >
-                                                <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                                                  {product.name}
-                                                </h3>
+                                                {brandMap[product.brand] || ""}
                                               </Link>
-                          
-                                              {/* Price Row (same level always) */}
-                                              <div className="flex items-center gap-2 mb-3">
-                                                <span className="text-base font-semibold text-red-600">
-                                                  ₹ {(
-                                                    product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
-                                                      ? product.special_price
-                                                      : product.price
-                                                  ).toLocaleString()}
-                                                </span>
-                          
-                          
-                                                {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
-                                                  product.special_price < product.price &&
-                                                  (
-                                                    <span className="text-xs text-gray-500 line-through">
-                                                      ₹ {product.price.toLocaleString()}
-                                                    </span>
-                                                )}
-                                              </div>
-                          
-                                              <h4
-                                                    className={`text-xs mb-3 ${
-                                                      product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
-                                                    }`}
-                                                  >
-                                                    {product.stock_status}
-                                                    {product.stock_status === "In Stock" && product.quantity
-                                                      ? `, ${product.quantity} units`
-                                                      : ""}
-                                                  </h4>
-                          
-                                              {/* Bottom Buttons */}
-                                              <div className="mt-auto flex items-center justify-between gap-2">
-                                                <Addtocart
-                                                  productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
-                                                  className="w-full text-xs sm:text-sm py-1.5"
-                                                />
-                                                <a
-                                                  href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
-                                                >
-                                                  <svg
-                                                    className="w-5 h-5"
-                                                    viewBox="0 0 32 32"
-                                                    fill="currentColor"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                  >
+                                            </h4>
+                                            <Link
+                                              href={`/product/${product.slug || product._id}`}
+                                              className="block mb-2"
+                                            >
+                                            <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                                              {product.name}
+                                            </h3>
+                                            </Link>
+                                            <div className="mt-2 text-lg font-bold text-blue-600">
+                                                Rs. {product.special_price || product.price}
+                                              <span className="line-through text-gray-400 text-sm ml-1">
+                                                Rs. {product.price}
+                                              </span>
+                                            </div>
+                                            <p className={`text-sm mt-1 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
+                                              {product.quantity > 0
+                                                ? `In stock, ${product.quantity} units`
+                                                : "Out of stock"}
+                                            </p>
+
+                                            <div className="mt-3 flex items-center justify-between gap-2">
+                                              <Addtocart productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price} className="flex-1" />
+                                              <a 
+                                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer" 
+                                              className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors duration-300 flex items-center justify-center"
+                                              >
+                                                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
                                                     <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-                                                  </svg>
-                                                </a>
-                                              </div>
+                                                </svg>
+                                              </a>
                                             </div>
                                           </div>
                                         ))}
@@ -1168,7 +1123,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
   animate="visible"
   variants={sectionVariants}
   id="flash_sales"
-  className="px-0 sm:px-0 md:px-0 pt-6"
+  className="px-4 sm:px-6 md:px-6 pt-6"
 >
   {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
     <div className="py-0">
@@ -1361,7 +1316,13 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             {bannerData.banner.items.map((item) => (
                               <motion.div
                                 key={item.id}
-                                className="relative w-full aspect-[1920/550] max-h-[550px]"
+                                className="relative w-full 
+                                          aspect-[16/9] max-h-[110px] 
+                                          sm:aspect-[16/6] sm:max-h-[180px]
+                                          md:aspect-[16/8] md:max-h-[200px]
+                                          lg:aspect-[16/9] lg:max-h-[300px]
+                                          xl:aspect-[16/10] xl:max-h-[400px]
+                                          2xl:aspect-[16/12] 2xl:max-h-[700px]"
                                 variants={itemVariants}
                               >
                                 <div className="absolute inset-0 overflow-hidden">
@@ -1380,7 +1341,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                           </Slider>
                         ) : (
                           <motion.div
-                            className="p-4 md:p-6 relative aspect-[1920/550] max-h-[550px]"
+                            className="p-4 md:p-6 relative h-[250px] md:h-[500px]"
                             variants={itemVariants}
                           >
                             <div className="absolute inset-0 flex justify-center items-center bg-white">
@@ -1863,7 +1824,15 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     </div>
                     </section>
                   )}
-                  <RecentlyViewedProducts /> 
+
+
+
+                  
+
+                  <RecentlyViewedProducts />
+                  
+
+                
             </div>
         </>
     );
