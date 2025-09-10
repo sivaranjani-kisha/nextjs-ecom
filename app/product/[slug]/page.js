@@ -7,7 +7,7 @@ export async function generateMetadata({ params  }) {
   const slug = params.slug;
 
   // Always use absolute URL
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bea.divinfosys.com";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
   const response = await fetch(`${baseUrl}/api/product/${slug}`, {
     // Disable caching so metadata is always fresh
