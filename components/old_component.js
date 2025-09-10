@@ -73,9 +73,33 @@ export default function HomeComponent() {
     // Cateogry Scroll
     const categoryScrollRef = useRef(null);
 const [videos, setVideos] = useState([]);
- const [activeVideo, setActiveVideo] = useState(null);
-  const scrollRef = useRef(null);
-const scrollCategories = (direction) => {
+const [activeVideo, setActiveVideo] = useState(null);
+
+// commit: added localStorage read/write helpers for daily cache
+const DAILY_CACHE_KEY = 'site_daily_cache_v1';
+const _todayStr = () => new Date().toISOString().slice(0,10);
+const readDailyCache = () => {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem(DAILY_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.date !== _todayStr()) return null; // expired or different day
+    return parsed.payload || null;
+  } catch (e) {
+    return null;
+  }
+};
+const writeDailyCache = (payload) => {
+  try {
+    if (typeof window === 'undefined') return;
+    const obj = { date: _todayStr(), payload };
+    localStorage.setItem(DAILY_CACHE_KEY, JSON.stringify(obj));
+  } catch (e) {
+    // ignore
+  }
+};
+  const scrollCategories = (direction) => {
   if (categoryScrollRef.current) {
     categoryScrollRef.current.scrollBy({
       left: direction === "left" ? -200 : 200,
@@ -446,65 +470,129 @@ useEffect(() => {
     return () => clearTimeout(timer);
 }, []);
 
-const fetchHomeSections = async () => {
-    setIsSectionLoading(true);
-    try {
-      const response = await fetch("/api/home-sections");
-      const data = await response.json();
+useEffect(() => {
+    // commit: consolidated first-load daily cache logic
+    let mounted = true;
 
-      if (data.success && data.data?.length > 0) {
-        const sectionItems = data.data
-          .filter((section) => section.status === "active") // only active
-          .map((section) => ({
-            id: section._id,
-            name: section.name,
-            position: section.position,
-          }));
-
-        setHomeSectionData({ sections: sectionItems });
-      } else {
-        setHomeSectionData({ sections: [] });
-      }
-    } catch (error) {
-      console.error("Error fetching home sections:", error);
-      setHomeSectionData({ sections: [] });
-    } finally {
-      setIsSectionLoading(false);
-    }
-};
-
-  useEffect(() => {
-    fetchHomeSections();
-  }, []);
-    useEffect(() => {
-        setHasMounted(true);
-      }, []);
-    
-      useEffect(() => {
-        if (!hasMounted) return;
-      
-        const savedCategories = localStorage.getItem('headerCategories');
-        if (savedCategories) {
-          setCategories(JSON.parse(savedCategories));
+    const populateFromCache = (payload) => {
+      try {
+        // Banners
+        if (payload.banners) {
+          const data = payload.banners;
+          const bannerItems = (data.banners || data.items || []).filter(b => b.status !== 'Inactive').map(b => ({ id: b._id || b.id, redirect_url: b.redirect_url || b.buttonLink, banner_image: b.banner_image || b.bgImageUrl, status: b.status }));
+          setBannerData({ banner: { items: bannerItems } });
         }
-      
-        const fetchCategories = async () => {
-          try {
-            const response = await fetch('/api/categories/get');
-            const data = await response.json();
-            const parentCategories = data.filter(
-              (category) => category.parentid === "none" && category.status === "Active"
-            );
-            setCategories(parentCategories);
-            localStorage.setItem('headerCategories', JSON.stringify(parentCategories));
-          } catch (error) {
-            console.error("Error fetching categories:", error);
-          }
+
+        // Flash sales
+        if (payload.flashsales) {
+          const data = payload.flashsales;
+          const sales = (data.flashSales || data.items || []).filter(s => s.status !== 'Inactive').map(s => ({ id: s._id || s.id, title: s.title, banner_image: s.banner_image || s.productImage, background_image: s.background_image || s.bgImage, redirect_url: s.redirect_url || s.redirectUrl, status: s.status }));
+          setFlashSalesData(sales);
+        }
+
+        // Brands
+        if (payload.brands) {
+          const data = payload.brands;
+          const list = (data.brands || data.data || data) || [];
+          setBrands(list);
+        }
+
+        // Categories
+        if (payload.categories) {
+          const data = payload.categories;
+          const cats = Array.isArray(data) ? data : (data.data || []);
+          setCategories(cats);
+          const rootIds = cats.filter(cat => cat.parentid === 'none' && cat.status === 'Active').map(cat => cat._id);
+          const secondLevel = cats.filter(cat => rootIds.includes(cat.parentid) && cat.status === 'Active');
+          setParentCategories(secondLevel);
+          setSelectedCategory(secondLevel[0]);
+        }
+
+        // Products
+        if (payload.products) {
+          const data = payload.products;
+          const prods = Array.isArray(data) ? data : (data.data || []);
+          setProducts(prods);
+        }
+
+        // Category banners
+        if (payload.categoryBanners) {
+          const data = payload.categoryBanners;
+          const formatted = (data.banners || data.items || []).map(b => ({ imageUrl: b.banner_image, redirectUrl: b.redirect_url }));
+          setCategoryBanner(formatted);
+        }
+
+        // Single banners
+        if (payload.singlebanner) {
+          setSingleBannerData(prev => ({ ...prev, singlebanner: { items: payload.singlebanner.banners || payload.singlebanner.items || payload.singlebanner } }));
+        }
+        if (payload.singlebannerTwo) {
+          setSingleBannerData(prev => ({ ...prev, singlebannerTwo: { items: payload.singlebannerTwo.banners || payload.singlebannerTwo.items || payload.singlebannerTwo } }));
+        }
+
+        // Home sections
+        if (payload.homeSections) {
+          const data = payload.homeSections;
+          const secs = data.data || data.sections || data || [];
+          setHomeSectionData({ sections: Array.isArray(secs) ? secs : [] });
+        }
+
+        // Videos
+        if (payload.videos) {
+          const data = payload.videos;
+          const vids = data.videoCards || data || [];
+          setVideos(vids);
+        }
+      } catch (e) {
+        console.error('populateFromCache error', e);
+      }
+    };
+
+    const loadAll = async () => {
+      const cached = readDailyCache();
+      if (cached) {
+        populateFromCache(cached);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch in parallel
+        const endpoints = {
+          banners: '/api/topbanner',
+          flashsales: '/api/flashsale',
+          brands: '/api/brand/get',
+          categories: '/api/categories/get',
+          products: '/api/product/get',
+          categoryBanners: '/api/categorybanner',
+          singlebanner: '/api/singlebanner',
+          singlebannerTwo: '/api/singlebanner-two',
+          homeSections: '/api/home-sections',
+          videos: '/api/videocard'
         };
-      
-        fetchCategories();
-        checkAuthStatus();
-      }, [hasMounted]);
+
+        const keys = Object.keys(endpoints);
+        const promises = keys.map(k => fetch(endpoints[k]).then(r => r.ok ? r.json().catch(() => null) : null).catch(() => null));
+        const results = await Promise.all(promises);
+        const payload = {};
+        keys.forEach((k, i) => { payload[k] = results[i]; });
+
+        // write daily cache
+        writeDailyCache(payload); // commit: write daily cache after first-load fetch
+
+        if (!mounted) return;
+        populateFromCache(payload);
+      } catch (err) {
+        console.error('loadAll error', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAll();
+
+    return () => { mounted = false; };
+}, []);
 
     // Animation controls
     const controls = useAnimation();
@@ -1736,7 +1824,15 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     </div>
                     </section>
                   )}
-                  <RecentlyViewedProducts /> 
+
+
+
+                  
+
+                  <RecentlyViewedProducts />
+                  
+
+                
             </div>
         </>
     );
