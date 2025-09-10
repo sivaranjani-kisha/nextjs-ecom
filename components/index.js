@@ -1228,13 +1228,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                             {bannerData.banner.items.map((item) => (
                               <motion.div
                                 key={item.id}
-                                className="relative w-full 
-                                          aspect-[16/9] max-h-[110px] 
-                                          sm:aspect-[16/6] sm:max-h-[180px]
-                                          md:aspect-[16/8] md:max-h-[200px]
-                                          lg:aspect-[16/9] lg:max-h-[300px]
-                                          xl:aspect-[16/10] xl:max-h-[400px]
-                                          2xl:aspect-[16/12] 2xl:max-h-[700px]"
+                                className="relative w-full aspect-[1920/550] max-h-[550px]"
                                 variants={itemVariants}
                               >
                                 <div className="absolute inset-0 overflow-hidden">
@@ -1253,7 +1247,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                           </Slider>
                         ) : (
                           <motion.div
-                            className="p-4 md:p-6 relative h-[250px] md:h-[500px]"
+                            className="p-4 md:p-6 relative aspect-[1920/550] max-h-[550px]"
                             variants={itemVariants}
                           >
                             <div className="absolute inset-0 flex justify-center items-center bg-white">
@@ -1741,7 +1735,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
 
                   
 
-                  <RecentlyViewedProducts /> 
+                  <RecentlyViewedProducts />
                   
 
                 
