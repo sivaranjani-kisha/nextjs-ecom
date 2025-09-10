@@ -1027,7 +1027,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
 
                                   {/* Products Grid */}
                                   <div className="w-full md:w-2/3">
-                                    <div className={` relative flex-1 pt-2 pb-2 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden group`}  style={{ border: `solid 6px ${categoryStyle.borderColor}` }}>
+                                    <div className={` relative flex-1 pt-2 pb-2 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}  style={{ border: `solid 6px ${categoryStyle.borderColor}` }}>
                                       {/* Left Arrow */}
                                       <button
                                         onClick={() => scrollLeft(category._id)}
@@ -1054,36 +1054,50 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
                                         {categoryProducts.slice(0, 6).map((product) => (
                                         
-                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md">
+                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
                                             
                                             {/* Product Image */}
-                                            <div className="relative aspect-square bg-gray-50">
+                                            <div className="relative aspect-square bg-gray-50 group">
                                               {product.images?.[0] && (
-                                              //   <img
-                                              //   src={`/uploads/products/${product.images?.[0]}` || "/placeholder.jpg"} 
-                                              //   alt={product.images?.[0] || "Product image"} 
-                                              //   className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-                                              //   onError={(e) => { 
-                                              //     e.target.onerror = null; 
-                                              //     e.target.src = "/uploads/products/placeholder.jpg";
-                                              //   }} 
-                                              // />
-                                                <Image
-                                                  src={
-                                                    product.images[0].startsWith("http")
-                                                      ? product.images[0]
-                                                      : `/uploads/products/${product.images[0]}`
-                                                  }
-                                                  alt={product.images[0]}
-                                                  fill
-                                                  className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105"
-                                                  sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                                                  unoptimized
-                                                  onError={(e) => { 
-                                                    e.target.onerror = null; 
-                                                    e.target.src = "/uploads/products/placeholder.jpg";
-                                                  }} 
-                                                />
+                                                <>
+                                                  {/* Default Image */}
+                                                  <Image
+                                                    src={
+                                                      product.images[0].startsWith("http")
+                                                        ? product.images[0]
+                                                        : `/uploads/products/${product.images[0]}`
+                                                    }
+                                                    alt={product.name}
+                                                    fill
+                                                    className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
+                                                    sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                                                    unoptimized
+                                                    onError={(e) => {
+                                                      e.target.onerror = null;
+                                                      e.target.src = "/uploads/products/placeholder.jpg";
+                                                    }}
+                                                  />
+
+                                                  {/* Hover Image (second image if available) */}
+                                                  {product.images[1] && (
+                                                    <Image
+                                                      src={
+                                                        product.images[1].startsWith("http")
+                                                          ? product.images[1]
+                                                          : `/uploads/products/${product.images[1]}`
+                                                      }
+                                                      alt={product.name}
+                                                      fill
+                                                      className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                                                      sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                                                      unoptimized
+                                                      onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = "/uploads/products/placeholder.jpg";
+                                                      }}
+                                                    />
+                                                  )}
+                                                </>
                                               )}
                           
                                               {/* Discount Badge */}
