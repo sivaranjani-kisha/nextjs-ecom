@@ -298,8 +298,8 @@ const capitalizeFirstLetter = (str) =>
 
 
         {/* Bottom Section */}
-        {/* <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 md:grid-cols-[70%_30%]">  */}
-        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 "> 
+        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 md:grid-cols-[70%_30%]"> 
+        {/* <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 ">  */}
           <div className="">
             <div className="mb-2 container mx-auto px-3 flex flex-col md:flex-row justify-between items-center gap-6 ">
               <div className="text-center md:text-left ml-1 mb-1">
@@ -393,10 +393,23 @@ const capitalizeFirstLetter = (str) =>
               </div>
             </div>
           </div>
-          <div className="container mx-auto px-4  space-y-4">
-            <h3 className="text-white font-semibold flex text-lg mb-4">Our Location</h3>
+        {/* Right Column - Our Location + Stores */}
+        <div className="container mx-auto px-4 space-y-4">
+          <h3 className="text-white font-semibold flex text-lg mb-4">Our Location</h3>
+
+          {Object.entries(groupedStores).map(([city, orgs], index) => (
+            <div key={index} className="space-y-2">
+              {/* <h5 className="text-white font-medium flex items-center gap-2 mb-1">
+                Showroom in {city}:
+              </h5> */}
+              <p className="text-sm text-gray-400 ">
+                {orgs.join(", ")}
+              </p>
             </div>
-        {Object.entries(groupedStores).map(([city, orgs], index) => (
+          ))}
+        </div>
+
+        {/* {Object.entries(groupedStores).map(([city, orgs], index) => (
         <div key={index} className="container mx-auto px-4  space-y-4">
         
          <h5 className="text-white font-medium flex items-center gap-2 mb-2">
@@ -408,10 +421,10 @@ const capitalizeFirstLetter = (str) =>
 
           
         </div>
-      ))}
+      ))} */}
 
         </div>
-        <div className="container mx-auto px-4 py-4 space-y-4">
+        <div className="container mx-auto ml-4  py-4 space-y-4">
 
   
           <div>
