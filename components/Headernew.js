@@ -931,8 +931,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                           className="fixed z-50 border-t border-gray-200 shadow-xl bg-white rounded"
                           style={{
                             top: `${searchDropdownTop}px`,
-                            width: `${searchDropdownWidth + 120}px`,
-                            left: `30px`,
+                            width: '42%',
                             maxHeight: '420px',
                             overflow: 'auto'
                           }}
