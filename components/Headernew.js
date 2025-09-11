@@ -125,6 +125,8 @@ const Header = () => {
     const [hoveredCategory, setHoveredCategory] = useState(null);
     const [dropdownLeft, setDropdownLeft] = useState(0);
     const [dropdownTop, setDropdownTop] = useState(0);
+    const [dropdownCenterX, setDropdownCenterX] = useState(null);
+    const [dropdownUseTranslate, setDropdownUseTranslate] = useState(false);
     const slideRefs = useRef({});
     const [suggestions, setSuggestions] = useState([]);
     // refs & state for search dropdown positioning
@@ -687,6 +689,7 @@ const chunkFlatList = (flatList, size = 11) => {
         // Using fixed positioning => use viewport coords (rect.left / rect.bottom)
         setDropdownLeft(rect.left);
         setDropdownTop(rect.bottom);
+        setDropdownCenterX(rect.left + rect.width / 2);
     };
     // After dropdown mounts, measure and adjust so it never overflows screen or hides under arrows
     useLayoutEffect(() => {
@@ -695,9 +698,17 @@ const chunkFlatList = (flatList, size = 11) => {
         const screenWidth = window.innerWidth;
         let left = dropdownLeft;
 
-        // If dropdown would overflow right edge, shift it left
-        if (left + ddRect.width > screenWidth - 10) {
-            left = Math.max(10, screenWidth - ddRect.width - 10);
+        // Center dropdown based on parent center when available
+        if (dropdownCenterX != null && ddRect.width) {
+            left = dropdownCenterX - ddRect.width / 2;
+            // Clamp to viewport
+            if (left < 8) left = 8;
+            if (left + ddRect.width > screenWidth - 10) left = Math.max(10, screenWidth - ddRect.width - 10);
+        } else {
+            // If dropdown would overflow right edge, shift it left
+            if (left + ddRect.width > screenWidth - 10) {
+                left = Math.max(10, screenWidth - ddRect.width - 10);
+            }
         }
 
         // Ensure dropdown is at least after prev arrow
@@ -709,7 +720,7 @@ const chunkFlatList = (flatList, size = 11) => {
         if (left < 8) left = 8;
         if (left !== dropdownLeft) setDropdownLeft(left);
         // only run when hoveredCategory changes to avoid update loops
-    }, [hoveredCategory]);
+    }, [hoveredCategory, dropdownCenterX]);
 
     // cleanup hide timeout on unmount
     useEffect(() => {
@@ -1450,19 +1461,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                     </div>
                 )} */}
                 {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
-                    <div
-                        ref={dropdownRef}
-                        className="fixed z-50 border-t border-gray-200 shadow-xl"
-                        style={{
-                            top: `${dropdownTop}px`,
-                            maxWidth: "calc(100% - 20px)",
-  left: `30px`,
-                        }}
-                        onMouseEnter={cancelHide}
-                        onMouseLeave={() => startHide(120)}
-                    >
-                        <div className="flex flex-wrap bg-white h-[390px]">
-  {(() => {
+  (() => {
     let dropdownChunksLocal = chunkFlatList(
       flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
       11
@@ -1478,7 +1477,6 @@ const renderFlatItem = (item, hoveredCategory) => {
 
       const space = Math.max(0, size - prevChunk.length);
       if (space > 0 && lastChunk.length > 0) {
-        // move up to `space` items from lastChunk into prevChunk
         const moving = lastChunk.splice(0, space);
         prevChunk.push(...moving);
         dropdownChunksLocal[prevIdx] = prevChunk;
@@ -1499,7 +1497,6 @@ const renderFlatItem = (item, hoveredCategory) => {
         if (!Array.isArray(next) || next.length === 0) continue;
         if (next[0]?.type === 'brands-header' && current.length < size) {
           const space = Math.max(0, size - current.length);
-          // move up to `space` items from next into current (including header if needed)
           const moving = next.splice(0, space);
           dropdownChunksLocal[i] = [...current, ...moving];
           if (next.length === 0) {
@@ -1507,78 +1504,85 @@ const renderFlatItem = (item, hoveredCategory) => {
           } else {
             dropdownChunksLocal[i + 1] = next;
           }
-          // after moving once, stop — we only fill the immediate short column
           break;
-        }
+        } 
       }
     }
 
-    // determine if hovered category has navigation image
     const hasNavImage = Boolean(hoveredCategory && (hoveredCategory.navImage || hoveredCategory.image));
 
-    // build columns from chunks with max 6 visible columns (reserve last for image when present)
+    // build columns from chunks (only actual columns up to max)
     const maxCols = 6;
     const dataCols = dropdownChunksLocal;
+    const maxDataCols = hasNavImage ? maxCols - 1 : maxCols;
+    const columns = dataCols.slice(0, maxDataCols);
 
-    // number of data columns required (image takes one slot if present)
-    const requiredDataCols = hasNavImage ? maxCols - 1 : maxCols;
+    // compute dropdown width based on columns and image
+    const columnWidth = 220; // matches min-w used for columns
+    const imageWidth = hasNavImage ? 220 : 0;
+    const gutter = 0; // adjust if you add gap between columns
+    let computedWidth = columns.length * columnWidth + imageWidth + gutter;
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const maxAllowedWidth = Math.max(300, screenWidth - 20);
+    if (computedWidth > maxAllowedWidth) computedWidth = maxAllowedWidth;
 
-    // take available data columns and pad with empty placeholders to ensure fixed column count
-    let visibleDataCols = dataCols.slice(0, requiredDataCols);
-    while (visibleDataCols.length < requiredDataCols) {
-      visibleDataCols.push([]);
-    }
+    // decide left/transform styles
+    const styleLeft = dropdownUseTranslate && dropdownCenterX ? `${dropdownCenterX}px` : `${dropdownLeft}px`;
+    const styleTransform = dropdownUseTranslate && dropdownCenterX ? 'translateX(-50%)' : 'none';
 
-    const columns = visibleDataCols;
-
-    // render data columns and optionally an image column as the last column
     return (
-      <>
-        {columns.map((chunk, index) => {
-          const scrollableClass = (Array.isArray(chunk) && chunk.length > 10) ? "  pr-2" : "";
-          const isEmpty = !Array.isArray(chunk) || chunk.length === 0;
-          const bgClass = isEmpty ? 'bg-white' : (index % 2 === 0 ? 'bg-gray-200' : 'bg-white');
-          return (
-            <div key={index} className={`min-w-[220px] max-w-[250px]   p-3 flex flex-col justify-start self-start ${scrollableClass} ${bgClass}`}
-                style={{ height: '100%' }}
-            >
-              {Array.isArray(chunk) && chunk.length > 0 ? (
-                chunk.map((item) => renderFlatItem(item, hoveredCategory))
-              ) : (
-                <div className="w-full">&nbsp;</div>
-              )}
-            </div>
-          );
-        })}
+      <div
+        ref={dropdownRef}
+        className="fixed z-50 border-t border-gray-200 shadow-xl"
+        style={{
+          top: `${dropdownTop}px`,
+          left: styleLeft,
+          transform: styleTransform,
+          width: `${computedWidth}px`,
+          maxWidth: 'calc(100% - 20px)'
+        }}
+        onMouseEnter={cancelHide}
+        onMouseLeave={() => startHide(120)}
+      >
+        <div className="flex flex-wrap bg-white h-[390px]" style={{ width: '100%' }}>
+          {columns.map((chunk, index) => {
+            const scrollableClass = (Array.isArray(chunk) && chunk.length > 10) ? '  pr-2' : '';
+            const isEmpty = !Array.isArray(chunk) || chunk.length === 0;
+            const bgClass = isEmpty ? 'bg-white' : (index % 2 === 0 ? 'bg-gray-200' : 'bg-white');
+            const colClass = isEmpty
+              ? `min-w-[220px] max-w-[250px] p-3`
+              : `min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start self-start ${scrollableClass} ${bgClass}`;
 
-        {hasNavImage && (
-          (() => {
-            const imgIndex = columns.length; // position of image column (0-based)
-            const imgBgClass = imgIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white';
             return (
-              <div key="nav-image-panel" className={`w-[220px] h-[390px] flex items-center justify-center ${imgBgClass}`}>
-                  <Link href={`/category/${hoveredCategory.category_slug}`} className="block w-full h-full">
-                    <Image
-                      src={hoveredCategory.navImage || hoveredCategory.image}
-                      alt={hoveredCategory.category_name || 'Category Image'}
-                      width={220}
-                      height={390}
-                      className="object-cover  w-full h-full"
-                      style={{ boxShadow: '0px -13px 0px #2453d3'}}
-                    />
-                  </Link>
-                </div>
-            );
-          })()
-        )}
-      </>
-    );
-  })()}
-</div>
-
-
-                    </div>
+              <div key={index} className={colClass} style={{ height: '100%' }}>
+                {Array.isArray(chunk) && chunk.length > 0 ? (
+                  chunk.map((item) => renderFlatItem(item, hoveredCategory))
+                ) : (
+                  <div className="w-full">&nbsp;</div>
                 )}
+              </div>
+            );
+          })}
+
+          {hasNavImage && (
+            <div key="nav-image-panel" className={`w-[220px] h-[390px] flex items-center justify-center ${columns.length % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+              <Link href={`/category/${hoveredCategory.category_slug}`} className="block w-full h-full">
+                <Image
+                  src={hoveredCategory.navImage || hoveredCategory.image}
+                  alt={hoveredCategory.category_name || 'Category Image'}
+                  width={220}
+                  height={390}
+                  className="object-cover  w-full h-full"
+                  style={{ boxShadow: '0px -13px 0px #2453d3'}}
+                />
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  })()
+)}
             </div>
 
         </header>
