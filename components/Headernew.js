@@ -583,26 +583,49 @@ const flattenTree = (cat, rootCategory, level = 0) => {
     // Flatten all starting from actual visible categories (like Refrigerator, AC…)
 const flattenAllCategories = (cats) => {
     let result = [];
-    let allBrands = [];
     let brandCounter = 0; // Counter for unique keys
-    
+
+    // Use a Map to dedupe brands by a normalized key (slug/name/id)
+    const brandMap = new Map();
+
+    const normalizeKey = (s) => {
+        if (!s && s !== 0) return '';
+        return String(s).toLowerCase().replace(/\s+/g, ' ').trim().replace(/[^a-z0-9]/g, '');
+    };
+
     cats.forEach(cat => {
         // Add the category and its subcategories
         result = result.concat(flattenTree(cat, cat.category_slug, 0));
-        
-        // Collect all brands from this category
-        if (cat.brands && cat.brands.length > 0) {
+
+        // Collect brands for this category and add to map if unique
+        if (Array.isArray(cat.brands) && cat.brands.length > 0) {
             cat.brands.forEach(brand => {
-                allBrands.push({
-                    ...brand,
-                    type: 'brand',
-                    sourceCategory: cat.category_name,
-                    uniqueKey: `${brand._id}-${cat._id}-${brandCounter++}` // Truly unique key
-                });
+                // try multiple fields for a stable identifier
+                const candidate = brand.brand_slug || brand.slug || brand.brand_name || brand.name || brand._id || '';
+                const key = normalizeKey(candidate);
+                if (!key) return; // skip invalid
+
+                if (!brandMap.has(key)) {
+                    // store first occurrence and include a stable uniqueKey
+                    brandMap.set(key, {
+                        ...brand,
+                        type: 'brand',
+                        sourceCategory: cat.category_name,
+                        uniqueKey: `${brand._id || key}-${brandCounter++}`
+                    });
+                } else {
+                    // already present: optionally we could merge sourceCategory info
+                    const existing = brandMap.get(key);
+                    if (existing && existing.sourceCategory !== cat.category_name) {
+                        existing.sourceCategory = existing.sourceCategory + ", " + cat.category_name;
+                    }
+                }
             });
         }
     });
-    
+
+    const allBrands = Array.from(brandMap.values());
+
     // Add a single brands header at the end
     if (allBrands.length > 0) {
         result.push({
@@ -612,7 +635,7 @@ const flattenAllCategories = (cats) => {
             level: 0,
             uniqueKey: 'all-brands-header'
         });
-        
+
         // Add all collected brands with unique keys
         result = result.concat(allBrands.map(brand => ({
             ...brand,
@@ -620,7 +643,7 @@ const flattenAllCategories = (cats) => {
             uniqueKey: brand.uniqueKey
         })));
     }
-    
+
     return result;
 };
 
@@ -859,7 +882,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                     <div className="relative hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden border border-gray-300">
                       {/* grouped select + input on the left */}
                       <div className="flex items-center w-full">
-                        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2.5 text-xs sm:text-sm text-gray-700 bg-gray-100 border-r border-gray-300 outline-none rounded-l-md">
+                        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2.5 text-xs sm:text-sm text-gray-700 bg-gray-200 border-r border-gray-300 outline-none rounded-l-md">
                             <option value="All Categories">All Categories</option>
                             {categories.map((cat) => (
                                 <option key={cat._id} value={cat.category_name}>
@@ -920,7 +943,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                             <ul className="p-3 space-y-2">
                               {suggestions.map((product) => (
                                 <li key={product._id} className="p-0">
-                                  <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded min-h-[60px]" style={{ height: '81px', backgroundColor: '#d3d3d3b8' }}>
+                                  <div className="flex items-center gap-3 p-2 hover:bg-gray-200 rounded min-h-[60px]" style={{ height: '81px', backgroundColor: '#d3d3d3b8' }}>
                                     {product.images?.[0] ? (
                                       <img
                                         src={product.images[0].startsWith('http') ? product.images[0] : `/uploads/products/${product.images[0]}`}
@@ -928,7 +951,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                                         className="w-12 h-12 object-cover rounded"
                                       />
                                     ) : (
-                                      <div className="w-12 h-12 bg-gray-100 rounded" />
+                                      <div className="w-12 h-12 bg-gray-200 rounded" />
                                     )}
                                     <div className="flex-1 min-w-0">
                                       <Link href={`/product/${product.slug}`} className="block text-sm font-medium text-gray-800 hover:text-blue-600 truncate">
@@ -1040,7 +1063,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                     <div className="sm:hidden bg-white fixed inset-0 z-50 p-4 rounded-lg shadow-lg overflow-y-auto transition-all duration-300"
                          style={{ touchAction: 'auto', userSelect: 'auto', WebkitUserSelect: 'auto' }}>
                         {/* Mobile Search Bar */}
-                        <div className="flex items-center bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
+                        <div className="flex items-center bg-gray-200 rounded-lg shadow overflow-hidden mb-4">
                             <input type="text" tabIndex={0} autoFocus placeholder={placeholder || "Search products..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none bg-white" />
                             <button className="px-3 text-customBlue" onClick={handleSearch} tabIndex={0}>
                                 <FaSearch />
@@ -1106,35 +1129,35 @@ const renderFlatItem = (item, hoveredCategory) => {
                         </div>
                         {/* Mobile Menu Links */}
                         <div className="space-y-3">
-                            <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
                                 <FaLocationDot className="mr-2 text-customBlue" />Location
                             </Link>
-                            <Link href="/wishlist" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Link href="/wishlist" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
                                 <FaHeart className="mr-2 text-customBlue" />Wishlist
                                 {wishlistCount > 0 && (
                                     <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{wishlistCount}</span>
                                 )}
                             </Link>
-                            <Link href="/cart" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Link href="/cart" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
                                 <FaShoppingCart className="mr-2 text-customBlue" />Cart
                                 {cartCount > 0 && (
                                     <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
                                 )}
                             </Link>
                             {isLoggedIn && isAdmin && (
-                                <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
+                                <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
                             )}
                             {isLoggedIn ? (
                                 <>
-                                    <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
                                         <FaShoppingBag className="mr-2 text-customBlue" />My Orders
                                     </Link>
-                                    <button onClick={handleLogout} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
+                                    <button onClick={handleLogout} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-200">
                                         <IoLogOut className="mr-2 text-customBlue" />Logout
                                     </button>
                                 </>
                             ) : (
-                                <button onClick={() => { setShowAuthModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
+                                <button onClick={() => { setShowAuthModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-200">
                                     <FiUser className="mr-2 text-customBlue" />Sign In
                                 </button>
                             )}
@@ -1370,7 +1393,9 @@ const renderFlatItem = (item, hoveredCategory) => {
                                 {categories.map((category) => (
                                     <SwiperSlide key={category._id} className="!w-auto">
                                         <div ref={(el) => (slideRefs.current[category._id] = el)} onMouseEnter={() => handleMouseEnter(category._id)} onMouseLeave={() => startHide(120)} className="px-5 py-2 flex flex-col items-center text-center" >
-                                            <Link href={`/category/${category.category_slug}`} className="text-sm text-base text-white hover:text-orange-500 whitespace-nowrap" >
+                                            <Link href={`/category/${category.category_slug}`} className="text-sm text-base text-white hover:text-orange-500 whitespace-nowrap" 
+                                            
+                                            >
                                                 {category.category_name}
                                             </Link>
                                         </div>
@@ -1492,58 +1517,60 @@ const renderFlatItem = (item, hoveredCategory) => {
     // determine if hovered category has navigation image
     const hasNavImage = Boolean(hoveredCategory && (hoveredCategory.navImage || hoveredCategory.image));
 
-    // build columns from chunks with max 6 visible columns
+    // build columns from chunks with max 6 visible columns (reserve last for image when present)
     const maxCols = 6;
     const dataCols = dropdownChunksLocal;
 
-    // compute how many slots image should occupy (used when rendering image panel)
-    const imageSpan = hasNavImage && dataCols.length < maxCols ? Math.max(1, maxCols - dataCols.length) : 0;
-    const spanWidth = `calc(${imageSpan} * 250px)`; // 250px matches other column max width
+    // number of data columns required (image takes one slot if present)
+    const requiredDataCols = hasNavImage ? maxCols - 1 : maxCols;
 
-    // columns are only the data columns (limit to maxCols)
-    const columns = dataCols.slice(0, maxCols);
+    // take available data columns and pad with empty placeholders to ensure fixed column count
+    let visibleDataCols = dataCols.slice(0, requiredDataCols);
+    while (visibleDataCols.length < requiredDataCols) {
+      visibleDataCols.push([]);
+    }
 
-    // container paddingRight reserves space for absolutely-positioned image panel
-    const containerStyle = hasNavImage && imageSpan > 0 ? { paddingRight: spanWidth } : undefined;
+    const columns = visibleDataCols;
 
+    // render data columns and optionally an image column as the last column
     return (
       <>
         {columns.map((chunk, index) => {
-          const scrollableClass = chunk.length > 10 ? " max-h-[320px] pr-2" : "";
+          const scrollableClass = (Array.isArray(chunk) && chunk.length > 10) ? "  pr-2" : "";
+          const isEmpty = !Array.isArray(chunk) || chunk.length === 0;
+          const bgClass = isEmpty ? 'bg-white' : (index % 2 === 0 ? 'bg-gray-200' : 'bg-white');
           return (
-            <div key={index} className={`min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start ${scrollableClass}`} style={{
-
-                boxShadow: '0px -13px 0px #2453d3',
-                }}>
-              {chunk.map((item) => renderFlatItem(item, hoveredCategory))}
+            <div key={index} className={`min-w-[220px] max-w-[250px]   p-3 flex flex-col justify-start self-start ${scrollableClass} ${bgClass}`}
+                style={{ height: '100%' }}
+            >
+              {Array.isArray(chunk) && chunk.length > 0 ? (
+                chunk.map((item) => renderFlatItem(item, hoveredCategory))
+              ) : (
+                <div className="w-full">&nbsp;</div>
+              )}
             </div>
           );
         })}
 
-        {/* absolutely positioned image panel on the right to avoid wrapping under columns */}
-        {hasNavImage && imageSpan > 0 && (
-          <div
-            key="nav-image-panel"
-            className={`min-w-[240px] max-w-[250px]  flex flex-col justify-start max-h-[324px] `}
-            
-          >
-            <Link href={``} className="w-full h-full block">
-              <Image
-                src={hoveredCategory.navImage || hoveredCategory.image}
-                alt={hoveredCategory.category_name || 'Category Image'}
-                width={220 * imageSpan}
-                height={390}
-                style={{
-                objectFit: 'cover',
-                width: '100%',
-                height: '120%',
-                boxShadow: '0px -13px 0px #2453d3',
-                }}
-
-                className="object-cover rounded"
-              />
-            </Link>
-          </div>
+        {hasNavImage && (
+          (() => {
+            const imgIndex = columns.length; // position of image column (0-based)
+            const imgBgClass = imgIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+            return (
+              <div key="nav-image-panel" className={`w-[220px] h-[390px] flex items-center justify-center ${imgBgClass}`}>
+                  <Link href={`/category/${hoveredCategory.category_slug}`} className="block w-full h-full">
+                    <Image
+                      src={hoveredCategory.navImage || hoveredCategory.image}
+                      alt={hoveredCategory.category_name || 'Category Image'}
+                      width={220}
+                      height={390}
+                      className="object-cover  w-full h-full"
+                      style={{ boxShadow: '0px -13px 0px #2453d3'}}
+                    />
+                  </Link>
+                </div>
+            );
+          })()
         )}
       </>
     );
@@ -1554,6 +1581,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                     </div>
                 )}
             </div>
+
         </header>
     );
 };
