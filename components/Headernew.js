@@ -345,7 +345,8 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
             handleSearch();
         }
     };
-
+  const isValidEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+    const isValidMobile = (mobile) => /^[0-9]{10}$/.test(mobile);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -356,45 +357,128 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
     const [formError, setFormError] = useState('');
     const [error, setError] = useState('');
     const handleAuthSubmit = async (e) => {
-        e.preventDefault();
-        setFormError('');
-        setError('');
-        setLoadingAuth(true);
+    e.preventDefault();
+    setLoadingAuth(false);
 
+    // ---------- REGISTER VALIDATION ----------
+    if (activeTab === 'register') {
+        if (formData.name === '') {
+            const nameError = document.getElementById('name-error');
+            if (nameError) {
+                nameError.textContent = 'Name must be filled';
+                nameError.classList.add('text-red-500');
+            }
+            const nameInput = document.getElementById('name-input');
+            if (nameInput) nameInput.classList.add('border-red-500');
+        } else {
+            const nameError = document.getElementById('name-error');
+            if (nameError) nameError.textContent = '';
+            const nameInput = document.getElementById('name-input');
+            if (nameInput) nameInput.classList.remove('border-red-500');
+        }
+
+        if (formData.mobile === '') {
+            const mobileError = document.getElementById('mobile-error');
+            if (mobileError) {
+                mobileError.textContent = 'Mobile must be filled';
+                mobileError.classList.add('text-red-500');
+            }
+            const mobileInput = document.getElementById('mobile-input');
+            if (mobileInput) mobileInput.classList.add('border-red-500');
+        } else if (!isValidMobile(formData.mobile)) {
+            const mobileError = document.getElementById('mobile-error');
+            if (mobileError) {
+                mobileError.textContent = 'Enter a valid mobile number';
+                mobileError.classList.add('text-red-500');
+            }
+            const mobileInput = document.getElementById('mobile-input');
+            if (mobileInput) mobileInput.classList.add('border-red-500');
+        } else {
+            const mobileError = document.getElementById('mobile-error');
+            if (mobileError) mobileError.textContent = '';
+            const mobileInput = document.getElementById('mobile-input');
+            if (mobileInput) mobileInput.classList.remove('border-red-500');
+        }
+    }
+
+    // ---------- COMMON (LOGIN + REGISTER) ----------
+    if (formData.email === '') {
+        const emailError = document.getElementById('email-error');
+        if (emailError) {
+            emailError.textContent = 'Email must be filled';
+            emailError.classList.add('text-red-500');
+        }
+        const emailInput = document.getElementById('email-input');
+        if (emailInput) emailInput.classList.add('border-red-500');
+    } else if (!isValidEmail(formData.email)) {
+        const emailError = document.getElementById('email-error');
+        if (emailError) {
+            emailError.textContent = 'Enter a valid email';
+            emailError.classList.add('text-red-500');
+        }
+        const emailInput = document.getElementById('email-input');
+        if (emailInput) emailInput.classList.add('border-red-500');
+    } else {
+        const emailError = document.getElementById('email-error');
+        if (emailError) emailError.textContent = '';
+        const emailInput = document.getElementById('email-input');
+        if (emailInput) emailInput.classList.remove('border-red-500');
+    }
+
+    if (formData.password.length < 6) {
+        const passwordError = document.getElementById('password-error');
+        if (passwordError) {
+            passwordError.textContent = 'Password must be at least 6 characters';
+            passwordError.classList.add('text-red-500');
+        }
+        const passwordInput = document.getElementById('password-input');
+        if (passwordInput) passwordInput.classList.add('border-red-500');
+    } else {
+        const passwordError = document.getElementById('password-error');
+        if (passwordError) passwordError.textContent = '';
+        const passwordInput = document.getElementById('password-input');
+        if (passwordInput) passwordInput.classList.remove('border-red-500');
+    }
+
+    // ---------- API CALL ----------
+    if (
+        (activeTab === 'login' && formData.email && formData.password.length >= 6) ||
+        (activeTab === 'register' && formData.name && formData.email && formData.mobile && formData.password.length >= 6)
+    ) {
         try {
+            setLoadingAuth(true);
+            setFormError('');
+            setError('');
             const endpoint = activeTab === 'login' ? '/api/auth/login' : '/api/auth/register';
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.message || 'Something went wrong');
-            }
+               if (!response.ok) {
+        // 👇 If backend sends specific message, show that instead of generic
+        if (data.message) {
+            setError(<span className="text-red-500">{data.message}</span>);
+        }  else {
+            setError(<span className="text-red-500">Password Mismatch</span>);
+        }
+        return;
+    }
+
+            // if (!response.ok) throw new Error(data.message || 'Something went wrong');
+
             if (data.token) {
                 localStorage.setItem('token', data.token);
                 setIsLoggedIn(true);
-                if (data.user.role == "admin") {
-                    setIsAdmin(true);
-                } else {
-                    setIsAdmin(false);
-                }
+                setIsAdmin(data.user.role === 'admin');
                 setUserData(data.user);
                 setShowAuthModal(false);
-                setFormData({
-                    name: '',
-                    email: '',
-                    mobile: '',
-                    password: ''
-                });
+                setFormData({ name: '', email: '', mobile: '', password: '' });
+
                 // Update cart count after login
                 const cartResponse = await fetch('/api/cart/count', {
-                    headers: {
-                        'Authorization': `Bearer ${data.token}`
-                    }
+                    headers: { Authorization: `Bearer ${data.token}` },
                 });
                 if (cartResponse.ok) {
                     const cartData = await cartResponse.json();
@@ -409,7 +493,11 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
         } finally {
             setLoadingAuth(false);
         }
-    };
+    } else {
+        return;
+    }
+};
+
     useEffect(() => {
         setHasMounted(true);
     }, []);
@@ -1158,13 +1246,21 @@ const renderFlatItem = (item, hoveredCategory) => {
 
                             <form onSubmit={handleAuthSubmit} className="space-y-4">
                                 {activeTab === 'register' && (
-                                    <input type="text" placeholder="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                                    <>
+                                    <input type="text" placeholder="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"id="name-input"/>
+                                    <span id="name-error"></span>
+                                    </>
                                 )}
-                                <input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                                <input type="text" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" id="email-input" />
+                                <span id="email-error"></span>
                                 {activeTab === 'register' && (
-                                    <input type="tel" placeholder="Mobile" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                                <>
+                                <input type="tel" placeholder="Mobile" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"  id="mobile-input" />
+                                <span id="mobile-error"></span>
+                                </>
                                 )}
-                                <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required minLength={6} />
+                                <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" minLength={6} id="password-input" />
+                                <span id="password-error"></span>
                                 {(formError || error) && (
                                     <div className="text-red-500 text-sm">
                                         {formError || error}

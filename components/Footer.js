@@ -320,7 +320,7 @@ const capitalizeFirstLetter = (str) =>
             </div>
               
           <div className="bg-[#2e2a2a]">
-              <div className="container mx-auto px-4  space-y-4">
+              <div className="container mx-auto px-4 mt-4  space-y-4">
                 {groupedCategories.main.map((mainCat) => (
                   <div key={mainCat._id}>
                     {/* Main Category */}
@@ -400,11 +400,11 @@ const capitalizeFirstLetter = (str) =>
         <div key={index} className="container mx-auto px-4  space-y-4">
         
          <h5 className="text-white font-medium flex items-center gap-2 mb-2">
-  Showroom in {city}:
-  <span className="text-sm text-gray-500">
-    {orgs.join(", ")}
-  </span>
-</h5>
+            Showroom in {city}:
+            <span className="text-sm text-gray-500">
+              {orgs.join(", ")}
+            </span>
+          </h5>
 
           
         </div>
