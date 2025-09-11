@@ -1138,7 +1138,30 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                               </Link>
                           
                                               {/* Price Row (same level always) */}
-                                              <div className="flex items-center gap-2 mb-3">
+                                               <div className="flex items-center gap-2 mb-3">
+                                                <span className="text-base font-semibold text-red-600">
+                                                  ₹ {(
+                                                    product.special_price &&
+                                                    product.special_price > 0 &&
+                                                    product.special_price != '0' &&
+                                                    product.special_price != 0 &&
+                                                    product.special_price < product.price
+                                                      ? Math.round(product.special_price)
+                                                      : Math.round(product.price)
+                                                  ).toLocaleString()}
+                                                </span>
+
+                                                {product.special_price > 0 &&
+                                                  product.special_price != '0' &&
+                                                  product.special_price != 0 &&
+                                                  product.special_price &&
+                                                  product.special_price < product.price && (
+                                                    <span className="text-xs text-gray-500 line-through">
+                                                      ₹ {Math.round(product.price).toLocaleString()}
+                                                    </span>
+                                                )}
+                                              </div>
+                                              {/* <div className="flex items-center gap-2 mb-3">
                                                 <span className="text-base font-semibold text-red-600">
                                                   ₹ {(
                                                     product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
@@ -1155,7 +1178,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                       ₹ {product.price.toLocaleString()}
                                                     </span>
                                                 )}
-                                              </div>
+                                              </div> */}
                           
                                               <h4
                                                     className={`text-xs mb-3 ${
