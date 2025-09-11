@@ -2,7 +2,8 @@
 
 
 import ProductDetailsSection from "@/components/ProductDetailsSection";
-// import RelatedProducts from "@/components/RelatedProducts";
+import { useCart } from '@/context/CartContext';
+import { useModal } from '@/context/ModalContext';
 import {  useEffect, useState, useRef, useCallback } from "react";
 import { Icon } from '@iconify/react';
 import { useParams } from "next/navigation";
@@ -71,30 +72,67 @@ const handleIncrease = () => {
 //     if (categoryId) fetchCategoryProducts();
 //   }, [categoryId]);
 
+const { updateCartCount } = useCart();
+  const { openAuthModal } = useModal();
 
+  const handleBuyNow = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-const handleBuyNow = () => {
-  const checkoutData = {
-    cart: {
-      items: [{
-        product: product._id,
-        quantity: quantity,
-        price: product.special_price || product.price,
-        warranty: selectedWarranty,
-        extendedWarranty: selectedExtendedWarranty,
-        name: product.name,
-        images: product.images,
-      }],
-    },
-    // Include other necessary data like total price, discounts, etc.
+      // ✅ Check authentication
+      const response = await fetch('/api/auth/check', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        }
+      });
+      const data = await response.json();
+      if (!data.loggedIn) {
+        openAuthModal({
+          error: 'Please log in to continue.',
+          onSuccess: () => handleBuyNow(), // retry on success
+        });
+        return;
+      }
+
+      // ✅ Add to cart
+      const cartResponse = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productId: product._id, quantity }),
+      });
+
+      if (!cartResponse.ok) {
+        throw new Error('Failed to add to cart');
+      }
+
+      const cartData = await cartResponse.json();
+      updateCartCount(cartData.cart.totalItems);
+
+      // ✅ Save buy now state in localStorage
+      localStorage.setItem(
+        "buyNowData",
+        JSON.stringify({
+          cart: {
+            items: [{ ...product, quantity }],
+          },
+          total: product.special_price > 0 ? product.special_price : product.price,
+        })
+      );
+
+      // ✅ Redirect
+      window.location.href = "/checkout";
+    } catch (err) {
+      console.error("Buy Now error:", err);
+    }
   };
 
-  // Save the data to local storage under a new key
-  localStorage.setItem("buyNowData", JSON.stringify(checkoutData));
 
-  // Redirect the user to the checkout page
-  router.push("/checkout");
-};
+
 
 
 
@@ -1515,8 +1553,8 @@ const fetchBrand = async () => {
     <h2 className="text-sm font-bold text-customBlue underline mb-2">
       Related Products
     </h2>
-    {relatedProducts.filter(item => item.stock_status === "In Stock").slice(0, 3).map((item) => (
-      <div key={item._id} className="flex items-start mb-4">
+    {relatedProducts.filter(item => item.stock_status === "In Stock").slice(0, 3).map((item,index) => (
+      <div key={`${item._id}-${index}`} className="flex items-start mb-4">
         <input
           type="checkbox"
           className="mt-2 mr-3"
@@ -1593,18 +1631,7 @@ const fetchBrand = async () => {
   <div className="w-full space-y-3">
     {/* Buy Now */}
     <button
-      onClick={() => {
-        localStorage.setItem(
-          "buyNowData",
-          JSON.stringify({
-            cart: {
-              items: [{ ...product, quantity }],
-            },
-            total: cartTotal,
-          })
-        );
-        window.location.href = "/checkout";
-      }}
+      onClick={handleBuyNow}
       className="w-full bg-white hover:bg-customBlue hover:text-white text-customBlue border border-blue-200 font-semibold py-3 rounded-md shadow-md flex items-center justify-center gap-3"
     >
       <FaStore className="h-5 w-5" />

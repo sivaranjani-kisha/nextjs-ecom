@@ -134,7 +134,7 @@ const inputClass = "w-full border rounded-md px-3 py-2 focus:outline-none";
             <b>+91 98423 44323</b>.
           </h4>
           
-          <a href="tel:9865555000" className="inline-block bg-[#2453d3] text-white px-4 py-2 rounded hover:bg-[#2453d3] transition">
+          <a href="tel:9865555000" className="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-[#2453d3] transition">
             Click to Call
           </a>
         </div>
@@ -246,7 +246,7 @@ const inputClass = "w-full border rounded-md px-3 py-2 focus:outline-none";
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-[#2453d3] text-white px-6 py-2 rounded-md"
+                className="bg-green-600 text-white px-6 py-2 rounded-md"
               >
                 {loading ? "Submitting..." : "Submit"}
               </button>

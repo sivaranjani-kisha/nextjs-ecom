@@ -7,7 +7,7 @@ import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX, FiPho
 import { FaBars, FaShoppingBag, FaUserShield } from "react-icons/fa";
 import { FaHeart, FaShoppingCart, FaSearch } from 'react-icons/fa';
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { IoLogOut } from "react-icons/io5";
 import { FaCircleChevronLeft, FaCircleChevronRight, FaLocationDot, FaPhone } from "react-icons/fa6";
 import { useCart } from '@/context/CartContext';
@@ -20,9 +20,6 @@ import { Play } from "lucide-react";
 import { Navigation } from 'swiper/modules';
 import SideNavbar from '@/components/sideNavbar';
 import { useHeaderdetails } from "@/context/HeaderContext";
-import ProductCard from '@/components/ProductCard';
-import Addtocart from '@/components/AddToCart';
-import { getProducts } from '@/lib/productApi';
 const Header = () => {
     const router = useRouter();
     const pathname = usePathname();
@@ -46,28 +43,12 @@ const Header = () => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
     const [searchQuery, setSearchQuery] = useState("");
-    const [placeholder, setPlaceholder] = useState("Search For");
-    const [typedPreview, setTypedPreview] = useState("");
+    const [placeholder, setPlaceholder] = useState("");
     const [words, setWords] = useState([]);
     const [categorieslist, setCategorieslist] = useState([]);
     const wordIndex = useRef(0);
     const charIndex = useRef(0);
     const isDeleting = useRef(false);
-    const getSortedProducts = () => {
-        const sortedProducts = [...products];
-        switch(sortOption) {
-        case 'price-low-high':
-            return sortedProducts.sort((a, b) => (a.special_price ?? a.price) - (b.special_price ?? b.price));
-        case 'price-high-low':
-            return sortedProducts.sort((a, b) => (b.special_price ?? b.price) - (a.special_price ?? a.price));
-        case 'name-a-z':
-            return sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
-        case 'name-z-a':
-            return sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
-        default:
-            return sortedProducts;
-        }
-    };
 
     useEffect(() => {
       const fetchCategories = async () => {
@@ -93,8 +74,7 @@ const Header = () => {
           ? currentWord.substring(0, charIndex.current - 1)
           : currentWord.substring(0, charIndex.current + 1);
 
-        // update typed preview (keep placeholder static)
-        setTypedPreview(updatedText || "");
+        setPlaceholder(updatedText);
 
         charIndex.current = isDeleting.current
           ? charIndex.current - 1
@@ -106,7 +86,7 @@ const Header = () => {
         } else if (isDeleting.current && charIndex.current === 0) {
           isDeleting.current = false;
           wordIndex.current = (wordIndex.current + 1) % words.length;
-          setTimeout(typeEffect, 1000); // pause before typing next
+          setTimeout(typeEffect, 500); // pause before typing next
         } else {
           setTimeout(typeEffect, isDeleting.current ? 60 : 100);
         }
@@ -120,21 +100,11 @@ const Header = () => {
 
     const [offers, setOffers] = useState([]);
     const [categories, setCategories] = useState([]);
-    const [products, setProducts] = useState([]);
-    const [sortOption, setSortOption] = useState('');
     const [hoveredCategory, setHoveredCategory] = useState(null);
     const [dropdownLeft, setDropdownLeft] = useState(0);
     const [dropdownTop, setDropdownTop] = useState(0);
     const slideRefs = useRef({});
     const [suggestions, setSuggestions] = useState([]);
-    // refs & state for search dropdown positioning
-    const searchInputRef = useRef(null);
-    const debounceRef = useRef(null);
-    const searchDropdownRef = useRef(null);
-    const [searchDropdownVisible, setSearchDropdownVisible] = useState(false);
-    const [searchDropdownLeft, setSearchDropdownLeft] = useState(0);
-    const [searchDropdownTop, setSearchDropdownTop] = useState(0);
-    const [searchDropdownWidth, setSearchDropdownWidth] = useState(0);
     // Toggle mobile menu
     const toggleMobileMenu = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -218,126 +188,33 @@ const Header = () => {
 
     router.push(`/search?${params.toString()}`);
   };
-  
-    // Load products once using shared util (for instant local filtering)
-useEffect(() => {
-  let mounted = true;
-  const loadProducts = async () => {
-    try {
-      const data = await getProducts();
-      if (!mounted) return;
-      setProducts(Array.isArray(data) ? data : (data?.data || []));
-    } catch (err) {
-      console.error('Error loading products in header', err);
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSuggestions([]);
+      return;
     }
-  };
-  loadProducts();
-  return () => { mounted = false; };
-}, []);
 
-// Memoized sorted products using existing getSortedProducts flow
-const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]);
+    const delay = setTimeout(async () => {
+      const res = await fetch(`/api/search/suggestions?q=${searchQuery}`);
+      const data = await res.json();
+      setSuggestions(data);
+    }, 400);
 
-    // helper to fetch suggestions (safe JSON handling) - now uses local products for instant results
-    const fetchSuggestions = useCallback(async (q) => {
-      if (!q || q.trim().length < 1) {
-        setSuggestions([]);
-        return;
-      }
+    return () => clearTimeout(delay);
+  }, [searchQuery]);
 
-      // Use local products (sorted) for instant client-side suggestions
-      try {
-        if (Array.isArray(sortedProducts) && sortedProducts.length > 0) {
-          const ql = q.toLowerCase();
-          const filtered = sortedProducts.filter(p => {
-            const name = (p.name || '').toLowerCase();
-            const code = (p.item_code || '').toLowerCase();
-            const brand = ((p.brand_name || p.brand || '') + '').toLowerCase();
-            return name.includes(ql) || code.includes(ql) || brand.includes(ql);
-          }).slice(0, 12);
-
-          setSuggestions(filtered);
-          setSearchDropdownVisible(true);
-
-          if (searchInputRef.current) {
-            const rect = searchInputRef.current.getBoundingClientRect();
-            setSearchDropdownLeft(rect.left);
-            setSearchDropdownTop(rect.bottom + window.scrollY);
-            setSearchDropdownWidth(rect.width);
-          }
-          return;
-        }
-      } catch (err) {
-        console.error('Local filter error', err);
-      }
-
-      // Fallback: server-side suggestions
-      try {
-        const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(q)}`);
-        if (!res.ok) {
-          setSuggestions([]);
-          return;
-        }
-        const text = await res.text();
-        if (!text) { setSuggestions([]); return; }
-        let data;
-        try { data = JSON.parse(text); } catch { setSuggestions([]); return; }
-        const items = Array.isArray(data) ? data : (data?.results || []);
-        setSuggestions(items.slice(0, 12));
-        setSearchDropdownVisible(true);
-
-        if (searchInputRef.current) {
-          const rect = searchInputRef.current.getBoundingClientRect();
-          setSearchDropdownLeft(rect.left);
-          setSearchDropdownTop(rect.bottom + window.scrollY);
-          setSearchDropdownWidth(rect.width);
-        }
-      } catch (err) {
-        console.error('Error fetching suggestions:', err);
-        setSuggestions([]);
-      }
-    }, [sortedProducts]);
   
-    // Debounced effect: call fetchSuggestions while typing
+    // Auto-search when typing (debounced)
     useEffect(() => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      const q = searchQuery.trim();
-      if (!q) {
-        setSuggestions([]);
-        setSearchDropdownVisible(false);
-        return;
-      }
-
-      // Ensure dropdown becomes visible as soon as user types (even for one char)
-      setSearchDropdownVisible(true);
-
-      // Immediate fetch for the first character, otherwise debounce for performance
-      if (q.length === 1) {
-        fetchSuggestions(q);
-        return;
-      }
-
-      debounceRef.current = setTimeout(() => fetchSuggestions(q), 200);
-      return () => clearTimeout(debounceRef.current);
-    }, [searchQuery, fetchSuggestions]);
+      if (searchQuery.trim() || selectedCategory !== "All Categories") {
+        const delayDebounce = setTimeout(() => {
+          handleSearch();
+        }, 500); // 500ms delay after typing stops
   
-    // Close search dropdown when clicking outside input or dropdown
-    useEffect(() => {
-      const handler = (e) => {
-        const target = e.target;
-        if (
-          searchDropdownVisible &&
-          searchInputRef.current &&
-          searchDropdownRef.current &&
-          !searchInputRef.current.contains(target) &&
-          !searchDropdownRef.current.contains(target)
-        ) {
-          setSearchDropdownVisible(false);
-        }
-      };
-      document.addEventListener('mousedown', handler);
-      return () => document.removeEventListener('mousedown', handler);
-    }, [searchDropdownVisible]);
+        return () => clearTimeout(delayDebounce);
+      }
+    }, [searchQuery, selectedCategory]);
+
     // Modify the search button to use the handler
     // Also make the search work when pressing Enter in the input field
     const handleKeyPress = (e) => {
@@ -345,8 +222,7 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
             handleSearch();
         }
     };
-  const isValidEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-    const isValidMobile = (mobile) => /^[0-9]{10}$/.test(mobile);
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -357,128 +233,45 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
     const [formError, setFormError] = useState('');
     const [error, setError] = useState('');
     const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    setLoadingAuth(false);
+        e.preventDefault();
+        setFormError('');
+        setError('');
+        setLoadingAuth(true);
 
-    // ---------- REGISTER VALIDATION ----------
-    if (activeTab === 'register') {
-        if (formData.name === '') {
-            const nameError = document.getElementById('name-error');
-            if (nameError) {
-                nameError.textContent = 'Name must be filled';
-                nameError.classList.add('text-red-500');
-            }
-            const nameInput = document.getElementById('name-input');
-            if (nameInput) nameInput.classList.add('border-red-500');
-        } else {
-            const nameError = document.getElementById('name-error');
-            if (nameError) nameError.textContent = '';
-            const nameInput = document.getElementById('name-input');
-            if (nameInput) nameInput.classList.remove('border-red-500');
-        }
-
-        if (formData.mobile === '') {
-            const mobileError = document.getElementById('mobile-error');
-            if (mobileError) {
-                mobileError.textContent = 'Mobile must be filled';
-                mobileError.classList.add('text-red-500');
-            }
-            const mobileInput = document.getElementById('mobile-input');
-            if (mobileInput) mobileInput.classList.add('border-red-500');
-        } else if (!isValidMobile(formData.mobile)) {
-            const mobileError = document.getElementById('mobile-error');
-            if (mobileError) {
-                mobileError.textContent = 'Enter a valid mobile number';
-                mobileError.classList.add('text-red-500');
-            }
-            const mobileInput = document.getElementById('mobile-input');
-            if (mobileInput) mobileInput.classList.add('border-red-500');
-        } else {
-            const mobileError = document.getElementById('mobile-error');
-            if (mobileError) mobileError.textContent = '';
-            const mobileInput = document.getElementById('mobile-input');
-            if (mobileInput) mobileInput.classList.remove('border-red-500');
-        }
-    }
-
-    // ---------- COMMON (LOGIN + REGISTER) ----------
-    if (formData.email === '') {
-        const emailError = document.getElementById('email-error');
-        if (emailError) {
-            emailError.textContent = 'Email must be filled';
-            emailError.classList.add('text-red-500');
-        }
-        const emailInput = document.getElementById('email-input');
-        if (emailInput) emailInput.classList.add('border-red-500');
-    } else if (!isValidEmail(formData.email)) {
-        const emailError = document.getElementById('email-error');
-        if (emailError) {
-            emailError.textContent = 'Enter a valid email';
-            emailError.classList.add('text-red-500');
-        }
-        const emailInput = document.getElementById('email-input');
-        if (emailInput) emailInput.classList.add('border-red-500');
-    } else {
-        const emailError = document.getElementById('email-error');
-        if (emailError) emailError.textContent = '';
-        const emailInput = document.getElementById('email-input');
-        if (emailInput) emailInput.classList.remove('border-red-500');
-    }
-
-    if (formData.password.length < 6) {
-        const passwordError = document.getElementById('password-error');
-        if (passwordError) {
-            passwordError.textContent = 'Password must be at least 6 characters';
-            passwordError.classList.add('text-red-500');
-        }
-        const passwordInput = document.getElementById('password-input');
-        if (passwordInput) passwordInput.classList.add('border-red-500');
-    } else {
-        const passwordError = document.getElementById('password-error');
-        if (passwordError) passwordError.textContent = '';
-        const passwordInput = document.getElementById('password-input');
-        if (passwordInput) passwordInput.classList.remove('border-red-500');
-    }
-
-    // ---------- API CALL ----------
-    if (
-        (activeTab === 'login' && formData.email && formData.password.length >= 6) ||
-        (activeTab === 'register' && formData.name && formData.email && formData.mobile && formData.password.length >= 6)
-    ) {
         try {
-            setLoadingAuth(true);
-            setFormError('');
-            setError('');
             const endpoint = activeTab === 'login' ? '/api/auth/login' : '/api/auth/register';
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(formData),
             });
             const data = await response.json();
-               if (!response.ok) {
-        // 👇 If backend sends specific message, show that instead of generic
-        if (data.message) {
-            setError(<span className="text-red-500">{data.message}</span>);
-        }  else {
-            setError(<span className="text-red-500">Password Mismatch</span>);
-        }
-        return;
-    }
-
-            // if (!response.ok) throw new Error(data.message || 'Something went wrong');
-
+            if (!response.ok) {
+                throw new Error(data.message || 'Something went wrong');
+            }
             if (data.token) {
                 localStorage.setItem('token', data.token);
                 setIsLoggedIn(true);
-                setIsAdmin(data.user.role === 'admin');
+                if (data.user.role == "admin") {
+                    setIsAdmin(true);
+                } else {
+                    setIsAdmin(false);
+                }
                 setUserData(data.user);
                 setShowAuthModal(false);
-                setFormData({ name: '', email: '', mobile: '', password: '' });
-
+                setFormData({
+                    name: '',
+                    email: '',
+                    mobile: '',
+                    password: ''
+                });
                 // Update cart count after login
                 const cartResponse = await fetch('/api/cart/count', {
-                    headers: { Authorization: `Bearer ${data.token}` },
+                    headers: {
+                        'Authorization': `Bearer ${data.token}`
+                    }
                 });
                 if (cartResponse.ok) {
                     const cartData = await cartResponse.json();
@@ -493,11 +286,7 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
         } finally {
             setLoadingAuth(false);
         }
-    } else {
-        return;
-    }
-};
-
+    };
     useEffect(() => {
         setHasMounted(true);
     }, []);
@@ -563,7 +352,18 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
     }, []);
 
 
- 
+    // Flatten tree, but skip the main "Large Appliances"
+    // const flattenTree = (cat, rootCategory, level = 0) => {
+    //     let result = [];
+    //     result.push({ ...cat, rootCategory, level });
+
+    //     if (cat.subcategories?.length > 0) {
+    //         cat.subcategories.forEach(child => {
+    //             result = result.concat(flattenTree(child, rootCategory, level + 1));
+    //         });
+    //     }
+    //     return result;
+    // };
 const flattenTree = (cat, rootCategory, level = 0) => {
     let result = [];
     
@@ -583,49 +383,26 @@ const flattenTree = (cat, rootCategory, level = 0) => {
     // Flatten all starting from actual visible categories (like Refrigerator, AC…)
 const flattenAllCategories = (cats) => {
     let result = [];
+    let allBrands = [];
     let brandCounter = 0; // Counter for unique keys
-
-    // Use a Map to dedupe brands by a normalized key (slug/name/id)
-    const brandMap = new Map();
-
-    const normalizeKey = (s) => {
-        if (!s && s !== 0) return '';
-        return String(s).toLowerCase().replace(/\s+/g, ' ').trim().replace(/[^a-z0-9]/g, '');
-    };
-
+    
     cats.forEach(cat => {
         // Add the category and its subcategories
         result = result.concat(flattenTree(cat, cat.category_slug, 0));
-
-        // Collect brands for this category and add to map if unique
-        if (Array.isArray(cat.brands) && cat.brands.length > 0) {
+        
+        // Collect all brands from this category
+        if (cat.brands && cat.brands.length > 0) {
             cat.brands.forEach(brand => {
-                // try multiple fields for a stable identifier
-                const candidate = brand.brand_slug || brand.slug || brand.brand_name || brand.name || brand._id || '';
-                const key = normalizeKey(candidate);
-                if (!key) return; // skip invalid
-
-                if (!brandMap.has(key)) {
-                    // store first occurrence and include a stable uniqueKey
-                    brandMap.set(key, {
-                        ...brand,
-                        type: 'brand',
-                        sourceCategory: cat.category_name,
-                        uniqueKey: `${brand._id || key}-${brandCounter++}`
-                    });
-                } else {
-                    // already present: optionally we could merge sourceCategory info
-                    const existing = brandMap.get(key);
-                    if (existing && existing.sourceCategory !== cat.category_name) {
-                        existing.sourceCategory = existing.sourceCategory + ", " + cat.category_name;
-                    }
-                }
+                allBrands.push({
+                    ...brand,
+                    type: 'brand',
+                    sourceCategory: cat.category_name,
+                    uniqueKey: `${brand._id}-${cat._id}-${brandCounter++}` // Truly unique key
+                });
             });
         }
     });
-
-    const allBrands = Array.from(brandMap.values());
-
+    
     // Add a single brands header at the end
     if (allBrands.length > 0) {
         result.push({
@@ -635,7 +412,7 @@ const flattenAllCategories = (cats) => {
             level: 0,
             uniqueKey: 'all-brands-header'
         });
-
+        
         // Add all collected brands with unique keys
         result = result.concat(allBrands.map(brand => ({
             ...brand,
@@ -643,22 +420,45 @@ const flattenAllCategories = (cats) => {
             uniqueKey: brand.uniqueKey
         })));
     }
-
+    
     return result;
 };
 
-
-
-
- 
-const chunkFlatList = (flatList, size = 11) => {
+    // 🔹 Split into columns (10 items max per column)
+    // const chunkFlatList = (flatList, size = 15) => {
+    //     const chunks = [];
+    //     for (let i = 0; i < flatList.length; i += size) {
+    //         chunks.push(flatList.slice(i, i + size));
+    //     }
+    //     return chunks;
+    // };
+const chunkFlatList = (flatList, size = 15) => {
     const chunks = [];
-    if (!Array.isArray(flatList) || flatList.length === 0) return chunks;
-
-    for (let i = 0; i < flatList.length; i += size) {
-        chunks.push(flatList.slice(i, i + size));
+    
+    // Find where brands section starts
+    const brandsStartIndex = flatList.findIndex(item => item.type === 'brands-header');
+    
+    if (brandsStartIndex === -1) {
+        // No brands, just chunk normally
+        for (let i = 0; i < flatList.length; i += size) {
+            chunks.push(flatList.slice(i, i + size));
+        }
+        return chunks;
     }
-
+    
+    // Chunk categories (before brands)
+    for (let i = 0; i < brandsStartIndex; i += size) {
+        chunks.push(flatList.slice(i, Math.min(i + size, brandsStartIndex)));
+    }
+    
+    // Chunk brands (keep brands together in their own column(s))
+    const brandsSection = flatList.slice(brandsStartIndex);
+    const brandsPerColumn = 12; // Adjust as needed
+    
+    for (let i = 0; i < brandsSection.length; i += brandsPerColumn) {
+        chunks.push(brandsSection.slice(i, i + brandsPerColumn));
+    }
+    
     return chunks;
 };
 
@@ -708,8 +508,8 @@ const chunkFlatList = (flatList, size = 11) => {
         // Ensure dropdown doesn't go too far left
         if (left < 8) left = 8;
         if (left !== dropdownLeft) setDropdownLeft(left);
-        // only run when hoveredCategory changes to avoid update loops
-    }, [hoveredCategory]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hoveredCategory, dropdownLeft]);
 
     // cleanup hide timeout on unmount
     useEffect(() => {
@@ -748,80 +548,65 @@ const chunkFlatList = (flatList, size = 11) => {
             setForgotPasswordLoading(false);
         }
     };
-    // Render flattened category/brand item
+    // 🔹 Render flattened category item
 const renderFlatItem = (item, hoveredCategory) => {
-  const itemKey = item.uniqueKey || item._id;
-  const paddingLeft = `${(item.level || 0) * 12}px`;
 
-  let content = null;
-
-  if (item.type === "brands-header") {
-    const href =
-      item.level === 0
-        ? `/category/${encodeURIComponent(item.category_slug || "")}`
-        : `/category/${encodeURIComponent(
-            hoveredCategory?.category_slug || ""
-          )}/${encodeURIComponent(item.rootCategory || "")}/${encodeURIComponent(
-            item.category_slug || ""
-          )}`;
-    content = (
+    // Use uniqueKey instead of _id for the key prop
+    const itemKey = item.uniqueKey || item._id;
+    
+    if (item.type === 'brands-header') {
+        return (
+            <div key={itemKey} className="" style={{ paddingLeft: `${item.level * 12}px` }}>
+                <h3 className="font-semibold text-sm text-blue-600 border-b border-gray-200 pb-1">
+                    {item.category_name}
+                </h3>
+            </div>
+        );
+    }
+    
+    if (item.type === 'brand') {
+        const href = `/category/brand/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.brand_slug)}`;
         
-      <h3 className="flex items-center justify-between mb-1 text-sm font-semibold text-blue-600 ml-1">
-  {item.category_name}
-</h3>
-    );
-  } 
-  else if (item.type === "brand") {
-    const href = `/category/brand/${encodeURIComponent(
-      hoveredCategory?.category_slug || ""
-    )}/${encodeURIComponent(item.brand_slug || "")}`;
+        return (
+            <div key={itemKey} style={{ paddingLeft: `${item.level * 12}px` }}>
+                <Link
+                    href={href}
+                    className="flex items-center mb-1 text-sm text-[#8c8c8c] p-[5px] hover:text-[#0e54e6]"
+                >
+                    <span className="font-normal">{item.brand_name}</span>
+                </Link>
+            </div>
+        );
+    }
+    
+    // Original category rendering code
+    const href = item.level === 0
+        ? `/category/${encodeURIComponent(item.category_slug)}`
+        : `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
 
-    content = (
-      <Link
-        href={href}
-        className="flex items-center mb-1 text-sm text-[#8c8c8c] p-[5px] hover:text-[#0e54e6]"
-      >
-        <span className="font-normal">{item.brand_name}</span>
-      </Link>
+    return (
+        <div key={itemKey} style={{ paddingLeft: `${item.level * 12}px` }}>
+            <Link
+                href={href}
+                className={`flex items-center justify-between mb-1 text-sm ${item.level === 0
+                        ? "font-semibold text-blue-600"
+                        : "text-[#8c8c8c] !p-[5px] hover:text-[#0e54e6]"
+                    }`}
+            >
+                <span className={item.level === 0 ? "font-bold" : "font-normal"}>
+                    {item.category_name}
+                </span>
+                {item.level === 0 && (
+                    <Play
+                        size={14}
+                        strokeWidth={0}
+                        className="text-blue-600 fill-blue-600"
+                    />
+                )}
+            </Link>
+        </div>
     );
-  } 
-  else {
-    const href =`/category/${encodeURIComponent(
-            hoveredCategory?.category_slug || ""
-          )}/${encodeURIComponent(item.rootCategory || "")}/${encodeURIComponent(
-            item.category_slug || ""
-          )}`;
-
-    content = (
-      <Link
-        href={href}
-        className={`flex items-center justify-between mb-1 text-sm ${
-          item.level === 0
-            ? "font-semibold text-blue-600"
-            : "text-[#8c8c8c] !p-[5px] hover:text-[#0e54e6]"
-        }`}
-      >
-        <span className={item.level === 0 ? "font-bold" : "font-normal"}>
-          {item.category_name}
-        </span>
-        {item.level === 0 && (
-          <Play
-            size={14}
-            strokeWidth={0}
-            className="text-blue-600 fill-blue-600"
-          />
-        )}
-      </Link>
-    );
-  }
-
-  return (
-    <div key={itemKey} style={{ paddingLeft }}>
-      {content}
-    </div>
-  );
 };
-
 
     return (
         <header className="sticky top-0 z-50">
@@ -879,95 +664,62 @@ const renderFlatItem = (item, hoveredCategory) => {
                     </div>
 
                     {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
-                    <div className="relative hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden border border-gray-300">
-                      {/* grouped select + input on the left */}
-                      <div className="flex items-center w-full">
-                        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2.5 text-xs sm:text-sm text-gray-700 bg-gray-200 border-r border-gray-300 outline-none rounded-l-md">
-                            <option value="All Categories">All Categories</option>
-                            {categories.map((cat) => (
-                                <option key={cat._id} value={cat.category_name}>
-                                    {cat.category_name}
-                                </option>
-                            ))}
-                        </select>
-                        <input
-                          type="text"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          ref={searchInputRef}
-                          onFocus={() => {
-                            if (searchInputRef.current) {
-                              const rect = searchInputRef.current.getBoundingClientRect();
-                              setSearchDropdownLeft(rect.left);
-                              setSearchDropdownTop(rect.bottom + window.scrollY);
-                              setSearchDropdownWidth(rect.width);
-                            }
-                            if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
-                            setSearchDropdownVisible(true);
-                          }}
-                          onKeyDown={handleKeyPress}
-                          className="flex-1 px-3 py-2 text-sm outline-none relative rounded-r-md"
-                        />
-                      </div>
+    <div className="relative hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden !border !border-[#8c8c8c]">
+      <select
+        value={selectedCategory}
+        onChange={(e) => setSelectedCategory(e.target.value)}
+        className="px-3 py-2 text-xs sm:text-sm text-gray-700 bg-gray-100 border-r border-gray-300 outline-none"
+      >
+        <option value="All Categories">All Categories</option>
+        {categories.map((cat) => (
+          <option key={cat._id} value={cat.category_name}>
+            {cat.category_name}
+          </option>
+        ))}
+      </select>
 
-                      {/* fake placeholder overlay: shows Search For "<bold updatedText>" when input empty */}
-                      {searchQuery.trim() === "" && (
-                        <div className="absolute left-3 top-2 pointer-events-none select-none">
-                          <span className="text-sm text-gray-600 font-bold">&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;&nbsp;&nbsp;Search For</span>
-                          <span className="text-sm text-gray-600"> {"\""}</span>
-                          <span className="text-sm text-gray-600">{typedPreview}</span>
-                          <span className="text-sm text-gray-600">{"\""}</span>
-                        </div>
-                      )}
+      <input
+        type="text"
+        placeholder={placeholder || "Search products..."}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="flex-1 px-3 py-2 text-sm outline-none"
+      />
 
-                      <button className="px-3 text-blue-600" onClick={handleSearch}>
-                        <FaSearch />
-                      </button>
+      <button className="px-3 text-customBlue" onClick={handleSearch}>
+        <FaSearch />
+      </button>
 
-                      {/* Suggestions dropdown rendered as fixed so it won't be clipped */}
-                      {searchDropdownVisible && (
-                        <div
-                          ref={searchDropdownRef}
-                          className="fixed z-50 border-t border-gray-200 shadow-xl bg-white rounded"
-                          style={{
-                            top: `${searchDropdownTop}px`,
-                            width: '42%',
-                            maxHeight: '420px',
-                            overflow: 'auto'
-                          }}
-                        >
-                          <div className="px-3 py-2 text-xs text-gray-500 font-semibold">PRODUCTS</div>
-                          {/* product grid - uses suggestions computed from local products for instant results */}
-                          {Array.isArray(suggestions) && suggestions.length > 0 ? (
-                            <ul className="p-3 space-y-2">
-                              {suggestions.map((product) => (
-                                <li key={product._id} className="p-0">
-                                  <div className="flex items-center gap-3 p-2 hover:bg-gray-200 rounded min-h-[60px]" style={{ height: '81px', backgroundColor: '#d3d3d3b8' }}>
-                                    {product.images?.[0] ? (
-                                      <img
-                                        src={product.images[0].startsWith('http') ? product.images[0] : `/uploads/products/${product.images[0]}`}
-                                        alt={product.name}
-                                        className="w-12 h-12 object-cover rounded"
-                                      />
-                                    ) : (
-                                      <div className="w-12 h-12 bg-gray-200 rounded" />
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                      <Link href={`/product/${product.slug}`} className="block text-sm font-medium text-gray-800 hover:text-blue-600 truncate">
-                                        {product.name}
-                                      </Link>
-                                      <div className="text-xs text-gray-500">₹{(product.special_price ?? product.price ?? 0).toLocaleString()}</div>
-                                    </div>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <div className="px-3 py-3 text-sm text-gray-500">No results found</div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+      {/* Suggestions dropdown */}
+      {suggestions.length > 0 && (
+        <div className="absolute top-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 z-50">
+          <div className="p-2 text-xs font-semibold text-gray-500">PRODUCTS</div>
+          {suggestions.map((p) => (
+            <Link
+              key={p._id}
+              href={`/product/${p.product_slug}`}
+              className="flex items-center gap-2 p-2 hover:bg-gray-100"
+            >
+              <img
+                src={p.product_image}
+                alt={p.product_name}
+                className="w-10 h-10 object-contain"
+              />
+              <div>
+                <div className="text-sm font-medium text-gray-800">{p.product_name}</div>
+                <div className="text-sm text-customBlue">Rs. {p.price}</div>
+              </div>
+            </Link>
+          ))}
+          <div
+            onClick={handleSearch}
+            className="block p-2 text-center text-sm text-customBlue hover:bg-gray-100 cursor-pointer"
+          >
+            View all results →
+          </div>
+        </div>
+      )}
+    </div>
                     {/* Icons Group */}
                     <div className="flex items-center gap-[2rem] sm:gap-4">
                         {/* Mobile Search Button (Hidden on desktop) */}
@@ -1062,7 +814,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                     <div className="sm:hidden bg-white fixed inset-0 z-50 p-4 rounded-lg shadow-lg overflow-y-auto transition-all duration-300"
                          style={{ touchAction: 'auto', userSelect: 'auto', WebkitUserSelect: 'auto' }}>
                         {/* Mobile Search Bar */}
-                        <div className="flex items-center bg-gray-200 rounded-lg shadow overflow-hidden mb-4">
+                        <div className="flex items-center bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
                             <input type="text" tabIndex={0} autoFocus placeholder={placeholder || "Search products..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleKeyPress} className="flex-1 px-3 py-2 text-sm outline-none bg-white" />
                             <button className="px-3 text-customBlue" onClick={handleSearch} tabIndex={0}>
                                 <FaSearch />
@@ -1128,35 +880,35 @@ const renderFlatItem = (item, hoveredCategory) => {
                         </div>
                         {/* Mobile Menu Links */}
                         <div className="space-y-3">
-                            <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
                                 <FaLocationDot className="mr-2 text-customBlue" />Location
                             </Link>
-                            <Link href="/wishlist" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Link href="/wishlist" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
                                 <FaHeart className="mr-2 text-customBlue" />Wishlist
                                 {wishlistCount > 0 && (
                                     <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{wishlistCount}</span>
                                 )}
                             </Link>
-                            <Link href="/cart" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Link href="/cart" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
                                 <FaShoppingCart className="mr-2 text-customBlue" />Cart
                                 {cartCount > 0 && (
                                     <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
                                 )}
                             </Link>
                             {isLoggedIn && isAdmin && (
-                                <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
+                                <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
                             )}
                             {isLoggedIn ? (
                                 <>
-                                    <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(false)}>
                                         <FaShoppingBag className="mr-2 text-customBlue" />My Orders
                                     </Link>
-                                    <button onClick={handleLogout} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-200">
+                                    <button onClick={handleLogout} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
                                         <IoLogOut className="mr-2 text-customBlue" />Logout
                                     </button>
                                 </>
                             ) : (
-                                <button onClick={() => { setShowAuthModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-200">
+                                <button onClick={() => { setShowAuthModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-100">
                                     <FiUser className="mr-2 text-customBlue" />Sign In
                                 </button>
                             )}
@@ -1182,21 +934,13 @@ const renderFlatItem = (item, hoveredCategory) => {
 
                             <form onSubmit={handleAuthSubmit} className="space-y-4">
                                 {activeTab === 'register' && (
-                                    <>
-                                    <input type="text" placeholder="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"id="name-input"/>
-                                    <span id="name-error"></span>
-                                    </>
+                                    <input type="text" placeholder="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                                 )}
-                                <input type="text" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" id="email-input" />
-                                <span id="email-error"></span>
+                                <input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                                 {activeTab === 'register' && (
-                                <>
-                                <input type="tel" placeholder="Mobile" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"  id="mobile-input" />
-                                <span id="mobile-error"></span>
-                                </>
+                                    <input type="tel" placeholder="Mobile" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                                 )}
-                                <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" minLength={6} id="password-input" />
-                                <span id="password-error"></span>
+                                <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required minLength={6} />
                                 {(formError || error) && (
                                     <div className="text-red-500 text-sm">
                                         {formError || error}
@@ -1392,9 +1136,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                                 {categories.map((category) => (
                                     <SwiperSlide key={category._id} className="!w-auto">
                                         <div ref={(el) => (slideRefs.current[category._id] = el)} onMouseEnter={() => handleMouseEnter(category._id)} onMouseLeave={() => startHide(120)} className="px-5 py-2 flex flex-col items-center text-center" >
-                                            <Link href={`/category/${category.category_slug}`} className="text-sm text-base text-white hover:text-orange-500 whitespace-nowrap" 
-                                            
-                                            >
+                                            <Link href={`/category/${category.category_slug}`} className="text-sm text-base text-white hover:text-orange-500 whitespace-nowrap" >
                                                 {category.category_name}
                                             </Link>
                                         </div>
@@ -1406,7 +1148,7 @@ const renderFlatItem = (item, hoveredCategory) => {
                 </div>
 
                 {/* DROPDOWN OUTSIDE SWIPER (fixed so it won't be clipped) */}
-                {/* {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
+                {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
                     <div
                         ref={dropdownRef}
                         className="fixed z-50 border-t border-gray-200 shadow-xl"
@@ -1420,27 +1162,28 @@ const renderFlatItem = (item, hoveredCategory) => {
                         onMouseLeave={() => startHide(120)}
                     >
                         <div className="flex flex-wrap bg-white h-auto max-h-[450px] overflow-y-auto">
-                        {chunkFlatList(
-                            flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
-                            11
-                        ).map((chunk, index) => (
-                            <div
-                                key={index}
-                                className="min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start"
-                            >
-                                {chunk.map(item => renderFlatItem(item, hoveredCategory))}
-                            </div>
-                        ))}
+    {chunkFlatList(
+        flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+        11
+    ).map((chunk, index) => (
+        <div
+            key={index}
+            className="min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start"
+        >
+            {chunk.map(item => renderFlatItem(item, hoveredCategory))}
+        </div>
+    ))}
 
                             {(hoveredCategory.navImage || hoveredCategory.image) && (
                                 <div className="min-w-[220px] max-w-[250px] flex items-center justify-center h-full ">
-                                    <Link href={`/category/${hoveredCategory.category_slug}`} className="w-full h-full block">
+                                    <Link href={``} className="w-full h-full">
                                         <Image
                                             src={hoveredCategory.navImage || hoveredCategory.image}
-                                            alt={hoveredCategory.category_name || 'Category Image'}
+                                            alt="Category Navigation Image"
                                             width={220}
                                             height={390}
-                                            className="object-cover rounded w-full h-full"
+                                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                                            className="object-cover rounded"
                                         />
                                     </Link>
                                 </div>
@@ -1448,139 +1191,8 @@ const renderFlatItem = (item, hoveredCategory) => {
                         </div>
 
                     </div>
-                )} */}
-                {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (
-                    <div
-                        ref={dropdownRef}
-                        className="fixed z-50 border-t border-gray-200 shadow-xl"
-                        style={{
-                            top: `${dropdownTop}px`,
-                            maxWidth: "calc(100% - 20px)",
-  left: `30px`,
-                        }}
-                        onMouseEnter={cancelHide}
-                        onMouseLeave={() => startHide(120)}
-                    >
-                        <div className="flex flex-wrap bg-white h-[390px]">
-  {(() => {
-    let dropdownChunksLocal = chunkFlatList(
-      flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
-      11
-    );
-
-    // If the last chunk is short, try to move items (brands) into previous column to fill the gap
-    if (dropdownChunksLocal.length > 1) {
-      const size = 11;
-      const prevIdx = dropdownChunksLocal.length - 2;
-      const lastIdx = dropdownChunksLocal.length - 1;
-      const prevChunk = [...dropdownChunksLocal[prevIdx]];
-      const lastChunk = [...dropdownChunksLocal[lastIdx]];
-
-      const space = Math.max(0, size - prevChunk.length);
-      if (space > 0 && lastChunk.length > 0) {
-        // move up to `space` items from lastChunk into prevChunk
-        const moving = lastChunk.splice(0, space);
-        prevChunk.push(...moving);
-        dropdownChunksLocal[prevIdx] = prevChunk;
-        if (lastChunk.length === 0) {
-          dropdownChunksLocal.pop();
-        } else {
-          dropdownChunksLocal[lastIdx] = lastChunk;
-        }
-      }
-    }
-
-    // If a chunk immediately before a brands column is short, move brands into it
-    if (dropdownChunksLocal.length > 1) {
-      const size = 11;
-      for (let i = 0; i < dropdownChunksLocal.length - 1; i++) {
-        const current = dropdownChunksLocal[i];
-        const next = dropdownChunksLocal[i + 1];
-        if (!Array.isArray(next) || next.length === 0) continue;
-        if (next[0]?.type === 'brands-header' && current.length < size) {
-          const space = Math.max(0, size - current.length);
-          // move up to `space` items from next into current (including header if needed)
-          const moving = next.splice(0, space);
-          dropdownChunksLocal[i] = [...current, ...moving];
-          if (next.length === 0) {
-            dropdownChunksLocal.splice(i + 1, 1);
-          } else {
-            dropdownChunksLocal[i + 1] = next;
-          }
-          // after moving once, stop — we only fill the immediate short column
-          break;
-        }
-      }
-    }
-
-    // determine if hovered category has navigation image
-    const hasNavImage = Boolean(hoveredCategory && (hoveredCategory.navImage || hoveredCategory.image));
-
-    // build columns from chunks with max 6 visible columns (reserve last for image when present)
-    const maxCols = 6;
-    const dataCols = dropdownChunksLocal;
-
-    // number of data columns required (image takes one slot if present)
-    const requiredDataCols = hasNavImage ? maxCols - 1 : maxCols;
-
-    // take available data columns and pad with empty placeholders to ensure fixed column count
-    let visibleDataCols = dataCols.slice(0, requiredDataCols);
-    while (visibleDataCols.length < requiredDataCols) {
-      visibleDataCols.push([]);
-    }
-
-    const columns = visibleDataCols;
-
-    // render data columns and optionally an image column as the last column
-    return (
-      <>
-        {columns.map((chunk, index) => {
-          const scrollableClass = (Array.isArray(chunk) && chunk.length > 10) ? "  pr-2" : "";
-          const isEmpty = !Array.isArray(chunk) || chunk.length === 0;
-          const bgClass = isEmpty ? 'bg-white' : (index % 2 === 0 ? 'bg-gray-200' : 'bg-white');
-          return (
-            <div key={index} className={`min-w-[220px] max-w-[250px]   p-3 flex flex-col justify-start self-start ${scrollableClass} ${bgClass}`}
-                style={{ height: '100%' }}
-            >
-              {Array.isArray(chunk) && chunk.length > 0 ? (
-                chunk.map((item) => renderFlatItem(item, hoveredCategory))
-              ) : (
-                <div className="w-full">&nbsp;</div>
-              )}
-            </div>
-          );
-        })}
-
-        {hasNavImage && (
-          (() => {
-            const imgIndex = columns.length; // position of image column (0-based)
-            const imgBgClass = imgIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white';
-            return (
-              <div key="nav-image-panel" className={`w-[220px] h-[390px] flex items-center justify-center ${imgBgClass}`}>
-                  <Link href={`/category/${hoveredCategory.category_slug}`} className="block w-full h-full">
-                    <Image
-                      src={hoveredCategory.navImage || hoveredCategory.image}
-                      alt={hoveredCategory.category_name || 'Category Image'}
-                      width={220}
-                      height={390}
-                      className="object-cover  w-full h-full"
-                      style={{ boxShadow: '0px -13px 0px #2453d3'}}
-                    />
-                  </Link>
-                </div>
-            );
-          })()
-        )}
-      </>
-    );
-  })()}
-</div>
-
-
-                    </div>
                 )}
             </div>
-
         </header>
     );
 };

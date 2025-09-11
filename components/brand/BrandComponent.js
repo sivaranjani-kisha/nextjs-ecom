@@ -838,8 +838,30 @@ export default function BrandPage() {
                               {product.name}
                             </h3>
                           </Link>
+                       <div className="flex items-center gap-2 mb-3">
+                        <span className="text-base font-semibold text-red-600">
+                          ₹ {(
+                            product.special_price &&
+                            product.special_price > 0 &&
+                            product.special_price != '0' &&
+                            product.special_price != 0 &&
+                            product.special_price < product.price
+                              ? Math.round(product.special_price)
+                              : Math.round(product.price)
+                          ).toLocaleString()}
+                        </span>
 
-                          <div className="flex items-center gap-2 mb-3">
+                        {product.special_price > 0 &&
+                          product.special_price != '0' &&
+                          product.special_price != 0 &&
+                          product.special_price &&
+                          product.special_price < product.price && (
+                            <span className="text-xs text-gray-500 line-through">
+                              ₹ {Math.round(product.price).toLocaleString()}
+                            </span>
+                        )}
+                      </div>
+                          {/* <div className="flex items-center gap-2 mb-3">
                             <span className="text-base font-semibold text-blue-600">
                               ₹{(
                                 product.special_price && product.special_price > 0 && product.special_price != '0' && product.special_price != 0 && product.special_price < product.price
@@ -855,7 +877,7 @@ export default function BrandPage() {
                                   ₹{product.price.toLocaleString()}
                                 </span>
                             )}
-                          </div>
+                          </div> */}
 
                           <div className="mt-auto flex items-center justify-between gap-2 ccs">
                             <Addtocart

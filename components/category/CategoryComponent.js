@@ -78,8 +78,15 @@ const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0);
 
       if (categoryData.products?.length > 0) {
         const prices = categoryData.products.map(p => p.special_price);
-        const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
+        let minPrice = Math.min(...prices);
+        let maxPrice = Math.max(...prices);
+
+        // ✅ Fix: If only one product, add a small buffer
+        if (minPrice === maxPrice) {
+          minPrice = minPrice - 1; // or e.g., minPrice * 0.95
+          maxPrice = maxPrice + 1; // or e.g., maxPrice * 1.05
+        }
+
         setPriceRange([minPrice, maxPrice]);
         setSelectedFilters(prev => ({
           ...prev,
@@ -705,7 +712,7 @@ useEffect(() => {
                         >
                           {/* active green bar */}
                           <div
-                            className="absolute h-2 bg-green-500 rounded-lg"
+                            className="absolute h-2 bg-gray-500 rounded-lg"
                             style={{
                               left: `${((values[0] - MIN) / (MAX - MIN)) * 100}%`,
                               width: `${((values[1] - values[0]) / (MAX - MIN)) * 100}%`,
@@ -839,7 +846,7 @@ useEffect(() => {
                 {getSortedProducts().map(product => (
                   <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
                     {/* Product Image */}
-                    <div className="relative aspect-square bg-gray-50">
+                    <div className="relative aspect-square bg-white">
                       {product.images?.[0] && (
                         <Image
                           src={
@@ -894,6 +901,30 @@ useEffect(() => {
  
                       {/* Price Row (same level always) */}
                       <div className="flex items-center gap-2 mb-3">
+                      <span className="text-base font-semibold text-red-600">
+                        ₹ {(
+                          product.special_price &&
+                          product.special_price > 0 &&
+                          product.special_price != '0' &&
+                          product.special_price != 0 &&
+                          product.special_price < product.price
+                            ? Math.round(product.special_price)
+                            : Math.round(product.price)
+                        ).toLocaleString()}
+                      </span>
+
+                      {product.special_price > 0 &&
+                        product.special_price != '0' &&
+                        product.special_price != 0 &&
+                        product.special_price &&
+                        product.special_price < product.price && (
+                          <span className="text-xs text-gray-500 line-through">
+                            ₹ {Math.round(product.price).toLocaleString()}
+                          </span>
+                      )}
+                    </div>
+
+                      {/* <div className="flex items-center gap-2 mb-3">
                         <span className="text-base font-semibold text-red-600">
                           ₹ {(
                             product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
@@ -910,7 +941,7 @@ useEffect(() => {
                               ₹ {product.price.toLocaleString()}
                             </span>
                         )}
-                      </div>
+                      </div> */}
  
                       <h4
                             className={`text-xs mb-3 ${

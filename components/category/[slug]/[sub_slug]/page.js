@@ -75,8 +75,15 @@ export default function CategoryPage() {
 
       if (categoryData.products?.length > 0) {
         const prices = categoryData.products.map(p => p.special_price);
-        const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
+        let minPrice = Math.min(...prices);
+        let maxPrice = Math.max(...prices);
+
+        // ✅ Fix: If only one product, add a small buffer
+        if (minPrice === maxPrice) {
+          minPrice = minPrice - 1; // or e.g., minPrice * 0.95
+          maxPrice = maxPrice + 1; // or e.g., maxPrice * 1.05
+        }
+
         setPriceRange([minPrice, maxPrice]);
         setSelectedFilters(prev => ({
           ...prev,
@@ -549,8 +556,7 @@ export default function CategoryPage() {
 
   return (
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
-    {!nofound && categoryData.products.length > 0 ? (
-      <>
+    
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
           <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.main_category.category_name}</h1>
@@ -703,7 +709,7 @@ export default function CategoryPage() {
                         >
                           {/* active green bar */}
                           <div
-                            className="absolute h-2 bg-green-500 rounded-lg"
+                            className="absolute h-2 bg-gray-400 rounded-lg"
                             style={{
                               left: `${((values[0] - MIN) / (MAX - MIN)) * 100}%`,
                               width: `${((values[1] - values[0]) / (MAX - MIN)) * 100}%`,
@@ -825,7 +831,8 @@ export default function CategoryPage() {
                 )}
               </div>
             </div>
-
+            {!nofound && categoryData.products.length > 0 ? (
+            <>
             {/* Products Section */}
             <div className="flex-1">
               {products.length > 0 ? (
@@ -836,7 +843,7 @@ export default function CategoryPage() {
                         key={product._id}
                         className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
                       >
-                        <div className="relative aspect-square bg-gray-50">
+                        <div className="relative aspect-square bg-white">
                           {product.images?.[0] && (
                             <Image
                               src={
@@ -866,9 +873,15 @@ export default function CategoryPage() {
                         </div>
 
                         <div className="p-2 md:p-4 flex flex-col h-full">
-                           <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
+                          <Link
+                                                  href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                                                  className="hover:text-blue-600"
+                                                >
+                                                  {brandMap[product.brand] || ""}
+                                                </Link>
+                           {/* <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
                         {brandMap[product.brand] || ""}
-                        </h4>
+                        </h4> */}
                           <Link
                             href={`/product/${product.slug}`}
                             className="block mb-2"
@@ -878,8 +891,30 @@ export default function CategoryPage() {
                               {product.name}
                             </h3>
                           </Link>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-base font-semibold text-red-600">
+                          ₹ {(
+                            product.special_price &&
+                            product.special_price > 0 &&
+                            product.special_price != '0' &&
+                            product.special_price != 0 &&
+                            product.special_price < product.price
+                              ? Math.round(product.special_price)
+                              : Math.round(product.price)
+                          ).toLocaleString()}
+                        </span>
 
-                          <div className="flex items-center gap-2 mb-3">
+                        {product.special_price > 0 &&
+                          product.special_price != '0' &&
+                          product.special_price != 0 &&
+                          product.special_price &&
+                          product.special_price < product.price && (
+                            <span className="text-xs text-gray-500 line-through">
+                              ₹ {Math.round(product.price).toLocaleString()}
+                            </span>
+                        )}
+                      </div>
+                          {/* <div className="flex items-center gap-2 mb-3">
                             <span className="text-base font-semibold text-red-600">
                               ₹ {(
                                 product.special_price && product.special_price > 0 && product.special_price != '0' &&  product.special_price != 0 && product.special_price < product.price
@@ -896,7 +931,7 @@ export default function CategoryPage() {
                                   ₹ {product.price.toLocaleString()}
                                 </span>
                             )}
-                          </div>
+                          </div> */}
 
                           <h4
                             className={`text-xs mb-3 ${
@@ -954,10 +989,10 @@ export default function CategoryPage() {
                 </div>
               )}
             </div>
-          </div>
+          
         </>
       ) : (
-        <div className="text-center py-10">
+        <div className="text-center py-10 mx-auto">
           <img 
             src="/images/no-productbox.png" 
             alt="No Products" 
@@ -966,6 +1001,7 @@ export default function CategoryPage() {
         </div>
       )}
       <ToastContainer />
+      </div>
     </div>
   );
 }
