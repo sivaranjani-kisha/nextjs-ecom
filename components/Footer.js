@@ -31,45 +31,87 @@ const Footer = () => {
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-  const fetchCategories = async () => {
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+  const getCached = (key) => {
     try {
-      const res = await fetch("/api/categories/get");
-      const data = await res.json();
-
-      if (data) {
-        // Main category = parentid === "none"
-        const main = data.filter((cat) => cat.parentid === "none");
-console.log(main);
-        // Subcategories grouped by parentid
-        const subs = {};
-        data.forEach((cat) => {
-          if (cat.parentid !== "none") {
-            if (!subs[cat.parentid]) subs[cat.parentid] = [];
-            subs[cat.parentid].push(cat);
-          }
-        });
-
-        setGroupedCategories({ main, subs });
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.__ts) return null;
+      if (Date.now() - parsed.__ts > CACHE_TTL) {
+        localStorage.removeItem(key);
+        return null;
       }
-    } catch (err) {
-      console.error("Error fetching categories:", err);
+      return parsed.data;
+    } catch (e) {
+      return null;
     }
   };
- const fetchStores = async () => {
-      try {
-        const res = await fetch("/api/store/get");
-        const data = await res.json();
-        
-        if (data && data.success) {
-          setStores(data.data);
-        }
-      } catch (err) {
-        console.error("Error fetching stores:", err);
+
+  const setCached = (key, data) => {
+    try {
+      localStorage.setItem(key, JSON.stringify({ __ts: Date.now(), data }));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const makeGrouped = (data) => {
+    const activeCategories = Array.isArray(data) ? data.filter(cat => cat.status === 'Active') : [];
+    const main = activeCategories.filter(cat => cat.parentid === 'none');
+    const subs = {};
+    activeCategories.forEach(cat => {
+      if (cat.parentid !== 'none') {
+        if (!subs[cat.parentid]) subs[cat.parentid] = [];
+        subs[cat.parentid].push(cat);
       }
-    };
+    });
+    return { main, subs };
+  };
+
+  const fetchCategories = async () => {
+    const key = 'cache_footer_categories_v1';
+    const cached = getCached(key);
+    if (cached) {
+      setGroupedCategories(makeGrouped(cached));
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/categories/get');
+      const data = await res.json();
+      if (data) {
+        setGroupedCategories(makeGrouped(data));
+        setCached(key, data);
+      }
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
+
+  const fetchStores = async () => {
+    const key = 'cache_footer_stores_v1';
+    const cached = getCached(key);
+    if (cached) {
+      setStores(cached);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/store/get');
+      const data = await res.json();
+      if (data && data.success) {
+        setStores(data.data);
+        setCached(key, data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching stores:', err);
+    }
+  };
 
   fetchCategories();
-   fetchStores();
+  fetchStores();
 }, []);
 
 
