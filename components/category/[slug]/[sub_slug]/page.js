@@ -873,9 +873,15 @@ export default function CategoryPage() {
                         </div>
 
                         <div className="p-2 md:p-4 flex flex-col h-full">
-                           <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
+                          <Link
+                                                  href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                                                  className="hover:text-blue-600"
+                                                >
+                                                  {brandMap[product.brand] || ""}
+                                                </Link>
+                           {/* <h4 className="text-xs text-gray-500 mb-2 uppercase hover:text-blue-600">
                         {brandMap[product.brand] || ""}
-                        </h4>
+                        </h4> */}
                           <Link
                             href={`/product/${product.slug}`}
                             className="block mb-2"
