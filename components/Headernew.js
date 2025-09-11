@@ -53,21 +53,21 @@ const Header = () => {
     const wordIndex = useRef(0);
     const charIndex = useRef(0);
     const isDeleting = useRef(false);
-const getSortedProducts = () => {
-    const sortedProducts = [...products];
-    switch(sortOption) {
-      case 'price-low-high':
-        return sortedProducts.sort((a, b) => (a.special_price ?? a.price) - (b.special_price ?? b.price));
-      case 'price-high-low':
-        return sortedProducts.sort((a, b) => (b.special_price ?? b.price) - (a.special_price ?? a.price));
-      case 'name-a-z':
-        return sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
-      case 'name-z-a':
-        return sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
-      default:
-        return sortedProducts;
-    }
-};
+    const getSortedProducts = () => {
+        const sortedProducts = [...products];
+        switch(sortOption) {
+        case 'price-low-high':
+            return sortedProducts.sort((a, b) => (a.special_price ?? a.price) - (b.special_price ?? b.price));
+        case 'price-high-low':
+            return sortedProducts.sort((a, b) => (b.special_price ?? b.price) - (a.special_price ?? a.price));
+        case 'name-a-z':
+            return sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+        case 'name-z-a':
+            return sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
+        default:
+            return sortedProducts;
+        }
+    };
 
     useEffect(() => {
       const fetchCategories = async () => {
@@ -563,125 +563,81 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
     }, []);
 
 
-    // Flatten tree, but skip the main "Large Appliances"
-    const flattenTree = (cat, rootCategory, level = 0) => {
-        let result = [];
-        result.push({ ...cat, rootCategory, level });
-
-        if (cat.subcategories?.length > 0) {
-            cat.subcategories.forEach(child => {
-                result = result.concat(flattenTree(child, rootCategory, level + 1));
-            });
-        }
-        return result;
-    };
-// const flattenTree = (cat, rootCategory, level = 0) => {
-//     let result = [];
+ 
+const flattenTree = (cat, rootCategory, level = 0) => {
+    let result = [];
     
-//     // Add the category itself
-//     result.push({ ...cat, rootCategory, level, type: 'category' });
+    // Add the category itself
+    result.push({ ...cat, rootCategory, level, type: 'category' });
 
-//     // Add subcategories
-//     if (cat.subcategories?.length > 0) {
-//         cat.subcategories.forEach(child => {
-//             result = result.concat(flattenTree(child, rootCategory, level + 1));
-//         });
-//     }
+    // Add subcategories
+    if (cat.subcategories?.length > 0) {
+        cat.subcategories.forEach(child => {
+            result = result.concat(flattenTree(child, rootCategory, level + 1));
+        });
+    }
     
-//     return result;
-// };
+    return result;
+};
 
     // Flatten all starting from actual visible categories (like Refrigerator, AC…)
-// const flattenAllCategories = (cats) => {
-//     let result = [];
-//     let allBrands = [];
-//     let brandCounter = 0; // Counter for unique keys
+const flattenAllCategories = (cats) => {
+    let result = [];
+    let allBrands = [];
+    let brandCounter = 0; // Counter for unique keys
     
-//     cats.forEach(cat => {
-//         // Add the category and its subcategories
-//         result = result.concat(flattenTree(cat, cat.category_slug, 0));
+    cats.forEach(cat => {
+        // Add the category and its subcategories
+        result = result.concat(flattenTree(cat, cat.category_slug, 0));
         
-//         // Collect all brands from this category
-//         if (cat.brands && cat.brands.length > 0) {
-//             cat.brands.forEach(brand => {
-//                 allBrands.push({
-//                     ...brand,
-//                     type: 'brand',
-//                     sourceCategory: cat.category_name,
-//                     uniqueKey: `${brand._id}-${cat._id}-${brandCounter++}` // Truly unique key
-//                 });
-//             });
-//         }
-//     });
-    
-//     // Add a single brands header at the end
-//     if (allBrands.length > 0) {
-//         result.push({
-//             _id: 'all-brands-header',
-//             type: 'brands-header',
-//             category_name: 'Brands',
-//             level: 0,
-//             uniqueKey: 'all-brands-header'
-//         });
-        
-//         // Add all collected brands with unique keys
-//         result = result.concat(allBrands.map(brand => ({
-//             ...brand,
-//             level: 1,
-//             uniqueKey: brand.uniqueKey
-//         })));
-//     }
-    
-//     return result;
-// };
-
-   const flattenAllCategories = (cats) => {
-        let result = [];
-        cats.forEach(cat => {
-            // each top-level category is itself the root
-            result = result.concat(flattenTree(cat, cat.category_slug, 0));
-        });
-        return result;
-    };
-
-
-    // 🔹 Split into columns (10 items max per column)
-    const chunkFlatList = (flatList, size = 15) => {
-        const chunks = [];
-        for (let i = 0; i < flatList.length; i += size) {
-            chunks.push(flatList.slice(i, i + size));
+        // Collect all brands from this category
+        if (cat.brands && cat.brands.length > 0) {
+            cat.brands.forEach(brand => {
+                allBrands.push({
+                    ...brand,
+                    type: 'brand',
+                    sourceCategory: cat.category_name,
+                    uniqueKey: `${brand._id}-${cat._id}-${brandCounter++}` // Truly unique key
+                });
+            });
         }
-        return chunks;
-    };
-// const chunkFlatList = (flatList, size = 15) => {
-//     const chunks = [];
+    });
     
-//     // Find where brands section starts
-//     const brandsStartIndex = flatList.findIndex(item => item.type === 'brands-header');
+    // Add a single brands header at the end
+    if (allBrands.length > 0) {
+        result.push({
+            _id: 'all-brands-header',
+            type: 'brands-header',
+            category_name: 'Brands',
+            level: 0,
+            uniqueKey: 'all-brands-header'
+        });
+        
+        // Add all collected brands with unique keys
+        result = result.concat(allBrands.map(brand => ({
+            ...brand,
+            level: 1,
+            uniqueKey: brand.uniqueKey
+        })));
+    }
     
-//     if (brandsStartIndex === -1) {
-//         // No brands, just chunk normally
-//         for (let i = 0; i < flatList.length; i += size) {
-//             chunks.push(flatList.slice(i, i + size));
-//         }
-//         return chunks;
-//     }
-    
-//     // Chunk categories (before brands)
-//     for (let i = 0; i < brandsStartIndex; i += size) {
-//         chunks.push(flatList.slice(i, Math.min(i + size, brandsStartIndex)));
-//     }
-    
-//     // Chunk brands (keep brands together in their own column(s))
-//     const brandsSection = flatList.slice(brandsStartIndex);
-//     const brandsPerColumn = 12; // Adjust as needed
-    
-//     for (let i = 0; i < brandsSection.length; i += brandsPerColumn) {
-//         chunks.push(brandsSection.slice(i, i + brandsPerColumn));
-//     }
-    
-//     return chunks;
-// };
+    return result;
+};
+
+
+
+
+ 
+const chunkFlatList = (flatList, size = 11) => {
+    const chunks = [];
+    if (!Array.isArray(flatList) || flatList.length === 0) return chunks;
+
+    for (let i = 0; i < flatList.length; i += size) {
+        chunks.push(flatList.slice(i, i + size));
+    }
+
+    return chunks;
+};
 
     const cancelHide = () => {
         if (hideTimeout.current) {
@@ -710,28 +666,6 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
         setDropdownTop(rect.bottom);
     };
     // After dropdown mounts, measure and adjust so it never overflows screen or hides under arrows
-    // useLayoutEffect(() => {
-    //     if (!hoveredCategory || !dropdownRef.current) return;
-    //     const ddRect = dropdownRef.current.getBoundingClientRect();
-    //     const screenWidth = window.innerWidth;
-    //     let left = dropdownLeft;
-
-    //     // If dropdown would overflow right edge, shift it left
-    //     if (left + ddRect.width > screenWidth - 10) {
-    //         left = Math.max(10, screenWidth - ddRect.width - 10);
-    //     }
-
-    //     // Ensure dropdown is at least after prev arrow
-    //     const prevBtn = document.querySelector(".custom-swiper-prev");
-    //     const prevRight = prevBtn?.getBoundingClientRect().right || 0;
-    //     if (left < prevRight + 8) left = prevRight + 8;
-
-    //     // Ensure dropdown doesn't go too far left
-    //     if (left < 8) left = 8;
-    //     if (left !== dropdownLeft) setDropdownLeft(left);
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [hoveredCategory, dropdownLeft]);
-
     useLayoutEffect(() => {
         if (!hoveredCategory || !dropdownRef.current) return;
         const ddRect = dropdownRef.current.getBoundingClientRect();
@@ -751,8 +685,8 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
         // Ensure dropdown doesn't go too far left
         if (left < 8) left = 8;
         if (left !== dropdownLeft) setDropdownLeft(left);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hoveredCategory, dropdownLeft]);
+        // only run when hoveredCategory changes to avoid update loops
+    }, [hoveredCategory]);
 
     // cleanup hide timeout on unmount
     useEffect(() => {
@@ -791,100 +725,80 @@ const sortedProducts = useMemo(() => getSortedProducts(), [products, sortOption]
             setForgotPasswordLoading(false);
         }
     };
-    // 🔹 Render flattened category item
-// const renderFlatItem = (item, hoveredCategory) {
-
-//     // Use uniqueKey instead of _id for the key prop
-//     const itemKey = item.uniqueKey || item._id;
-    
-//     if (item.type === 'brands-header') {
-//         return (
-//             <div key={itemKey} className="" style={{ paddingLeft: `${item.level * 12}px` }}>
-//                 <h3 className="font-semibold text-sm text-blue-600 border-b border-gray-200 pb-1">
-//                     {item.category_name}
-//                 </h3>
-//             </div>
-//         );
-//     }
-    
-//     if (item.type === 'brand') {
-//         const href = `/category/brand/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.brand_slug)}`;
-        
-//         return (
-//             <div key={itemKey} style={{ paddingLeft: `${item.level * 12}px` }}>
-//                 <Link
-//                     href={href}
-//                     className="flex items-center mb-1 text-sm text-[#8c8c8c] p-[5px] hover:text-[#0e54e6]"
-//                 >
-//                     <span className="font-normal">{item.brand_name}</span>
-//                 </Link>
-//             </div>
-//         );
-//     }
-    
-//     // Original category rendering code
-//     const href = item.level === 0
-//         ? `/category/${encodeURIComponent(item.category_slug)}`
-//         : `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
-
-//     return (
-//         <div key={itemKey} style={{ paddingLeft: `${item.level * 12}px` }}>
-//             <Link
-//                 href={href}
-//                 className={`flex items-center justify-between mb-1 text-sm ${item.level === 0
-//                         ? "font-semibold text-blue-600"
-//                         : "text-[#8c8c8c] !p-[5px] hover:text-[#0e54e6]"
-//                     }`}
-//             >
-//                 <span className={item.level === 0 ? "font-bold" : "font-normal"}>
-//                     {item.category_name}
-//                 </span>
-//                 {item.level === 0 && (
-//                     <Play
-//                         size={14}
-//                         strokeWidth={0}
-//                         className="text-blue-600 fill-blue-600"
-//                     />
-//                 )}
-//             </Link>
-//         </div>
-//     );
-// };
-
+    // Render flattened category/brand item
 const renderFlatItem = (item, hoveredCategory) => {
-        console.log(hoveredCategory);
-        // if root (level 0) -> only /category/rootCategory
-        const href =
-            item.level === 0
-                ? `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}`
-                : `/category/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.rootCategory)}/${encodeURIComponent(item.category_slug)}`;
+  const itemKey = item.uniqueKey || item._id;
+  const paddingLeft = `${(item.level || 0) * 12}px`;
 
-        return (
-            <div key={item._id} style={{ paddingLeft: `${item.level * 12}px` }}>
-                <Link
-                    href={href}
-                    className={`flex items-center justify-between mb-1 text-sm ${item.level === 0
-                            ? "font-semibold text-blue-600"
-                            : "text-[#8c8c8c] !p-[5px] hover:text-[#0e54e6]"
-                        }`}
-                >
-                    {/* Category name with bold font */}
-                    <span className={item.level === 0 ? "font-bold" : "font-normal"}>
-                        {item.category_name}
-                    </span>
+  let content = null;
 
-                    {/* Show triangle icon only for top-level categories */}
-                    {item.level === 0 && (
-                        <Play
-                            size={14}
-                            strokeWidth={0} // remove outline
-                            className="text-blue-600 fill-blue-600"
-                        />
-                    )}
-                </Link>
-            </div>
-        );
-    };
+  if (item.type === "brands-header") {
+    const href =
+      item.level === 0
+        ? `/category/${encodeURIComponent(item.category_slug || "")}`
+        : `/category/${encodeURIComponent(
+            hoveredCategory?.category_slug || ""
+          )}/${encodeURIComponent(item.rootCategory || "")}/${encodeURIComponent(
+            item.category_slug || ""
+          )}`;
+    content = (
+        
+      <h3 className="flex items-center justify-between mb-1 text-sm font-semibold text-blue-600 ml-1">
+  {item.category_name}
+</h3>
+    );
+  } 
+  else if (item.type === "brand") {
+    const href = `/category/brand/${encodeURIComponent(
+      hoveredCategory?.category_slug || ""
+    )}/${encodeURIComponent(item.brand_slug || "")}`;
+
+    content = (
+      <Link
+        href={href}
+        className="flex items-center mb-1 text-sm text-[#8c8c8c] p-[5px] hover:text-[#0e54e6]"
+      >
+        <span className="font-normal">{item.brand_name}</span>
+      </Link>
+    );
+  } 
+  else {
+    const href =`/category/${encodeURIComponent(
+            hoveredCategory?.category_slug || ""
+          )}/${encodeURIComponent(item.rootCategory || "")}/${encodeURIComponent(
+            item.category_slug || ""
+          )}`;
+
+    content = (
+      <Link
+        href={href}
+        className={`flex items-center justify-between mb-1 text-sm ${
+          item.level === 0
+            ? "font-semibold text-blue-600"
+            : "text-[#8c8c8c] !p-[5px] hover:text-[#0e54e6]"
+        }`}
+      >
+        <span className={item.level === 0 ? "font-bold" : "font-normal"}>
+          {item.category_name}
+        </span>
+        {item.level === 0 && (
+          <Play
+            size={14}
+            strokeWidth={0}
+            className="text-blue-600 fill-blue-600"
+          />
+        )}
+      </Link>
+    );
+  }
+
+  return (
+    <div key={itemKey} style={{ paddingLeft }}>
+      {content}
+    </div>
+  );
+};
+
 
     return (
         <header className="sticky top-0 z-50">
@@ -994,8 +908,8 @@ const renderFlatItem = (item, hoveredCategory) => {
                           className="fixed z-50 border-t border-gray-200 shadow-xl bg-white rounded"
                           style={{
                             top: `${searchDropdownTop}px`,
-                            left: `${searchDropdownLeft}px`,
                             width: `${searchDropdownWidth + 120}px`,
+                            left: `30px`,
                             maxHeight: '420px',
                             overflow: 'auto'
                           }}
@@ -1517,50 +1431,125 @@ const renderFlatItem = (item, hoveredCategory) => {
                         className="fixed z-50 border-t border-gray-200 shadow-xl"
                         style={{
                             top: `${dropdownTop}px`,
-                            left: `${dropdownLeft}px`,
                             maxWidth: "calc(100% - 20px)",
-
+  left: `30px`,
                         }}
                         onMouseEnter={cancelHide}
                         onMouseLeave={() => startHide(120)}
                     >
                         <div className="flex flex-wrap bg-white h-[390px]">
-                            {(() => {
-                                const dropdownChunksLocal = chunkFlatList(
-                                    flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
-                                    11
-                                );
+  {(() => {
+    let dropdownChunksLocal = chunkFlatList(
+      flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+      11
+    );
 
-                                return dropdownChunksLocal.map((chunk, index) => {
-                                    const isLast = index === dropdownChunksLocal.length - 1;
-                                    const scrollableClass = chunk.length > 10 ? ' max-h-[320px] pr-2' : '';
-                                    return (
-                                        <div
-                                            key={index}
-                                            className={`min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start ${scrollableClass}`}
-                                        >
-                                            {chunk.map(item => renderFlatItem(item, hoveredCategory))}
+    // If the last chunk is short, try to move items (brands) into previous column to fill the gap
+    if (dropdownChunksLocal.length > 1) {
+      const size = 11;
+      const prevIdx = dropdownChunksLocal.length - 2;
+      const lastIdx = dropdownChunksLocal.length - 1;
+      const prevChunk = [...dropdownChunksLocal[prevIdx]];
+      const lastChunk = [...dropdownChunksLocal[lastIdx]];
 
-                                            {/* Render image only inside the last column if available */}
-                                            {isLast && (hoveredCategory.navImage || hoveredCategory.image) && (
-                                                <div className="mt-2 w-full h-[180px] flex items-center justify-center">
-                                                    <Link href={``} className="w-full h-full block">
-                                                        <Image
-                                                            src={hoveredCategory.navImage || hoveredCategory.image}
-                                                            alt="Category Navigation Image"
-                                                            width={220}
-                                                            height={390}
-                                                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                                                            className="object-cover rounded"
-                                                        />
-                                                    </Link>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                });
-                            })()}
-                        </div>
+      const space = Math.max(0, size - prevChunk.length);
+      if (space > 0 && lastChunk.length > 0) {
+        // move up to `space` items from lastChunk into prevChunk
+        const moving = lastChunk.splice(0, space);
+        prevChunk.push(...moving);
+        dropdownChunksLocal[prevIdx] = prevChunk;
+        if (lastChunk.length === 0) {
+          dropdownChunksLocal.pop();
+        } else {
+          dropdownChunksLocal[lastIdx] = lastChunk;
+        }
+      }
+    }
+
+    // If a chunk immediately before a brands column is short, move brands into it
+    if (dropdownChunksLocal.length > 1) {
+      const size = 11;
+      for (let i = 0; i < dropdownChunksLocal.length - 1; i++) {
+        const current = dropdownChunksLocal[i];
+        const next = dropdownChunksLocal[i + 1];
+        if (!Array.isArray(next) || next.length === 0) continue;
+        if (next[0]?.type === 'brands-header' && current.length < size) {
+          const space = Math.max(0, size - current.length);
+          // move up to `space` items from next into current (including header if needed)
+          const moving = next.splice(0, space);
+          dropdownChunksLocal[i] = [...current, ...moving];
+          if (next.length === 0) {
+            dropdownChunksLocal.splice(i + 1, 1);
+          } else {
+            dropdownChunksLocal[i + 1] = next;
+          }
+          // after moving once, stop — we only fill the immediate short column
+          break;
+        }
+      }
+    }
+
+    // determine if hovered category has navigation image
+    const hasNavImage = Boolean(hoveredCategory && (hoveredCategory.navImage || hoveredCategory.image));
+
+    // build columns from chunks with max 6 visible columns
+    const maxCols = 6;
+    const dataCols = dropdownChunksLocal;
+
+    // compute how many slots image should occupy (used when rendering image panel)
+    const imageSpan = hasNavImage && dataCols.length < maxCols ? Math.max(1, maxCols - dataCols.length) : 0;
+    const spanWidth = `calc(${imageSpan} * 250px)`; // 250px matches other column max width
+
+    // columns are only the data columns (limit to maxCols)
+    const columns = dataCols.slice(0, maxCols);
+
+    // container paddingRight reserves space for absolutely-positioned image panel
+    const containerStyle = hasNavImage && imageSpan > 0 ? { paddingRight: spanWidth } : undefined;
+
+    return (
+      <>
+        {columns.map((chunk, index) => {
+          const scrollableClass = chunk.length > 10 ? " max-h-[320px] pr-2" : "";
+          return (
+            <div key={index} className={`min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start ${scrollableClass}`} style={{
+
+                boxShadow: '0px -13px 0px #2453d3',
+                }}>
+              {chunk.map((item) => renderFlatItem(item, hoveredCategory))}
+            </div>
+          );
+        })}
+
+        {/* absolutely positioned image panel on the right to avoid wrapping under columns */}
+        {hasNavImage && imageSpan > 0 && (
+          <div
+            key="nav-image-panel"
+            className={`min-w-[240px] max-w-[250px]  flex flex-col justify-start max-h-[324px] `}
+            
+          >
+            <Link href={``} className="w-full h-full block">
+              <Image
+                src={hoveredCategory.navImage || hoveredCategory.image}
+                alt={hoveredCategory.category_name || 'Category Image'}
+                width={220 * imageSpan}
+                height={390}
+                style={{
+                objectFit: 'cover',
+                width: '100%',
+                height: '120%',
+                boxShadow: '0px -13px 0px #2453d3',
+                }}
+
+                className="object-cover rounded"
+              />
+            </Link>
+          </div>
+        )}
+      </>
+    );
+  })()}
+</div>
+
 
                     </div>
                 )}
