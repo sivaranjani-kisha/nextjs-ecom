@@ -222,11 +222,19 @@ const RecentlyViewedProducts = () => {
                               src={
                                 product.images[0].startsWith("http")
                                   ? product.images[0]
-                                  : `/uploads/products/${product.images[0]}`
+                                  : `https://bea.divinfosys.com/uploads/products/${product.images[0]}`
                               }
                               alt={product.name}
                               fill
-                              className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
+                
+
+                              className={`object-contain p-2 md:p-4 transition-transform duration-500 
+                              ${product.images[1] 
+                                ? "group-hover:opacity-0"   // if 2nd image → fade out
+                                : "group-hover:scale-110"   // if only 1 image → zoom
+                              }`}
+
+
                               sizes="(max-width: 640px) 50vw, 33vw, 25vw"
                               unoptimized
                               onError={(e) => {
@@ -241,27 +249,24 @@ const RecentlyViewedProducts = () => {
                                 src={
                                   product.images[1].startsWith("http")
                                     ? product.images[1]
-                                    : `/uploads/products/${product.images[1]}`
+                                    : `https://bea.divinfosys.com/uploads/products/${product.images[1]}`
                                 }
                                 alt={product.name}
-                                fill
-                                className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                                fill                
+                                className="object-contain p-2 md:p-4 transition-transform duration-500 opacity-0 group-hover:opacity-100 group-hover:scale-110"
                                 sizes="(max-width: 640px) 50vw, 33vw, 25vw"
                                 unoptimized
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = "/uploads/products/placeholder.jpg";
+                                  e.target.src = `https://bea.divinfosys.com/uploads/products/${product.images[0]}`;
                                 }}
                               />
                             )}
                           </>
                         )}
                                                   
-
-
-
                         {/* Gray overlay on hover */}
-                        <div className="absolute inset-0 bg-gray-500 opacity-0 group-hover:opacity-50 transition-opacity duration-300 z-10"></div>
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-50 transition-opacity duration-300 z-10"></div>
 
                         {/* Discount Badge (always visible) */}
                         {Number(product.special_price) > 0 &&

@@ -204,7 +204,7 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
           <div>
             <input
               type="password"
-              placeholder="Passwordbc"
+              placeholder="Password"
               value={formData.password}
               onChange={(e) => {
                 setFormData({...formData, password: e.target.value});
