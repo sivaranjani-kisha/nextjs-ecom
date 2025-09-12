@@ -209,11 +209,11 @@ const RecentlyViewedProducts = () => {
                   {visibleProducts.map((product) => (
                     <div
                       key={product._id}
-                      className="group border border-gray-200 hover:border-[#0069c1] hover:shadow-md transition-all duration-300 rounded-lg p-1"
+                      className="group border border-gray-200 hover:border-[#0069c1] hover:shadow-md transition-all duration-300 rounded-lg"
                     >
                       
                       {/* Product Image */}
-                      <div className="relative w-full h-[210px] bg-gray-50 group overflow-hidden rounded-t-lg aspect-square">
+                      <div className="relative w-full h-[210px] group overflow-hidden rounded-t-lg aspect-square">
 
                         {product.images?.[0] && (
                           <>
@@ -222,7 +222,7 @@ const RecentlyViewedProducts = () => {
                               src={
                                 product.images[0].startsWith("http")
                                   ? product.images[0]
-                                  : `https://bea.divinfosys.com/uploads/products/${product.images[0]}`
+                                  : `/uploads/products/${product.images[0]}`
                               }
                               alt={product.name}
                               fill
@@ -249,7 +249,7 @@ const RecentlyViewedProducts = () => {
                                 src={
                                   product.images[1].startsWith("http")
                                     ? product.images[1]
-                                    : `https://bea.divinfosys.com/uploads/products/${product.images[1]}`
+                                    : `/uploads/products/${product.images[1]}`
                                 }
                                 alt={product.name}
                                 fill                
@@ -258,7 +258,7 @@ const RecentlyViewedProducts = () => {
                                 unoptimized
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = `https://bea.divinfosys.com/uploads/products/${product.images[0]}`;
+                                  e.target.src = `/uploads/products/${product.images[0]}`;
                                 }}
                               />
                             )}
