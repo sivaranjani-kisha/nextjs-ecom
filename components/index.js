@@ -97,15 +97,15 @@ const scrollCategories = (direction) => {
     borderColor: "#68778B"
   },
   "television": {
-    backgroundImage: "/uploads/categories/category-darling-img/television.png",
+    backgroundImage: "/uploads/categories/category-darling-img/television-one.jpg",
     borderColor: "#A9A097" 
   },
   "refrigerator": {
-    backgroundImage: "/uploads/categories/category-darling-img/refirgrator.png",
+    backgroundImage: "/uploads/categories/category-darling-img/refirgrator-one.jpg",
     borderColor: "#5C8B99" 
   },
   "washing-machine": {
-    backgroundImage: "/uploads/categories/category-darling-img/washine-machine.png",
+    backgroundImage: "/uploads/categories/category-darling-img/washine-machine-one.jpg",
     borderColor: "#69AEA2"
   }
 };
@@ -1515,7 +1515,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                         </div>
                         
                         {/* Category-based Product Display */}
-                        <div className="space-y-8">            
+                        <div className="space-y-8 max-w-7xl mx-auto">            
                           {parentCategories
                             .filter(category => priorityCategories.includes(category.category_slug))
                             .sort((a, b) => {
@@ -1599,7 +1599,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                           <div key={product._id} className="relative bg-white flex-shrink-0 w-64 flex flex-col justify-between p-0  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
                                             
                                             {/* Product Image */}
-                                            <div className="relative aspect-square bg-gray-50 group">
+                                            <div className="relative aspect-square bg-white group">
                                               {product.images?.[0] && (
                                                 <>
                                                   {/* Default Image */}
