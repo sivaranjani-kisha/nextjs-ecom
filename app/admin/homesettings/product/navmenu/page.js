@@ -19,7 +19,7 @@ export default function ProductCategoryPage() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/categoryproduct');
+      const response = await fetch('/api/categoryproduct/nav');
       
       if (!response.ok) {
         throw new Error('Failed to fetch category products');
@@ -68,7 +68,7 @@ export default function ProductCategoryPage() {
       
       // Create the data to send to the API
       const updatePromises = categories.map((category, index) => 
-        fetch('/api/categoryproduct', {
+        fetch('/api/categoryproduct/nav', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ export default function ProductCategoryPage() {
       setOriginalCategories(JSON.parse(JSON.stringify(categories)));
       setHasChanges(false);
       
-      alert("Category order saved successfully!");
+   
       
       // Refresh to make sure we have the latest data
       fetchCategories();
@@ -194,10 +194,8 @@ export default function ProductCategoryPage() {
                               </span>
                               <div>
                                 <div style={{ fontWeight: '500' }}>
-                                 {category.subcategoryId?.category_name || 
-                                (category.subcategoryId && typeof category.subcategoryId === 'object' 
-                                ? category.subcategoryId.category_name 
-                                : 'Unknown Category')}
+                                  {/* FIXED: Get category name from subcategoryId object */}
+                                  {category.subcategoryId?.category_name || 'Unknown Category'}
                                 </div>
                                 <div style={{ fontSize: '0.8em', color: '#666' }}>
                                   {category.products?.length || 0} products
