@@ -1596,7 +1596,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
                                         {categoryProducts.slice(0, 15).map((product) => (
                                         
-                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-72 flex flex-col justify-between p-0  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
+                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-64 flex flex-col justify-between p-0  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
                                             
                                             {/* Product Image */}
                                             <div className="relative aspect-square bg-gray-50 group">
@@ -1630,7 +1630,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                       }
                                                       alt={product.name}
                                                       fill
-                                                      className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                                                      className="object-contain p-0 md:p-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
                                                       sizes="(max-width: 640px) 50vw, 33vw, 25vw"
                                                       unoptimized
                                                       onError={(e) => {
