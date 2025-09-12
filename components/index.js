@@ -89,8 +89,8 @@ const scrollCategories = (direction) => {
  const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
  const categoryStyles = {
   "air-conditioner": {
-    backgroundImage: "/uploads/categories/category-darling-img/air-conditioner.png",
-    borderColor: "#B48A60" 
+    backgroundImage: "/uploads/categories/category-darling-img/air-conditoner-one.jpg",
+    borderColor: "#060F16" 
   },
   "mobile-phones": {
     backgroundImage: "/uploads/categories/category-darling-img/smartphone.png", 
@@ -961,7 +961,544 @@ const handleCategoryClick = useCallback((category) => (e) => {
                       </div>
                     </section>
                     );
+                // case 'product':
+                //   return (
+                //     <motion.section
+                //       id="product"
+                //       initial="hiddenDown"
+                //       animate="visible"
+                //       className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
+                //     >
+                //       <div className="rounded-[23px] py-4 p-2">
+                //         {/* Section Header */}
+                //         <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                //           <h5 className="text-xl sm:text-2xl font-bold">
+                //             Shop by Category
+                //           </h5>
+                //         </div>
+                        
+                //         {/* Category-based Product Display */}
+                //         <div className="space-y-8">            
+                //           {parentCategories
+                //             .filter(category => priorityCategories.includes(category.category_slug))
+                //             .sort((a, b) => {
+                //               // Sort by the order in priorityCategories array
+                //               return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
+                //             })
+                //             .map((category, index) => {
+
+                //               const categoryStyle = categoryStyles[category.category_slug] || {
+                //                 backgroundImage: '/uploads/small-appliance-banner.webp',
+                //                 borderColor: '#1F3A8C'
+                //               };
+                //               // Get products for this category
+                //               const categoryProducts = (() => {
+                //                 const subCategories = categories.filter(
+                //                   cat => cat.parentid === category._id
+                //                 );
+                          
+                //                 const validCategoryIds = [
+                //                   category._id,
+                //                   ...subCategories.map(sub => sub._id)
+                //                 ];
+                          
+                //                 const allProducts = products.filter(product => 
+                //                   product.category && product.quantity > 2 && product.special_price > 2 &&
+                //                   validCategoryIds.includes(product.category.toString())
+                //                 );
+                                
+                //                 return allProducts.slice(0, 50);
+                //               })();
+                          
+                //               // Skip empty categories
+                //               if (categoryProducts.length === 0) return null;
+                          
+                //               return (
+                //                 <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
+                //                   {/* Category Banner */}
+                //                   <div className="flex-shrink-0 w-full md:w-1/3 relative">
+                //                     <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
+                //                     <div className="relative z-10 h-full flex flex-col p-6 text-white">
+                //                       <h2 className="text-2xl font-bold">{category.category_name}</h2>
+                                      
+                //                       <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
+                //                     </div>
+                //                   </div>
+
+                //                   {/* Products Grid */}
+                //                   <div className="w-full md:w-2/3">
+                //                     <div className={` relative flex-1 pt-2 pb-2 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}  style={{ border: `solid 6px ${categoryStyle.borderColor}` }}>
+                //                       {/* Left Arrow */}
+                //                       <button
+                //                         onClick={() => scrollLeft(category._id)}
+                //                         className="absolute left-0 top-1/2 -translate-y-1/2 
+                //                                   w-8 h-8 flex items-center justify-center 
+                //                                   rounded-full bg-white text-black border border-gray 
+                //                                   hover:bg-black hover:text-white hover:border-white
+                //                                   shadow-sm z-20 transition-all duration-300"
+                //                       >
+                //                         <FiChevronLeft size={18} />
+                //                       </button>
+
+                //                       {/* Right Arrow */}
+                //                       <button
+                //                         onClick={() => scrollRight(category._id)}
+                //                         className="absolute right-0 top-1/2 -translate-y-1/2 
+                //                                   w-8 h-8 flex items-center justify-center 
+                //                                   rounded-full bg-white text-black border border-gray 
+                //                                   hover:bg-black hover:text-white hover:border-white
+                //                                   shadow-sm z-20 transition-all duration-300"
+                //                       >
+                //                         <FiChevronRight size={18} />
+                //                       </button>
+                //                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
+                //                         {categoryProducts.slice(0, 6).map((product) => (
+                                        
+                //                           <div key={product._id} className="relative bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
+                                            
+                //                             {/* Product Image */}
+                //                             <div className="relative aspect-square bg-gray-50 group">
+                //                               {product.images?.[0] && (
+                //                                 <>
+                //                                   {/* Default Image */}
+                //                                   <Image
+                //                                     src={
+                //                                       product.images[0].startsWith("http")
+                //                                         ? product.images[0]
+                //                                         : `/uploads/products/${product.images[0]}`
+                //                                     }
+                //                                     alt={product.name}
+                //                                     fill
+                //                                     className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
+                //                                     sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                //                                     unoptimized
+                //                                     onError={(e) => {
+                //                                       e.target.onerror = null;
+                //                                       e.target.src = "/uploads/products/placeholder.jpg";
+                //                                     }}
+                //                                   />
+
+                //                                   {/* Hover Image (second image if available) */}
+                //                                   {product.images[1] && (
+                //                                     <Image
+                //                                       src={
+                //                                         product.images[1].startsWith("http")
+                //                                           ? product.images[1]
+                //                                           : `/uploads/products/${product.images[1]}`
+                //                                       }
+                //                                       alt={product.name}
+                //                                       fill
+                //                                       className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                //                                       sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                //                                       unoptimized
+                //                                       onError={(e) => {
+                //                                         e.target.onerror = null;
+                //                                         e.target.src = "/uploads/products/placeholder.jpg";
+                //                                       }}
+                //                                     />
+                //                                   )}
+                //                                 </>
+                //                               )}
+                          
+                //                               {/* Discount Badge */}
+                //                               {Number(product.special_price) > 0 &&
+                //                                 Number(product.special_price) < Number(product.price) && (
+                //                                   <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                //                                     {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
+                //                                   </span>
+                //                               )}
+                          
+                          
+                //                               {/* Wishlist */}
+                //                               <div className="absolute top-2 right-2">
+                //                                 <ProductCard productId={product._id} />
+                //                               </div>
+                //                             </div>
+                          
+                //                             {/* Product Info and Buttons */}
+                //                             <div className="p-2 md:p-4 flex flex-col h-full">
+                //                               <h4 className="text-xs text-gray-500 mb-2 uppercase">
+                //                                 <Link
+                //                                   href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                //                                   className="hover:text-blue-600"
+                //                                 >
+                //                                   {brandMap[product.brand] || ""}
+                //                                 </Link>
+                //                               </h4>
+                        
+                //                               {/* Title with fixed height */}
+                //                               <Link
+                //                                 href={`/product/${product.slug}`}
+                //                                 className="block mb-2"
+                //                                 onClick={() => handleProductClick(product)}
+                //                               >
+                //                                 <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                //                                   {product.name}
+                //                                 </h3>
+                //                               </Link>
+                          
+                //                               {/* Price Row (same level always) */}
+                //                                <div className="flex items-center gap-2 mb-3">
+                //                                 <span className="text-base font-semibold text-red-600">
+                //                                   ₹ {(
+                //                                     product.special_price &&
+                //                                     product.special_price > 0 &&
+                //                                     product.special_price != '0' &&
+                //                                     product.special_price != 0 &&
+                //                                     product.special_price < product.price
+                //                                       ? Math.round(product.special_price)
+                //                                       : Math.round(product.price)
+                //                                   ).toLocaleString()}
+                //                                 </span>
+
+                //                                 {product.special_price > 0 &&
+                //                                   product.special_price != '0' &&
+                //                                   product.special_price != 0 &&
+                //                                   product.special_price &&
+                //                                   product.special_price < product.price && (
+                //                                     <span className="text-xs text-gray-500 line-through">
+                //                                       ₹ {Math.round(product.price).toLocaleString()}
+                //                                     </span>
+                //                                 )}
+                //                               </div>
+                //                               {/* <div className="flex items-center gap-2 mb-3">
+                //                                 <span className="text-base font-semibold text-red-600">
+                //                                   ₹ {(
+                //                                     product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
+                //                                       ? product.special_price
+                //                                       : product.price
+                //                                   ).toLocaleString()}
+                //                                 </span>
+                          
+                          
+                //                                 {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
+                //                                   product.special_price < product.price &&
+                //                                   (
+                //                                     <span className="text-xs text-gray-500 line-through">
+                //                                       ₹ {product.price.toLocaleString()}
+                //                                     </span>
+                //                                 )}
+                //                               </div> */}
+                          
+                //                               <h4
+                //                                     className={`text-xs mb-3 ${
+                //                                       product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
+                //                                     }`}
+                //                                   >
+                //                                     {product.stock_status}
+                //                                     {product.stock_status === "In Stock" && product.quantity
+                //                                       ? `, ${product.quantity} units`
+                //                                       : ""}
+                //                                   </h4>
+                          
+                //                               {/* Bottom Buttons */}
+                //                               <div className="mt-auto flex items-center justify-between gap-2">
+                //                                 <Addtocart
+                //                                   productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
+                //                                   className="w-full text-xs sm:text-sm py-1.5"
+                //                                 />
+                //                                 <a
+                //                                   href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
+                //                                   target="_blank"
+                //                                   rel="noopener noreferrer"
+                //                                   className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
+                //                                 >
+                //                                   <svg
+                //                                     className="w-5 h-5"
+                //                                     viewBox="0 0 32 32"
+                //                                     fill="currentColor"
+                //                                     xmlns="http://www.w3.org/2000/svg"
+                //                                   >
+                //                                     <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
+                //                                   </svg>
+                //                                 </a>
+                //                               </div>
+                //                             </div>
+                //                           </div>
+                //                         ))}
+                //                       </div>
+                //                     </div>
+                //                   </div>
+                //                 </div>
+                //               );
+                //             })
+                //           }
+                //         </div>
+                //       </div>
+                //     </motion.section>
+                //   );
                 case 'product':
+                  // return (
+                  //   <motion.section
+                  //     id="product"
+                  //     initial="hiddenDown"
+                  //     animate="visible"
+                  //     className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
+                  //   >
+                  //     <div className="rounded-[23px] py-4 p-2">
+                  //       {/* Section Header */}
+                  //       <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                  //         <h5 className="text-xl sm:text-2xl font-bold">
+                  //           Shop by Category
+                  //         </h5>
+                  //       </div>
+                        
+                  //       {/* Category-based Product Display */}
+                  //       <div className="space-y-8">            
+                  //         {parentCategories
+                  //           .filter(category => priorityCategories.includes(category.category_slug))
+                  //           .sort((a, b) => {
+                  //             // Sort by the order in priorityCategories array
+                  //             return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
+                  //           })
+                  //           .map((category, index) => {
+
+                  //             const categoryStyle = categoryStyles[category.category_slug] || {
+                  //               backgroundImage: '/uploads/small-appliance-banner.webp',
+                  //               borderColor: '#1F3A8C'
+                  //             };
+                  //             // Get products for this category
+                  //             const categoryProducts = (() => {
+                  //               const subCategories = categories.filter(
+                  //                 cat => cat.parentid === category._id
+                  //               );
+                          
+                  //               const validCategoryIds = [
+                  //                 category._id,
+                  //                 ...subCategories.map(sub => sub._id)
+                  //               ];
+                          
+                  //               const allProducts = products.filter(product => 
+                  //                 product.category && product.quantity > 2 && product.special_price > 2 &&
+                  //                 validCategoryIds.includes(product.category.toString())
+                  //               );
+                                
+                  //               return allProducts.slice(0, 50);
+                  //             })();
+                          
+                  //             // Skip empty categories
+                  //             if (categoryProducts.length === 0) return null;
+                          
+                  //             return (
+                  //               <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
+                  //                 {/* Category Banner */}
+                  //                 <div className="flex-shrink-0 relative" style={{width: '450px', height: '472px'}}>
+                  //                   <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
+                  //                   <div className="relative z-10 h-full flex flex-col p-6 text-white">
+                  //                     <h2 className="text-2xl font-bold">{category.category_name}</h2>
+                                      
+                  //                     <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
+                  //                   </div>
+                  //                 </div>
+
+                  //                 {/* Products Grid */}
+                  //                 <div className="" style={{width: 'calc(100% - 450px)'}}>
+                  //                   <div className={` relative flex-1 pt-2 pb-0 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}   style={{
+                  //                     borderTop: `6px solid ${categoryStyle.borderColor}`,
+                  //                     borderBottom: `6px solid ${categoryStyle.borderColor}`,
+                  //                     borderLeft: index % 2 === 1 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
+                  //                     borderRight: index % 2 === 0 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
+                  //                   }}>
+                  //                     {/* relative bg-white flex-shrink-0 w-72 h-[466px] flex flex-col justify-between p-4 rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer */}
+                  //                     {/* Left Arrow */}
+                  //                     <button
+                  //                       onClick={() => scrollLeft(category._id)}
+                  //                       className="absolute left-0 top-1/2 -translate-y-1/2 
+                  //                                 w-8 h-8 flex items-center justify-center 
+                  //                                 rounded-full bg-white text-black border border-gray 
+                  //                                 hover:bg-black hover:text-white hover:border-white
+                  //                                 shadow-sm z-20 transition-all duration-300"
+                  //                     >
+                  //                       <FiChevronLeft size={18} />
+                  //                     </button>
+
+                  //                     {/* Right Arrow */}
+                  //                     <button
+                  //                       onClick={() => scrollRight(category._id)}
+                  //                       className="absolute right-0 top-1/2 -translate-y-1/2 
+                  //                                 w-8 h-8 flex items-center justify-center 
+                  //                                 rounded-full bg-white text-black border border-gray 
+                  //                                 hover:bg-black hover:text-white hover:border-white
+                  //                                 shadow-sm z-20 transition-all duration-300"
+                  //                     >
+                  //                       <FiChevronRight size={18} />
+                  //                     </button>
+                  //                     <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
+                  //                       {categoryProducts.slice(0, 6).map((product) => (
+                                        
+                  //                         <div key={product._id} className="relative bg-white flex-shrink-0 w-72 h-[450px] flex flex-col justify-between p-4 rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer mb-2">
+                                            
+                  //                           {/* Product Image */}
+                  //                           <div className="relative aspect-square bg-gray-50 group">
+                  //                             {product.images?.[0] && (
+                  //                               <>
+                  //                                 {/* Default Image */}
+                  //                                 <Image
+                  //                                   src={
+                  //                                     product.images[0].startsWith("http")
+                  //                                       ? product.images[0]
+                  //                                       : `/uploads/products/${product.images[0]}`
+                  //                                   }
+                  //                                   alt={product.name}
+                  //                                   fill
+                  //                                   className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
+                  //                                   sizes="(max-width: 500px) 40vw, 23vw, 15vw"
+                  //                                   unoptimized
+                  //                                   onError={(e) => {
+                  //                                     e.target.onerror = null;
+                  //                                     e.target.src = "/uploads/products/placeholder.jpg";
+                  //                                   }}
+                  //                                 />
+
+                  //                                 {/* Hover Image (second image if available) */}
+                  //                                 {product.images[1] && (
+                  //                                   <Image
+                  //                                     src={
+                  //                                       product.images[1].startsWith("http")
+                  //                                         ? product.images[1]
+                  //                                         : `/uploads/products/${product.images[1]}`
+                  //                                     }
+                  //                                     alt={product.name}
+                  //                                     fill
+                  //                                     className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                  //                                     sizes="(max-width: 500px) 40vw, 23vw, 15vw"
+                  //                                     unoptimized
+                  //                                     onError={(e) => {
+                  //                                       e.target.onerror = null;
+                  //                                       e.target.src = "/uploads/products/placeholder.jpg";
+                  //                                     }}
+                  //                                   />
+                  //                                 )}
+                  //                               </>
+                  //                             )}
+                          
+                  //                             {/* Discount Badge */}
+                  //                             {Number(product.special_price) > 0 &&
+                  //                               Number(product.special_price) < Number(product.price) && (
+                  //                                 <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                  //                                   {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
+                  //                                 </span>
+                  //                             )}
+                          
+                          
+                  //                             {/* Wishlist */}
+                  //                             <div className="absolute top-2 right-2">
+                  //                               <ProductCard productId={product._id} />
+                  //                             </div>
+                  //                           </div>
+                          
+                  //                           {/* Product Info and Buttons */}
+                  //                           <div className="pb-0 p-2 md:px-4 flex flex-col h-full ">
+                  //                             <h4 className="text-xs text-gray-500 mb-2 uppercase">
+                  //                               <Link
+                  //                                 href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                  //                                 className="hover:text-blue-600"
+                  //                               >
+                  //                                 {brandMap[product.brand] || ""}
+                  //                               </Link>
+                  //                             </h4>
+                        
+                  //                             {/* Title with fixed height */}
+                  //                             <Link
+                  //                               href={`/product/${product.slug}`}
+                  //                               className="block mb-2"
+                  //                               onClick={() => handleProductClick(product)}
+                  //                             >
+                  //                               <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                  //                                 {product.name}
+                  //                               </h3>
+                  //                             </Link>
+                          
+                  //                             {/* Price Row (same level always) */}
+                  //                              <div className="flex items-center gap-2 mb-2">
+                  //                               <span className="text-base font-semibold text-red-600">
+                  //                                 ₹ {(
+                  //                                   product.special_price &&
+                  //                                   product.special_price > 0 &&
+                  //                                   product.special_price != '0' &&
+                  //                                   product.special_price != 0 &&
+                  //                                   product.special_price < product.price
+                  //                                     ? Math.round(product.special_price)
+                  //                                     : Math.round(product.price)
+                  //                                 ).toLocaleString()}
+                  //                               </span>
+
+                  //                               {product.special_price > 0 &&
+                  //                                 product.special_price != '0' &&
+                  //                                 product.special_price != 0 &&
+                  //                                 product.special_price &&
+                  //                                 product.special_price < product.price && (
+                  //                                   <span className="text-xs text-gray-500 line-through">
+                  //                                     ₹ {Math.round(product.price).toLocaleString()}
+                  //                                   </span>
+                  //                               )}
+                  //                             </div>
+                  //                             {/* <div className="flex items-center gap-2 mb-3">
+                  //                               <span className="text-base font-semibold text-red-600">
+                  //                                 ₹ {(
+                  //                                   product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
+                  //                                     ? product.special_price
+                  //                                     : product.price
+                  //                                 ).toLocaleString()}
+                  //                               </span>
+                          
+                          
+                  //                               {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
+                  //                                 product.special_price < product.price &&
+                  //                                 (
+                  //                                   <span className="text-xs text-gray-500 line-through">
+                  //                                     ₹ {product.price.toLocaleString()}
+                  //                                   </span>
+                  //                               )}
+                  //                             </div> */}
+                          
+                  //                             <h4
+                  //                                   className={`text-xs mb-2 ${
+                  //                                     product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
+                  //                                   }`}
+                  //                                 >
+                  //                                   {product.stock_status}
+                  //                                   {product.stock_status === "In Stock" && product.quantity
+                  //                                     ? `, ${product.quantity} units`
+                  //                                     : ""}
+                  //                                 </h4>
+                          
+                  //                             {/* Bottom Buttons */}
+                  //                             <div className="mt-2 mb-1 flex items-center justify-between gap-2">
+                  //                               <Addtocart
+                  //                                 productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
+                  //                                 className="w-full text-xs sm:text-sm py-1.5"
+                  //                               />
+                  //                               <a
+                  //                                 href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
+                  //                                 target="_blank"
+                  //                                 rel="noopener noreferrer"
+                  //                                 className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
+                  //                               >
+                  //                                 <svg
+                  //                                   className="w-5 h-5"
+                  //                                   viewBox="0 0 32 32"
+                  //                                   fill="currentColor"
+                  //                                   xmlns="http://www.w3.org/2000/svg"
+                  //                                 >
+                  //                                   <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
+                  //                                 </svg>
+                  //                               </a>
+                  //                             </div>
+                  //                           </div>
+                  //                         </div>
+                  //                       ))}
+                  //                     </div>
+                  //                   </div>
+                  //                 </div>
+                  //               </div>
+                  //             );
+                  //           })
+                  //         }
+                  //       </div>
+                  //     </div>
+                  //   </motion.section>
+                  // );
                   return (
                     <motion.section
                       id="product"
@@ -1007,7 +1544,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                   validCategoryIds.includes(product.category.toString())
                                 );
                                 
-                                return allProducts.slice(0, 50);
+                                return allProducts.slice(0, 200);
                               })();
                           
                               // Skip empty categories
@@ -1016,8 +1553,8 @@ const handleCategoryClick = useCallback((category) => (e) => {
                               return (
                                 <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
                                   {/* Category Banner */}
-                                  <div className="flex-shrink-0 w-full md:w-1/3 relative">
-                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
+                                 <div className="flex-shrink-0 relative" style={{width: '450px'}}>
+                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})`,backgroundSize:'cover',backgroundPosition: 'center',backgroundRepeat: 'no-repeat'}}></div>
                                     <div className="relative z-10 h-full flex flex-col p-6 text-white">
                                       <h2 className="text-2xl font-bold">{category.category_name}</h2>
                                       
@@ -1026,8 +1563,13 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                   </div>
 
                                   {/* Products Grid */}
-                                  <div className="w-full md:w-2/3">
-                                    <div className={` relative flex-1 pt-2 pb-2 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}  style={{ border: `solid 6px ${categoryStyle.borderColor}` }}>
+                                  <div className="" style={{width: 'calc(100% - 450px)'}}>
+                                    <div className={` relative flex-1 py-1 pb-1 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}   style={{
+                                      borderTop: `6px solid ${categoryStyle.borderColor}`,
+                                      borderBottom: `6px solid ${categoryStyle.borderColor}`,
+                                      borderLeft: index % 2 === 1 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
+                                      borderRight: index % 2 === 0 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
+                                    }}>
                                       {/* Left Arrow */}
                                       <button
                                         onClick={() => scrollLeft(category._id)}
@@ -1052,9 +1594,9 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                         <FiChevronRight size={18} />
                                       </button>
                                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
-                                        {categoryProducts.slice(0, 6).map((product) => (
+                                        {categoryProducts.slice(0, 15).map((product) => (
                                         
-                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
+                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-64 flex flex-col justify-between p-0  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
                                             
                                             {/* Product Image */}
                                             <div className="relative aspect-square bg-gray-50 group">
@@ -1069,7 +1611,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                     }
                                                     alt={product.name}
                                                     fill
-                                                    className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
+                                                    className="object-contain p-0 md:p-0 transition-opacity duration-300 group-hover:opacity-0"
                                                     sizes="(max-width: 640px) 50vw, 33vw, 25vw"
                                                     unoptimized
                                                     onError={(e) => {
@@ -1088,7 +1630,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                       }
                                                       alt={product.name}
                                                       fill
-                                                      className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                                                      className="object-contain p-0 md:p-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
                                                       sizes="(max-width: 640px) 50vw, 33vw, 25vw"
                                                       unoptimized
                                                       onError={(e) => {
@@ -1103,7 +1645,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                               {/* Discount Badge */}
                                               {Number(product.special_price) > 0 &&
                                                 Number(product.special_price) < Number(product.price) && (
-                                                  <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                                                  <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
                                                     {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                                                   </span>
                                               )}

@@ -20,7 +20,7 @@ export default function TermsPage() {
             points: [
               "An amount of ₹5000 is required to reserve your iPhone 17.",
               "This amount will be adjusted against the final price of the product at the time of purchase.",
-              "Pre-booking can only be made through bank transfer (no other payment modes are accepted)."
+              "Pre-booking can be made through bank transfer/UPI/ Credit card (no other payment modes are accepted)."
             ]
           },
           {

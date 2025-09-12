@@ -69,20 +69,130 @@ const Header = () => {
         }
     };
 
-    useEffect(() => {
-      const fetchCategories = async () => {
-        try {
-          const response = await fetch("/api/categories/get");
-          const data = await response.json();
-          setCategorieslist(data);
-          setWords(data.map((cat) => cat.category_name));
-        } catch (error) {
-          console.error("Error fetching categories:", error);
-        }
-      };
+    // --- Add cache helpers after your state declarations (place near other consts) ---
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const loadCache = (key) => {
+	// returns null if not found or parse error
+	try {
+		const raw = localStorage.getItem(key);
+		if (!raw) return null;
+		const obj = JSON.parse(raw);
+		if (!obj || !obj.ts || !obj.data) return null;
+		return obj;
+	} catch (e) {
+		console.warn('Cache parse error for', key, e);
+		return null;
+	}
+};
+const saveCache = (key, data) => {
+	try {
+		localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+	} catch (e) {
+		// ignore storage errors (quota)
+		console.warn('Cache save failed for', key, e);
+	}
+};
 
-      fetchCategories();
-    }, []);
+    useEffect(() => {
+  const key = 'categories_raw_cache';
+  let mounted = true;
+
+  const useCachedOrFetch = async () => {
+    // try cache first
+    try {
+      const cached = loadCache(key);
+      if (cached && (Date.now() - cached.ts) < CACHE_TTL_MS) {
+        if (!mounted) return;
+        const data = cached.data;
+        setCategorieslist(data);
+        setWords(Array.isArray(data) ? data.map((cat) => cat.category_name) : []);
+        return;
+      }
+    } catch (err) {
+      console.warn('Error reading categories cache', err);
+    }
+
+    // fallback to fetch and then cache
+    try {
+      const response = await fetch("/api/categories/get");
+      const data = await response.json();
+      if (!mounted) return;
+      setCategorieslist(data);
+      setWords(Array.isArray(data) ? data.map((cat) => cat.category_name) : []);
+      saveCache(key, data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  useCachedOrFetch();
+  return () => { mounted = false; };
+}, []);
+
+    useEffect(() => {
+  const rawKey = 'categories_raw_cache';
+  const nestedKey = 'categories_nested_cache';
+  let mounted = true;
+
+  const buildNestedAndCache = (rawData) => {
+    // Keep only active categories
+    const activeCategories = Array.isArray(rawData) ? rawData.filter(cat => cat.status === "Active") : [];
+
+    const categoryMap = {};
+    activeCategories.forEach((cat) => {
+      // ensure subcategories array exists
+      categoryMap[cat._id] = { ...cat, subcategories: [] };
+    });
+
+    const nestedCategories = [];
+    activeCategories.forEach((cat) => {
+      if (cat.parentid === "none") {
+        // use the mapped object to ensure same reference
+        nestedCategories.push(categoryMap[cat._id]);
+      } else if (categoryMap[cat.parentid]) {
+        categoryMap[cat.parentid].subcategories.push(categoryMap[cat._id]);
+      }
+    });
+
+    // cache nested structure
+    saveCache(nestedKey, nestedCategories);
+    return nestedCategories;
+  };
+
+  const setupCategories = async () => {
+    try {
+      // Try nested cache first
+      const nestedCached = loadCache(nestedKey);
+      if (nestedCached && (Date.now() - nestedCached.ts) < CACHE_TTL_MS) {
+        if (!mounted) return;
+        setCategories(nestedCached.data);
+      } else {
+        // Get raw data from cache or fetch
+        let raw = null;
+        const rawCached = loadCache(rawKey);
+        if (rawCached && (Date.now() - rawCached.ts) < CACHE_TTL_MS) {
+          raw = rawCached.data;
+        } else {
+          const res = await fetch("/api/categories/get");
+          raw = await res.json();
+          saveCache(rawKey, raw);
+        }
+
+        if (!mounted) return;
+        const nested = buildNestedAndCache(raw);
+        setCategories(nested);
+      }
+    } catch (err) {
+      console.error("Failed to fetch or build categories:", err);
+      // fallback: ensure auth check still runs
+    }
+    // always check auth status after categories settled
+    try { checkAuthStatus(); } catch (e) { /* ignore */ }
+  };
+
+  setupCategories();
+  return () => { mounted = false; };
+}, []);
 
     useEffect(() => {
       const typeEffect = () => {
@@ -767,25 +877,16 @@ const renderFlatItem = (item, hoveredCategory) => {
   let content = null;
 
   if (item.type === "brands-header") {
-    const href =
-      item.level === 0
-        ? `/category/${encodeURIComponent(item.category_slug || "")}`
-        : `/category/${encodeURIComponent(
-            hoveredCategory?.category_slug || ""
-          )}/${encodeURIComponent(item.rootCategory || "")}/${encodeURIComponent(
-            item.category_slug || ""
-          )}`;
+  
     content = (
-        
-      <h3 className="flex items-center justify-between mb-1 text-sm font-semibold text-blue-600 ml-1">
-  {item.category_name}
-</h3>
+        <h3 className="flex items-center justify-between mb-1 text-sm font-semibold text-blue-600 ml-1">
+            {item.category_name}
+        </h3>
     );
   } 
   else if (item.type === "brand") {
-    const href = `/category/brand/${encodeURIComponent(
-      hoveredCategory?.category_slug || ""
-    )}/${encodeURIComponent(item.brand_slug || "")}`;
+    const href = `/category/brand/${encodeURIComponent(hoveredCategory.category_slug)}/${encodeURIComponent(item.brand_slug)}`;
+        
 
     content = (
       <Link
@@ -797,11 +898,10 @@ const renderFlatItem = (item, hoveredCategory) => {
     );
   } 
   else {
-    const href =`/category/${encodeURIComponent(
-            hoveredCategory?.category_slug || ""
-          )}/${encodeURIComponent(item.rootCategory || "")}/${encodeURIComponent(
-            item.category_slug || ""
-          )}`;
+const href =
+  item.level === 0
+    ? `/category/${encodeURIComponent(hoveredCategory?.category_slug || "")}/${encodeURIComponent(item.category_slug || "")}`
+    : `/category/${encodeURIComponent(hoveredCategory?.category_slug || "")}/${encodeURIComponent(item.rootCategory || "")}/${encodeURIComponent(item.category_slug || "")}`;
 
     content = (
       <Link
@@ -837,26 +937,25 @@ const renderFlatItem = (item, hoveredCategory) => {
     return (
         <header className="sticky top-0 z-50">
             <style jsx global>{`
-              :root{--height:44px;--radius:14px;--outline:#e3e3e9;--bg:#ffffff;--accent:#5b46f0;--muted:#6b7280;--shadow:0 12px 30px rgba(36,83,211,0.06)}
-              /* container */
-              .search-bar{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:var(--radius);padding:8px 14px;border:1px solid var(--outline);box-shadow:var(--shadow);transition:box-shadow .25s ease,transform .12s ease,border-color .18s ease;width:100%;max-width:900px;margin:0 auto}
-              .search-bar:focus-within{box-shadow:0 18px 48px rgba(36,83,211,.06);border-color:rgba(36,83,211,.06)}
-              .search-bar-inner{position:relative;display:flex;align-items:center;gap:12px;width:100%;padding:6px;border-radius:10px}
-              /* select */
-              /* default: no visible border, show only when focused or has value */
-              .search-select{height:var(--height);min-width:140px;max-width:200px;border-radius:10px;border:1px solid transparent;padding:0 36px 0 14px;font-size:15px;color:#111;background:#fff;-webkit-appearance:none;appearance:none;cursor:pointer}
-              .select-wrap{position:relative;display:inline-block}
-              .select-wrap::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:10px;height:10px;background-image:linear-gradient(135deg,#6b7280,#6b7280);clip-path:polygon(50% 70%,0 25%,100% 25%);opacity:.85;pointer-events:none}
-              /* input */
-              .search-input{flex:1 1 auto;height:var(--height);padding:10px 14px;border-radius:10px;border:1px solid transparent;background:#fff;color:#0f172a;font-size:15px}
-              /* when user has typed or on focus, show light border */
-              .search-input.has-value, .search-input:focus, .search-select:focus { border-color: #e3e3e9; box-shadow: 0 6px 20px rgba(36,83,211,0.04); }
-              /* remove default browser outline to avoid black focus ring */
-              .search-input:focus, .search-select:focus { outline: none; }
-              @keyframes shimmer{from{left:-120%}to{left:120%}}
-              @media (max-width:900px){:root{--height:42px}.search-btn{width:48px}.search-select{min-width:100px}}
+              :root{--height:38px;--radius:12px;--outline:#e3e3e9;--bg:#ffffff;--accent:#5b46f0;--muted:#6b7280;--shadow:0 8px 18px rgba(36,83,211,0.04)}
+              .search-bar{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:4px 8px;border:3px solid var(--outline);box-shadow:var(--shadow);transition:box-shadow .25s ease,transform .12s ease,border-color .18s ease;width:100%;max-width:900px;margin:0 auto}
+              .search-bar:focus-within{box-shadow:0 12px 30px rgba(36,83,211,.04);border-color:rgba(36,83,211,.04)}
+              .search-bar-inner{position:relative;display:flex;align-items:center;gap:10px;width:100%;padding:2px;border-radius:8px}
+               /* select */
+               /* default: no visible border, show only when focused or has value */
+               .search-select{height:var(--height);min-width:140px;max-width:200px;border-radius:10px;border:1px solid transparent;padding:0 36px 0 14px;font-size:15px;color:#111;background:#fff;-webkit-appearance:none;appearance:none;cursor:pointer}
+               .select-wrap{position:relative;display:inline-block}
+               .select-wrap::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:10px;height:10px;background-image:linear-gradient(135deg,#6b7280,#6b7280);clip-path:polygon(50% 70%,0 25%,100% 25%);opacity:.85;pointer-events:none}
+               /* input */
+               .search-input{flex:1 1 auto;height:var(--height);padding:8px 12px;border-radius:10px;border:1px solid transparent;background:#fff;color:#0f172a;font-size:15px;width:100%;}
+               /* when user has typed or on focus, show light border */
+               .search-input.has-value, .search-input:focus, .search-select:focus { border-color: #e3e3e9; box-shadow: 0 6px 20px rgba(36,83,211,0.04); }
+               /* remove default browser outline to avoid black focus ring */
+               .search-input:focus, .search-select:focus { outline: none; }
+               @keyframes shimmer{from{left:-120%}to{left:120%}}
+               @media (max-width:900px){:root{--height:36px}.search-btn{width:48px;color:#2453d3;}.search-select{min-width:100px}}
             `}</style>
-
+            
             {/* Top Announcement Bar */}
             {/* {offers.some(
                 (offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active"
@@ -911,7 +1010,19 @@ const renderFlatItem = (item, hoveredCategory) => {
                     </div>
 
                     {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
-                    <div className="search-bar relative hidden sm:flex flex-1 w-full max-w-[1100px] mx-auto items-center bg-white rounded-lg shadow overflow-hidden border border-gray-200" role="search">
+                    <div className="search-bar relative hidden sm:flex flex-1 w-full max-w-[900px] mx-auto items-center bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200" role="search" style={{minHeight: '40px', display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    background: 'var(--bg)',
+    borderRadius: '10px',
+    padding: '4px 8px',
+    border: '3px solid var(--outline)',
+    boxShadow: 'var(--shadow)',
+    transition:
+      'box-shadow .25s ease, transform .12s ease, border-color .18s ease',
+    width: '100%',
+    maxWidth: '900px',
+    margin: '0 auto',}}>
                       <div className="search-bar-inner" style={{ position: 'relative', width: '100%' }}>
                         <div className="select-wrap">
                           <select
@@ -928,36 +1039,42 @@ const renderFlatItem = (item, hoveredCategory) => {
                             ))}
                           </select>
                         </div>
-
-                        <input
-                          type="search"
-                          name="q"
-                          id="q"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          ref={searchInputRef}
-                          onFocus={() => {
-                            if (searchInputRef.current) {
-                              const rect = searchInputRef.current.getBoundingClientRect();
-                              setSearchDropdownLeft(rect.left);
-                              setSearchDropdownTop(rect.bottom + window.scrollY);
-                              setSearchDropdownWidth(rect.width);
-                            }
-                            if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
-                            setSearchDropdownVisible(true);
-                          }}
-                          onKeyDown={handleKeyPress}
-                          className={`search-input ${searchQuery.trim() ? 'has-value' : ''}`}
-                          placeholder={searchQuery.trim() === "" ? `Search For \"${typedPreview}\"` : ''}
-                          aria-label="Search query"
-                        />
-
-                        <button type="button" className="search-btn" onClick={handleSearch} aria-label="Search">
+                        {/* input wrapper with absolute overlay */}
+                        <div className="relative flex-1">
+                          <input
+                            type="search"
+                            name="q"
+                            id="q"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            ref={searchInputRef}
+                            onFocus={() => {
+                              if (searchInputRef.current) {
+                                const rect = searchInputRef.current.getBoundingClientRect();
+                                setSearchDropdownLeft(rect.left);
+                                setSearchDropdownTop(rect.bottom + window.scrollY);
+                                setSearchDropdownWidth(rect.width);
+                              }
+                              if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
+                              setSearchDropdownVisible(true);
+                            }}
+                            onKeyDown={handleKeyPress}
+                            className={`search-input ${searchQuery.trim() ? 'has-value' : ''}`}
+                            placeholder=" "
+                            aria-label="Search query"
+                          />
+                          {/* typed-overlay: "Search For" light gray, typedPreview black */}
+                          {searchQuery.trim() === "" && (
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                              <span className="text-gray-400 text-sm">Search For</span>
+                              <span className="text-black text-sm">"{typedPreview}"</span>
+                            </div>
+                          )}
+                        </div>
+                        <button type="button" className="search-btn" style={{color:'#2453d3'}} onClick={handleSearch} aria-label="Search">
                           <FaSearch />
                         </button>
-
                         <div className="shimmer" aria-hidden="true"></div>
-
                         {/* Suggestions dropdown rendered as fixed so it won't be clipped; position uses measured left/width */}
                         {searchDropdownVisible && (
                           <div
@@ -1572,13 +1689,15 @@ const renderFlatItem = (item, hoveredCategory) => {
           {columns.map((chunk, index) => {
             const scrollableClass = (Array.isArray(chunk) && chunk.length > 10) ? '  pr-2' : '';
             const isEmpty = !Array.isArray(chunk) || chunk.length === 0;
-            const bgClass = isEmpty ? 'bg-white' : (index % 2 === 0 ? 'bg-gray-200' : 'bg-white');
+            // use exact #f2f2f2 color instead of tailwind's bg-gray-200
+            const bgClass = isEmpty ? 'bg-white' : (index % 2 === 0 ? 'bg-[#f2f2f2]' : 'bg-white');
+            // include computed bgClass but force inline background to #f2f2f2 (inline wins)
             const colClass = isEmpty
-              ? `min-w-[220px] max-w-[250px] p-3`
+              ? `min-w-[220px] max-w-[250px] p-3 ${bgClass}`
               : `min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start self-start ${scrollableClass} ${bgClass}`;
-
+ 
             return (
-              <div key={index} className={colClass} style={{ height: '100%' }}>
+              <div key={index} className={colClass} style={{ height: '100%'}}>
                 {Array.isArray(chunk) && chunk.length > 0 ? (
                   chunk.map((item) => renderFlatItem(item, hoveredCategory))
                 ) : (
@@ -1588,20 +1707,29 @@ const renderFlatItem = (item, hoveredCategory) => {
             );
           })}
 
-          {hasNavImage && (
-            <div key="nav-image-panel" className={`w-[220px] h-[390px] flex items-center justify-center ${columns.length % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-              <Link href={`/category/${hoveredCategory.category_slug}`} className="block w-full h-full">
-                <Image
-                  src={hoveredCategory.navImage || hoveredCategory.image}
-                  alt={hoveredCategory.category_name || 'Category Image'}
-                  width={220}
-                  height={390}
-                  className="object-cover  w-full h-full"
-                  style={{ boxShadow: '0px -13px 0px #2453d3'}}
-                />
-              </Link>
-            </div>
-          )}
+          {hasNavImage && (hoveredCategory?.navImage || hoveredCategory?.image) && (
+  <div
+    key="nav-image-panel"
+    className={`w-[220px] h-[390px] flex items-center justify-center ${
+      columns.length % 2 === 0 ? "bg-gray-50" : "bg-white"
+    }`}
+  >
+    <Link
+      href={`/category/${hoveredCategory?.category_slug || ""}`}
+      className="block w-full h-full"
+    >
+      <Image
+        src={hoveredCategory.navImage || hoveredCategory.image}
+        alt={hoveredCategory.category_name || "Category Image"}
+        width={220}
+        height={390}
+        className="object-cover w-full h-full"
+        style={{ boxShadow: "0px -13px 0px #2453d3" }}
+      />
+    </Link>
+  </div>
+)}
+
         </div>
       </div>
     );
