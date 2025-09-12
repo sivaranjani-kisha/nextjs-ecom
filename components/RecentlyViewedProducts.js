@@ -228,7 +228,7 @@ const RecentlyViewedProducts = () => {
                               fill
                 
 
-                              className={`object-contain p-2 md:p-4 transition-transform duration-500 
+                              className={`object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out 
                               ${product.images[1] 
                                 ? "group-hover:opacity-0"   // if 2nd image → fade out
                                 : "group-hover:scale-110"   // if only 1 image → zoom
@@ -253,7 +253,7 @@ const RecentlyViewedProducts = () => {
                                 }
                                 alt={product.name}
                                 fill                
-                                className="object-contain p-2 md:p-4 transition-transform duration-500 opacity-0 group-hover:opacity-100 group-hover:scale-110"
+                                className="object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out opacity-0 group-hover:opacity-100 group-hover:scale-110"
                                 sizes="(max-width: 640px) 50vw, 33vw, 25vw"
                                 unoptimized
                                 onError={(e) => {
