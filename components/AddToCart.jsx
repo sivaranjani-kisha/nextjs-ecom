@@ -144,7 +144,7 @@ if (selectedFrequentProducts?.length > 0) {
       <button 
   onClick={handleAddToCart}
   disabled={isLoading || isOutOfStock || isprice}
-  className={`w-full sm:w-auto px-2 py-2 md:px-3 md:py-2 border border-1 rounded-md  transition duration-300 text-sm flex items-center justify-center gap-x-1 
+  className={`px-2 py-2 md:px-2 md:py-2 mr-1 rounded-md shadow-md transition duration-300 text-md flex items-center justify-center gap-x-1
     ${isOutOfStock
           ? 'bg-gray-400 cursor-not-allowed text-white'
           :
@@ -154,9 +154,10 @@ if (selectedFrequentProducts?.length > 0) {
           ? 'bg-green-500 text-white hover:bg-green-600'
           // : isprice
           // ? 'bg-green-500 text-white hover:bg-green-600'
-          : 'bg-white text-customBlue hover:bg-customBlue hover:text-white'
+          : 'bg-white text-[#2453D3] hover:bg-[#2453D3] hover:text-white'
     }
-    active:scale-95 disabled:active:scale-100`}
+    active:scale-95 disabled:active:scale-100
+    w-full min-[1400px]:w-[185px]`}
 >
   {isOutOfStock ? (
         <span>Out of Stock</span>

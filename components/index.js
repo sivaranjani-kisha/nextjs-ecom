@@ -101,7 +101,7 @@ const scrollCategories = (direction) => {
     borderColor: "#A9A097" 
   },
   "refrigerator": {
-    backgroundImage: "/uploads/categories/category-darling-img/refirgrator-one.jpg",
+    backgroundImage: "/uploads/categories/category-darling-img/refirgrator-two.jpg",
     borderColor: "#5C8B99" 
   },
   "washing-machine": {
@@ -1508,14 +1508,15 @@ const handleCategoryClick = useCallback((category) => (e) => {
                     >
                       <div className="rounded-[23px] py-4 p-2">
                         {/* Section Header */}
-                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
-                          <h5 className="text-xl sm:text-2xl font-bold">
-                            Shop by Category
-                          </h5>
-                        </div>
+                        
                         
                         {/* Category-based Product Display */}
-                        <div className="space-y-8 max-w-7xl mx-auto">            
+                        <div className="space-y-8 max-w-7xl mx-auto">    
+                          <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                            <h5 className="text-xl sm:text-2xl font-bold">
+                              Shop by Category
+                            </h5>
+                          </div>        
                           {parentCategories
                             .filter(category => priorityCategories.includes(category.category_slug))
                             .sort((a, b) => {
@@ -1555,8 +1556,8 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                   {/* Category Banner */}
                                  <div className="flex-shrink-0 relative" style={{width: '450px'}}>
                                     <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})`,backgroundSize:'cover',backgroundPosition: 'center',backgroundRepeat: 'no-repeat'}}></div>
-                                    <div className="relative z-10 h-full flex flex-col p-6 text-white">
-                                      <h2 className="text-2xl font-bold">{category.category_name}</h2>
+                                    <div className="relative z-10 h-full flex flex-col justify-end p-6 text-white">
+                                      {/* <h2 className="text-2xl font-bold">{category.category_name}</h2> */}
                                       
                                       <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
                                     </div>
@@ -1596,7 +1597,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
                                         {categoryProducts.slice(0, 15).map((product) => (
                                         
-                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-64 flex flex-col justify-between p-0  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
+                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-64 flex flex-col justify-between p-[5px]  rounded-lg border border-gray-200 hover:border-[#0069c1] hover:shadow-md transition-all duration-300  cursor-pointer">
                                             
                                             {/* Product Image */}
                                             <div className="relative aspect-square bg-white group">
@@ -1611,7 +1612,11 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                     }
                                                     alt={product.name}
                                                     fill
-                                                    className="object-contain p-0 md:p-0 transition-opacity duration-300 group-hover:opacity-0"
+                                                    className={`object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out 
+                                                    ${product.images[1] 
+                                                      ? "group-hover:opacity-0"   // if 2nd image → fade out
+                                                      : "group-hover:scale-110"   // if only 1 image → zoom
+                                                    }`}
                                                     sizes="(max-width: 640px) 50vw, 33vw, 25vw"
                                                     unoptimized
                                                     onError={(e) => {
@@ -1630,7 +1635,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                       }
                                                       alt={product.name}
                                                       fill
-                                                      className="object-contain p-0 md:p-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                                                      className="object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out opacity-0 group-hover:opacity-100 group-hover:scale-110"
                                                       sizes="(max-width: 640px) 50vw, 33vw, 25vw"
                                                       unoptimized
                                                       onError={(e) => {
