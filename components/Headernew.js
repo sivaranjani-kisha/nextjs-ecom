@@ -836,6 +836,27 @@ const renderFlatItem = (item, hoveredCategory) => {
 
     return (
         <header className="sticky top-0 z-50">
+            <style jsx global>{`
+              :root{--height:44px;--radius:14px;--outline:#e3e3e9;--bg:#ffffff;--accent:#5b46f0;--muted:#6b7280;--shadow:0 12px 30px rgba(36,83,211,0.06)}
+              /* container */
+              .search-bar{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:var(--radius);padding:8px 14px;border:1px solid var(--outline);box-shadow:var(--shadow);transition:box-shadow .25s ease,transform .12s ease,border-color .18s ease;width:100%;max-width:900px;margin:0 auto}
+              .search-bar:focus-within{box-shadow:0 18px 48px rgba(36,83,211,.06);border-color:rgba(36,83,211,.06)}
+              .search-bar-inner{position:relative;display:flex;align-items:center;gap:12px;width:100%;padding:6px;border-radius:10px}
+              /* select */
+              /* default: no visible border, show only when focused or has value */
+              .search-select{height:var(--height);min-width:140px;max-width:200px;border-radius:10px;border:1px solid transparent;padding:0 36px 0 14px;font-size:15px;color:#111;background:#fff;-webkit-appearance:none;appearance:none;cursor:pointer}
+              .select-wrap{position:relative;display:inline-block}
+              .select-wrap::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:10px;height:10px;background-image:linear-gradient(135deg,#6b7280,#6b7280);clip-path:polygon(50% 70%,0 25%,100% 25%);opacity:.85;pointer-events:none}
+              /* input */
+              .search-input{flex:1 1 auto;height:var(--height);padding:10px 14px;border-radius:10px;border:1px solid transparent;background:#fff;color:#0f172a;font-size:15px}
+              /* when user has typed or on focus, show light border */
+              .search-input.has-value, .search-input:focus, .search-select:focus { border-color: #e3e3e9; box-shadow: 0 6px 20px rgba(36,83,211,0.04); }
+              /* remove default browser outline to avoid black focus ring */
+              .search-input:focus, .search-select:focus { outline: none; }
+              @keyframes shimmer{from{left:-120%}to{left:120%}}
+              @media (max-width:900px){:root{--height:42px}.search-btn{width:48px}.search-select{min-width:100px}}
+            `}</style>
+
             {/* Top Announcement Bar */}
             {/* {offers.some(
                 (offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active"
@@ -890,19 +911,28 @@ const renderFlatItem = (item, hoveredCategory) => {
                     </div>
 
                     {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
-                    <div className="relative hidden sm:flex flex-1 max-w-xl items-center bg-white rounded-lg shadow overflow-hidden border border-gray-300">
-                      {/* grouped select + input on the left */}
-                      <div className="flex items-center w-full">
-                        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2.5 text-xs sm:text-sm text-gray-700 bg-gray-200 border-r border-gray-300 outline-none rounded-l-md">
+                    <div className="search-bar relative hidden sm:flex flex-1 w-full max-w-[1100px] mx-auto items-center bg-white rounded-lg shadow overflow-hidden border border-gray-200" role="search">
+                      <div className="search-bar-inner" style={{ position: 'relative', width: '100%' }}>
+                        <div className="select-wrap">
+                          <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="search-select"
+                            aria-label="Search category"
+                          >
                             <option value="All Categories">All Categories</option>
                             {categories.map((cat) => (
-                                <option key={cat._id} value={cat.category_name}>
-                                    {cat.category_name}
-                                </option>
+                              <option key={cat._id} value={cat.category_name}>
+                                {cat.category_name}
+                              </option>
                             ))}
-                        </select>
+                          </select>
+                        </div>
+
                         <input
-                          type="text"
+                          type="search"
+                          name="q"
+                          id="q"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           ref={searchInputRef}
@@ -917,67 +947,61 @@ const renderFlatItem = (item, hoveredCategory) => {
                             setSearchDropdownVisible(true);
                           }}
                           onKeyDown={handleKeyPress}
-                          className="flex-1 px-3 py-2 text-sm outline-none relative rounded-r-md"
+                          className={`search-input ${searchQuery.trim() ? 'has-value' : ''}`}
+                          placeholder={searchQuery.trim() === "" ? `Search For \"${typedPreview}\"` : ''}
+                          aria-label="Search query"
                         />
-                      </div>
 
-                      {/* fake placeholder overlay: shows Search For "<bold updatedText>" when input empty */}
-                      {searchQuery.trim() === "" && (
-                        <div className="absolute left-3 top-2 pointer-events-none select-none">
-                          <span className="text-sm text-gray-600 font-bold">&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;&nbsp;&nbsp;Search For</span>
-                          <span className="text-sm text-gray-600"> {"\""}</span>
-                          <span className="text-sm text-gray-600">{typedPreview}</span>
-                          <span className="text-sm text-gray-600">{"\""}</span>
-                        </div>
-                      )}
+                        <button type="button" className="search-btn" onClick={handleSearch} aria-label="Search">
+                          <FaSearch />
+                        </button>
 
-                      <button className="px-3 text-blue-600" onClick={handleSearch}>
-                        <FaSearch />
-                      </button>
+                        <div className="shimmer" aria-hidden="true"></div>
 
-                      {/* Suggestions dropdown rendered as fixed so it won't be clipped */}
-                      {searchDropdownVisible && (
-                        <div
-                          ref={searchDropdownRef}
-                          className="fixed z-50 border-t border-gray-200 shadow-xl bg-white rounded"
-                          style={{
-                            top: `${searchDropdownTop}px`,
-                            width: '42%',
-                            maxHeight: '420px',
-                            overflow: 'auto'
-                          }}
-                        >
-                          <div className="px-3 py-2 text-xs text-gray-500 font-semibold">PRODUCTS</div>
-                          {/* product grid - uses suggestions computed from local products for instant results */}
-                          {Array.isArray(suggestions) && suggestions.length > 0 ? (
-                            <ul className="p-3 space-y-2">
-                              {suggestions.map((product) => (
-                                <li key={product._id} className="p-0">
-                                  <div className="flex items-center gap-3 p-2 hover:bg-gray-200 rounded min-h-[60px]" style={{ height: '81px', backgroundColor: '#d3d3d3b8' }}>
-                                    {product.images?.[0] ? (
-                                      <img
-                                        src={product.images[0].startsWith('http') ? product.images[0] : `/uploads/products/${product.images[0]}`}
-                                        alt={product.name}
-                                        className="w-12 h-12 object-cover rounded"
-                                      />
-                                    ) : (
-                                      <div className="w-12 h-12 bg-gray-200 rounded" />
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                      <Link href={`/product/${product.slug}`} className="block text-sm font-medium text-gray-800 hover:text-blue-600 truncate">
-                                        {product.name}
-                                      </Link>
-                                      <div className="text-xs text-gray-500">₹{(product.special_price ?? product.price ?? 0).toLocaleString()}</div>
+                        {/* Suggestions dropdown rendered as fixed so it won't be clipped; position uses measured left/width */}
+                        {searchDropdownVisible && (
+                          <div
+                            ref={searchDropdownRef}
+                            className="fixed z-50 border-t border-gray-200 shadow-xl bg-white rounded"
+                            style={{
+                              top: `${searchDropdownTop}px`,
+                              left: `${searchDropdownLeft}px`,
+                              width: `${searchDropdownWidth}px`,
+                              maxHeight: '420px',
+                              overflow: 'auto'
+                            }}
+                          >
+                            <div className="px-3 py-2 text-xs text-gray-500 font-semibold">PRODUCTS</div>
+                            {Array.isArray(suggestions) && suggestions.length > 0 ? (
+                              <ul className="p-3 space-y-2">
+                                {suggestions.map((product) => (
+                                  <li key={product._id} className="p-0">
+                                    <div className="flex items-center gap-3 p-2 hover:bg-gray-200 rounded min-h-[60px]" style={{ height: '81px', backgroundColor: '#d3d3d3b8' }}>
+                                      {product.images?.[0] ? (
+                                        <img
+                                          src={product.images[0].startsWith('http') ? product.images[0] : `/uploads/products/${product.images[0]}`}
+                                          alt={product.name}
+                                          className="w-12 h-12 object-cover rounded"
+                                        />
+                                      ) : (
+                                        <div className="w-12 h-12 bg-gray-200 rounded" />
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <Link href={`/product/${product.slug}`} className="block text-sm font-medium text-gray-800 hover:text-blue-600 truncate">
+                                          {product.name}
+                                        </Link>
+                                        <div className="text-xs text-gray-500">₹{(product.special_price ?? product.price ?? 0).toLocaleString()}</div>
+                                      </div>
                                     </div>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <div className="px-3 py-3 text-sm text-gray-500">No results found</div>
-                          )}
-                        </div>
-                      )}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="px-3 py-3 text-sm text-gray-500">No results found</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {/* Icons Group */}
                     <div className="flex items-center gap-[2rem] sm:gap-4">
@@ -1586,6 +1610,6 @@ const renderFlatItem = (item, hoveredCategory) => {
             </div>
 
         </header>
-    );
+       );
 };
 export default Header;
