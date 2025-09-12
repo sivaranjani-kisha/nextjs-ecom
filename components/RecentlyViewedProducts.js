@@ -213,26 +213,52 @@ const RecentlyViewedProducts = () => {
                     >
                       
                       {/* Product Image */}
-                      <div className="relative w-full h-[210px] bg-gray-50 group overflow-hidden rounded-t-lg">
-                        {/* Product Image */}
-                        {product.images?.[0] && (                                  
-                          <Image
-                            src={
-                              product.images[0].startsWith("http")
-                                ? product.images[0]
-                                : `/uploads/products/${product.images[0]}`
-                            }
-                            alt={product.images[0]}
-                            fill
-                            className="object-contain p-2 md:p-4 transition-transform duration-300 group-hover:scale-105"
-                            sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                            unoptimized
-                            onError={(e) => { 
-                              e.target.onerror = null; 
-                              e.target.src = "/uploads/products/placeholder.jpg";
-                            }} 
-                          />
+                      <div className="relative w-full h-[210px] bg-gray-50 group overflow-hidden rounded-t-lg aspect-square">
+
+                        {product.images?.[0] && (
+                          <>
+                            {/* Default Image */}
+                            <Image
+                              src={
+                                product.images[0].startsWith("http")
+                                  ? product.images[0]
+                                  : `/uploads/products/${product.images[0]}`
+                              }
+                              alt={product.name}
+                              fill
+                              className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
+                              sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                              unoptimized
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "/uploads/products/placeholder.jpg";
+                              }}
+                            />
+
+                            {/* Hover Image (second image if available) */}
+                            {product.images[1] && (
+                              <Image
+                                src={
+                                  product.images[1].startsWith("http")
+                                    ? product.images[1]
+                                    : `/uploads/products/${product.images[1]}`
+                                }
+                                alt={product.name}
+                                fill
+                                className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                                sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                                unoptimized
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "/uploads/products/placeholder.jpg";
+                                }}
+                              />
+                            )}
+                          </>
                         )}
+                                                  
+
+
 
                         {/* Gray overlay on hover */}
                         <div className="absolute inset-0 bg-gray-500 opacity-0 group-hover:opacity-50 transition-opacity duration-300 z-10"></div>
