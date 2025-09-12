@@ -89,7 +89,7 @@ const scrollCategories = (direction) => {
  const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
  const categoryStyles = {
   "air-conditioner": {
-    backgroundImage: "/uploads/450x470.jpg",
+    backgroundImage: "/uploads/categories/category-darling-img/air-conditoner-one.jpg",
     borderColor: "#060F16" 
   },
   "mobile-phones": {
@@ -1554,7 +1554,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                 <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
                                   {/* Category Banner */}
                                  <div className="flex-shrink-0 relative" style={{width: '450px'}}>
-                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
+                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})`,backgroundSize:'cover',backgroundPosition: 'center',backgroundRepeat: 'no-repeat'}}></div>
                                     <div className="relative z-10 h-full flex flex-col p-6 text-white">
                                       <h2 className="text-2xl font-bold">{category.category_name}</h2>
                                       
@@ -1596,7 +1596,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
                                         {categoryProducts.slice(0, 15).map((product) => (
                                         
-                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-72 flex flex-col justify-between p-4  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
+                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-72 flex flex-col justify-between p-0  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
                                             
                                             {/* Product Image */}
                                             <div className="relative aspect-square bg-gray-50 group">
@@ -1611,7 +1611,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                                     }
                                                     alt={product.name}
                                                     fill
-                                                    className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
+                                                    className="object-contain p-0 md:p-0 transition-opacity duration-300 group-hover:opacity-0"
                                                     sizes="(max-width: 640px) 50vw, 33vw, 25vw"
                                                     unoptimized
                                                     onError={(e) => {
@@ -1645,7 +1645,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
                                               {/* Discount Badge */}
                                               {Number(product.special_price) > 0 &&
                                                 Number(product.special_price) < Number(product.price) && (
-                                                  <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                                                  <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
                                                     {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                                                   </span>
                                               )}
