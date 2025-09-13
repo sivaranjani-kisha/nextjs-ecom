@@ -5,8 +5,6 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "../styles/slick-custom.css";
-import Flickity from "flickity";
-import "flickity/css/flickity.css";
 import { motion, useAnimation, useInView } from "framer-motion";
 //import { ShoppingCartSimple, CaretDown } from "@phosphor-icons/react";
 import { X } from "lucide-react"; 
