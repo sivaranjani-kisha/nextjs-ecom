@@ -926,7 +926,7 @@ const grandTotal = subtotal - totalDiscount;
                     {/* Product Image */}
                     <div className="relative w-16 h-16 flex-shrink-0 border rounded overflow-hidden p-2">
                       <img
-                        src={item.imageUrl}
+                        src={item.image}
                         alt={item.name}
                         className="w-full h-full object-contain"
                       />
