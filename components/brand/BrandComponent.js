@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "react-feather
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import { ToastContainer, toast } from 'react-toastify';
+import { Range as ReactRange } from "react-range";
 
 export default function BrandPage() {
   const [brandData, setBrandData] = useState({
@@ -52,7 +53,8 @@ export default function BrandPage() {
     totalProducts: 0
   });
   const itemsPerPage = 20;
-
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  
   // Banner state
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
@@ -218,6 +220,33 @@ export default function BrandPage() {
 
     localStorage.setItem('recentlyViewed', JSON.stringify(limited));
   };
+  
+  const [brandMap, setBrandMap] = useState([]);
+ 
+  const fetchBrand = async () => {
+    try {
+      const response = await fetch("/api/brand");
+      const result = await response.json();
+      if (result.error) {
+        console.error(result.error);
+      } else {
+        const data = result.data;
+   
+        // Store as map for quick access
+        const map = {};
+        data.forEach((b) => {
+          map[b._id] = b.brand_name;
+        });
+        setBrandMap(map);
+      }
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
+ 
+  useEffect(() => {
+    fetchBrand();
+  }, []);
 
   // Sorting functionality
   const getSortedProducts = () => {
@@ -265,12 +294,35 @@ export default function BrandPage() {
   };
 
   const handlePriceChange = (values) => {
-    setSelectedFilters(prev => ({
-      ...prev,
-      price: { min: values[0], max: values[1] }
-    }));
-  };
-
+   let min = Math.max(1, values[0]);     // clamp to >= 1
+   let max = Math.max(1, values[1]);   // clamp to <= 100
+ 
+   // Ensure min never exceeds max
+   if (min > max) {
+     min = max;
+   }
+ 
+   setSelectedFilters((prev) => ({
+     ...prev,
+     price: { min, max }
+   }));
+ };
+ 
+    const STEP = 100;
+   const MIN = priceRange[0];
+   const MAX = priceRange[1];
+ 
+   // slider local state
+   const [values, setValues] = useState([
+     selectedFilters.price.min,
+     selectedFilters.price.max,
+   ]);
+ 
+   // sync with external filters (e.g. reset button)
+   useEffect(() => {
+     setValues([selectedFilters.price.min, selectedFilters.price.max]);
+   }, [selectedFilters.price.min, selectedFilters.price.max]);
+ 
   const CategoryTree = ({ 
     categories, 
     level = 0, 
@@ -597,8 +649,8 @@ export default function BrandPage() {
             {/* Filters Sidebar */}
             <div className="w-full md:w-[250px] shrink-0">
               {/* Active Filters */}
-              {(selectedFilters.categories.length > 0 ||
-                selectedFilters.subcategories.length > 0 ||
+              {(selectedFilters.brands.length > 0 || 
+                selectedFilters.categories.length > 0 ||
                 selectedFilters.filters.length > 0 ||
                 selectedFilters.price.min !== priceRange[0] || 
                 selectedFilters.price.max !== priceRange[1]) && (
@@ -630,33 +682,16 @@ export default function BrandPage() {
                         </span>
                       ) : null;
                     })}
-                    
-                    {selectedFilters.subcategories.map(subcategoryId => {
-                      // Find the subcategory in the category tree
-                      let subcategoryName = "";
-                      const findSubcategory = (categories) => {
-                        for (const category of categories) {
-                          if (category._id === subcategoryId) {
-                            subcategoryName = category.category_name;
-                            return true;
-                          }
-                          if (category.subCategories && category.subCategories.length > 0) {
-                            if (findSubcategory(category.subCategories)) return true;
-                          }
-                        }
-                        return false;
-                      };
-                      
-                      findSubcategory(brandData.categoryTree || []);
-                      
-                      return subcategoryName ? (
+                    {selectedFilters.brands.map(brandId => {
+                      const brand = brandData.brand?._id === brandId ? brandData.brand : null;
+                      return brand ? (
                         <span 
-                          key={subcategoryId}
+                          key={brandId}
                           className="bg-gray-100 px-2 py-1 rounded text-sm flex items-center"
                         >
-                          {subcategoryName}
+                          {brand.brand_name}
                           <button 
-                            onClick={() => handleFilterChange('subcategories', subcategoryId)}
+                            onClick={() => handleFilterChange('brands', brandId)}
                             className="ml-1 text-gray-500 hover:text-gray-700"
                           >
                             ×
@@ -686,7 +721,7 @@ export default function BrandPage() {
                     })}
                     
                     {(selectedFilters.price.min !== priceRange[0] || 
-                     selectedFilters.price.max !== priceRange[1]) && (
+                      selectedFilters.price.max !== priceRange[1]) && (
                       <span className="bg-gray-100 px-2 py-1 rounded text-sm flex items-center">
                         ₹{selectedFilters.price.min} - ₹{selectedFilters.price.max}
                         <button 
@@ -703,45 +738,100 @@ export default function BrandPage() {
                   </div>
                 </div>
               )}
-
+  
               {/* Categories Tree */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
-                <h3 className="text-base font-semibold mb-3 text-gray-700">Categories</h3>
-                {brandData.categoryTree?.length > 0 ? (
+              {brandData.categoryTree?.length > 0 && (
+                <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 text-sm text-gray-600">
+                  <h3 className="text-base font-semibold mb-3 text-gray-700">Categories</h3>
                   <CategoryTree 
                     categories={brandData.categoryTree} 
                     selectedCategories={selectedFilters.categories}
                     selectedSubcategories={selectedFilters.subcategories}
                     onFilterChange={handleFilterChange} 
                   />
-                ) : (
-                  <p className="text-gray-500 text-sm">No categories available</p>
-                )}
-              </div>
-
+                </div>
+              )}
+  
               {/* Price Filter */}
               <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
                 <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
-                <div className="space-y-4">
-                  <input
-                    type="range"
-                    min={priceRange[0]}
-                    max={priceRange[1]}
-                    step="100"
-                    value={selectedFilters.price.max}
-                    onChange={(e) => handlePriceChange([
-                      selectedFilters.price.min, 
-                      parseInt(e.target.value)
-                    ])}
-                    className="w-full range accent-blue-600"
-                  />
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>₹{selectedFilters.price.min}</span>
-                    <span>₹{selectedFilters.price.max}</span>
-                  </div>
+          
+                <ReactRange
+                  values={values}
+                  step={STEP}
+                  min={MIN}
+                  max={MAX}
+                  onChange={(newValues) => setValues(newValues)} // move thumbs
+                  onFinalChange={(newValues) => handlePriceChange(newValues)} // apply on release
+                  renderTrack={({ props, children }) => (
+                    <div
+                      {...props}
+                      className="w-full h-2 rounded-lg bg-gray-200 relative"
+                    >
+                      {/* active green bar */}
+                      <div
+                        className="absolute h-2 bg-gray-500 rounded-lg"
+                        style={{
+                          left: `${((values[0] - MIN) / (MAX - MIN)) * 100}%`,
+                          width: `${((values[1] - values[0]) / (MAX - MIN)) * 100}%`,
+                        }}
+                      />
+                      {children}
+                    </div>
+                  )}
+                  renderThumb={({ props, index }) => {
+                    const { key, ...rest } = props; // remove key from spread
+  
+                    return (
+                      <div
+                        key={key} // assign key directly
+                        {...rest} // spread remaining props
+                        className={`w-4 h-4 rounded-full border-2 border-black shadow cursor-pointer relative
+                          ${index === 0 ? "bg-blue-500 z-10" : "bg-green-500 z-20"}`}
+                      >
+                        {/*
+                        <span className="absolute -top-6 text-xs bg-gray-700 text-white px-2 py-1 rounded">
+                          {index === 0 ? "Min" : "Max"}
+                        </span>
+                        */}
+                      </div>
+                    );
+                  }}
+                />
+          
+                <div className="flex justify-between text-sm text-gray-600 mt-6">
+                  <span>₹{values[0].toLocaleString()}</span>
+                  <span>₹{values[1].toLocaleString()}</span>
                 </div>
               </div>
-
+  
+              {/* Brand Filter */}
+              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+                <div className="flex items-center justify-between pb-2">
+                  <h3 className="text-base font-semibold text-gray-700">Brands</h3>
+                  <button onClick={toggleBrands} className="text-gray-500 hover:text-gray-700">
+                    {isBrandsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </button>
+                </div>
+                {isBrandsExpanded && (
+                  <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
+                    {brandData.brand && (
+                      <li key={brandData.brand._id} className="flex items-center">
+                        <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={selectedFilters.brands.includes(brandData.brand._id)}
+                            onChange={() => handleFilterChange("brands", brandData.brand._id)}
+                            className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                          />
+                          <span className="text-sm text-gray-600">{brandData.brand.brand_name}</span>
+                        </label>
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </div>
+  
               {/* Dynamic Filters */}
               <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
                 <div className="pb-2 mb-2">
@@ -751,18 +841,24 @@ export default function BrandPage() {
                   <div className="space-y-4">
                     {Object.values(filterGroups).map(group => (
                       <div key={group._id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
-                        <button onClick={() => toggleFilterGroup(group._id)} className="flex justify-between items-center w-full group">
-                          <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">{group.name}</span>
-                          <ChevronDown 
-                            size={18}
-                            className={`text-gray-400 transition-transform duration-200 ${
-                              expandedFilters[group._id] ? 'rotate-180' : ''
-                            }`}
-                          />
-                        </button>
+                       <button
+  onClick={() => toggleFilterGroup(group._id)}
+  className="flex justify-between items-center w-full group"
+>
+  <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors uppercase">
+    {group.name}
+  </span>
+  <ChevronDown
+    size={18}
+    className={`text-gray-400 transition-transform duration-200 ${
+      expandedFilters[group._id] ? "rotate-180" : ""
+    }`}
+  />
+</button>
 
+  
                         {expandedFilters[group._id] && (
-                          <ul className="mt-3 space-y-2 pl-1">
+                          <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
                             {group.filters.map(filter => (
                               <li key={filter._id} className="flex items-center">
                                 <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
@@ -796,11 +892,9 @@ export default function BrandPage() {
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                     {getSortedProducts().map(product => (
-                      <div
-                        key={product._id}
-                        className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
-                      >
-                        <div className="relative aspect-square bg-gray-50">
+                      <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
+                        {/* Product Image */}
+                        <div className="relative aspect-square bg-white">
                           {product.images?.[0] && (
                             <Image
                               src={
@@ -815,77 +909,88 @@ export default function BrandPage() {
                               unoptimized
                             />
                           )}
-
+       
+                          {/* Discount Badge */}
                           {Number(product.special_price) > 0 &&
                             Number(product.special_price) < Number(product.price) && (
-                              <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
+                              <span className="absolute top-3 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
                                 {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                               </span>
                           )}
-
+       
+       
+                          {/* Wishlist */}
                           <div className="absolute top-2 right-2">
                             <ProductCard productId={product._id} />
                           </div>
                         </div>
-
+       
+                        {/* Product Info and Buttons */}
                         <div className="p-2 md:p-4 flex flex-col h-full">
+                          <h4 className="text-xs text-gray-500 mb-2 uppercase">
+                            <Link
+                              href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                              className="hover:text-blue-600"
+                            >
+                              {brandMap[product.brand] || ""}
+                            </Link>
+                          </h4>
+      
+                          {/* Title with fixed height */}
                           <Link
                             href={`/product/${product.slug}`}
                             className="block mb-2"
                             onClick={() => handleProductClick(product)}
                           >
-                            <h3 className="text-xs sm:text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2 min-h-[40px]">
+                            <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
                               {product.name}
                             </h3>
                           </Link>
-                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-base font-semibold text-red-600">
-                          ₹ {(
-                            product.special_price &&
-                            product.special_price > 0 &&
-                            product.special_price != '0' &&
-                            product.special_price != 0 &&
-                            product.special_price < product.price
-                              ? Math.round(product.special_price)
-                              : Math.round(product.price)
-                          ).toLocaleString()}
-                        </span>
-
-                        {product.special_price > 0 &&
-                          product.special_price != '0' &&
-                          product.special_price != 0 &&
-                          product.special_price &&
-                          product.special_price < product.price && (
-                            <span className="text-xs text-gray-500 line-through">
-                              ₹ {Math.round(product.price).toLocaleString()}
-                            </span>
-                        )}
-                      </div>
-                          {/* <div className="flex items-center gap-2 mb-3">
-                            <span className="text-base font-semibold text-blue-600">
-                              ₹{(
-                                product.special_price && product.special_price > 0 && product.special_price != '0' && product.special_price != 0 && product.special_price < product.price
-                                  ? product.special_price
-                                  : product.price
+       
+                          {/* Price Row (same level always) */}
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-base font-semibold text-red-600">
+                              ₹ {(
+                                product.special_price &&
+                                product.special_price > 0 &&
+                                product.special_price != '0' &&
+                                product.special_price != 0 &&
+                                product.special_price < product.price
+                                  ? Math.round(product.special_price)
+                                  : Math.round(product.price)
                               ).toLocaleString()}
                             </span>
-
-                            {product.special_price > 0 && product.special_price != '0' && product.special_price != 0 &&   product.special_price &&
-                              product.special_price < product.price &&
-                              (
+      
+                            {product.special_price > 0 &&
+                              product.special_price != '0' &&
+                              product.special_price != 0 &&
+                              product.special_price &&
+                              product.special_price < product.price && (
                                 <span className="text-xs text-gray-500 line-through">
-                                  ₹{product.price.toLocaleString()}
+                                  ₹ {Math.round(product.price).toLocaleString()}
                                 </span>
                             )}
-                          </div> */}
-
-                          <div className="mt-auto flex items-center justify-between gap-2 ccs">
+                          </div>
+      
+                          <h4
+                            className={`text-xs mb-3 ${
+                              product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
+                            }`}
+                          >
+                            {product.stock_status}
+                            {product.stock_status === "In Stock" && product.quantity
+                              ? `, ${product.quantity} units`
+                              : ""}
+                          </h4>
+       
+                          {/* Bottom Buttons */}
+                          <div className="mt-auto flex items-center justify-between gap-2">
                             <Addtocart
-                              productId={product._id} stockQuantity={product.quantity} special_price={product.special_price}
+                              productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
                               className="w-full text-xs sm:text-sm py-1.5"
                             />
                             <a
-                              href={`https://wa.me/?text=Check this out: ${product.name}`}
+                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
                               target="_blank"
                               rel="noopener noreferrer"
                               className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"

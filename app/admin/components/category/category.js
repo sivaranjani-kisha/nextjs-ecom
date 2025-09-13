@@ -650,7 +650,7 @@ const handleUpdateNavImageChange = async (e) => {
         <div className="bg-white shadow-md rounded-lg p-5 mb-5 overflow-x-auto">
         <Link
       href="/admin/category/navcat"
-      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150 inline-block"
+      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 r mb-2 ounded-md text-sm font-medium shadow-sm transition duration-150 inline-block"
     >
       NavMenu
     </Link>

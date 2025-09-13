@@ -369,7 +369,7 @@ const handleSave = async (subcategoryId) => {
         onClose={closeStatusModal}
       />
       <div className="bg-white shadow-md rounded-lg p-5 mb-5 overflow-x-auto">
-        <a className="bg-red-500 hover:bg-red-600 text-white px-4 py-2  mb-4 rounded-md text-sm font-medium shadow-sm transition duration-150 inline-block" href="/admin/homesettings/product/navmenu">Category Drag</a>
+        <a className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2  mb-4 rounded-md text-sm font-medium shadow-sm transition duration-150 inline-block" href="/admin/homesettings/product/navmenu">Category Drag</a>
         {mainCategories.map((mainCategory) => (
           <div key={mainCategory._id} className="mb-8">
             <h3 className="text-lg font-semibold mb-4 bg-gray-100 p-3 rounded">
