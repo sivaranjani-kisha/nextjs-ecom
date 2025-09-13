@@ -1984,7 +1984,7 @@ export default function HomeComponent() {
                       {bannerData.banner.items.map((item) => (
                         <motion.div
                           key={item.id}
-                          className="relative w-full aspect-[1920/550] max-h-auto"
+                          className="relative w-full aspect-[2000/667] max-h-auto"
                           variants={itemVariants}
                         >
                           <div className="absolute inset-0 overflow-hidden">
@@ -2003,7 +2003,7 @@ export default function HomeComponent() {
                     </Slider>
                   ) : (
                     <motion.div
-                      className="p-4 md:p-6 relative aspect-[1920/550] max-h-auto"
+                      className="p-4 md:p-6 relative aspect-[2000/667] max-h-auto"
                       variants={itemVariants}
                     >
                       <div className="absolute inset-0 flex justify-center items-center bg-white">
