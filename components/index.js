@@ -5,6 +5,8 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "../styles/slick-custom.css";
+import Flickity from "flickity";
+import "flickity/css/flickity.css";
 import { motion, useAnimation, useInView } from "framer-motion";
 //import { ShoppingCartSimple, CaretDown } from "@phosphor-icons/react";
 import { X } from "lucide-react"; 
@@ -23,116 +25,121 @@ import { ChevronRight } from "lucide-react";
 import 'swiper/css';
 import 'swiper/css/navigation';
 export default function HomeComponent() {
+
   function slugify(text) {
-  return text
-    ?.toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")        // replace spaces with -
-    .replace(/[^\w\-]+/g, "")    // remove special chars
-    .replace(/\-\-+/g, "-");     // collapse multiple -
-}
-    const features = [
-        { image: "/images/delivery-truck.png", title: "Free Shipping", description: "Free shipping all over the US" },
-        { image: "/images/reputation.png", title: "100% Satisfaction", description: "Guaranteed satisfaction with every order" },
-        { image: "/images/payment-protection.png", title: "Secure Payments", description: "We ensure secure transactions" },
-        { image: "/images/support.png", title: "24/7 Support", description: "We're here to help anytime" },
-    ];
-    const scrollContainerRef = useRef(null);
-    const containerRef = useRef(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isBannerLoading, setIsBannerLoading] = useState(true);
-    const [isFlashSalesLoading, setIsFlashSalesLoading] = useState(true);
-    const [navigating, setNavigating] = useState(false);
-    const [bannerData, setBannerData] = useState({
-        banner: {
-        items: []
-        }
-    });
-    const router = useRouter();
-    const [userData, setUserData] = useState(null);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [hasMounted, setHasMounted] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [flashSalesData, setFlashSalesData] = useState([]);
-    const [brands, setBrands] = useState([]);
-    const [isBrandsLoading, setIsBrandsLoading] = useState(true);
-    const [scrollDirection, setScrollDirection] = useState('down');
-    const [categories, setCategories] = useState([]);
-    const [products, setProducts] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState();
-    const [parentCategories, setParentCategories] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [authMode, setAuthMode] = useState('login');
-    const [categoryBanner, setCategoryBanner] = useState([]);
+    return text
+      ?.toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")        // replace spaces with -
+      .replace(/[^\w\-]+/g, "")    // remove special chars
+      .replace(/\-\-+/g, "-");     // collapse multiple -
+  }
+
+  const features = [
+    { image: "/images/delivery-truck.png", title: "Free Shipping", description: "Free shipping all over the US" },
+    { image: "/images/reputation.png", title: "100% Satisfaction", description: "Guaranteed satisfaction with every order" },
+    { image: "/images/payment-protection.png", title: "Secure Payments", description: "We ensure secure transactions" },
+    { image: "/images/support.png", title: "24/7 Support", description: "We're here to help anytime" },
+  ];
+  
+  const scrollContainerRef = useRef(null);
+  const containerRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isBannerLoading, setIsBannerLoading] = useState(true);
+  const [isFlashSalesLoading, setIsFlashSalesLoading] = useState(true);
+  const [navigating, setNavigating] = useState(false);
+  const [bannerData, setBannerData] = useState({
+    banner: {
+      items: []
+    }
+  });
+  
+  const router = useRouter();
+  const [userData, setUserData] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [flashSalesData, setFlashSalesData] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [isBrandsLoading, setIsBrandsLoading] = useState(true);
+  const [scrollDirection, setScrollDirection] = useState('down');
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState();
+  const [parentCategories, setParentCategories] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const [categoryBanner, setCategoryBanner] = useState([]);
   const [sections, setSections] = useState([]);
-   const [homeSectionData, setHomeSectionData] = useState({ sections: [] });
+  const [homeSectionData, setHomeSectionData] = useState({ sections: [] });
   //const [isSectionLoading, setIsSectionLoading] = useState(false);
   const [isSectionLoading, setIsSectionLoading] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    // Cateogry Scroll
-    const categoryScrollRef = useRef(null);
-const [videos, setVideos] = useState([]);
- const [activeVideo, setActiveVideo] = useState(null);
+
+  // Cateogry Scroll
+  const categoryScrollRef = useRef(null);
+  const [videos, setVideos] = useState([]);
+  const [activeVideo, setActiveVideo] = useState(null);
   const scrollRef = useRef(null);
-const scrollCategories = (direction) => {
-  if (categoryScrollRef.current) {
-    categoryScrollRef.current.scrollBy({
-      left: direction === "left" ? -200 : 200,
-      behavior: "smooth",
-    });
-  }
-};
-  const [brandMap, setBrandMap] = useState([]);
-
-
- const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
- const categoryStyles = {
-  "air-conditioner": {
-    backgroundImage: "/uploads/categories/category-darling-img/air-conditoner-one.jpg",
-    borderColor: "#060F16" 
-  },
-  "mobile-phones": {
-    backgroundImage: "/uploads/categories/category-darling-img/smartphone.png", 
-    borderColor: "#68778B"
-  },
-  "television": {
-    backgroundImage: "/uploads/categories/category-darling-img/television-one.jpg",
-    borderColor: "#A9A097" 
-  },
-  "refrigerator": {
-    backgroundImage: "/uploads/categories/category-darling-img/refirgrator-two.jpg",
-    borderColor: "#5C8B99" 
-  },
-  "washing-machine": {
-    backgroundImage: "/uploads/categories/category-darling-img/washine-machine-one.jpg",
-    borderColor: "#69AEA2"
-  }
-};
-const fetchBrand = async () => {
-  try {
-    const response = await fetch("/api/brand");
-    const result = await response.json();
-    if (result.error) {
-      console.error(result.error);
-    } else {
-      const data = result.data;
- 
-      // Store as map for quick access
-      const map = {};
-      data.forEach((b) => {
-        map[b._id] = b.brand_name;
+  const scrollCategories = (direction) => {
+    if (categoryScrollRef.current) {
+      categoryScrollRef.current.scrollBy({
+        left: direction === "left" ? -200 : 200,
+        behavior: "smooth",
       });
-      setBrandMap(map);
     }
-  } catch (error) {
-    console.error(error.message);
-  }
-};
+  };
+
+  const [brandMap, setBrandMap] = useState([]);
+  const priorityCategories = ["air-conditioner", "mobile-phones", "television", "refrigerator", "washing-machine"];
+  const categoryStyles = {
+    "air-conditioner": {
+      backgroundImage: "/uploads/categories/category-darling-img/air-conditoner-one.jpg",
+      borderColor: "#060F16" 
+    },
+    "mobile-phones": {
+      backgroundImage: "/uploads/categories/category-darling-img/smartphone.png", 
+      borderColor: "#68778B"
+    },
+    "television": {
+      backgroundImage: "/uploads/categories/category-darling-img/television-one.jpg",
+      borderColor: "#A9A097" 
+    },
+    "refrigerator": {
+      backgroundImage: "/uploads/categories/category-darling-img/refirgrator-two.jpg",
+      borderColor: "#5C8B99" 
+    },
+    "washing-machine": {
+      backgroundImage: "/uploads/categories/category-darling-img/washine-machine-one.jpg",
+      borderColor: "#69AEA2"
+    }
+  };
+
+  const fetchBrand = async () => {
+    try {
+      const response = await fetch("/api/brand");
+      const result = await response.json();
+      if (result.error) {
+        console.error(result.error);
+      } else {
+        const data = result.data;
+  
+        // Store as map for quick access
+        const map = {};
+        data.forEach((b) => {
+          map[b._id] = b.brand_name;
+        });
+        setBrandMap(map);
+      }
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
  
-useEffect(() => {
-  fetchBrand();
-}, []);
+  useEffect(() => {
+    fetchBrand();
+  }, []);
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -156,7 +163,8 @@ useEffect(() => {
       });
     }
   };
-   // ✅ Extract YouTube ID
+
+  // ✅ Extract YouTube ID
   const getYoutubeId = (url) => {
     try {
       const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
@@ -167,7 +175,7 @@ useEffect(() => {
   };
 
   // Fetch banner data
-useEffect(() => {
+  useEffect(() => {
     const fetchBannerData = async () => {
         setIsBannerLoading(true);
         try {
@@ -503,9 +511,9 @@ useEffect(() => {
     }, 2000);
 
     return () => clearTimeout(timer);
-}, []);
+  }, []);
 
-const fetchHomeSections = async () => {
+  const fetchHomeSections = async () => {
     setIsSectionLoading(true);
     try {
       const response = await fetch("/api/home-sections");
@@ -530,285 +538,273 @@ const fetchHomeSections = async () => {
     } finally {
       setIsSectionLoading(false);
     }
-};
+  };
 
   useEffect(() => {
     fetchHomeSections();
   }, []);
-    useEffect(() => {
-        setHasMounted(true);
-      }, []);
-    
-      useEffect(() => {
-        if (!hasMounted) return;
-      
-        const savedCategories = localStorage.getItem('headerCategories');
-        if (savedCategories) {
-          setCategories(JSON.parse(savedCategories));
-        }
-      
-        const fetchCategories = async () => {
-          try {
-            const response = await fetch('/api/categories/get');
-            const data = await response.json();
-            const parentCategories = data.filter(
-              (category) => category.parentid === "none" && category.status === "Active"
-            );
-            setCategories(parentCategories);
-            localStorage.setItem('headerCategories', JSON.stringify(parentCategories));
-          } catch (error) {
-            console.error("Error fetching categories:", error);
-          }
-        };
-      
-        fetchCategories();
-        checkAuthStatus();
-      }, [hasMounted]);
 
-    // Animation controls
-    const controls = useAnimation();
-    const refs = {
-        banner: useRef(null),
-        flashSales: useRef(null),
-        delivery: useRef(null),
-    };
-    const checkAuthStatus = async () => {
-        try {
-          const token = localStorage.getItem('token');
-          if (!token) return;
+  useEffect(() => {
+      setHasMounted(true);
+  }, []);
     
-          const response = await fetch('/api/auth/check', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
+  useEffect(() => {
+    if (!hasMounted) return;
+    
+    const savedCategories = localStorage.getItem('headerCategories');
+    if (savedCategories) {
+      setCategories(JSON.parse(savedCategories));
+    }
+  
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories/get');
+        const data = await response.json();
+        const parentCategories = data.filter(
+          (category) => category.parentid === "none" && category.status === "Active"
+        );
+        setCategories(parentCategories);
+        localStorage.setItem('headerCategories', JSON.stringify(parentCategories));
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+  
+    fetchCategories();
+    checkAuthStatus();
+  }, [hasMounted]);
+
+  // Animation controls
+  const controls = useAnimation();
+  const refs = {
+    banner: useRef(null),
+    flashSales: useRef(null),
+    delivery: useRef(null),
+  };
+
+  const checkAuthStatus = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('/api/auth/check', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsLoggedIn(true);
+        setUserData(data.user);
+      } else {
+        localStorage.removeItem('token');
+        setIsLoggedIn(false);
+      }
+    } catch (error) {
+      console.error("Error checking auth status:", error);
+    }
+  };
+
+  const isInView = {
+    banner: useInView(refs.banner, { once: true, amount: 0.1 }),
+    flashSales: useInView(refs.flashSales, { once: true, amount: 0.1 }),
+    delivery: useInView(refs.delivery, { once: true, amount: 0.1 }),
+  };
+
+  useEffect(() => {
+    if (isInView.banner) {
+      controls.start("visible");
+    }
+  }, [isInView.banner, controls]);
+
+  const CustomPrevArrow = ({ onClick }) => (
+    <button onClick={onClick} className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-3 rounded-full shadow-md z-10 hover:bg-gray-600"> ◀ </button>
+  );
+
+  const CustomNextArrow = ({ onClick }) => (
+    <button onClick={onClick} className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-3 rounded-full shadow-md z-10 hover:bg-gray-600"> ▶ </button>
+  );
+
+  const settings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 5000,
+    arrows: false,
+    prevArrow: <CustomPrevArrow />,
+    nextArrow: <CustomNextArrow />,
+  };
+
+  const flashSalesSettings = {
+    dots: false,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 3,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 5000,
+    responsive: [
+        { 
+            breakpoint: 1024,
+            settings: {
+            slidesToShow: 2,
             }
-          });
-    
-          if (response.ok) {
-            const data = await response.json();
-            setIsLoggedIn(true);
-            setUserData(data.user);
-          } else {
-            localStorage.removeItem('token');
-            setIsLoggedIn(false);
-          }
-        } catch (error) {
-          console.error("Error checking auth status:", error);
-        }
-      };
-    const isInView = {
-        banner: useInView(refs.banner, { once: true, amount: 0.1 }),
-        flashSales: useInView(refs.flashSales, { once: true, amount: 0.1 }),
-        delivery: useInView(refs.delivery, { once: true, amount: 0.1 }),
-    };
-    useEffect(() => {
-        if (isInView.banner) {
-          controls.start("visible");
-        }
-    }, [isInView.banner, controls]);
-
-    const CustomPrevArrow = ({ onClick }) => (
-        <button onClick={onClick} className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-3 rounded-full shadow-md z-10 hover:bg-gray-600"> ◀ </button>
-    );
-
-    const CustomNextArrow = ({ onClick }) => (
-        <button onClick={onClick} className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-3 rounded-full shadow-md z-10 hover:bg-gray-600"> ▶ </button>
-    );
-
-    const settings = {
-        dots: true,
-        infinite: true,
-        speed: 500,
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        autoplay: true,
-        autoplaySpeed: 5000,
-        arrows: false,
-        prevArrow: <CustomPrevArrow />,
-        nextArrow: <CustomNextArrow />,
-    };
-
-    // const settings = {
-    //     dots: true,
-    //     infinite: true,
-    //     speed: 500,
-    //     slidesToShow: 1,
-    //     slidesToScroll: 1,
-    //     autoplay: true,
-    //     autoplaySpeed: 5000,
-    //     arrows: false,
-    //     prevArrow: <CustomPrevArrow />,
-    //     nextArrow: <CustomNextArrow />,
-    // };
-
-    const flashSalesSettings = {
-        dots: false,
-        infinite: true,
-        speed: 500,
-        slidesToShow: 3,
-        slidesToScroll: 1,
-        autoplay: true,
-        autoplaySpeed: 5000,
-        responsive: [
-            { 
-                breakpoint: 1024,
-                settings: {
-                slidesToShow: 2,
-                }
-            },
-            {
-                breakpoint: 768,
-                settings: {
-                slidesToShow: 1,
-                }
+        },
+        {
+            breakpoint: 768,
+            settings: {
+            slidesToShow: 1,
             }
-        ]
-    };
+        }
+    ]
+  };
 
-    const brandSettings = {
-  infinite: true,
-  speed: 3000, // Continuous effect
-  slidesToShow: 6, // Default for large screens
-  slidesToScroll: 1,
-  autoplay: true,
-  autoplaySpeed: 0,
-  cssEase: "linear",
-  arrows: false,
-  pauseOnHover: true,
-
-  responsive: [
-    {
-      breakpoint: 1024, // Tablets
-      settings: {
-        slidesToShow: 5,
+  const brandSettings = {
+    infinite: true,
+    speed: 3000, // Continuous effect
+    slidesToShow: 6, // Default for large screens
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 0,
+    cssEase: "linear",
+    arrows: false,
+    pauseOnHover: true,
+    responsive: [
+      {
+        breakpoint: 1024, // Tablets
+        settings: {
+          slidesToShow: 5,
+        },
       },
-    },
-    {
-      breakpoint: 768, // Mobile
-      settings: {
-        slidesToShow: 3,
+      {
+        breakpoint: 768, // Mobile
+        settings: {
+          slidesToShow: 3,
+        },
       },
-    },
-    {
-      breakpoint: 480, // Extra-small devices
-      settings: {
-        slidesToShow: 2,
+      {
+        breakpoint: 480, // Extra-small devices
+        settings: {
+          slidesToShow: 2,
+        },
       },
-    },
-  ],
-};
+    ],
+  };
 
    
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-            when: "beforeChildren",
-            staggerChildren: 0.2
-            }
-        }
-    };
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+      when: "beforeChildren",
+        staggerChildren: 0.2
+      }
+    }
+  };
     
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0 },
-        visible: {
-            y: 0,
-            opacity: 1,
-            transition: {
-            duration: 0.5,
-            ease: "easeOut"
-            }
-        }
-    };
+  const itemVariants = {
+      hidden: { y: 20, opacity: 0 },
+      visible: {
+          y: 0,
+          opacity: 1,
+          transition: {
+          duration: 0.5,
+          ease: "easeOut"
+          }
+      }
+  };
     
-    const sectionVariants = {
-        hiddenDown: { y: 50, opacity: 0 },
-        hiddenUp: { y: -50, opacity: 0 },
-        visible: {
-            y: 0,
-            opacity: 1,
-            transition: {
-            duration: 0.6,
-            ease: "easeOut"
-            }
-        }
-    };
+  const sectionVariants = {
+    hiddenDown: { y: 50, opacity: 0 },
+    hiddenUp: { y: -50, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+      duration: 0.6,
+        ease: "easeOut"
+      }
+    }
+  };
 
-    const categoryRef = useRef(null);
-// ✅ State for single banner
-const [singleBannerData, setSingleBannerData] = useState({
-  singlebanner: { items: [] }
-});
-const [isSingleBannerLoading, setIsSingleBannerLoading] = useState(false);
+  const categoryRef = useRef(null);
+  // ✅ State for single banner
+  const [singleBannerData, setSingleBannerData] = useState({
+    singlebanner: { items: [] }
+  });
+  const [isSingleBannerLoading, setIsSingleBannerLoading] = useState(false);
 
-    // const scrollLeft = () => {
-    //     scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
-    // };
-      
-    // const scrollRight = () => {
-    //     scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" });
-    // };
+  // const scrollLeft = () => {
+  //     scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
+  // };
+    
+  // const scrollRight = () => {
+  //     scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" });
+  // };
 
-    const categoryScrollRefs = useRef({});
-      const scrollLeft = (categoryId) => {
+  const categoryScrollRefs = useRef({});
+  const scrollLeft = (categoryId) => {
     if (categoryScrollRefs.current[categoryId]) {
       categoryScrollRefs.current[categoryId].scrollBy({ left: -300, behavior: "smooth" });
     }
-    };
+  };
 
-    const scrollRight = (categoryId) => {
+  const scrollRight = (categoryId) => {
     if (categoryScrollRefs.current[categoryId]) {
       categoryScrollRefs.current[categoryId].scrollBy({ left: 300, behavior: "smooth" });
     }
-    };
+  };
     
-    const getSubcategorySlugs = (parentId) => {
+  const getSubcategorySlugs = (parentId) => {
     return categories
-        .filter(cat => cat.parentid === parentId)
-        .map(sub => sub.category_slug);
-    };
+      .filter(cat => cat.parentid === parentId)
+      .map(sub => sub.category_slug);
+  };
 
-    const filteredProducts = selectedCategory
-    ? (() => {
-        const subCategories = categories.filter(
-          cat => cat.parentid === selectedCategory._id
-        );
+  const filteredProducts = selectedCategory
+  ? (() => {
+      const subCategories = categories.filter(
+        cat => cat.parentid === selectedCategory._id
+      );
 
-        const validCategoryIds = [
-          selectedCategory._id,
-          ...subCategories.map(sub => sub._id)
-        ];
-        return products.filter(product => 
-          product.category && 
-          validCategoryIds.includes(product.category.toString())
-        );
-    })() : products;
+      const validCategoryIds = [
+        selectedCategory._id,
+        ...subCategories.map(sub => sub._id)
+      ];
+      return products.filter(product => 
+        product.category && 
+        validCategoryIds.includes(product.category.toString())
+      );
+  })() : products;
 
-console.log("Filtered Products:", filteredProducts);
+  console.log("Filtered Products:", filteredProducts);
 
-    const handleProductClick = (product) => {
-        if (navigating) return;
+  const handleProductClick = (product) => {
+    if (navigating) return;
 
-        setNavigating(true);
-        const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
+    setNavigating(true);
+    const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
+    const alreadyViewed = stored.find((p) => p._id === product._id);
+    const updated = alreadyViewed
+      ? stored.filter((p) => p._id !== product._id)
+      : stored;
 
-        const alreadyViewed = stored.find((p) => p._id === product._id);
+      updated.unshift(product); // Add to beginning
 
-        const updated = alreadyViewed
-            ? stored.filter((p) => p._id !== product._id)
-            : stored;
+      const limited = updated.slice(0, 10); // Limit to 10 recent products
 
-        updated.unshift(product); // Add to beginning
+      localStorage.setItem('recentlyViewed', JSON.stringify(limited));
+  };
 
-        const limited = updated.slice(0, 10); // Limit to 10 recent products
-
-        localStorage.setItem('recentlyViewed', JSON.stringify(limited));
-    };
-
-   // 1. Define the handler function with proper parameters
-const handleCategoryClick = useCallback((category) => (e) => {
+  // 1. Define the handler function with proper parameters
+  const handleCategoryClick = useCallback((category) => (e) => {
     if (navigating) {
         e.preventDefault();
         return;
@@ -823,24 +819,24 @@ const handleCategoryClick = useCallback((category) => (e) => {
     // localStorage.setItem('recentlyViewedCategories', JSON.stringify(updated.slice(0, 10)));
 
     router.push(`/category/${category.category_slug}`);
-}, [navigating, router]);
+  }, [navigating, router]);
 
 
 
-    // Handle route events
-       useEffect(() => {
-        const handleRouteChange = () => setNavigating(false);
-    
-        if (!router?.events?.on) return;
-    
-        router.events.on('routeChangeComplete', handleRouteChange);
-        router.events.on('routeChangeError', handleRouteChange);
-    
-        return () => {
-            router.events.off('routeChangeComplete', handleRouteChange);
-            router.events.off('routeChangeError', handleRouteChange);
-        };
-    }, [router]);
+  // Handle route events
+  useEffect(() => {
+    const handleRouteChange = () => setNavigating(false);
+
+    if (!router?.events?.on) return;
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+    router.events.on('routeChangeError', handleRouteChange);
+
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+      router.events.off('routeChangeError', handleRouteChange);
+    };
+  }, [router]);
 
 
     const featuredCategory = parentCategories[0];
@@ -876,1355 +872,1362 @@ const handleCategoryClick = useCallback((category) => (e) => {
   
       fetchOfferProducts();
     }, []);
+
   
-        // Helper function to render sections in the correct order
-        
-        console.log(categoryBanner);
-        const renderSection = (sectionName) => {
-            switch(sectionName) {
-                case 'category_banner':
-                    return (
+    // Helper function to render sections in the correct order
+    console.log(categoryBanner);
+    const renderSection = (sectionName) => {
+      switch(sectionName) {
+          case 'category_banner':
+              return (
 
-                      // <section id="category_banner">
-                      //   <div className="px-0  pt-7">
-                      //       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                      //           {categoryBanner.map((banner, index) => (
-                      //               <div key={index} className="col-span-1">
-                      //                   <div className="card  overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                      //                       <Link href={banner.redirectUrl || "#"} className="no-underline">
-                      //                           <img
-                      //                               src={banner.imageUrl}
-                      //                               alt={`Category Banner ${index + 1}`}
-                      //                               // title={`Category Banner ${index + 1}`}
-                      //                               className="w-full h-auto object-cover"
-                      //                               width={400}
-                      //                               height={400}
-                      //                           />
-                      //                       </Link>
-                      //                   </div>
-                      //               </div>
-                      //           ))}
-                      //       </div>
-                      //   </div>
-                      // </section>
+                // <section id="category_banner">
+                //   <div className="px-0  pt-7">
+                //       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                //           {categoryBanner.map((banner, index) => (
+                //               <div key={index} className="col-span-1">
+                //                   <div className="card  overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                //                       <Link href={banner.redirectUrl || "#"} className="no-underline">
+                //                           <img
+                //                               src={banner.imageUrl}
+                //                               alt={`Category Banner ${index + 1}`}
+                //                               // title={`Category Banner ${index + 1}`}
+                //                               className="w-full h-auto object-cover"
+                //                               width={400}
+                //                               height={400}
+                //                           />
+                //                       </Link>
+                //                   </div>
+                //               </div>
+                //           ))}
+                //       </div>
+                //   </div>
+                // </section>
 
-                       <section id="category_banner">
-                      <div className="px-4 md:px-6 py-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          {categoryBanner.map((banner, index) => (
-                            
-                            <div key={index} className="col-span-1">
-                              <div className="relative group overflow-hidden  shadow-sm hover:shadow-md transition-shadow">
- 
-                                {/* Image */}
-                                <img
-                                  src={banner.imageUrl}
-                                  alt={`Category Banner ${index + 1}`}
-                                  className="w-full h-[300px] object-cover transform group-hover:scale-105 transition duration-500 ease-in-out"
-                                  width={400}
-                                  height={400}
-                                />
+                  <section id="category_banner">
+                <div className="px-4 md:px-6 py-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {categoryBanner.map((banner, index) => (
+                      
+                      <div key={index} className="col-span-1">
+                        <div className="relative group overflow-hidden  shadow-sm hover:shadow-md transition-shadow">
 
-                                <div className="absolute top-1 mb-4 left-4 py-6">
-                                  <h3 className="text-lg md:text-xl font-bold">{banner.categoryname}</h3>
+                          {/* Image */}
+                          <img
+                            src={banner.imageUrl}
+                            alt={`Category Banner ${index + 1}`}
+                            className="w-full h-[300px] object-cover transform group-hover:scale-105 transition duration-500 ease-in-out"
+                            width={400}
+                            height={400}
+                          />
+
+                          <div className="absolute top-1 mb-4 left-4 py-6">
+                            <h3 className="text-lg md:text-xl font-bold">{banner.categoryname}</h3>
+                          </div>
+
+                          {/* Shop Now Link with Arrow */}
+                          <div className="absolute top-8 left-4 py-6">
+                            <Link
+                              href={banner.redirectUrl || "#"}
+                              className="mt-2 inline-flex items-center text-sm font-medium text-gray-800 hover:text-black transition"
+                            >
+                              {banner.buttonText || "Shop Now"}
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="ml-1 h-4 w-4"
+                              >
+                                <path d="m9 18 6-6-6-6" />
+                              </svg>
+                            </Link>
+                          </div>
+
+
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+              );
+          
+          // case 'product':
+          //   return (
+          //     <motion.section
+          //       id="product"
+          //       initial="hiddenDown"
+          //       animate="visible"
+          //       className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
+          //     >
+          //       <div className="rounded-[23px] py-4 p-2">
+          //         {/* Section Header */}
+          //         <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+          //           <h5 className="text-xl sm:text-2xl font-bold">
+          //             Shop by Category
+          //           </h5>
+          //         </div>
+                  
+          //         {/* Category-based Product Display */}
+          //         <div className="space-y-8">            
+          //           {parentCategories
+          //             .filter(category => priorityCategories.includes(category.category_slug))
+          //             .sort((a, b) => {
+          //               // Sort by the order in priorityCategories array
+          //               return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
+          //             })
+          //             .map((category, index) => {
+
+          //               const categoryStyle = categoryStyles[category.category_slug] || {
+          //                 backgroundImage: '/uploads/small-appliance-banner.webp',
+          //                 borderColor: '#1F3A8C'
+          //               };
+          //               // Get products for this category
+          //               const categoryProducts = (() => {
+          //                 const subCategories = categories.filter(
+          //                   cat => cat.parentid === category._id
+          //                 );
+                    
+          //                 const validCategoryIds = [
+          //                   category._id,
+          //                   ...subCategories.map(sub => sub._id)
+          //                 ];
+                    
+          //                 const allProducts = products.filter(product => 
+          //                   product.category && product.quantity > 2 && product.special_price > 2 &&
+          //                   validCategoryIds.includes(product.category.toString())
+          //                 );
+                          
+          //                 return allProducts.slice(0, 50);
+          //               })();
+                    
+          //               // Skip empty categories
+          //               if (categoryProducts.length === 0) return null;
+                    
+          //               return (
+          //                 <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
+          //                   {/* Category Banner */}
+          //                   <div className="flex-shrink-0 w-full md:w-1/3 relative">
+          //                     <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
+          //                     <div className="relative z-10 h-full flex flex-col p-6 text-white">
+          //                       <h2 className="text-2xl font-bold">{category.category_name}</h2>
+                                
+          //                       <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
+          //                     </div>
+          //                   </div>
+
+          //                   {/* Products Grid */}
+          //                   <div className="w-full md:w-2/3">
+          //                     <div className={` relative flex-1 pt-2 pb-2 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}  style={{ border: `solid 6px ${categoryStyle.borderColor}` }}>
+          //                       {/* Left Arrow */}
+          //                       <button
+          //                         onClick={() => scrollLeft(category._id)}
+          //                         className="absolute left-0 top-1/2 -translate-y-1/2 
+          //                                   w-8 h-8 flex items-center justify-center 
+          //                                   rounded-full bg-white text-black border border-gray 
+          //                                   hover:bg-black hover:text-white hover:border-white
+          //                                   shadow-sm z-20 transition-all duration-300"
+          //                       >
+          //                         <FiChevronLeft size={18} />
+          //                       </button>
+
+          //                       {/* Right Arrow */}
+          //                       <button
+          //                         onClick={() => scrollRight(category._id)}
+          //                         className="absolute right-0 top-1/2 -translate-y-1/2 
+          //                                   w-8 h-8 flex items-center justify-center 
+          //                                   rounded-full bg-white text-black border border-gray 
+          //                                   hover:bg-black hover:text-white hover:border-white
+          //                                   shadow-sm z-20 transition-all duration-300"
+          //                       >
+          //                         <FiChevronRight size={18} />
+          //                       </button>
+          //                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
+          //                         {categoryProducts.slice(0, 6).map((product) => (
+                                  
+          //                           <div key={product._id} className="relative bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
+                                      
+          //                             {/* Product Image */}
+          //                             <div className="relative aspect-square bg-gray-50 group">
+          //                               {product.images?.[0] && (
+          //                                 <>
+          //                                   {/* Default Image */}
+          //                                   <Image
+          //                                     src={
+          //                                       product.images[0].startsWith("http")
+          //                                         ? product.images[0]
+          //                                         : `/uploads/products/${product.images[0]}`
+          //                                     }
+          //                                     alt={product.name}
+          //                                     fill
+          //                                     className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
+          //                                     sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+          //                                     unoptimized
+          //                                     onError={(e) => {
+          //                                       e.target.onerror = null;
+          //                                       e.target.src = "/uploads/products/placeholder.jpg";
+          //                                     }}
+          //                                   />
+
+          //                                   {/* Hover Image (second image if available) */}
+          //                                   {product.images[1] && (
+          //                                     <Image
+          //                                       src={
+          //                                         product.images[1].startsWith("http")
+          //                                           ? product.images[1]
+          //                                           : `/uploads/products/${product.images[1]}`
+          //                                       }
+          //                                       alt={product.name}
+          //                                       fill
+          //                                       className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+          //                                       sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+          //                                       unoptimized
+          //                                       onError={(e) => {
+          //                                         e.target.onerror = null;
+          //                                         e.target.src = "/uploads/products/placeholder.jpg";
+          //                                       }}
+          //                                     />
+          //                                   )}
+          //                                 </>
+          //                               )}
+                    
+          //                               {/* Discount Badge */}
+          //                               {Number(product.special_price) > 0 &&
+          //                                 Number(product.special_price) < Number(product.price) && (
+          //                                   <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+          //                                     {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
+          //                                   </span>
+          //                               )}
+                    
+                    
+          //                               {/* Wishlist */}
+          //                               <div className="absolute top-2 right-2">
+          //                                 <ProductCard productId={product._id} />
+          //                               </div>
+          //                             </div>
+                    
+          //                             {/* Product Info and Buttons */}
+          //                             <div className="p-2 md:p-4 flex flex-col h-full">
+          //                               <h4 className="text-xs text-gray-500 mb-2 uppercase">
+          //                                 <Link
+          //                                   href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+          //                                   className="hover:text-blue-600"
+          //                                 >
+          //                                   {brandMap[product.brand] || ""}
+          //                                 </Link>
+          //                               </h4>
+                  
+          //                               {/* Title with fixed height */}
+          //                               <Link
+          //                                 href={`/product/${product.slug}`}
+          //                                 className="block mb-2"
+          //                                 onClick={() => handleProductClick(product)}
+          //                               >
+          //                                 <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+          //                                   {product.name}
+          //                                 </h3>
+          //                               </Link>
+                    
+          //                               {/* Price Row (same level always) */}
+          //                                <div className="flex items-center gap-2 mb-3">
+          //                                 <span className="text-base font-semibold text-red-600">
+          //                                   ₹ {(
+          //                                     product.special_price &&
+          //                                     product.special_price > 0 &&
+          //                                     product.special_price != '0' &&
+          //                                     product.special_price != 0 &&
+          //                                     product.special_price < product.price
+          //                                       ? Math.round(product.special_price)
+          //                                       : Math.round(product.price)
+          //                                   ).toLocaleString()}
+          //                                 </span>
+
+          //                                 {product.special_price > 0 &&
+          //                                   product.special_price != '0' &&
+          //                                   product.special_price != 0 &&
+          //                                   product.special_price &&
+          //                                   product.special_price < product.price && (
+          //                                     <span className="text-xs text-gray-500 line-through">
+          //                                       ₹ {Math.round(product.price).toLocaleString()}
+          //                                     </span>
+          //                                 )}
+          //                               </div>
+          //                               {/* <div className="flex items-center gap-2 mb-3">
+          //                                 <span className="text-base font-semibold text-red-600">
+          //                                   ₹ {(
+          //                                     product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
+          //                                       ? product.special_price
+          //                                       : product.price
+          //                                   ).toLocaleString()}
+          //                                 </span>
+                    
+                    
+          //                                 {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
+          //                                   product.special_price < product.price &&
+          //                                   (
+          //                                     <span className="text-xs text-gray-500 line-through">
+          //                                       ₹ {product.price.toLocaleString()}
+          //                                     </span>
+          //                                 )}
+          //                               </div> */}
+                    
+          //                               <h4
+          //                                     className={`text-xs mb-3 ${
+          //                                       product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
+          //                                     }`}
+          //                                   >
+          //                                     {product.stock_status}
+          //                                     {product.stock_status === "In Stock" && product.quantity
+          //                                       ? `, ${product.quantity} units`
+          //                                       : ""}
+          //                                   </h4>
+                    
+          //                               {/* Bottom Buttons */}
+          //                               <div className="mt-auto flex items-center justify-between gap-2">
+          //                                 <Addtocart
+          //                                   productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
+          //                                   className="w-full text-xs sm:text-sm py-1.5"
+          //                                 />
+          //                                 <a
+          //                                   href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
+          //                                   target="_blank"
+          //                                   rel="noopener noreferrer"
+          //                                   className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
+          //                                 >
+          //                                   <svg
+          //                                     className="w-5 h-5"
+          //                                     viewBox="0 0 32 32"
+          //                                     fill="currentColor"
+          //                                     xmlns="http://www.w3.org/2000/svg"
+          //                                   >
+          //                                     <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
+          //                                   </svg>
+          //                                 </a>
+          //                               </div>
+          //                             </div>
+          //                           </div>
+          //                         ))}
+          //                       </div>
+          //                     </div>
+          //                   </div>
+          //                 </div>
+          //               );
+          //             })
+          //           }
+          //         </div>
+          //       </div>
+          //     </motion.section>
+          //   );
+          
+          case 'product':
+            // return (
+            //   <motion.section
+            //     id="product"
+            //     initial="hiddenDown"
+            //     animate="visible"
+            //     className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
+            //   >
+            //     <div className="rounded-[23px] py-4 p-2">
+            //       {/* Section Header */}
+            //       <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+            //         <h5 className="text-xl sm:text-2xl font-bold">
+            //           Shop by Category
+            //         </h5>
+            //       </div>
+                  
+            //       {/* Category-based Product Display */}
+            //       <div className="space-y-8">            
+            //         {parentCategories
+            //           .filter(category => priorityCategories.includes(category.category_slug))
+            //           .sort((a, b) => {
+            //             // Sort by the order in priorityCategories array
+            //             return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
+            //           })
+            //           .map((category, index) => {
+
+            //             const categoryStyle = categoryStyles[category.category_slug] || {
+            //               backgroundImage: '/uploads/small-appliance-banner.webp',
+            //               borderColor: '#1F3A8C'
+            //             };
+            //             // Get products for this category
+            //             const categoryProducts = (() => {
+            //               const subCategories = categories.filter(
+            //                 cat => cat.parentid === category._id
+            //               );
+                    
+            //               const validCategoryIds = [
+            //                 category._id,
+            //                 ...subCategories.map(sub => sub._id)
+            //               ];
+                    
+            //               const allProducts = products.filter(product => 
+            //                 product.category && product.quantity > 2 && product.special_price > 2 &&
+            //                 validCategoryIds.includes(product.category.toString())
+            //               );
+                          
+            //               return allProducts.slice(0, 50);
+            //             })();
+                    
+            //             // Skip empty categories
+            //             if (categoryProducts.length === 0) return null;
+                    
+            //             return (
+            //               <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
+            //                 {/* Category Banner */}
+            //                 <div className="flex-shrink-0 relative" style={{width: '450px', height: '472px'}}>
+            //                   <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
+            //                   <div className="relative z-10 h-full flex flex-col p-6 text-white">
+            //                     <h2 className="text-2xl font-bold">{category.category_name}</h2>
+                                
+            //                     <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
+            //                   </div>
+            //                 </div>
+
+            //                 {/* Products Grid */}
+            //                 <div className="" style={{width: 'calc(100% - 450px)'}}>
+            //                   <div className={` relative flex-1 pt-2 pb-0 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}   style={{
+            //                     borderTop: `6px solid ${categoryStyle.borderColor}`,
+            //                     borderBottom: `6px solid ${categoryStyle.borderColor}`,
+            //                     borderLeft: index % 2 === 1 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
+            //                     borderRight: index % 2 === 0 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
+            //                   }}>
+            //                     {/* relative bg-white flex-shrink-0 w-72 h-[466px] flex flex-col justify-between p-4 rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer */}
+            //                     {/* Left Arrow */}
+            //                     <button
+            //                       onClick={() => scrollLeft(category._id)}
+            //                       className="absolute left-0 top-1/2 -translate-y-1/2 
+            //                                 w-8 h-8 flex items-center justify-center 
+            //                                 rounded-full bg-white text-black border border-gray 
+            //                                 hover:bg-black hover:text-white hover:border-white
+            //                                 shadow-sm z-20 transition-all duration-300"
+            //                     >
+            //                       <FiChevronLeft size={18} />
+            //                     </button>
+
+            //                     {/* Right Arrow */}
+            //                     <button
+            //                       onClick={() => scrollRight(category._id)}
+            //                       className="absolute right-0 top-1/2 -translate-y-1/2 
+            //                                 w-8 h-8 flex items-center justify-center 
+            //                                 rounded-full bg-white text-black border border-gray 
+            //                                 hover:bg-black hover:text-white hover:border-white
+            //                                 shadow-sm z-20 transition-all duration-300"
+            //                     >
+            //                       <FiChevronRight size={18} />
+            //                     </button>
+            //                     <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
+            //                       {categoryProducts.slice(0, 6).map((product) => (
+                                  
+            //                         <div key={product._id} className="relative bg-white flex-shrink-0 w-72 h-[450px] flex flex-col justify-between p-4 rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer mb-2">
+                                      
+            //                           {/* Product Image */}
+            //                           <div className="relative aspect-square bg-gray-50 group">
+            //                             {product.images?.[0] && (
+            //                               <>
+            //                                 {/* Default Image */}
+            //                                 <Image
+            //                                   src={
+            //                                     product.images[0].startsWith("http")
+            //                                       ? product.images[0]
+            //                                       : `/uploads/products/${product.images[0]}`
+            //                                   }
+            //                                   alt={product.name}
+            //                                   fill
+            //                                   className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
+            //                                   sizes="(max-width: 500px) 40vw, 23vw, 15vw"
+            //                                   unoptimized
+            //                                   onError={(e) => {
+            //                                     e.target.onerror = null;
+            //                                     e.target.src = "/uploads/products/placeholder.jpg";
+            //                                   }}
+            //                                 />
+
+            //                                 {/* Hover Image (second image if available) */}
+            //                                 {product.images[1] && (
+            //                                   <Image
+            //                                     src={
+            //                                       product.images[1].startsWith("http")
+            //                                         ? product.images[1]
+            //                                         : `/uploads/products/${product.images[1]}`
+            //                                     }
+            //                                     alt={product.name}
+            //                                     fill
+            //                                     className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+            //                                     sizes="(max-width: 500px) 40vw, 23vw, 15vw"
+            //                                     unoptimized
+            //                                     onError={(e) => {
+            //                                       e.target.onerror = null;
+            //                                       e.target.src = "/uploads/products/placeholder.jpg";
+            //                                     }}
+            //                                   />
+            //                                 )}
+            //                               </>
+            //                             )}
+                    
+            //                             {/* Discount Badge */}
+            //                             {Number(product.special_price) > 0 &&
+            //                               Number(product.special_price) < Number(product.price) && (
+            //                                 <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+            //                                   {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
+            //                                 </span>
+            //                             )}
+                    
+                    
+            //                             {/* Wishlist */}
+            //                             <div className="absolute top-2 right-2">
+            //                               <ProductCard productId={product._id} />
+            //                             </div>
+            //                           </div>
+                    
+            //                           {/* Product Info and Buttons */}
+            //                           <div className="pb-0 p-2 md:px-4 flex flex-col h-full ">
+            //                             <h4 className="text-xs text-gray-500 mb-2 uppercase">
+            //                               <Link
+            //                                 href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+            //                                 className="hover:text-blue-600"
+            //                               >
+            //                                 {brandMap[product.brand] || ""}
+            //                               </Link>
+            //                             </h4>
+                  
+            //                             {/* Title with fixed height */}
+            //                             <Link
+            //                               href={`/product/${product.slug}`}
+            //                               className="block mb-2"
+            //                               onClick={() => handleProductClick(product)}
+            //                             >
+            //                               <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+            //                                 {product.name}
+            //                               </h3>
+            //                             </Link>
+                    
+            //                             {/* Price Row (same level always) */}
+            //                              <div className="flex items-center gap-2 mb-2">
+            //                               <span className="text-base font-semibold text-red-600">
+            //                                 ₹ {(
+            //                                   product.special_price &&
+            //                                   product.special_price > 0 &&
+            //                                   product.special_price != '0' &&
+            //                                   product.special_price != 0 &&
+            //                                   product.special_price < product.price
+            //                                     ? Math.round(product.special_price)
+            //                                     : Math.round(product.price)
+            //                                 ).toLocaleString()}
+            //                               </span>
+
+            //                               {product.special_price > 0 &&
+            //                                 product.special_price != '0' &&
+            //                                 product.special_price != 0 &&
+            //                                 product.special_price &&
+            //                                 product.special_price < product.price && (
+            //                                   <span className="text-xs text-gray-500 line-through">
+            //                                     ₹ {Math.round(product.price).toLocaleString()}
+            //                                   </span>
+            //                               )}
+            //                             </div>
+            //                             {/* <div className="flex items-center gap-2 mb-3">
+            //                               <span className="text-base font-semibold text-red-600">
+            //                                 ₹ {(
+            //                                   product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
+            //                                     ? product.special_price
+            //                                     : product.price
+            //                                 ).toLocaleString()}
+            //                               </span>
+                    
+                    
+            //                               {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
+            //                                 product.special_price < product.price &&
+            //                                 (
+            //                                   <span className="text-xs text-gray-500 line-through">
+            //                                     ₹ {product.price.toLocaleString()}
+            //                                   </span>
+            //                               )}
+            //                             </div> */}
+                    
+            //                             <h4
+            //                                   className={`text-xs mb-2 ${
+            //                                     product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
+            //                                   }`}
+            //                                 >
+            //                                   {product.stock_status}
+            //                                   {product.stock_status === "In Stock" && product.quantity
+            //                                     ? `, ${product.quantity} units`
+            //                                     : ""}
+            //                                 </h4>
+                    
+            //                             {/* Bottom Buttons */}
+            //                             <div className="mt-2 mb-1 flex items-center justify-between gap-2">
+            //                               <Addtocart
+            //                                 productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
+            //                                 className="w-full text-xs sm:text-sm py-1.5"
+            //                               />
+            //                               <a
+            //                                 href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
+            //                                 target="_blank"
+            //                                 rel="noopener noreferrer"
+            //                                 className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
+            //                               >
+            //                                 <svg
+            //                                   className="w-5 h-5"
+            //                                   viewBox="0 0 32 32"
+            //                                   fill="currentColor"
+            //                                   xmlns="http://www.w3.org/2000/svg"
+            //                                 >
+            //                                   <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
+            //                                 </svg>
+            //                               </a>
+            //                             </div>
+            //                           </div>
+            //                         </div>
+            //                       ))}
+            //                     </div>
+            //                   </div>
+            //                 </div>
+            //               </div>
+            //             );
+            //           })
+            //         }
+            //       </div>
+            //     </div>
+            //   </motion.section>
+            // );
+
+            return (
+              <motion.section
+                id="product"
+                initial="hiddenDown"
+                animate="visible"
+                className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
+              >
+                <div className="rounded-[23px] py-4 p-2">
+                  {/* Section Header */}
+                  
+                  
+                  {/* Category-based Product Display */}
+                  <div className="space-y-8 max-w-7xl mx-auto">    
+                    <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                      <h5 className="text-xl sm:text-2xl font-bold">
+                        Shop by Category
+                      </h5>
+                    </div>        
+                    {parentCategories
+                      .filter(category => priorityCategories.includes(category.category_slug))
+                      .sort((a, b) => {
+                        // Sort by the order in priorityCategories array
+                        return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
+                      })
+                      .map((category, index) => {
+
+                        const categoryStyle = categoryStyles[category.category_slug] || {
+                          backgroundImage: '/uploads/small-appliance-banner.webp',
+                          borderColor: '#1F3A8C'
+                        };
+                        // Get products for this category
+                        const categoryProducts = (() => {
+                          const subCategories = categories.filter(
+                            cat => cat.parentid === category._id
+                          );
+                    
+                          const validCategoryIds = [
+                            category._id,
+                            ...subCategories.map(sub => sub._id)
+                          ];
+                    
+                          const allProducts = products.filter(product => 
+                            product.category && product.quantity > 2 && product.special_price > 2 &&
+                            validCategoryIds.includes(product.category.toString())
+                          );
+                          
+                          return allProducts.slice(0, 200);
+                        })();
+                    
+                        // Skip empty categories
+                        if (categoryProducts.length === 0) return null;
+                    
+                        return (
+                          <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
+                            {/* Category Banner */}
+                            <div className="flex-shrink-0 relative" style={{width: '450px'}}>
+                              <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})`,backgroundSize:'cover',backgroundPosition: 'center',backgroundRepeat: 'no-repeat'}}></div>
+                              <div className="relative z-10 h-full flex flex-col justify-end p-6 text-white">
+                                {/* <h2 className="text-2xl font-bold">{category.category_name}</h2> */}
+                                
+                                <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
+                              </div>
+                            </div>
+
+                            {/* Products Grid */}
+                            <div className="" style={{width: 'calc(100% - 450px)'}}>
+                              <div className={` relative flex-1 py-1 pb-1 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}   style={{
+                                borderTop: `6px solid ${categoryStyle.borderColor}`,
+                                borderBottom: `6px solid ${categoryStyle.borderColor}`,
+                                borderLeft: index % 2 === 1 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
+                                borderRight: index % 2 === 0 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
+                              }}>
+                                {/* Left Arrow */}
+                                <button
+                                  onClick={() => scrollLeft(category._id)}
+                                  className="absolute left-0 top-1/2 -translate-y-1/2 
+                                            w-8 h-8 flex items-center justify-center 
+                                            rounded-full bg-white text-black border border-gray 
+                                            hover:bg-black hover:text-white hover:border-white
+                                            shadow-sm z-20 transition-all duration-300"
+                                >
+                                  <FiChevronLeft size={18} />
+                                </button>
+
+                                {/* Right Arrow */}
+                                <button
+                                  onClick={() => scrollRight(category._id)}
+                                  className="absolute right-0 top-1/2 -translate-y-1/2 
+                                            w-8 h-8 flex items-center justify-center 
+                                            rounded-full bg-white text-black border border-gray 
+                                            hover:bg-black hover:text-white hover:border-white
+                                            shadow-sm z-20 transition-all duration-300"
+                                >
+                                  <FiChevronRight size={18} />
+                                </button>
+                                <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
+                                  {categoryProducts.slice(0, 15).map((product) => (
+                                  
+                                    <div key={product._id} className="relative bg-white flex-shrink-0 w-64 flex flex-col justify-between p-[5px]  rounded-lg border border-gray-200 hover:border-[#0069c1] hover:shadow-md transition-all duration-300  cursor-pointer">
+                                      
+                                      {/* Product Image */}
+                                      <div className="relative aspect-square bg-white group">
+                                        {product.images?.[0] && (
+                                          <>
+                                            {/* Default Image */}
+                                            <Image
+                                              src={
+                                                product.images[0].startsWith("http")
+                                                  ? product.images[0]
+                                                  : `/uploads/products/${product.images[0]}`
+                                              }
+                                              alt={product.name}
+                                              fill
+                                              className={`object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out 
+                                              ${product.images[1] 
+                                                ? "group-hover:opacity-0"   // if 2nd image → fade out
+                                                : "group-hover:scale-110"   // if only 1 image → zoom
+                                              }`}
+                                              sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                                              unoptimized
+                                              onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = "/uploads/products/placeholder.jpg";
+                                              }}
+                                            />
+
+                                            {/* Hover Image (second image if available) */}
+                                            {product.images[1] && (
+                                              <Image
+                                                src={
+                                                  product.images[1].startsWith("http")
+                                                    ? product.images[1]
+                                                    : `/uploads/products/${product.images[1]}`
+                                                }
+                                                alt={product.name}
+                                                fill
+                                                className="object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out opacity-0 group-hover:opacity-100 group-hover:scale-110"
+                                                sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+                                                unoptimized
+                                                onError={(e) => {
+                                                  e.target.onerror = null;
+                                                  e.target.src = "/uploads/products/placeholder.jpg";
+                                                }}
+                                              />
+                                            )}
+                                          </>
+                                        )}
+                    
+                                        {/* Discount Badge */}
+                                        {Number(product.special_price) > 0 &&
+                                          Number(product.special_price) < Number(product.price) && (
+                                            <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                                              {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
+                                            </span>
+                                        )}
+                    
+                    
+                                        {/* Wishlist */}
+                                        <div className="absolute top-2 right-2">
+                                          <ProductCard productId={product._id} />
+                                        </div>
+                                      </div>
+                    
+                                      {/* Product Info and Buttons */}
+                                      <div className="p-2 md:p-4 flex flex-col h-full">
+                                        <h4 className="text-xs text-gray-500 mb-2 uppercase">
+                                          <Link
+                                            href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                                            className="hover:text-blue-600"
+                                          >
+                                            {brandMap[product.brand] || ""}
+                                          </Link>
+                                        </h4>
+                  
+                                        {/* Title with fixed height */}
+                                        <Link
+                                          href={`/product/${product.slug}`}
+                                          className="block mb-2"
+                                          onClick={() => handleProductClick(product)}
+                                        >
+                                          <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                                            {product.name}
+                                          </h3>
+                                        </Link>
+                    
+                                        {/* Price Row (same level always) */}
+                                          <div className="flex items-center gap-2 mb-3">
+                                          <span className="text-base font-semibold text-red-600">
+                                            ₹ {(
+                                              product.special_price &&
+                                              product.special_price > 0 &&
+                                              product.special_price != '0' &&
+                                              product.special_price != 0 &&
+                                              product.special_price < product.price
+                                                ? Math.round(product.special_price)
+                                                : Math.round(product.price)
+                                            ).toLocaleString()}
+                                          </span>
+
+                                          {product.special_price > 0 &&
+                                            product.special_price != '0' &&
+                                            product.special_price != 0 &&
+                                            product.special_price &&
+                                            product.special_price < product.price && (
+                                              <span className="text-xs text-gray-500 line-through">
+                                                ₹ {Math.round(product.price).toLocaleString()}
+                                              </span>
+                                          )}
+                                        </div>
+                                        {/* <div className="flex items-center gap-2 mb-3">
+                                          <span className="text-base font-semibold text-red-600">
+                                            ₹ {(
+                                              product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
+                                                ? product.special_price
+                                                : product.price
+                                            ).toLocaleString()}
+                                          </span>
+                    
+                    
+                                          {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
+                                            product.special_price < product.price &&
+                                            (
+                                              <span className="text-xs text-gray-500 line-through">
+                                                ₹ {product.price.toLocaleString()}
+                                              </span>
+                                          )}
+                                        </div> */}
+                    
+                                        <h4
+                                              className={`text-xs mb-3 ${
+                                                product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
+                                              }`}
+                                            >
+                                              {product.stock_status}
+                                              {product.stock_status === "In Stock" && product.quantity
+                                                ? `, ${product.quantity} units`
+                                                : ""}
+                                            </h4>
+                    
+                                        {/* Bottom Buttons */}
+                                        <div className="mt-auto flex items-center justify-between gap-2">
+                                          <Addtocart
+                                            productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
+                                            className="w-full text-xs sm:text-sm py-1.5"
+                                          />
+                                          <a
+                                            href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
+                                          >
+                                            <svg
+                                              className="w-5 h-5"
+                                              viewBox="0 0 32 32"
+                                              fill="currentColor"
+                                              xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                              <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
+                                            </svg>
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
- 
-                                {/* Shop Now Link with Arrow */}
-                                <div className="absolute top-8 left-4 py-6">
-                                  <Link
-                                    href={banner.redirectUrl || "#"}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    }
+                  </div>
+                </div>
+              </motion.section>
+            );
+          
+          case 'flash_sales':
+              return (
+
+                
+                              <motion.section
+                  ref={refs.flashSales}
+                  initial="hiddenDown"
+                  animate="visible"
+                  variants={sectionVariants}
+                  id="flash_sales"
+                  className="px-4 md:px-6 py-8"
+                >
+                  {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
+                    <div className="grid grid-cols-12 gap-6">
+                      {isFlashSalesLoading ? (
+                        <div className="flex justify-center items-center h-64 col-span-12">
+                          <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 animate-spin"></div>
+                        </div>
+                      ) : (
+                        flashSalesData
+                          .filter(item => item.bgImage && item.productImage)
+                          .slice(0, 3) // only take 3 items for 4/4/4
+                          .map((item) => (
+                            <div
+                              key={item.id}
+                              className="col-span-12 md:col-span-4 relative shadow-md overflow-hidden flex items-center p-6"
+                              style={{
+                                backgroundImage: `url(${item.bgImage})`,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
+                              }}
+                            >
+                              {/* Overlay */}
+                              <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+
+                              {/* Content Wrapper */}
+                              <div className="relative z-10 flex items-center w-full">
+                                {/* Image Left with animation */}
+                                <motion.div
+                                  whileHover={{ scale: 1.1 }}
+                                  transition={{ duration: 0.4 }}
+                                  className="w-1/2 flex justify-center"
+                                >
+                                  <Image
+                                    src={item.productImage}
+                                    alt={item.title}
+                                    width={300}
+                                    height={300}
+                                    className="object-cover rounded-lg"
+                                  />
+                                </motion.div>
+
+                                {/* Text Right */}
+                                <div className="w-1/2 pl-4 text-left text-white">
+                                  <h3 className="text-lg md:text-xl font-bold">{item.title}</h3>
+                                  <p className="text-sm mt-1 opacity-90">
+                                    {item.discountText || "Flat up to 30% discount"}
+                                  </p>
+                                  <motion.a
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    href={item.redirectUrl}
                                     className="mt-2 inline-flex items-center text-sm font-medium text-gray-800 hover:text-black transition"
                                   >
-                                    {banner.buttonText || "Shop Now"}
+                                    Shop Now
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
-                                      width="20"
-                                      height="20"
+                                      width="24"
+                                      height="24"
                                       viewBox="0 0 24 24"
                                       fill="none"
                                       stroke="currentColor"
                                       strokeWidth="2"
                                       strokeLinecap="round"
                                       strokeLinejoin="round"
-                                      className="ml-1 h-4 w-4"
+                                      className="lucide lucide-chevron-right ml-1 h-4 w-4"
                                     >
-                                      <path d="m9 18 6-6-6-6" />
+                                      <path d="M9 18l6-6-6-6" />
                                     </svg>
-                                  </Link>
+
+                                  </motion.a>
                                 </div>
- 
- 
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    </section>
-                    );
-                // case 'product':
-                //   return (
-                //     <motion.section
-                //       id="product"
-                //       initial="hiddenDown"
-                //       animate="visible"
-                //       className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
-                //     >
-                //       <div className="rounded-[23px] py-4 p-2">
-                //         {/* Section Header */}
-                //         <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
-                //           <h5 className="text-xl sm:text-2xl font-bold">
-                //             Shop by Category
-                //           </h5>
-                //         </div>
-                        
-                //         {/* Category-based Product Display */}
-                //         <div className="space-y-8">            
-                //           {parentCategories
-                //             .filter(category => priorityCategories.includes(category.category_slug))
-                //             .sort((a, b) => {
-                //               // Sort by the order in priorityCategories array
-                //               return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
-                //             })
-                //             .map((category, index) => {
-
-                //               const categoryStyle = categoryStyles[category.category_slug] || {
-                //                 backgroundImage: '/uploads/small-appliance-banner.webp',
-                //                 borderColor: '#1F3A8C'
-                //               };
-                //               // Get products for this category
-                //               const categoryProducts = (() => {
-                //                 const subCategories = categories.filter(
-                //                   cat => cat.parentid === category._id
-                //                 );
-                          
-                //                 const validCategoryIds = [
-                //                   category._id,
-                //                   ...subCategories.map(sub => sub._id)
-                //                 ];
-                          
-                //                 const allProducts = products.filter(product => 
-                //                   product.category && product.quantity > 2 && product.special_price > 2 &&
-                //                   validCategoryIds.includes(product.category.toString())
-                //                 );
-                                
-                //                 return allProducts.slice(0, 50);
-                //               })();
-                          
-                //               // Skip empty categories
-                //               if (categoryProducts.length === 0) return null;
-                          
-                //               return (
-                //                 <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
-                //                   {/* Category Banner */}
-                //                   <div className="flex-shrink-0 w-full md:w-1/3 relative">
-                //                     <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
-                //                     <div className="relative z-10 h-full flex flex-col p-6 text-white">
-                //                       <h2 className="text-2xl font-bold">{category.category_name}</h2>
-                                      
-                //                       <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
-                //                     </div>
-                //                   </div>
-
-                //                   {/* Products Grid */}
-                //                   <div className="w-full md:w-2/3">
-                //                     <div className={` relative flex-1 pt-2 pb-2 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}  style={{ border: `solid 6px ${categoryStyle.borderColor}` }}>
-                //                       {/* Left Arrow */}
-                //                       <button
-                //                         onClick={() => scrollLeft(category._id)}
-                //                         className="absolute left-0 top-1/2 -translate-y-1/2 
-                //                                   w-8 h-8 flex items-center justify-center 
-                //                                   rounded-full bg-white text-black border border-gray 
-                //                                   hover:bg-black hover:text-white hover:border-white
-                //                                   shadow-sm z-20 transition-all duration-300"
-                //                       >
-                //                         <FiChevronLeft size={18} />
-                //                       </button>
-
-                //                       {/* Right Arrow */}
-                //                       <button
-                //                         onClick={() => scrollRight(category._id)}
-                //                         className="absolute right-0 top-1/2 -translate-y-1/2 
-                //                                   w-8 h-8 flex items-center justify-center 
-                //                                   rounded-full bg-white text-black border border-gray 
-                //                                   hover:bg-black hover:text-white hover:border-white
-                //                                   shadow-sm z-20 transition-all duration-300"
-                //                       >
-                //                         <FiChevronRight size={18} />
-                //                       </button>
-                //                       <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
-                //                         {categoryProducts.slice(0, 6).map((product) => (
-                                        
-                //                           <div key={product._id} className="relative bg-white flex-shrink-0 w-60 flex flex-col justify-between p-4  rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer">
-                                            
-                //                             {/* Product Image */}
-                //                             <div className="relative aspect-square bg-gray-50 group">
-                //                               {product.images?.[0] && (
-                //                                 <>
-                //                                   {/* Default Image */}
-                //                                   <Image
-                //                                     src={
-                //                                       product.images[0].startsWith("http")
-                //                                         ? product.images[0]
-                //                                         : `/uploads/products/${product.images[0]}`
-                //                                     }
-                //                                     alt={product.name}
-                //                                     fill
-                //                                     className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
-                //                                     sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                //                                     unoptimized
-                //                                     onError={(e) => {
-                //                                       e.target.onerror = null;
-                //                                       e.target.src = "/uploads/products/placeholder.jpg";
-                //                                     }}
-                //                                   />
-
-                //                                   {/* Hover Image (second image if available) */}
-                //                                   {product.images[1] && (
-                //                                     <Image
-                //                                       src={
-                //                                         product.images[1].startsWith("http")
-                //                                           ? product.images[1]
-                //                                           : `/uploads/products/${product.images[1]}`
-                //                                       }
-                //                                       alt={product.name}
-                //                                       fill
-                //                                       className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
-                //                                       sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                //                                       unoptimized
-                //                                       onError={(e) => {
-                //                                         e.target.onerror = null;
-                //                                         e.target.src = "/uploads/products/placeholder.jpg";
-                //                                       }}
-                //                                     />
-                //                                   )}
-                //                                 </>
-                //                               )}
-                          
-                //                               {/* Discount Badge */}
-                //                               {Number(product.special_price) > 0 &&
-                //                                 Number(product.special_price) < Number(product.price) && (
-                //                                   <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
-                //                                     {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
-                //                                   </span>
-                //                               )}
-                          
-                          
-                //                               {/* Wishlist */}
-                //                               <div className="absolute top-2 right-2">
-                //                                 <ProductCard productId={product._id} />
-                //                               </div>
-                //                             </div>
-                          
-                //                             {/* Product Info and Buttons */}
-                //                             <div className="p-2 md:p-4 flex flex-col h-full">
-                //                               <h4 className="text-xs text-gray-500 mb-2 uppercase">
-                //                                 <Link
-                //                                   href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
-                //                                   className="hover:text-blue-600"
-                //                                 >
-                //                                   {brandMap[product.brand] || ""}
-                //                                 </Link>
-                //                               </h4>
-                        
-                //                               {/* Title with fixed height */}
-                //                               <Link
-                //                                 href={`/product/${product.slug}`}
-                //                                 className="block mb-2"
-                //                                 onClick={() => handleProductClick(product)}
-                //                               >
-                //                                 <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                //                                   {product.name}
-                //                                 </h3>
-                //                               </Link>
-                          
-                //                               {/* Price Row (same level always) */}
-                //                                <div className="flex items-center gap-2 mb-3">
-                //                                 <span className="text-base font-semibold text-red-600">
-                //                                   ₹ {(
-                //                                     product.special_price &&
-                //                                     product.special_price > 0 &&
-                //                                     product.special_price != '0' &&
-                //                                     product.special_price != 0 &&
-                //                                     product.special_price < product.price
-                //                                       ? Math.round(product.special_price)
-                //                                       : Math.round(product.price)
-                //                                   ).toLocaleString()}
-                //                                 </span>
-
-                //                                 {product.special_price > 0 &&
-                //                                   product.special_price != '0' &&
-                //                                   product.special_price != 0 &&
-                //                                   product.special_price &&
-                //                                   product.special_price < product.price && (
-                //                                     <span className="text-xs text-gray-500 line-through">
-                //                                       ₹ {Math.round(product.price).toLocaleString()}
-                //                                     </span>
-                //                                 )}
-                //                               </div>
-                //                               {/* <div className="flex items-center gap-2 mb-3">
-                //                                 <span className="text-base font-semibold text-red-600">
-                //                                   ₹ {(
-                //                                     product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
-                //                                       ? product.special_price
-                //                                       : product.price
-                //                                   ).toLocaleString()}
-                //                                 </span>
-                          
-                          
-                //                                 {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
-                //                                   product.special_price < product.price &&
-                //                                   (
-                //                                     <span className="text-xs text-gray-500 line-through">
-                //                                       ₹ {product.price.toLocaleString()}
-                //                                     </span>
-                //                                 )}
-                //                               </div> */}
-                          
-                //                               <h4
-                //                                     className={`text-xs mb-3 ${
-                //                                       product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
-                //                                     }`}
-                //                                   >
-                //                                     {product.stock_status}
-                //                                     {product.stock_status === "In Stock" && product.quantity
-                //                                       ? `, ${product.quantity} units`
-                //                                       : ""}
-                //                                   </h4>
-                          
-                //                               {/* Bottom Buttons */}
-                //                               <div className="mt-auto flex items-center justify-between gap-2">
-                //                                 <Addtocart
-                //                                   productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
-                //                                   className="w-full text-xs sm:text-sm py-1.5"
-                //                                 />
-                //                                 <a
-                //                                   href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
-                //                                   target="_blank"
-                //                                   rel="noopener noreferrer"
-                //                                   className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
-                //                                 >
-                //                                   <svg
-                //                                     className="w-5 h-5"
-                //                                     viewBox="0 0 32 32"
-                //                                     fill="currentColor"
-                //                                     xmlns="http://www.w3.org/2000/svg"
-                //                                   >
-                //                                     <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-                //                                   </svg>
-                //                                 </a>
-                //                               </div>
-                //                             </div>
-                //                           </div>
-                //                         ))}
-                //                       </div>
-                //                     </div>
-                //                   </div>
-                //                 </div>
-                //               );
-                //             })
-                //           }
-                //         </div>
-                //       </div>
-                //     </motion.section>
-                //   );
-                case 'product':
-                  // return (
-                  //   <motion.section
-                  //     id="product"
-                  //     initial="hiddenDown"
-                  //     animate="visible"
-                  //     className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
-                  //   >
-                  //     <div className="rounded-[23px] py-4 p-2">
-                  //       {/* Section Header */}
-                  //       <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
-                  //         <h5 className="text-xl sm:text-2xl font-bold">
-                  //           Shop by Category
-                  //         </h5>
-                  //       </div>
-                        
-                  //       {/* Category-based Product Display */}
-                  //       <div className="space-y-8">            
-                  //         {parentCategories
-                  //           .filter(category => priorityCategories.includes(category.category_slug))
-                  //           .sort((a, b) => {
-                  //             // Sort by the order in priorityCategories array
-                  //             return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
-                  //           })
-                  //           .map((category, index) => {
-
-                  //             const categoryStyle = categoryStyles[category.category_slug] || {
-                  //               backgroundImage: '/uploads/small-appliance-banner.webp',
-                  //               borderColor: '#1F3A8C'
-                  //             };
-                  //             // Get products for this category
-                  //             const categoryProducts = (() => {
-                  //               const subCategories = categories.filter(
-                  //                 cat => cat.parentid === category._id
-                  //               );
-                          
-                  //               const validCategoryIds = [
-                  //                 category._id,
-                  //                 ...subCategories.map(sub => sub._id)
-                  //               ];
-                          
-                  //               const allProducts = products.filter(product => 
-                  //                 product.category && product.quantity > 2 && product.special_price > 2 &&
-                  //                 validCategoryIds.includes(product.category.toString())
-                  //               );
-                                
-                  //               return allProducts.slice(0, 50);
-                  //             })();
-                          
-                  //             // Skip empty categories
-                  //             if (categoryProducts.length === 0) return null;
-                          
-                  //             return (
-                  //               <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
-                  //                 {/* Category Banner */}
-                  //                 <div className="flex-shrink-0 relative" style={{width: '450px', height: '472px'}}>
-                  //                   <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})` }}></div>
-                  //                   <div className="relative z-10 h-full flex flex-col p-6 text-white">
-                  //                     <h2 className="text-2xl font-bold">{category.category_name}</h2>
-                                      
-                  //                     <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
-                  //                   </div>
-                  //                 </div>
-
-                  //                 {/* Products Grid */}
-                  //                 <div className="" style={{width: 'calc(100% - 450px)'}}>
-                  //                   <div className={` relative flex-1 pt-2 pb-0 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}   style={{
-                  //                     borderTop: `6px solid ${categoryStyle.borderColor}`,
-                  //                     borderBottom: `6px solid ${categoryStyle.borderColor}`,
-                  //                     borderLeft: index % 2 === 1 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
-                  //                     borderRight: index % 2 === 0 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
-                  //                   }}>
-                  //                     {/* relative bg-white flex-shrink-0 w-72 h-[466px] flex flex-col justify-between p-4 rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer */}
-                  //                     {/* Left Arrow */}
-                  //                     <button
-                  //                       onClick={() => scrollLeft(category._id)}
-                  //                       className="absolute left-0 top-1/2 -translate-y-1/2 
-                  //                                 w-8 h-8 flex items-center justify-center 
-                  //                                 rounded-full bg-white text-black border border-gray 
-                  //                                 hover:bg-black hover:text-white hover:border-white
-                  //                                 shadow-sm z-20 transition-all duration-300"
-                  //                     >
-                  //                       <FiChevronLeft size={18} />
-                  //                     </button>
-
-                  //                     {/* Right Arrow */}
-                  //                     <button
-                  //                       onClick={() => scrollRight(category._id)}
-                  //                       className="absolute right-0 top-1/2 -translate-y-1/2 
-                  //                                 w-8 h-8 flex items-center justify-center 
-                  //                                 rounded-full bg-white text-black border border-gray 
-                  //                                 hover:bg-black hover:text-white hover:border-white
-                  //                                 shadow-sm z-20 transition-all duration-300"
-                  //                     >
-                  //                       <FiChevronRight size={18} />
-                  //                     </button>
-                  //                     <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
-                  //                       {categoryProducts.slice(0, 6).map((product) => (
-                                        
-                  //                         <div key={product._id} className="relative bg-white flex-shrink-0 w-72 h-[450px] flex flex-col justify-between p-4 rounded-lg border hover:border-blue-200 hover:border-2 transition-all shadow-sm hover:shadow-md cursor-pointer mb-2">
-                                            
-                  //                           {/* Product Image */}
-                  //                           <div className="relative aspect-square bg-gray-50 group">
-                  //                             {product.images?.[0] && (
-                  //                               <>
-                  //                                 {/* Default Image */}
-                  //                                 <Image
-                  //                                   src={
-                  //                                     product.images[0].startsWith("http")
-                  //                                       ? product.images[0]
-                  //                                       : `/uploads/products/${product.images[0]}`
-                  //                                   }
-                  //                                   alt={product.name}
-                  //                                   fill
-                  //                                   className="object-contain p-2 md:p-4 transition-opacity duration-300 group-hover:opacity-0"
-                  //                                   sizes="(max-width: 500px) 40vw, 23vw, 15vw"
-                  //                                   unoptimized
-                  //                                   onError={(e) => {
-                  //                                     e.target.onerror = null;
-                  //                                     e.target.src = "/uploads/products/placeholder.jpg";
-                  //                                   }}
-                  //                                 />
-
-                  //                                 {/* Hover Image (second image if available) */}
-                  //                                 {product.images[1] && (
-                  //                                   <Image
-                  //                                     src={
-                  //                                       product.images[1].startsWith("http")
-                  //                                         ? product.images[1]
-                  //                                         : `/uploads/products/${product.images[1]}`
-                  //                                     }
-                  //                                     alt={product.name}
-                  //                                     fill
-                  //                                     className="object-contain p-2 md:p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
-                  //                                     sizes="(max-width: 500px) 40vw, 23vw, 15vw"
-                  //                                     unoptimized
-                  //                                     onError={(e) => {
-                  //                                       e.target.onerror = null;
-                  //                                       e.target.src = "/uploads/products/placeholder.jpg";
-                  //                                     }}
-                  //                                   />
-                  //                                 )}
-                  //                               </>
-                  //                             )}
-                          
-                  //                             {/* Discount Badge */}
-                  //                             {Number(product.special_price) > 0 &&
-                  //                               Number(product.special_price) < Number(product.price) && (
-                  //                                 <span className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
-                  //                                   {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
-                  //                                 </span>
-                  //                             )}
-                          
-                          
-                  //                             {/* Wishlist */}
-                  //                             <div className="absolute top-2 right-2">
-                  //                               <ProductCard productId={product._id} />
-                  //                             </div>
-                  //                           </div>
-                          
-                  //                           {/* Product Info and Buttons */}
-                  //                           <div className="pb-0 p-2 md:px-4 flex flex-col h-full ">
-                  //                             <h4 className="text-xs text-gray-500 mb-2 uppercase">
-                  //                               <Link
-                  //                                 href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
-                  //                                 className="hover:text-blue-600"
-                  //                               >
-                  //                                 {brandMap[product.brand] || ""}
-                  //                               </Link>
-                  //                             </h4>
-                        
-                  //                             {/* Title with fixed height */}
-                  //                             <Link
-                  //                               href={`/product/${product.slug}`}
-                  //                               className="block mb-2"
-                  //                               onClick={() => handleProductClick(product)}
-                  //                             >
-                  //                               <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                  //                                 {product.name}
-                  //                               </h3>
-                  //                             </Link>
-                          
-                  //                             {/* Price Row (same level always) */}
-                  //                              <div className="flex items-center gap-2 mb-2">
-                  //                               <span className="text-base font-semibold text-red-600">
-                  //                                 ₹ {(
-                  //                                   product.special_price &&
-                  //                                   product.special_price > 0 &&
-                  //                                   product.special_price != '0' &&
-                  //                                   product.special_price != 0 &&
-                  //                                   product.special_price < product.price
-                  //                                     ? Math.round(product.special_price)
-                  //                                     : Math.round(product.price)
-                  //                                 ).toLocaleString()}
-                  //                               </span>
-
-                  //                               {product.special_price > 0 &&
-                  //                                 product.special_price != '0' &&
-                  //                                 product.special_price != 0 &&
-                  //                                 product.special_price &&
-                  //                                 product.special_price < product.price && (
-                  //                                   <span className="text-xs text-gray-500 line-through">
-                  //                                     ₹ {Math.round(product.price).toLocaleString()}
-                  //                                   </span>
-                  //                               )}
-                  //                             </div>
-                  //                             {/* <div className="flex items-center gap-2 mb-3">
-                  //                               <span className="text-base font-semibold text-red-600">
-                  //                                 ₹ {(
-                  //                                   product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
-                  //                                     ? product.special_price
-                  //                                     : product.price
-                  //                                 ).toLocaleString()}
-                  //                               </span>
-                          
-                          
-                  //                               {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
-                  //                                 product.special_price < product.price &&
-                  //                                 (
-                  //                                   <span className="text-xs text-gray-500 line-through">
-                  //                                     ₹ {product.price.toLocaleString()}
-                  //                                   </span>
-                  //                               )}
-                  //                             </div> */}
-                          
-                  //                             <h4
-                  //                                   className={`text-xs mb-2 ${
-                  //                                     product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
-                  //                                   }`}
-                  //                                 >
-                  //                                   {product.stock_status}
-                  //                                   {product.stock_status === "In Stock" && product.quantity
-                  //                                     ? `, ${product.quantity} units`
-                  //                                     : ""}
-                  //                                 </h4>
-                          
-                  //                             {/* Bottom Buttons */}
-                  //                             <div className="mt-2 mb-1 flex items-center justify-between gap-2">
-                  //                               <Addtocart
-                  //                                 productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
-                  //                                 className="w-full text-xs sm:text-sm py-1.5"
-                  //                               />
-                  //                               <a
-                  //                                 href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
-                  //                                 target="_blank"
-                  //                                 rel="noopener noreferrer"
-                  //                                 className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
-                  //                               >
-                  //                                 <svg
-                  //                                   className="w-5 h-5"
-                  //                                   viewBox="0 0 32 32"
-                  //                                   fill="currentColor"
-                  //                                   xmlns="http://www.w3.org/2000/svg"
-                  //                                 >
-                  //                                   <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-                  //                                 </svg>
-                  //                               </a>
-                  //                             </div>
-                  //                           </div>
-                  //                         </div>
-                  //                       ))}
-                  //                     </div>
-                  //                   </div>
-                  //                 </div>
-                  //               </div>
-                  //             );
-                  //           })
-                  //         }
-                  //       </div>
-                  //     </div>
-                  //   </motion.section>
-                  // );
-                  return (
-                    <motion.section
-                      id="product"
-                      initial="hiddenDown"
-                      animate="visible"
-                      className="recommended-products px-4 sm:px-6 md:px-6 pt-6"
-                    >
-                      <div className="rounded-[23px] py-4 p-2">
-                        {/* Section Header */}
-                        
-                        
-                        {/* Category-based Product Display */}
-                        <div className="space-y-8 max-w-7xl mx-auto">    
-                          <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
-                            <h5 className="text-xl sm:text-2xl font-bold">
-                              Shop by Category
-                            </h5>
-                          </div>        
-                          {parentCategories
-                            .filter(category => priorityCategories.includes(category.category_slug))
-                            .sort((a, b) => {
-                              // Sort by the order in priorityCategories array
-                              return priorityCategories.indexOf(a.category_slug) - priorityCategories.indexOf(b.category_slug);
-                            })
-                            .map((category, index) => {
-
-                              const categoryStyle = categoryStyles[category.category_slug] || {
-                                backgroundImage: '/uploads/small-appliance-banner.webp',
-                                borderColor: '#1F3A8C'
-                              };
-                              // Get products for this category
-                              const categoryProducts = (() => {
-                                const subCategories = categories.filter(
-                                  cat => cat.parentid === category._id
-                                );
-                          
-                                const validCategoryIds = [
-                                  category._id,
-                                  ...subCategories.map(sub => sub._id)
-                                ];
-                          
-                                const allProducts = products.filter(product => 
-                                  product.category && product.quantity > 2 && product.special_price > 2 &&
-                                  validCategoryIds.includes(product.category.toString())
-                                );
-                                
-                                return allProducts.slice(0, 200);
-                              })();
-                          
-                              // Skip empty categories
-                              if (categoryProducts.length === 0) return null;
-                          
-                              return (
-                                <div  key={category._id}  className={`bg-white rounded-lg p-0 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''} flex flex-col md:flex-row`}>
-                                  {/* Category Banner */}
-                                 <div className="flex-shrink-0 relative" style={{width: '450px'}}>
-                                    <div className="absolute inset-0"  style={{ backgroundImage: `url(${categoryStyle.backgroundImage})`,backgroundSize:'cover',backgroundPosition: 'center',backgroundRepeat: 'no-repeat'}}></div>
-                                    <div className="relative z-10 h-full flex flex-col justify-end p-6 text-white">
-                                      {/* <h2 className="text-2xl font-bold">{category.category_name}</h2> */}
-                                      
-                                      <Link   href={`/category/${category.category_slug || category._id}`} className="mt-3 bg-white hover:bg-gray-100 text-blue-700 text-sm font-semibold py-2 px-4 rounded w-fit"> Shop Now → </Link>
-                                    </div>
-                                  </div>
-
-                                  {/* Products Grid */}
-                                  <div className="" style={{width: 'calc(100% - 450px)'}}>
-                                    <div className={` relative flex-1 py-1 pb-1 border ${index % 2 === 1 ? 'pr-4 pl-2' : ' pl-4 pr-2'} overflow-hidden`}   style={{
-                                      borderTop: `6px solid ${categoryStyle.borderColor}`,
-                                      borderBottom: `6px solid ${categoryStyle.borderColor}`,
-                                      borderLeft: index % 2 === 1 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
-                                      borderRight: index % 2 === 0 ? `6px solid ${categoryStyle.borderColor}` : `0px`,
-                                    }}>
-                                      {/* Left Arrow */}
-                                      <button
-                                        onClick={() => scrollLeft(category._id)}
-                                        className="absolute left-0 top-1/2 -translate-y-1/2 
-                                                  w-8 h-8 flex items-center justify-center 
-                                                  rounded-full bg-white text-black border border-gray 
-                                                  hover:bg-black hover:text-white hover:border-white
-                                                  shadow-sm z-20 transition-all duration-300"
-                                      >
-                                        <FiChevronLeft size={18} />
-                                      </button>
-
-                                      {/* Right Arrow */}
-                                      <button
-                                        onClick={() => scrollRight(category._id)}
-                                        className="absolute right-0 top-1/2 -translate-y-1/2 
-                                                  w-8 h-8 flex items-center justify-center 
-                                                  rounded-full bg-white text-black border border-gray 
-                                                  hover:bg-black hover:text-white hover:border-white
-                                                  shadow-sm z-20 transition-all duration-300"
-                                      >
-                                        <FiChevronRight size={18} />
-                                      </button>
-                                      <div   ref={(el) => (categoryScrollRefs.current[category._id] = el)} className="flex overflow-x-auto scrollbar-hide scroll-smooth gap-4">
-                                        {categoryProducts.slice(0, 15).map((product) => (
-                                        
-                                          <div key={product._id} className="relative bg-white flex-shrink-0 w-64 flex flex-col justify-between p-[5px]  rounded-lg border border-gray-200 hover:border-[#0069c1] hover:shadow-md transition-all duration-300  cursor-pointer">
-                                            
-                                            {/* Product Image */}
-                                            <div className="relative aspect-square bg-white group">
-                                              {product.images?.[0] && (
-                                                <>
-                                                  {/* Default Image */}
-                                                  <Image
-                                                    src={
-                                                      product.images[0].startsWith("http")
-                                                        ? product.images[0]
-                                                        : `/uploads/products/${product.images[0]}`
-                                                    }
-                                                    alt={product.name}
-                                                    fill
-                                                    className={`object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out 
-                                                    ${product.images[1] 
-                                                      ? "group-hover:opacity-0"   // if 2nd image → fade out
-                                                      : "group-hover:scale-110"   // if only 1 image → zoom
-                                                    }`}
-                                                    sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                                                    unoptimized
-                                                    onError={(e) => {
-                                                      e.target.onerror = null;
-                                                      e.target.src = "/uploads/products/placeholder.jpg";
-                                                    }}
-                                                  />
-
-                                                  {/* Hover Image (second image if available) */}
-                                                  {product.images[1] && (
-                                                    <Image
-                                                      src={
-                                                        product.images[1].startsWith("http")
-                                                          ? product.images[1]
-                                                          : `/uploads/products/${product.images[1]}`
-                                                      }
-                                                      alt={product.name}
-                                                      fill
-                                                      className="object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out opacity-0 group-hover:opacity-100 group-hover:scale-110"
-                                                      sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                                                      unoptimized
-                                                      onError={(e) => {
-                                                        e.target.onerror = null;
-                                                        e.target.src = "/uploads/products/placeholder.jpg";
-                                                      }}
-                                                    />
-                                                  )}
-                                                </>
-                                              )}
-                          
-                                              {/* Discount Badge */}
-                                              {Number(product.special_price) > 0 &&
-                                                Number(product.special_price) < Number(product.price) && (
-                                                  <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
-                                                    {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
-                                                  </span>
-                                              )}
-                          
-                          
-                                              {/* Wishlist */}
-                                              <div className="absolute top-2 right-2">
-                                                <ProductCard productId={product._id} />
-                                              </div>
-                                            </div>
-                          
-                                            {/* Product Info and Buttons */}
-                                            <div className="p-2 md:p-4 flex flex-col h-full">
-                                              <h4 className="text-xs text-gray-500 mb-2 uppercase">
-                                                <Link
-                                                  href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
-                                                  className="hover:text-blue-600"
-                                                >
-                                                  {brandMap[product.brand] || ""}
-                                                </Link>
-                                              </h4>
-                        
-                                              {/* Title with fixed height */}
-                                              <Link
-                                                href={`/product/${product.slug}`}
-                                                className="block mb-2"
-                                                onClick={() => handleProductClick(product)}
-                                              >
-                                                <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                                                  {product.name}
-                                                </h3>
-                                              </Link>
-                          
-                                              {/* Price Row (same level always) */}
-                                               <div className="flex items-center gap-2 mb-3">
-                                                <span className="text-base font-semibold text-red-600">
-                                                  ₹ {(
-                                                    product.special_price &&
-                                                    product.special_price > 0 &&
-                                                    product.special_price != '0' &&
-                                                    product.special_price != 0 &&
-                                                    product.special_price < product.price
-                                                      ? Math.round(product.special_price)
-                                                      : Math.round(product.price)
-                                                  ).toLocaleString()}
-                                                </span>
-
-                                                {product.special_price > 0 &&
-                                                  product.special_price != '0' &&
-                                                  product.special_price != 0 &&
-                                                  product.special_price &&
-                                                  product.special_price < product.price && (
-                                                    <span className="text-xs text-gray-500 line-through">
-                                                      ₹ {Math.round(product.price).toLocaleString()}
-                                                    </span>
-                                                )}
-                                              </div>
-                                              {/* <div className="flex items-center gap-2 mb-3">
-                                                <span className="text-base font-semibold text-red-600">
-                                                  ₹ {(
-                                                    product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
-                                                      ? product.special_price
-                                                      : product.price
-                                                  ).toLocaleString()}
-                                                </span>
-                          
-                          
-                                                {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
-                                                  product.special_price < product.price &&
-                                                  (
-                                                    <span className="text-xs text-gray-500 line-through">
-                                                      ₹ {product.price.toLocaleString()}
-                                                    </span>
-                                                )}
-                                              </div> */}
-                          
-                                              <h4
-                                                    className={`text-xs mb-3 ${
-                                                      product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
-                                                    }`}
-                                                  >
-                                                    {product.stock_status}
-                                                    {product.stock_status === "In Stock" && product.quantity
-                                                      ? `, ${product.quantity} units`
-                                                      : ""}
-                                                  </h4>
-                          
-                                              {/* Bottom Buttons */}
-                                              <div className="mt-auto flex items-center justify-between gap-2">
-                                                <Addtocart
-                                                  productId={product._id} stockQuantity={product.quantity}  special_price={product.special_price}
-                                                  className="w-full text-xs sm:text-sm py-1.5"
-                                                />
-                                                <a
-                                                  href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${apiUrl}/product/${product.slug}`)}`} 
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
-                                                >
-                                                  <svg
-                                                    className="w-5 h-5"
-                                                    viewBox="0 0 32 32"
-                                                    fill="currentColor"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                  >
-                                                    <path d="M16.003 2.667C8.64 2.667 2.667 8.64 2.667 16c0 2.773.736 5.368 2.009 7.629L2 30l6.565-2.643A13.254 13.254 0 0016.003 29.333C23.36 29.333 29.333 23.36 29.333 16c0-7.36-5.973-13.333-13.33-13.333zm7.608 18.565c-.32.894-1.87 1.749-2.574 1.865-.657.104-1.479.148-2.385-.148-.55-.175-1.256-.412-2.162-.812-3.8-1.648-6.294-5.77-6.49-6.04-.192-.269-1.55-2.066-1.55-3.943 0-1.878.982-2.801 1.33-3.168.346-.364.75-.456 1.001-.456.25 0 .5.002.719.013.231.01.539-.088.845.643.32.768 1.085 2.669 1.18 2.863.096.192.16.423.03.683-.134.26-.2.423-.39.65-.192.231-.413.512-.589.689-.192.192-.391.401-.173.788.222.392.986 1.625 2.116 2.636 1.454 1.298 2.682 1.7 3.075 1.894.393.192.618.173.845-.096.23-.27.975-1.136 1.237-1.527.262-.392.524-.32.894-.192.375.13 2.35 1.107 2.75 1.308.393.205.656.308.75.48.096.173.096 1.003-.224 1.897z" />
-                                                  </svg>
-                                                </a>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })
-                          }
-                        </div>
-                      </div>
-                    </motion.section>
-                  );
-                case 'flash_sales':
-                    return (
-
-                      
-                                    <motion.section
-                        ref={refs.flashSales}
-                        initial="hiddenDown"
-                        animate="visible"
-                        variants={sectionVariants}
-                        id="flash_sales"
-                        className="px-4 md:px-6 py-8"
-                      >
-                        {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
-                          <div className="grid grid-cols-12 gap-6">
-                            {isFlashSalesLoading ? (
-                              <div className="flex justify-center items-center h-64 col-span-12">
-                                <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 animate-spin"></div>
-                              </div>
-                            ) : (
-                              flashSalesData
-                                .filter(item => item.bgImage && item.productImage)
-                                .slice(0, 3) // only take 3 items for 4/4/4
-                                .map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className="col-span-12 md:col-span-4 relative shadow-md overflow-hidden flex items-center p-6"
-                                    style={{
-                                      backgroundImage: `url(${item.bgImage})`,
-                                      backgroundSize: "cover",
-                                      backgroundPosition: "center",
-                                    }}
-                                  >
-                                    {/* Overlay */}
-                                    <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-
-                                    {/* Content Wrapper */}
-                                    <div className="relative z-10 flex items-center w-full">
-                                      {/* Image Left with animation */}
-                                      <motion.div
-                                        whileHover={{ scale: 1.1 }}
-                                        transition={{ duration: 0.4 }}
-                                        className="w-1/2 flex justify-center"
-                                      >
-                                        <Image
-                                          src={item.productImage}
-                                          alt={item.title}
-                                          width={300}
-                                          height={300}
-                                          className="object-cover rounded-lg"
-                                        />
-                                      </motion.div>
-
-                                      {/* Text Right */}
-                                      <div className="w-1/2 pl-4 text-left text-white">
-                                        <h3 className="text-lg md:text-xl font-bold">{item.title}</h3>
-                                        <p className="text-sm mt-1 opacity-90">
-                                          {item.discountText || "Flat up to 30% discount"}
-                                        </p>
-                                        <motion.a
-                                          whileHover={{ scale: 1.05 }}
-                                          whileTap={{ scale: 0.95 }}
-                                          href={item.redirectUrl}
-                                          className="mt-2 inline-flex items-center text-sm font-medium text-gray-800 hover:text-black transition"
-                                        >
-                                          Shop Now
-                                          <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="24"
-                                            height="24"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            className="lucide lucide-chevron-right ml-1 h-4 w-4"
-                                          >
-                                            <path d="M9 18l6-6-6-6" />
-                                          </svg>
-
-                                        </motion.a>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))
-                            )}
-                          </div>
-                        )}
-                      </motion.section>
-
-                    );
-                case 'features':
-                    return (
-                <section className="pt-7 px-4 sm:px-6 md:px-6" id="features">
-  <div className="max-w-7xl mx-auto px-4">
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-      {features.map((feature, index) => (
-        <div
-          key={index}
-          className="flex flex-col items-center cursor-pointer group"
-          onMouseEnter={(e) => {
-            const img = e.currentTarget.querySelector(".img-flip");
-            if (img) img.style.transform = "rotateY(360deg)";
-          }}
-          onMouseLeave={(e) => {
-            const img = e.currentTarget.querySelector(".img-flip");
-            if (img) img.style.transform = "rotateY(0deg)";
-          }}
-        >
-          {/* Image instead of Icon */}
-          <div
-            className="mb-4 img-flip"
-            style={{
-              transition: "transform 0.5s",
-              transformStyle: "preserve-3d",
-            }}
-          >
-            <img
-              src={feature.image}
-              alt={feature.title}
-              className="w-16 h-16 object-contain"
-            />
-          </div>
-
-          {/* Title */}
-          <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:transition-colors duration-300">
-            {feature.title}
-          </h3>
-
-          {/* Description */}
-          <p className="text-gray-600 text-sm leading-relaxed max-w-[250px] group-hover:transition-colors duration-300">
-            {feature.description}
-          </p>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
-
-                    );
-                case 'brands':
-                    return (
-                   <motion.section id="brands"
-                            ref={refs.delivery} 
-                            initial={scrollDirection === 'down' ? 'hiddenDown' : 'hiddenUp'} 
-                            animate= 'visible' 
-                            variants={sectionVariants} 
-                            className="px-4 sm:px-6 md:px-6 pt-7"
-                        >
-                            <div>
-                                <motion.div variants={containerVariants} className="  rounded-[23px] mx-2">
-                                    <motion.div variants={itemVariants} className="flex justify-between items-center mb-4">
-                                        <h5 className= "text-lg font-semibold">Shop by Brands</h5>
-                                    </motion.div>
-    
-                                    {isBrandsLoading ? (
-                                        <div className="flex justify-center items-center h-32">
-                                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-                                        </div>
-                                    ) : (
-                                        <motion.div variants={itemVariants}>
-                                            <Slider {...brandSettings} className="brand-slider px-2 sm:px-[50px] relative">
-                                                {brands.map((brand) => (
-                                                    <motion.div
-                                                        key={brand.id}
-                                                        className="p-4 flex justify-center items-center"
-                                                        whileHover={{ scale: 1.1 }}
-                                                    >
-                                                    <div className="w-24 h-24 flex items-center justify-center overflow-hidden">
-                                                      <Link href={`/brand/${slugify(brand.brand_name)}`}>
-                                                        <Image
-                                                          src={`/uploads/Brands/${brand.image}`}
-                                                          alt={brand.brand_name || "Brand Logo"}
-                                                          width={100}
-                                                          height={100}
-                                                          className="object-contain w-full h-full cursor-pointer"
-                                                          unoptimized
-                                                        />
-                                                      </Link>
-                                                    </div>
-                                                    </motion.div>
-                                                ))}
-                                            </Slider>
-                                        </motion.div>
-                                    )}
-                                </motion.div>
-                            </div>
-                        </motion.section>
-                    );
-                    
-                case 'topbanner':
-                  return(
-                        <motion.section id="topbanner"
-                                                ref={refs.banner}
-                                                initial="hidden"
-                                                animate="visible"
-                                                variants={containerVariants}
-                                                className="overflow-hidden pt-0 m-0 "
-                                              >
-                    <div className="relative">
-                      {isBannerLoading ? (
-                        <div className="p-6 flex justify-center items-center h-64">
-                          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-                        </div>
-                      ) : bannerData.banner.items.length > 0 ? (
-                        bannerData.banner.items.length > 1 ? (
-                          <Slider {...settings} className="relative">
-                            {bannerData.banner.items.map((item) => (
-                              <motion.div
-                                key={item.id}
-                                className="relative w-full aspect-[1920/550] max-h-[550px]"
-                                variants={itemVariants}
-                              >
-                                <div className="absolute inset-0 overflow-hidden">
-                                  <Image
-                                    src={item.bgImageUrl}
-                                    alt="Banner"
-                                    fill
-                                    quality={100}
-                                    className="object-fill w-full h-full"
-                                    style={{ objectPosition: "center 30%" }}
-                                    priority
-                                  />
-                                </div>
-                              </motion.div>
-                            ))}
-                          </Slider>
-                        ) : (
-                          <motion.div
-                            className="p-4 md:p-6 relative aspect-[1920/550] max-h-[550px]"
-                            variants={itemVariants}
-                          >
-                            <div className="absolute inset-0 flex justify-center items-center bg-white">
-                              <Image
-                                src={bannerData.banner.items[0].bgImageUrl}
-                                alt="Banner"
-                                fill
-                                className=" object-fill w-full h-full"
-                                priority
-                              />
-                            </div>
-                          </motion.div>
-                        )
-                      ) : (
-                        <div>
-                          </div>
-                        // <div className="p-6 text-center">
-                        //   <p className="text-lg">No active banners available</p>
-                        // </div>
+                          ))
                       )}
                     </div>
-                  </motion.section>
-                  )
-                case 'singlebanner':
-                  return (
-                    <motion.section id="singlebanner"
-                      ref={refs.singlebanner}
-                      initial="hidden"
-                      animate="visible"
-                      variants={containerVariants}
-                      className="overflow-hidden pt-7 px-4 sm:px-6 md:px-6"
-                    >
-                      <div className="relative">
-                        {isSingleBannerLoading ? (
-                          <div className="p-2 flex justify-center items-center h-64">
-                            <div className="animate-spin rounded-full border-t-2 border-b-2 border-blue-600"></div>
-                          </div>
-                        ) : singleBannerData.singlebanner.items.length > 0 ? (
-                          singleBannerData.singlebanner.items.length > 1 ? (
-                            <Slider {...settings} className="relative">
-                              {singleBannerData.singlebanner.items.map((item) => (
-                                <motion.div
-                                  key={item.id}
-                                  className="relative w-full 
-                                            aspect-[16/9] max-h-[110px] 
-                                            sm:aspect-[16/6] sm:max-h-[180px]
-                                            md:aspect-[16/8] md:max-h-[200px]
-                                            lg:aspect-[16/9] lg:max-h-[300px]
-                                            xl:aspect-[16/10] xl:max-h-[400px]
-                                            2xl:aspect-[16/12] 2xl:max-h-[700px]"
-                                  variants={itemVariants}
-                                >
-                                  <Link href={item.redirect_url || "#"} className="block w-full h-full">
-                                    <div className="absolute inset-0 flex justify-center items-center bg-white">
-                                      <Image
-                                        src={item.bgImageUrl}
-                                        alt="Banner"
-                                        fill
-                                        quality={100}
-                                        className="object-fill w-full h-full"
-                                        priority
-                                      />
-                                    </div>
-                                  </Link>
-                                </motion.div>
-                              ))}
-                            </Slider>
-                          ) : (
-                            <motion.div
-                              className="relative w-full "
-                              variants={itemVariants}
-                            >
-                              <Link
-                                href={singleBannerData.singlebanner.items[0].redirect_url || "#"}
-                                className="block w-full h-full"
-                              >
-                                <div className="relative w-full">
-                                  <Image
-                                    src={singleBannerData.singlebanner.items[0].bgImageUrl}
-                                     alt="Single Banner"
-                                     width={1920}
-                                     height={500}
-                                     quality={100}
-                                     className="w-full h-auto object-contain"
-                                     priority
-                                  />
-                                </div>
-                              </Link>
-                            </motion.div>
+                  )}
+                </motion.section>
 
-                          )
-                        ) : (
-                          <div className="p-6 text-center">
-                          </div>
-                        )}
-                      </div>
-                    </motion.section>
-                  )
-                
+              );
+          
+          case 'features':
+              return (
+          <section className="pt-7 px-4 sm:px-6 md:px-6" id="features">
+<div className="max-w-7xl mx-auto px-4">
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+{features.map((feature, index) => (
+  <div
+    key={index}
+    className="flex flex-col items-center cursor-pointer group"
+    onMouseEnter={(e) => {
+      const img = e.currentTarget.querySelector(".img-flip");
+      if (img) img.style.transform = "rotateY(360deg)";
+    }}
+    onMouseLeave={(e) => {
+      const img = e.currentTarget.querySelector(".img-flip");
+      if (img) img.style.transform = "rotateY(0deg)";
+    }}
+  >
+    {/* Image instead of Icon */}
+    <div
+      className="mb-4 img-flip"
+      style={{
+        transition: "transform 0.5s",
+        transformStyle: "preserve-3d",
+      }}
+    >
+      <img
+        src={feature.image}
+        alt={feature.title}
+        className="w-16 h-16 object-contain"
+      />
+    </div>
 
-                case 'videocard':
-                  return(
-                   <motion.section id="videocard"
-                      initial={{ opacity: 0, y: 50 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, amount: 0.3 }}
-                      transition={{ duration: 0.6 }}
+    {/* Title */}
+    <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:transition-colors duration-300">
+      {feature.title}
+    </h3>
+
+    {/* Description */}
+    <p className="text-gray-600 text-sm leading-relaxed max-w-[250px] group-hover:transition-colors duration-300">
+      {feature.description}
+    </p>
+  </div>
+))}
+</div>
+</div>
+</section>
+
+              );
+          
+          case 'brands':
+              return (
+              <motion.section id="brands"
+                      ref={refs.delivery} 
+                      initial={scrollDirection === 'down' ? 'hiddenDown' : 'hiddenUp'} 
+                      animate= 'visible' 
+                      variants={sectionVariants} 
                       className="px-4 sm:px-6 md:px-6 pt-7"
-                    >
-                      <div className=" rounded-2xl">
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-6 md:px-4">
-                          <h5 className="text-xl font-bold">What's Trending</h5>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => scroll("left")}
-                              className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
-                            >
-                              <CaretLeft size={20} weight="bold" />
-                            </button>
-                            <button
-                              onClick={() => scroll("right")}
-                              className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
-                            >
-                              <CaretRight size={20} weight="bold" />
-                            </button>
+                  >
+                      <div>
+                          <motion.div variants={containerVariants} className="  rounded-[23px] mx-2">
+                              <motion.div variants={itemVariants} className="flex justify-between items-center mb-4">
+                                  <h5 className= "text-lg font-semibold">Shop by Brands</h5>
+                              </motion.div>
+
+                              {isBrandsLoading ? (
+                                  <div className="flex justify-center items-center h-32">
+                                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+                                  </div>
+                              ) : (
+                                  <motion.div variants={itemVariants}>
+                                      <Slider {...brandSettings} className="brand-slider px-2 sm:px-[50px] relative">
+                                          {brands.map((brand) => (
+                                              <motion.div
+                                                  key={brand.id}
+                                                  className="p-4 flex justify-center items-center"
+                                                  whileHover={{ scale: 1.1 }}
+                                              >
+                                              <div className="w-24 h-24 flex items-center justify-center overflow-hidden">
+                                                <Link href={`/brand/${slugify(brand.brand_name)}`}>
+                                                  <Image
+                                                    src={`/uploads/Brands/${brand.image}`}
+                                                    alt={brand.brand_name || "Brand Logo"}
+                                                    width={100}
+                                                    height={100}
+                                                    className="object-contain w-full h-full cursor-pointer"
+                                                    unoptimized
+                                                  />
+                                                </Link>
+                                              </div>
+                                              </motion.div>
+                                          ))}
+                                      </Slider>
+                                  </motion.div>
+                              )}
+                          </motion.div>
+                      </div>
+                  </motion.section>
+              );
+
+          case 'topbanner':
+            return(
+                  <motion.section id="topbanner"
+                                          ref={refs.banner}
+                                          initial="hidden"
+                                          animate="visible"
+                                          variants={containerVariants}
+                                          className="overflow-hidden pt-0 m-0 "
+                                        >
+              <div className="relative">
+                {isBannerLoading ? (
+                  <div className="p-6 flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : bannerData.banner.items.length > 0 ? (
+                  bannerData.banner.items.length > 1 ? (
+                    <Slider {...settings} className="relative">
+                      {bannerData.banner.items.map((item) => (
+                        <motion.div
+                          key={item.id}
+                          className="relative w-full aspect-[1920/550] max-h-auto"
+                          variants={itemVariants}
+                        >
+                          <div className="absolute inset-0 overflow-hidden">
+                            <Image
+                              src={item.bgImageUrl}
+                              alt="Banner"
+                              fill
+                              quality={100}
+                              className="object-fill w-full h-full"
+                              style={{ objectPosition: "center 30%" }}
+                              priority
+                            />
                           </div>
-                        </div>
+                        </motion.div>
+                      ))}
+                    </Slider>
+                  ) : (
+                    <motion.div
+                      className="p-4 md:p-6 relative aspect-[1920/550] max-h-auto"
+                      variants={itemVariants}
+                    >
+                      <div className="absolute inset-0 flex justify-center items-center bg-white">
+                        <Image
+                          src={bannerData.banner.items[0].bgImageUrl}
+                          alt="Banner"
+                          fill
+                          className=" object-fill w-full h-full"
+                          priority
+                        />
+                      </div>
+                    </motion.div>
+                  )
+                ) : (
+                  <div>
+                    </div>
+                  // <div className="p-6 text-center">
+                  //   <p className="text-lg">No active banners available</p>
+                  // </div>
+                )}
+              </div>
+            </motion.section>
+            )
+ 
 
-                        {/* Video Scroll */}
-                       <div
-  ref={scrollRef}
-  className="flex gap-4 overflow-x-hidden scroll-smooth px-2 scrollbar-hide"
+          case 'singlebanner':
+            return (
+              <motion.section id="singlebanner"
+                ref={refs.singlebanner}
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
+                className="overflow-hidden pt-7 px-4 sm:px-6 md:px-6"
+              >
+                <div className="relative">
+                  {isSingleBannerLoading ? (
+                    <div className="p-2 flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full border-t-2 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : singleBannerData.singlebanner.items.length > 0 ? (
+                    singleBannerData.singlebanner.items.length > 1 ? (
+                      <Slider {...settings} className="relative">
+                        {singleBannerData.singlebanner.items.map((item) => (
+                          <motion.div
+                            key={item.id}
+                            className="relative w-full 
+                                      aspect-[16/9] max-h-[110px] 
+                                      sm:aspect-[16/6] sm:max-h-[180px]
+                                      md:aspect-[16/8] md:max-h-[200px]
+                                      lg:aspect-[16/9] lg:max-h-[300px]
+                                      xl:aspect-[16/10] xl:max-h-[400px]
+                                      2xl:aspect-[16/12] 2xl:max-h-[700px]"
+                            variants={itemVariants}
+                          >
+                            <Link href={item.redirect_url || "#"} className="block w-full h-full">
+                              <div className="absolute inset-0 flex justify-center items-center bg-white">
+                                <Image
+                                  src={item.bgImageUrl}
+                                  alt="Banner"
+                                  fill
+                                  quality={100}
+                                  className="object-fill w-full h-full"
+                                  priority
+                                />
+                              </div>
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </Slider>
+                    ) : (
+                      <motion.div
+                        className="relative w-full "
+                        variants={itemVariants}
+                      >
+                        <Link
+                          href={singleBannerData.singlebanner.items[0].redirect_url || "#"}
+                          className="block w-full h-full"
+                        >
+                          <div className="relative w-full">
+                            <Image
+                              src={singleBannerData.singlebanner.items[0].bgImageUrl}
+                                alt="Single Banner"
+                                width={1920}
+                                height={500}
+                                quality={100}
+                                className="w-full h-auto object-contain"
+                                priority
+                            />
+                          </div>
+                        </Link>
+                      </motion.div>
+                    )
+                  ) : (
+                    <div className="p-6 text-center">
+                    </div>
+                  )}
+                </div>
+              </motion.section>
+          )
+          
+          case 'videocard':
+            return(
+              <motion.section id="videocard"
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.6 }}
+                className="px-4 sm:px-6 md:px-6 pt-7"
+              >
+                <div className=" rounded-2xl">
+                  {/* Header */}
+                  <div className="flex justify-between items-center mb-6 md:px-4">
+                    <h5 className="text-xl font-bold">What's Trending</h5>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => scroll("left")}
+                        className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
+                      >
+                        <CaretLeft size={20} weight="bold" />
+                      </button>
+                      <button
+                        onClick={() => scroll("right")}
+                        className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
+                      >
+                        <CaretRight size={20} weight="bold" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Video Scroll */}
+                  <div
+ref={scrollRef}
+className="flex gap-4 overflow-x-hidden scroll-smooth px-2 scrollbar-hide"
 >
-  {videos.map((video) => {
-    let thumb = video.thumbnail_image;
+{videos.map((video) => {
+let thumb = video.thumbnail_image;
 
-    if (thumb) {
-      // Ensure correct path
-      if (!thumb.startsWith("http") && !thumb.startsWith("/")) {
-        thumb = "/" + thumb;
-      }
-    } else if (video.video_url) {
-      const ytId = getYoutubeId(video.video_url);
-      if (ytId) thumb = `https://img.youtube.com/vi/${ytId}/0.jpg`;
-    }
+if (thumb) {
+// Ensure correct path
+if (!thumb.startsWith("http") && !thumb.startsWith("/")) {
+  thumb = "/" + thumb;
+}
+} else if (video.video_url) {
+const ytId = getYoutubeId(video.video_url);
+if (ytId) thumb = `https://img.youtube.com/vi/${ytId}/0.jpg`;
+}
 
-    if (!thumb) thumb = "/placeholder.jpg";
+if (!thumb) thumb = "/placeholder.jpg";
 
-    return (
-      <motion.div
-        key={video._id}
-        whileHover={{ scale: 1.05 }}
-        className="min-w-[320px]  shadow-md bg-white overflow-hidden"
-      >
-        {/* 👉 Thumbnail click = same as title click */}
-        <div
-          className="h-48 relative flex items-center justify-center bg-gray-200 cursor-pointer"
-          onClick={() => setActiveVideo(video)}
-        >
-          <img
-            src={thumb}
-            alt={video.title}
-            className="w-full h-full object-cover"
-          />
-          <img
-            src="https://img.poorvika.com//play_video.png"
-            alt="play"
-            className="absolute w-12 h-12"
-          />
-        </div>
+return (
+<motion.div
+  key={video._id}
+  whileHover={{ scale: 1.05 }}
+  className="min-w-[320px]  shadow-md bg-white overflow-hidden"
+>
+  {/* 👉 Thumbnail click = same as title click */}
+  <div
+    className="h-48 relative flex items-center justify-center bg-gray-200 cursor-pointer"
+    onClick={() => setActiveVideo(video)}
+  >
+    <img
+      src={thumb}
+      alt={video.title}
+      className="w-full h-full object-cover"
+    />
+    <img
+      src="https://img.poorvika.com//play_video.png"
+      alt="play"
+      className="absolute w-12 h-12"
+    />
+  </div>
 
-        {/* 👉 Title click */}
-        <div className="p-3">
-          <p
-            className="text-sm font-medium text-gray-800 line-clamp-2 cursor-pointer hover:text-orange-600"
-            onClick={() => setActiveVideo(video)}
-          >
-            {video.title}
-          </p>
-        </div>
-      </motion.div>
-    );
-  })}
+  {/* 👉 Title click */}
+  <div className="p-3">
+    <p
+      className="text-sm font-medium text-gray-800 line-clamp-2 cursor-pointer hover:text-orange-600"
+      onClick={() => setActiveVideo(video)}
+    >
+      {video.title}
+    </p>
+  </div>
+</motion.div>
+);
+})}
 </div>
 
 
-                        {/* ✅ Modal for YouTube video */}
-                        {activeVideo && (
-                          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-                            <div className="bg-white  overflow-hidden relative w-[90%] md:w-[700px] h-[400px]">
-                              {/* Close Button */}
-                              <button
-                                className="absolute top-2 right-2 bg-black text-white rounded-full p-1"
-                                onClick={() => setActiveVideo(null)}
-                              >
-                                <X size={20} />
-                              </button>
+                  {/* ✅ Modal for YouTube video */}
+                  {activeVideo && (
+                    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+                      <div className="bg-white  overflow-hidden relative w-[90%] md:w-[700px] h-[400px]">
+                        {/* Close Button */}
+                        <button
+                          className="absolute top-2 right-2 bg-black text-white rounded-full p-1"
+                          onClick={() => setActiveVideo(null)}
+                        >
+                          <X size={20} />
+                        </button>
 
-                              {/* YouTube Embed */}
-                              <iframe
-                                width="100%"
-                                height="100%"
-                                src={`https://www.youtube.com/embed/${getYoutubeId(
-                                  activeVideo.video_url
-                                )}?autoplay=1`}
-                                title={activeVideo.title}
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              ></iframe>
-                            </div>
-                          </div>
-                        )}
+                        {/* YouTube Embed */}
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          src={`https://www.youtube.com/embed/${getYoutubeId(
+                            activeVideo.video_url
+                          )}?autoplay=1`}
+                          title={activeVideo.title}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
                       </div>
-                    </motion.section>
-                     )
-                default:
-                    return null;
-            }
-        };
+                    </div>
+                  )}
+                </div>
+              </motion.section>
+          )
+
+          default:
+              return null;
+      }
+    };
     
         // Map section names from API to our component names
         const getSectionComponentName = (sectionName) => {
@@ -2240,7 +2243,7 @@ const handleCategoryClick = useCallback((category) => (e) => {
             
             return mapping[sectionName] || sectionName.toLowerCase();
         };
- 
+
     return (
         <>
 
