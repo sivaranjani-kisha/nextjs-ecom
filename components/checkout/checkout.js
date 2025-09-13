@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ToastContainer, toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
@@ -17,6 +17,9 @@ const loadRazorpay = () => {
     document.body.appendChild(script);
   });
 };
+
+
+
 
 const DeliveryOptions = ({ formData, handleChange, isDeliverySaved, setIsDeliverySaved, stores }) => {
   const [fetchedStores, setFetchedStores] = useState(stores || []);
@@ -38,6 +41,9 @@ const DeliveryOptions = ({ formData, handleChange, isDeliverySaved, setIsDeliver
       fetchStores();
     }
   }, [stores]);
+
+
+
 
   return (
     <div className="mt-6 border rounded-md shadow-sm">
@@ -893,7 +899,7 @@ const grandTotal = subtotal - totalDiscount;
           <div className="w-full lg:w-1/3 bg-gray-50 p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Orders</h3>
 
-            <div className="border-b pb-3 mb-3">
+            {/* <div className="border-b pb-3 mb-3">
               {cartItems.map((item) => (
                 <div key={`order-item-${item.productId}`} className="flex justify-between text-gray-600 mb-2">
                   <div>
@@ -903,14 +909,79 @@ const grandTotal = subtotal - totalDiscount;
                   <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
+            </div> */}
+
+
+            <div className="relative border-b pb-3 mb-3">
+              {/* Scrollable List */}
+              <div
+                className="max-h-64 overflow-y-auto pr-2 scroll-smooth"
+              >
+                {cartItems.map((item) => (
+                  <div
+                    key={`order-item-${item.productId}`}
+                    className="flex items-start justify-between gap-3 text-gray-700 mb-4"
+                  >
+
+                    {/* Product Image */}
+                    <div className="relative w-16 h-16 flex-shrink-0 border rounded overflow-hidden p-2">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-contain"
+                      />
+
+                      {/* Quantity Badge */}
+                      <div className="absolute top-0 right-0 bg-gray-700 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                        {item.quantity}
+                      </div>
+                    </div>
+
+
+                    {/* Product Details */}
+                    <div className="flex-1">
+                      <div title={item.name} className="leading-snug text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-3 min-h-[40px]">
+                        {item.name}
+                      </div>
+
+                      {/* <div className="text-xs mt-1 text-gray-600">
+                        Qty: <span className="text-red-600">{item.quantity}</span>
+                      </div> */}
+                      
+                    </div>
+
+                    {/* Price */}
+                    <div className="text-sm whitespace-nowrap text-base font-semibold text-red-600">
+                      ₹{(item.price * item.quantity).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Scroll for More Items Overlay */}
+
+              {/* {cartItems.length > 2 && (
+                <div className="flex justify-center mt-2">
+                  <div className="bg-gray-800 text-white text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1 animate-bounce">
+                    <span>Scroll for more items</span>
+                    <span className="text-lg">↓</span>
+                  </div>
+                </div>
+              )} */}
+
             </div>
- {/* Add Discount row if there's any discount */}
-  {totalDiscount > 0 && (
-    <div className="flex justify-between text-green-600 mb-2">
-      <span>Discount:</span>
-      <span>-₹{totalDiscount.toFixed(2)}</span>
-    </div>
-  )}
+
+
+
+            {/* Add Discount row if there's any discount */}
+            {totalDiscount > 0 && (
+              <div className="flex justify-between text-green-600 mb-2">
+                <span>Discount:</span>
+                <span>-₹{totalDiscount.toFixed(2)}</span>
+              </div>
+            )}
+
+
             <div className="flex justify-between text-gray-800 font-semibold">
               <span>Subtotal:</span>
               <span>₹{cartItems.reduce(
