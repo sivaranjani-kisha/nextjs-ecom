@@ -174,6 +174,7 @@ export default function CheckoutPage() {
   const [authError, setAuthError] = useState('');
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  console.log(cartItems);
 const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
     const fetchStores = async () => {
@@ -926,7 +927,7 @@ const grandTotal = subtotal - totalDiscount;
                     {/* Product Image */}
                     <div className="relative w-16 h-16 flex-shrink-0 border rounded overflow-hidden p-2">
                       <img
-                        src={item.image}
+                        src={`/uploads/products/${item.image}`}
                         alt={item.name}
                         className="w-full h-full object-contain"
                       />
