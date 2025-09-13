@@ -89,6 +89,35 @@ const SuccessModal = ({ show, message, onClose }) => (
   </AnimatePresence>
 );
 
+const ErrorModal = ({ show, message, onClose }) => (
+  <AnimatePresence>
+    {show && (
+      <motion.div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 text-center shadow-xl"
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          exit={{ scale: 0.8 }}
+        >
+          <h3 className="text-xl font-semibold text-red-600 mb-2">Warning!</h3>
+          <p className="text-gray-500 mb-4">{message}</p>
+          <button
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            onClick={onClose}
+          >
+            OK
+          </button>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
 const CouponModal = ({ show, onClose, coupon, onApply, onChange, couponError, isValidating }) => (
   <AnimatePresence>
     {show && (
@@ -145,6 +174,8 @@ const CouponModal = ({ show, onClose, coupon, onApply, onChange, couponError, is
     )}
   </AnimatePresence>
 );
+
+
 export default function CartComponent() {
   const router = useRouter();
   const [cartData, setCartData] = useState(null);
@@ -155,9 +186,11 @@ export default function CartComponent() {
   // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   
   // Coupon states
   const [couponCode, setCouponCode] = useState("");
@@ -258,8 +291,8 @@ export default function CartComponent() {
 const updateQuantity = async (productId, newQuantity, original_quantity = null) => {
   try {
     if (original_quantity !== null && newQuantity > original_quantity) {
-      setSuccessMessage("Requested quantity exceeds available stock.");
-      setShowSuccessModal(true);
+      setErrorMessage("Requested quantity exceeds available stock.");
+      setShowErrorModal(true);
       return;
     }
 
@@ -648,6 +681,11 @@ const validateCoupon = async () => {
         message={successMessage}
         onClose={() => setShowSuccessModal(false)}
       />
+      <ErrorModal
+        show={showErrorModal}
+        message={errorMessage}
+        onClose={() => setShowErrorModal(false)}
+      />
      <CouponModal
   show={showCouponModal}
   onClose={() => {
@@ -692,23 +730,25 @@ const validateCoupon = async () => {
                   <Fragment key={item.productId}>
                     <tr className="border-b">
                       <td className="flex items-center py-4 px-4 gap-3">
-                        <Image
-                          src={`/uploads/products/${item.image}`}
-                          alt={item.name}
-                          width={100}
-                          height={100}
-                          className="rounded-md"
-                        />
+                         <div className="w-20 h-20 flex items-center justify-center border rounded-md overflow-hidden">
+                            <Image
+                              src={`/uploads/products/${item.image}`}
+                              alt={item.name}
+                              width={80}
+                              height={80}
+                              className="object-contain w-full h-full"
+                            />
+                          </div>
                         <div className="flex flex-col gap-1 text-sm md:text-base">
-                          <h3 className="text-gray-500 text-xs font-semibold">{item.item_code}</h3>
+                          <h3 className="text-xs text-gray-500 uppercase">{item.item_code}</h3>
                           <Link href={`/product/${slugify(item.name)}`}>
-                            <p className="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                            <p className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
                               {item.name.length > 50 ? item.name.slice(0, 50) + "..." : item.name}
                             </p>
                           </Link>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-gray-500 text-sm font-semibold">₹{item.price.toFixed(2)}</h3>
-                            <h3 className="text-gray-400 text-sm line-through">₹{item.actual_price.toFixed(2)}</h3>
+                            <h3 className="text-base font-semibold text-red-600">₹{item.price.toFixed(2)}</h3>
+                            <h3 className="text-xs text-gray-500 line-through">₹{item.actual_price.toFixed(2)}</h3>
                           </div>
                         </div>
                       </td>
