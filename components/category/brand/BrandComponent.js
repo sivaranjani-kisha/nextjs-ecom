@@ -7,13 +7,15 @@ import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "react-feather
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
 import { ToastContainer, toast } from 'react-toastify';
+import { Range as ReactRange } from "react-range";
 
 export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
   const [categoryData, setCategoryData] = useState({
     category: null,
     brand: null,
     categories: [],
-    filters: []
+    filters: [],
+    allCategoryIds: []
   });
   const [products, setProducts] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState({
@@ -26,22 +28,14 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
   const [priceRange, setPriceRange] = useState([0, 100000]);
   const [filterGroups, setFilterGroups] = useState({});
   const [loading, setLoading] = useState(true);
-  // const { categorySlug, brandSlug } = useParams();
   const [sortOption, setSortOption] = useState('');
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(true);
   const [isBrandsExpanded, setIsBrandsExpanded] = useState(true);
   const [expandedFilters, setExpandedFilters] = useState({}); 
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
   const [wishlist, setWishlist] = useState([]); 
-  const toggleFilters = () => setIsFiltersExpanded(!isFiltersExpanded);
-  const toggleCategories = () => {
-    setIsCategoriesExpanded(!isCategoriesExpanded);
-  };
-  const toggleBrands = () => setIsBrandsExpanded(!isBrandsExpanded);
-  const toggleFilterGroup = (id) => {
-    setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
-  };
   const [nofound, setNofound] = useState(false);
+  const [brandMap, setBrandMap] = useState({});
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -53,10 +47,18 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
   });
   const itemsPerPage = 12;
 
+  const toggleFilters = () => setIsFiltersExpanded(!isFiltersExpanded);
+  const toggleCategories = () => setIsCategoriesExpanded(!isCategoriesExpanded);
+  const toggleBrands = () => setIsBrandsExpanded(!isBrandsExpanded);
+  const toggleFilterGroup = (id) => {
+    setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   // Fetch initial data
   useEffect(() => {
     if (categorySlug && brandSlug) {
       fetchInitialData();
+      fetchBrand();
     }
   }, [categorySlug, brandSlug]);
   
@@ -68,24 +70,24 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
       
       setCategoryData({
         ...data,
-        categoryTree: data.categories,
         allCategoryIds: data.allCategoryIds || []
       });
 
       if (data.products?.length > 0) {
-        const prices = data.products.map(p => p.special_price);
+        const prices = data.products.map(p => p.special_price || p.price);
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
         setPriceRange([minPrice, maxPrice]);
         setSelectedFilters(prev => ({
           ...prev,
-          price: { min: minPrice, max: maxPrice }
+          price: { min: minPrice, max: maxPrice },
+          brands: [data.brand?._id] // Set the current brand as selected
         }));
       }
 
       const groups = {};
       data.filters.forEach(filter => {
-        const groupId = filter.filter_group_name;
+        const groupId = filter.filter_group_id || filter.filter_group_name;
         if (groupId) {
           if (!groups[groupId]) {
             groups[groupId] = {
@@ -106,20 +108,23 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
     }
   };
 
-  const fetchFilteredProducts = useCallback(async (categoryData, pageNum = 1, initialLoad = false) => {
+  const fetchFilteredProducts = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
       const query = new URLSearchParams();
       
       // Filter by the current brand
-      query.set('brands', categoryData.brand._id);
-      
-      if(selectedFilters.categories.length > 0){
-        query.set('categoryIds', selectedFilters.categories.join(','));
-      }else{
-        let maincat = categoryData.categories.flatMap(cat => [cat._id]);
-        query.set('maincategoryId',maincat.join(','));
+      if (categoryData.brand?._id) {
+        query.set('brands', categoryData.brand._id);
       }
+      
+      // Add category filters
+      if (selectedFilters.categories.length > 0) {
+        query.set('categoryIds', selectedFilters.categories.join(','));
+      } else if (categoryData.allCategoryIds?.length > 0) {
+        query.set('categoryIds', categoryData.allCategoryIds.join(','));
+      }
+      
       // Add subcategory filters if any
       if (selectedFilters.subcategories.length > 0) {
         query.set('subcategoryIds', selectedFilters.subcategories.join(','));
@@ -127,7 +132,6 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
       
       query.set('page', pageNum);
       query.set('limit', itemsPerPage);
-
       query.set('minPrice', selectedFilters.price.min);
       query.set('maxPrice', selectedFilters.price.max);
       
@@ -138,43 +142,45 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
       const res = await fetch(`/api/product/filter/category-brand/main?${query}`);
       const { products, pagination: paginationData } = await res.json();
 
-      setProducts(products);
+      setProducts(products || []);
       
       // Update pagination state
-      setPagination({
-        currentPage: paginationData.currentPage,
-        totalPages: paginationData.totalPages,
-        hasNext: paginationData.hasNext,
-        hasPrev: paginationData.hasPrev,
-        totalProducts: paginationData.totalProducts
-      });
+      if (paginationData) {
+        setPagination({
+          currentPage: paginationData.currentPage || 1,
+          totalPages: paginationData.totalPages || 1,
+          hasNext: paginationData.hasNext || false,
+          hasPrev: paginationData.hasPrev || false,
+          totalProducts: paginationData.totalProducts || 0
+        });
+      }
       
-      if (products.length === 0 && pageNum === 1) {
+      if ((!products || products.length === 0) && pageNum === 1) {
         setNofound(true);
       } else {
         setNofound(false);
       }
     } catch (error) {
-      toast.error('Error fetching products'+error);
+      toast.error('Error fetching products: ' + error.message);
     } finally {
       setLoading(false);
     }
-  }, [selectedFilters]);
+  }, [selectedFilters, categoryData]);
   
   const handleProductClick = (product) => {
-    const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
+    try {
+      const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
+      const alreadyViewed = stored.find((p) => p._id === product._id);
+      const updated = alreadyViewed
+        ? stored.filter((p) => p._id !== product._id)
+        : stored;
 
-    const alreadyViewed = stored.find((p) => p._id === product._id);
-
-    const updated = alreadyViewed
-      ? stored.filter((p) => p._id !== product._id)
-      : stored;
-
-    updated.unshift(product); // Add to beginning
-
-    const limited = updated.slice(0, 10); // Limit to 10 recent products
-
-    localStorage.setItem('recentlyViewed', JSON.stringify(limited));
+      updated.unshift(product); // Add to beginning
+      const limited = updated.slice(0, 10); // Limit to 10 recent products
+      localStorage.setItem('recentlyViewed', JSON.stringify(limited));
+    } catch (error) {
+      console.error("Error saving to recently viewed:", error);
+    }
   };
 
   // Sorting functionality
@@ -182,9 +188,9 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
     const sortedProducts = [...products];
     switch(sortOption) {
       case 'price-low-high':
-        return sortedProducts.sort((a, b) => a.special_price - b.special_price);
+        return sortedProducts.sort((a, b) => (a.special_price || a.price) - (b.special_price || b.price));
       case 'price-high-low':
-        return sortedProducts.sort((a, b) => b.special_price - a.special_price);
+        return sortedProducts.sort((a, b) => (b.special_price || b.price) - (a.special_price || a.price));
       case 'name-a-z':
         return sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
       case 'name-z-a':
@@ -193,7 +199,27 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
         return sortedProducts;
     }
   };
-  
+
+  const fetchBrand = async () => {
+    try {
+      const response = await fetch("/api/brand");
+      const result = await response.json();
+      if (result.error) {
+        console.error(result.error);
+      } else {
+        const data = result.data || result;
+        // Store as map for quick access
+        const map = {};
+        data.forEach((b) => {
+          map[b._id] = b.brand_name;
+        });
+        setBrandMap(map);
+      }
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
+
   const handleFilterChange = (type, value) => {
     setSelectedFilters(prev => {
       const newFilters = { ...prev };
@@ -204,7 +230,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
           : [...prev.brands, value];
       } else if (type === 'price') {
         newFilters.price = value;
-      } else  if (type === 'categories') {
+      } else if (type === 'categories') {
         newFilters.categories = prev.categories.includes(value)
           ? prev.categories.filter(item => item !== value)
           : [...prev.categories, value];
@@ -212,8 +238,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
         newFilters.subcategories = prev.subcategories.includes(value)
           ? prev.subcategories.filter(item => item !== value)
           : [...prev.subcategories, value];
-      }
-       else {
+      } else {
         newFilters.filters = prev.filters.includes(value)
           ? prev.filters.filter(item => item !== value)
           : [...prev.filters, value];
@@ -223,11 +248,34 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
   };
 
   const handlePriceChange = (values) => {
-    setSelectedFilters(prev => ({
+    let min = Math.max(1, values[0]);
+    let max = Math.max(1, values[1]);
+
+    // Ensure min never exceeds max
+    if (min > max) {
+      min = max;
+    }
+
+    setSelectedFilters((prev) => ({
       ...prev,
-      price: { min: values[0], max: values[1] }
+      price: { min, max }
     }));
   };
+
+  const STEP = 100;
+  const MIN = priceRange[0] || 0;
+  const MAX = priceRange[1] || 100000;
+
+  // slider local state
+  const [values, setValues] = useState([
+    selectedFilters.price.min,
+    selectedFilters.price.max,
+  ]);
+
+  // sync with external filters (e.g. reset button)
+  useEffect(() => {
+    setValues([selectedFilters.price.min, selectedFilters.price.max]);
+  }, [selectedFilters.price.min, selectedFilters.price.max]);
 
   const CategoryTree = ({ 
     categories, 
@@ -274,6 +322,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
                   </div>
                 )}
                 {category.category_name}
+                {category.count !== undefined && ` (${category.count})`}
               </button>
 
               {/* Expand/Collapse chevron */}
@@ -310,10 +359,10 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
   };
 
   useEffect(() => {
-    if (categoryData.category && categoryData.brand) {
-      fetchFilteredProducts(categoryData, 1);
+    if (categoryData.brand) {
+      fetchFilteredProducts(1);
     }
-  }, [selectedFilters, categoryData.category, categoryData.brand]);
+  }, [selectedFilters, categoryData.brand, fetchFilteredProducts]);
 
   const clearAllFilters = () => {
     setSelectedFilters({
@@ -327,7 +376,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= pagination.totalPages) {
-      fetchFilteredProducts(categoryData, page);
+      fetchFilteredProducts(page);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -409,7 +458,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
     );
   };
 
-  if ((loading || !categoryData.category || !categoryData.brand) && pagination.currentPage === 1) {
+  if ((loading || !categoryData.brand) && pagination.currentPage === 1) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
@@ -422,6 +471,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
   return (
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
       {/* Breadcrumb */}
+    
 
       {!nofound && products.length > 0 ? (
         <>
@@ -465,12 +515,12 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
             {/* Filters Sidebar */}
             <div className="w-full md:w-[250px] shrink-0">
               {/* Active Filters */}
-              {(selectedFilters.categories.length > 1 || // More than just the current category
-                selectedFilters.subcategories.length > 0 ||
-                selectedFilters.filters.length > 0 ||
-                selectedFilters.price.min !== priceRange[0] || 
-                selectedFilters.price.max !== priceRange[1]) && (
-                <div className="bg-white p-4 rounded shadow">
+              {(selectedFilters.categories.length > 0 ||
+               selectedFilters.subcategories.length > 0 ||
+               selectedFilters.filters.length > 0 ||
+               selectedFilters.price.min !== priceRange[0] || 
+               selectedFilters.price.max !== priceRange[1]) && (
+                <div className="bg-white p-4 rounded shadow mb-4">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="font-semibold">Active Filters</h3>
                     <button 
@@ -482,7 +532,6 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {selectedFilters.categories.map(categoryId => {
-                      if (categoryId === categoryData.category?._id) return null; // Don't show current category as a removable filter
                       const category = categoryData.categories?.find(c => c._id === categoryId);
                       return category ? (
                         <span 
@@ -501,22 +550,22 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
                     })}
                     
                     {selectedFilters.subcategories.map(subcategoryId => {
-                      // Find the subcategory in the category tree
+                      // Find subcategory in the category tree
                       let subcategoryName = "";
                       const findSubcategory = (categories) => {
-                        for (const category of categories) {
-                          if (category._id === subcategoryId) {
-                            subcategoryName = category.category_name;
+                        for (const cat of categories) {
+                          if (cat._id === subcategoryId) {
+                            subcategoryName = cat.category_name;
                             return true;
                           }
-                          if (category.subCategories && category.subCategories.length > 0) {
-                            if (findSubcategory(category.subCategories)) return true;
+                          if (cat.subCategories && findSubcategory(cat.subCategories)) {
+                            return true;
                           }
                         }
                         return false;
                       };
                       
-                      findSubcategory(categoryData.categoryTree || []);
+                      if (categoryData.categories) findSubcategory(categoryData.categories);
                       
                       return subcategoryName ? (
                         <span 
@@ -574,89 +623,147 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
               )}
 
               {/* Categories Tree */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
-                <h3 className="text-base font-semibold mb-3 text-gray-700">Categories</h3>
-                {categoryData.categoryTree?.length > 0 ? (
-                  <CategoryTree 
-                    categories={categoryData.categoryTree} 
-                    selectedCategories={selectedFilters.categories}
-                    selectedSubcategories={selectedFilters.subcategories}
-                    onFilterChange={handleFilterChange} 
-                  />
-                ) : (
-                  <p className="text-gray-500 text-sm">No categories available</p>
-                )}
-              </div>
+              {categoryData.categories?.length > 0 && (
+                <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+                  <div className="flex items-center justify-between pb-2">
+                    <h3 className="text-base font-semibold text-gray-700">Categories</h3>
+                    <button onClick={toggleCategories} className="text-gray-500 hover:text-gray-700">
+                      {isCategoriesExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </button>
+                  </div>
+                  {isCategoriesExpanded && (
+                    <CategoryTree 
+                      categories={categoryData.categories} 
+                      selectedCategories={selectedFilters.categories}
+                      selectedSubcategories={selectedFilters.subcategories}
+                      onFilterChange={handleFilterChange}
+                    />
+                  )}
+                </div>
+              )}
 
               {/* Price Filter */}
               <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
                 <h3 className="text-base font-semibold mb-4 text-gray-700">Price Range</h3>
-                <div className="space-y-4">
-                  <input
-                    type="range"
-                    min={priceRange[0]}
-                    max={priceRange[1]}
-                    step="100"
-                    value={selectedFilters.price.max}
-                    onChange={(e) => handlePriceChange([
-                      selectedFilters.price.min, 
-                      parseInt(e.target.value)
-                    ])}
-                    className="w-full range accent-blue-600"
-                  />
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>₹{selectedFilters.price.min}</span>
-                    <span>₹{selectedFilters.price.max}</span>
-                  </div>
+          
+                <ReactRange
+                  values={values}
+                  step={STEP}
+                  min={MIN}
+                  max={MAX}
+                  onChange={(newValues) => setValues(newValues)}
+                  onFinalChange={(newValues) => handlePriceChange(newValues)}
+                  renderTrack={({ props, children }) => (
+                    <div
+                      {...props}
+                      className="w-full h-2 rounded-lg bg-gray-200 relative"
+                    >
+                      <div
+                        className="absolute h-2 bg-gray-500 rounded-lg"
+                        style={{
+                          left: `${((values[0] - MIN) / (MAX - MIN)) * 100}%`,
+                          width: `${((values[1] - values[0]) / (MAX - MIN)) * 100}%`,
+                        }}
+                      />
+                      {children}
+                    </div>
+                  )}
+                  renderThumb={({ props, index }) => {
+                    const { key, ...rest } = props;
+                    return (
+                      <div
+                        key={key}
+                        {...rest}
+                        className={`w-4 h-4 rounded-full border-2 border-black shadow cursor-pointer relative
+                          ${index === 0 ? "bg-blue-500 z-10" : "bg-green-500 z-20"}`}
+                      />
+                    );
+                  }}
+                />
+          
+                <div className="flex justify-between text-sm text-gray-600 mt-6">
+                  <span>₹{values[0].toLocaleString()}</span>
+                  <span>₹{values[1].toLocaleString()}</span>
                 </div>
               </div>
+
+              {/* Brand Filter */}
+              {categoryData.brands?.length > 0 && (
+                <div className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+                  <div className="flex items-center justify-between pb-2">
+                    <h3 className="text-base font-semibold text-gray-700">Brands</h3>
+                    <button onClick={toggleBrands} className="text-gray-500 hover:text-gray-700">
+                      {isBrandsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </button>
+                  </div>
+                  {isBrandsExpanded && (
+                    <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
+                      {categoryData.brands.map(brand => (
+                        <li key={brand._id} className="flex items-center">
+                          <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={selectedFilters.brands.includes(brand._id)}
+                              onChange={() => handleFilterChange("brands", brand._id)}
+                              className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-600">{brand.brand_name} ({brand.count})</span>
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               {/* Dynamic Filters */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
-                <div className="pb-2 mb-2">
-                  <h3 className="text-base font-semibold text-gray-700">Product Filters</h3>
-                </div>
-                {isFiltersExpanded && (
-                  <div className="space-y-4">
-                    {Object.values(filterGroups).map(group => (
-                      <div key={group._id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
-                        <button onClick={() => toggleFilterGroup(group._id)} className="flex justify-between items-center w-full group">
-                          <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">{group.name}</span>
-                          <ChevronDown 
-                            size={18}
-                            className={`text-gray-400 transition-transform duration-200 ${
-                              expandedFilters[group._id] ? 'rotate-180' : ''
-                            }`}
-                          />
-                        </button>
-
-                        {expandedFilters[group._id] && (
-                          <ul className="mt-3 space-y-2 pl-1">
-                            {group.filters.map(filter => (
-                              <li key={filter._id} className="flex items-center">
-                                <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedFilters.filters.includes(filter._id)}
-                                    onChange={() => handleFilterChange('filters', filter._id)}
-                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                  />
-                                  <span className="text-sm text-gray-600">{filter.filter_name}</span>
-                                  {filter.count && (
-                                    <span className="text-xs text-gray-400 ml-auto">
-                                      ({filter.count})
-                                    </span>
-                                  )}
-                                </label>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    ))}
+              {Object.values(filterGroups).length > 0 && (
+                <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
+                  <div className="pb-2 mb-2">
+                    <h3 className="text-base font-semibold text-gray-700">Product Filters</h3>
                   </div>
-                )}
-              </div>
+                  {isFiltersExpanded && (
+                    <div className="space-y-4">
+                      {Object.values(filterGroups).map(group => (
+                        <div key={group._id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
+                          <button onClick={() => toggleFilterGroup(group._id)} className="flex justify-between items-center w-full group">
+                            <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">{group.name}</span>
+                            <ChevronDown 
+                              size={18}
+                              className={`text-gray-400 transition-transform duration-200 ${
+                                expandedFilters[group._id] ? 'rotate-180' : ''
+                              }`}
+                            />
+                          </button>
+
+                          {expandedFilters[group._id] && (
+                            <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
+                              {group.filters.map(filter => (
+                                <li key={filter._id} className="flex items-center">
+                                  <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedFilters.filters.includes(filter._id)}
+                                      onChange={() => handleFilterChange('filters', filter._id)}
+                                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <span className="text-sm text-gray-600">{filter.filter_name}</span>
+                                    {filter.count && (
+                                      <span className="text-xs text-gray-400 ml-auto">
+                                        ({filter.count})
+                                      </span>
+                                    )}
+                                  </label>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Products Section */}
@@ -665,11 +772,9 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                     {getSortedProducts().map(product => (
-                      <div
-                        key={product._id}
-                        className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
-                      >
-                        <div className="relative aspect-square bg-gray-50">
+                      <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
+                        {/* Product Image */}
+                        <div className="relative aspect-square bg-white">
                           {product.images?.[0] && (
                             <Image
                               src={
@@ -684,82 +789,94 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
                               unoptimized
                             />
                           )}
-
+       
+                          {/* Discount Badge */}
                           {Number(product.special_price) > 0 &&
                             Number(product.special_price) < Number(product.price) && (
-                              <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
+                              <span className="absolute top-3 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
                                 {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                               </span>
                           )}
-
+       
+                          {/* Wishlist */}
                           <div className="absolute top-2 right-2">
                             <ProductCard productId={product._id} />
                           </div>
                         </div>
-
+       
+                        {/* Product Info and Buttons */}
                         <div className="p-2 md:p-4 flex flex-col h-full">
+                          <h4 className="text-xs text-gray-500 mb-2 uppercase">
+                            <Link
+                              href={`/brand/${brandMap[product.brand] ? brandMap[product.brand].toLowerCase().replace(/\s+/g, "-") : ""}`}
+                              className="hover:text-blue-600"
+                            >
+                              {brandMap[product.brand] || ""}
+                            </Link>
+                          </h4>
+      
+                          {/* Title with fixed height */}
                           <Link
                             href={`/product/${product.slug}`}
                             className="block mb-2"
                             onClick={() => handleProductClick(product)}
                           >
-                            <h3 className="text-xs sm:text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2 min-h-[40px]">
+                            <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
                               {product.name}
                             </h3>
                           </Link>
-                     <div className="flex items-center gap-2 mb-3">
-                        <span className="text-base font-semibold text-red-600">
-                          ₹ {(
-                            product.special_price &&
-                            product.special_price > 0 &&
-                            product.special_price != '0' &&
-                            product.special_price != 0 &&
-                            product.special_price < product.price
-                              ? Math.round(product.special_price)
-                              : Math.round(product.price)
-                          ).toLocaleString()}
-                        </span>
-
-                        {product.special_price > 0 &&
-                          product.special_price != '0' &&
-                          product.special_price != 0 &&
-                          product.special_price &&
-                          product.special_price < product.price && (
-                            <span className="text-xs text-gray-500 line-through">
-                              ₹ {Math.round(product.price).toLocaleString()}
-                            </span>
-                        )}
-                      </div>
-                          {/* <div className="flex items-center gap-2 mb-3">
-                            <span className="text-base font-semibold text-blue-600">
-                              ₹{(
-                                product.special_price && product.special_price > 0 && product.special_price != '0' && product.special_price != 0 && product.special_price < product.price
-                                  ? product.special_price
-                                  : product.price
+       
+                          {/* Price Row (same level always) */}
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-base font-semibold text-red-600">
+                              ₹ {(
+                                product.special_price &&
+                                product.special_price > 0 &&
+                                product.special_price != '0' &&
+                                product.special_price != 0 &&
+                                product.special_price < product.price
+                                  ? Math.round(product.special_price)
+                                  : Math.round(product.price)
                               ).toLocaleString()}
                             </span>
-
-                            {product.special_price > 0 && product.special_price != '0' && product.special_price != 0 &&   product.special_price &&
-                              product.special_price < product.price &&
-                              (
+      
+                            {product.special_price > 0 &&
+                              product.special_price != '0' &&
+                              product.special_price != 0 &&
+                              product.special_price &&
+                              product.special_price < product.price && (
                                 <span className="text-xs text-gray-500 line-through">
-                                  ₹{product.price.toLocaleString()}
+                                  ₹ {Math.round(product.price).toLocaleString()}
                                 </span>
                             )}
-                          </div> */}
-
-                          <div className="mt-auto flex items-center justify-between gap-2 ccs">
+                          </div>
+      
+                          <h4
+                            className={`text-xs mb-3 ${
+                              product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
+                            }`}
+                          >
+                            {product.stock_status}
+                            {product.stock_status === "In Stock" && product.quantity
+                              ? `, ${product.quantity} units`
+                              : ""}
+                          </h4>
+       
+                          {/* Bottom Buttons */}
+                          <div className="mt-auto flex items-center justify-between gap-2">
                             <Addtocart
-                              productId={product._id} stockQuantity={product.quantity}
+                              productId={product._id} 
+                              stockQuantity={product.quantity}  
+                              special_price={product.special_price}
                               className="w-full text-xs sm:text-sm py-1.5"
                             />
                             <a
-                              href={`https://wa.me/?text=Check this out: ${product.name}`}
+                              href={`https://wa.me/919865555000?text=${encodeURIComponent(`Check Out This Product: ${window.location.origin}/product/${product.slug}`)}`} 
                               target="_blank"
                               rel="noopener noreferrer"
                               className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-full transition-colors duration-300 flex items-center justify-center"
                             >
-                              <svg
+                               <svg
                                 className="w-5 h-5"
                                 viewBox="0 0 32 32"
                                 fill="currentColor"
