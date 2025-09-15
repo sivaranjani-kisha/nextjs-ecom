@@ -18,11 +18,11 @@ async function saveFile(file) {
       throw new Error("Invalid image file. Please upload a valid image.");
     }
 
-    if (metadata.width !== 1920 || metadata.height !== 550) {
-      throw new Error(
-        `Image must be exactly 1920x550 pixels. Your image is ${metadata.width}x${metadata.height} pixels.`
-      );
-    }
+    // if (metadata.width !== 1920 || metadata.height !== 550) {
+    //   throw new Error(
+    //     `Image must be exactly 1920x550 pixels. Your image is ${metadata.width}x${metadata.height} pixels.`
+    //   );
+    // }
 
     const uploadDir = path.join(process.cwd(), "public", "uploads", "topbanner");
     if (!fs.existsSync(uploadDir)) {
