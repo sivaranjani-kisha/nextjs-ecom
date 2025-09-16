@@ -2117,6 +2117,6 @@ const [registerData, setRegisterData] = useState({
           </div>
         )}
       </>
-    );
+    ); 
 };
 export default Header;
