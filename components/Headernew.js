@@ -479,147 +479,149 @@ const clearSearch = useCallback(() => {
     const [loadingAuth, setLoadingAuth] = useState(false);
     const [formError, setFormError] = useState('');
     const [error, setError] = useState('');
-    const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    setLoadingAuth(false);
+const handleAuthSubmit = async (e) => {
+  e.preventDefault();
+  setLoadingAuth(false);
 
-    // ---------- REGISTER VALIDATION ----------
-    if (activeTab === 'register') {
-        if (formData.name === '') {
-            const nameError = document.getElementById('name-error');
-            if (nameError) {
-                nameError.textContent = 'Name must be filled';
-                nameError.classList.add('text-red-500');
-            }
-            const nameInput = document.getElementById('name-input');
-            if (nameInput) nameInput.classList.add('border-red-500');
-        } else {
-            const nameError = document.getElementById('name-error');
-            if (nameError) nameError.textContent = '';
-            const nameInput = document.getElementById('name-input');
-            if (nameInput) nameInput.classList.remove('border-red-500');
-        }
+  // pick correct state depending on tab
+  const currentData = activeTab === "login" ? loginData : registerData;
 
-        if (formData.mobile === '') {
-            const mobileError = document.getElementById('mobile-error');
-            if (mobileError) {
-                mobileError.textContent = 'Mobile must be filled';
-                mobileError.classList.add('text-red-500');
-            }
-            const mobileInput = document.getElementById('mobile-input');
-            if (mobileInput) mobileInput.classList.add('border-red-500');
-        } else if (!isValidMobile(formData.mobile)) {
-            const mobileError = document.getElementById('mobile-error');
-            if (mobileError) {
-                mobileError.textContent = 'Enter a valid mobile number';
-                mobileError.classList.add('text-red-500');
-            }
-            const mobileInput = document.getElementById('mobile-input');
-            if (mobileInput) mobileInput.classList.add('border-red-500');
-        } else {
-            const mobileError = document.getElementById('mobile-error');
-            if (mobileError) mobileError.textContent = '';
-            const mobileInput = document.getElementById('mobile-input');
-            if (mobileInput) mobileInput.classList.remove('border-red-500');
-        }
-    }
-
-    // ---------- COMMON (LOGIN + REGISTER) ----------
-    if (formData.email === '') {
-        const emailError = document.getElementById('email-error');
-        if (emailError) {
-            emailError.textContent = 'Email must be filled';
-            emailError.classList.add('text-red-500');
-        }
-        const emailInput = document.getElementById('email-input');
-        if (emailInput) emailInput.classList.add('border-red-500');
-    } else if (!isValidEmail(formData.email)) {
-        const emailError = document.getElementById('email-error');
-        if (emailError) {
-            emailError.textContent = 'Enter a valid email';
-            emailError.classList.add('text-red-500');
-        }
-        const emailInput = document.getElementById('email-input');
-        if (emailInput) emailInput.classList.add('border-red-500');
+  // ---------- REGISTER VALIDATION ----------
+  if (activeTab === "register") {
+    if (currentData.name === "") {
+      const nameError = document.getElementById("name-error");
+      if (nameError) {
+        nameError.textContent = "Name must be filled";
+        nameError.classList.add("text-red-500");
+      }
+      const nameInput = document.getElementById("name-input");
+      if (nameInput) nameInput.classList.add("border-red-500");
     } else {
-        const emailError = document.getElementById('email-error');
-        if (emailError) emailError.textContent = '';
-        const emailInput = document.getElementById('email-input');
-        if (emailInput) emailInput.classList.remove('border-red-500');
+      document.getElementById("name-error").textContent = "";
+      document.getElementById("name-input")?.classList.remove("border-red-500");
     }
 
-    if (formData.password.length < 6) {
-        const passwordError = document.getElementById('password-error');
-        if (passwordError) {
-            passwordError.textContent = 'Password must be at least 6 characters';
-            passwordError.classList.add('text-red-500');
-        }
-        const passwordInput = document.getElementById('password-input');
-        if (passwordInput) passwordInput.classList.add('border-red-500');
+    if (currentData.mobile === "") {
+      const mobileError = document.getElementById("mobile-error");
+      if (mobileError) {
+        mobileError.textContent = "Mobile must be filled";
+        mobileError.classList.add("text-red-500");
+      }
+      document.getElementById("mobile-input")?.classList.add("border-red-500");
+    } else if (!isValidMobile(currentData.mobile)) {
+      const mobileError = document.getElementById("mobile-error");
+      if (mobileError) {
+        mobileError.textContent = "Enter a valid mobile number";
+        mobileError.classList.add("text-red-500");
+      }
+      document.getElementById("mobile-input")?.classList.add("border-red-500");
     } else {
-        const passwordError = document.getElementById('password-error');
-        if (passwordError) passwordError.textContent = '';
-        const passwordInput = document.getElementById('password-input');
-        if (passwordInput) passwordInput.classList.remove('border-red-500');
+      document.getElementById("mobile-error").textContent = "";
+      document.getElementById("mobile-input")?.classList.remove("border-red-500");
     }
+  }
 
-    // ---------- API CALL ----------
-    if (
-        (activeTab === 'login' && formData.email && formData.password.length >= 6) ||
-        (activeTab === 'register' && formData.name && formData.email && formData.mobile && formData.password.length >= 6)
-    ) {
-        try {
-            setLoadingAuth(true);
-            setFormError('');
-            setError('');
-            const endpoint = activeTab === 'login' ? '/api/auth/login' : '/api/auth/register';
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-            const data = await response.json();
-               if (!response.ok) {
-        // 👇 If backend sends specific message, show that instead of generic
-        if (data.message) {
-            setError(<span className="text-red-500">{data.message}</span>);
-        }  else {
-            setError(<span className="text-red-500">Password Mismatch</span>);
-        }
+  // ---------- COMMON (LOGIN + REGISTER) ----------
+  if (currentData.email === "") {
+    const emailError = document.getElementById("email-error");
+    if (emailError) {
+      emailError.textContent = "Email must be filled";
+      emailError.classList.add("text-red-500");
+    }
+    document.getElementById("email-input")?.classList.add("border-red-500");
+  } else if (!isValidEmail(currentData.email)) {
+    const emailError = document.getElementById("email-error");
+    if (emailError) {
+      emailError.textContent = "Enter a valid email";
+      emailError.classList.add("text-red-500");
+    }
+    document.getElementById("email-input")?.classList.add("border-red-500");
+  } else {
+    document.getElementById("email-error").textContent = "";
+    document.getElementById("email-input")?.classList.remove("border-red-500");
+  }
+
+  if (currentData.password.length < 6) {
+    const passwordError = document.getElementById("password-error");
+    if (passwordError) {
+      passwordError.textContent = "Password must be at least 6 characters";
+      passwordError.classList.add("text-red-500");
+    }
+    document.getElementById("password-input")?.classList.add("border-red-500");
+  } else {
+    document.getElementById("password-error").textContent = "";
+    document.getElementById("password-input")?.classList.remove("border-red-500");
+  }
+
+  // ---------- API CALL ----------
+  if (
+    (activeTab === "login" &&
+      currentData.email &&
+      currentData.password.length >= 6) ||
+    (activeTab === "register" &&
+      currentData.name &&
+      currentData.email &&
+      currentData.mobile &&
+      currentData.password.length >= 6)
+  ) {
+    try {
+      setLoadingAuth(true);
+      setFormError("");
+      setError("");
+
+      const endpoint =
+        activeTab === "login" ? "/api/auth/login" : "/api/auth/register";
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentData), // ✅ use currentData instead of formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          <span className="text-red-500">
+            {data.message || "Password Mismatch"}
+          </span>
+        );
         return;
-    }
+      }
 
-            // if (!response.ok) throw new Error(data.message || 'Something went wrong');
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        setIsLoggedIn(true);
+        setIsAdmin(data.user.role === "admin");
+        setUserData(data.user);
+        setShowAuthModal(false);
 
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-                setIsLoggedIn(true);
-                setIsAdmin(data.user.role === 'admin');
-                setUserData(data.user);
-                setShowAuthModal(false);
-                setFormData({ name: '', email: '', mobile: '', password: '' });
+        // reset states
+        setLoginData({ email: "", password: "" });
+        setRegisterData({ name: "", email: "", mobile: "", password: "" });
 
-                // Update cart count after login
-                const cartResponse = await fetch('/api/cart/count', {
-                    headers: { Authorization: `Bearer ${data.token}` },
-                });
-                if (cartResponse.ok) {
-                    const cartData = await cartResponse.json();
-                    updateCartCount(cartData.count);
-                }
-            } else {
-                setShowAuthModal(true);
-                setActiveTab('login');
-            }
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoadingAuth(false);
+        // update cart
+        const cartResponse = await fetch("/api/cart/count", {
+          headers: { Authorization: `Bearer ${data.token}` },
+        });
+        if (cartResponse.ok) {
+          const cartData = await cartResponse.json();
+          updateCartCount(cartData.count);
         }
-    } else {
-        return;
+      } else {
+        setShowAuthModal(true);
+        setActiveTab("login");
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingAuth(false);
     }
+  } else {
+    return;
+  }
 };
+
 
     useEffect(() => {
         setHasMounted(true);
@@ -1094,6 +1096,19 @@ const renderDesktopSuggestionItem = (item, idx) => {
     </div>
   );
 };
+
+const [loginData, setLoginData] = useState({
+  email: "",
+  password: "",
+});
+
+const [registerData, setRegisterData] = useState({
+  name: "",
+  email: "",
+  mobile: "",
+  password: "",
+});
+
 
 
 // DESKTOP search input onKeyDown (replace its onKeyDown prop)
@@ -1675,6 +1690,7 @@ const renderDesktopSuggestionItem = (item, idx) => {
                       </button>
                     </div>
                 )}
+                
 
                 {/* Auth Modal */}
                 {showAuthModal && (
@@ -1692,22 +1708,38 @@ const renderDesktopSuggestionItem = (item, idx) => {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleAuthSubmit} className="space-y-4">
+                             <form onSubmit={handleAuthSubmit} className="space-y-4">
                                 {activeTab === 'register' && (
                                     <>
-                                    <input type="text" placeholder="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"id="name-input"/>
+                                    <input type="text" placeholder="Name" value={registerData.name}
+        onChange={(e) =>
+          setRegisterData({ ...registerData, name: e.target.value })
+        } className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"id="name-input"/>
                                     <span id="name-error"></span>
                                     </>
                                 )}
-                                <input type="text" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" id="email-input" />
+                                <input type="text" placeholder="Email" value={activeTab === "login" ? loginData.email : registerData.email}
+    onChange={(e) =>
+      activeTab === "login"
+        ? setLoginData({ ...loginData, email: e.target.value })
+        : setRegisterData({ ...registerData, email: e.target.value })
+    } className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" id="email-input" />
                                 <span id="email-error"></span>
                                 {activeTab === 'register' && (
                                 <>
-                                <input type="tel" placeholder="Mobile" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"  id="mobile-input" />
+                                <input type="tel" placeholder="Mobile" value={registerData.mobile}
+        onChange={(e) =>
+          setRegisterData({ ...registerData, mobile: e.target.value })
+        } className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"  id="mobile-input" />
                                 <span id="mobile-error"></span>
                                 </>
                                 )}
-                                <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" minLength={6} id="password-input" />
+                                <input type="password" placeholder="Password" value={activeTab === "login" ? loginData.password : registerData.password}
+    onChange={(e) =>
+      activeTab === "login"
+        ? setLoginData({ ...loginData, password: e.target.value })
+        : setRegisterData({ ...registerData, password: e.target.value })
+    } className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" minLength={6} id="password-input" />
                                 <span id="password-error"></span>
                                 {(formError || error) && (
                                     <div className="text-red-500 text-sm">
@@ -1721,7 +1753,7 @@ const renderDesktopSuggestionItem = (item, idx) => {
                                 {/* Moved Forgot Password button here - better placement */}
                                 {activeTab === 'login' && (
                                     <div className="text-center mt-2">
-                                        <button type="button" onClick={() => { setShowAuthModal(false); setShowForgotPasswordModal(true); setForgotStep(1); setForgotPasswordEmail(formData.email || ''); setForgotOTP(''); setNewPassword(''); setConfirmPassword(''); setForgotPasswordMessage(''); setForgotPasswordError(''); }} className="text-sm text-blue-500 hover:underline">
+                                        <button type="button" onClick={() => { setShowAuthModal(false); setShowForgotPasswordModal(true); setForgotStep(1); setForgotPasswordEmail(loginData.email || ''); setForgotOTP(''); setNewPassword(''); setConfirmPassword(''); setForgotPasswordMessage(''); setForgotPasswordError(''); }} className="text-sm text-blue-500 hover:underline">
                                             Forgot Password?
                                         </button>
                                     </div>
