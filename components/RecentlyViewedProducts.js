@@ -271,11 +271,11 @@ const RecentlyViewedProducts = () => {
                         {/* Discount Badge (always visible) */}
                         {Number(product.special_price) > 0 &&
                           Number(product.special_price) < Number(product.price) && (
-                            <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded z-20">
-                              {Math.round(
+                            <span className="absolute top-2 left-2 bg-orange-500 tracking-wider text-white text-xs font-bold px-2 py-1 rounded z-20">
+                              -{Math.round(
                                 100 - (Number(product.special_price) / Number(product.price)) * 100
                               )}
-                              % OFF
+                              % 
                             </span>
                           )}
 

@@ -936,9 +936,8 @@ const STEP = 100;
                       {product.special_price &&
                         product.special_price !== product.price &&
                         100 - (product.special_price / product.price) * 100 > 0 && (
-                          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
-                            {Math.round(100 - (product.special_price / product.price) * 100)}%
-                            OFF
+                          <span className="absolute top-2 left-2 bg-orange-500 tracking-wider text-white text-xs font-bold px-2 py-1 rounded z-10">
+                            -{Math.round(100 - (product.special_price / product.price) * 100)}%
                           </span>
                         )}
   

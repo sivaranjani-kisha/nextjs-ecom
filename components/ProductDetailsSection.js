@@ -168,10 +168,10 @@ const decodeAndClean = (str) => {
     return (
       <div key={product._id} className="border rounded-lg p-2 sm:p-3 hover:shadow-md transition-shadow relative">
         {discountPercentage > 0 && (
-          <span className={`px-1 sm:px-2 py-1 text-xs font-bold text-white rounded absolute top-1 sm:top-2 left-1 sm:left-2 ${
-            discountPercentage > 30 ? "bg-blue-500" : "bg-red-500"
+          <span className={`px-1 sm:px-2 py-1 text-xs font-bold tracking-wider text-white rounded absolute top-1 sm:top-2 left-1 sm:left-2 ${
+            discountPercentage > 30 ? "bg-blue-500" : "bg-orange-500"
           }`}>
-            {discountPercentage}% OFF
+            -{discountPercentage}% OFF
           </span>
         )}
         

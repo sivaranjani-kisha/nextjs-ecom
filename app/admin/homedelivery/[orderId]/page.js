@@ -203,14 +203,28 @@ const OrderDetails = () => {
             </thead>
             <tbody>
   {order.order_details?.map((item, i) => (
-    <tr key={i} className="border-b">
-      <td className="p-2">{item.product_name}</td>
-      <td className="p-2">{item.model}</td>
-      <td className="p-2 text-center">{item.quantity}</td>
-      <td className="p-2 text-right">₹{item.product_price}</td>
-      <td className="p-2 text-right">₹{item.quantity * item.product_price}</td>
-    </tr>
-  ))}
+  <tr key={i} className="border-b">
+    <td className="p-2">
+  {item.slug ? (
+    <a 
+      href={`/product/${item.slug}`} 
+      className="text-blue-600 hover:underline"
+    >
+      {item.product_name} - ({item.item_code.replace(/^ITEM/, "")})
+    </a>
+  ) : (
+    <span>
+      {item.product_name} - ({item.item_code.replace(/^ITEM/, "")})
+    </span>
+  )}
+</td>
+
+    <td className="p-2">{item.model}</td>
+    <td className="p-2 text-center">{item.quantity}</td>
+    <td className="p-2 text-right">₹{item.product_price}</td>
+    <td className="p-2 text-right">₹{item.quantity * item.product_price}</td>
+  </tr>
+))}
   <tr className="font-semibold">
     <td colSpan="4" className="p-2 text-right">Sub-Total:</td>
     {/* <td className="p-2 text-right">₹{order.sub_total}</td> */}
