@@ -317,7 +317,7 @@ const saveCache = (key, data) => {
         }
     };
 
-    // ... (keep all your existing state declarations)
+    // ...existing state declarations...
 
     // Add this search handler function
    const handleSearch = () => {
@@ -944,6 +944,209 @@ const href =
   );
 };
 
+// Price formatter
+const formatPrice = (value) => {
+  if (value === undefined || value === null || value === '') return '';
+  const num = Number(value);
+  if (Number.isNaN(num)) return '';
+  return '₹' + num.toLocaleString('en-IN');
+};
+
+// FIX: renderSuggestionItem slug bug
+const renderSuggestionItem = useCallback((item, idx) => {
+  const id = item._id || item.id || idx;
+  const slug = item.slug || item._id || item.id || ''; // added slug definition
+  const price = item.special_price ?? item.price;
+  const imageSrc = item.image || (Array.isArray(item.images) && item.images.length > 0 ? `/uploads/products/${item.images[0]}` : null);
+  return (
+    <Link
+      key={id}
+      href={`/product/${encodeURIComponent(slug)}`}
+      onClick={() => setSearchDropdownVisible(false)}
+      className="group block mb-2 last:mb-0 rounded-lg bg-[#e9e9ec] hover:bg-white border border-transparent hover:border-blue-300 shadow-sm hover:shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+    >
+      <div className="flex items-center gap-3 px-3 py-2">
+        <div className="w-12 h-12 rounded-md overflow-hidden bg-white ring-1 ring-gray-200 flex items-center justify-center shrink-0">
+          {imageSrc ? (
+            <img
+              src={imageSrc}
+              alt={imageSrc || 'Product'}
+              className="object-contain w-full h-full"
+              loading="lazy"
+            />
+          ) : (
+            <span className="text-[10px] text-gray-400">NO IMG</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[12px] font-semibold text-gray-800 leading-snug line-clamp-2 uppercase group-hover:text-blue-700">
+            {item.name || 'Unnamed'}
+          </div>
+          <div className="mt-1 flex items-center gap-2">
+            {price !== undefined && price !== null && (
+              <span className="text-[12px] font-medium text-gray-700 group-hover:text-blue-700">
+                {formatPrice(price)}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}, [setSearchDropdownVisible]);
+
+// ADD state (place with other useState declarations)
+const [activeSuggestion, setActiveSuggestion] = useState(-1);
+
+// RESET active suggestion when list changes or dropdown closes
+useEffect(() => {
+  if (!searchDropdownVisible) setActiveSuggestion(-1);
+  else setActiveSuggestion(-1);
+}, [suggestions, searchDropdownVisible]);
+
+// SELECT helper
+const selectSuggestion = useCallback((index) => {
+  if (index < 0 || index >= suggestions.length) return;
+  const item = suggestions[index];
+  const slug = item.slug || item._id || item.id;
+  if (!slug) return;
+  setSearchDropdownVisible(false);
+  router.push(`/product/${encodeURIComponent(slug)}`);
+}, [suggestions, router]);
+
+// DESKTOP key handling (keep existing handleKeyPress for mobile inputs)
+const handleDesktopKeyDown = (e) => {
+  if (!suggestions.length) {
+    if (e.key === 'Enter') handleSearch();
+    return;
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    setActiveSuggestion(p => (p + 1) % suggestions.length);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    setActiveSuggestion(p => (p - 1 + suggestions.length) % suggestions.length);
+  } else if (e.key === 'Enter') {
+    if (activeSuggestion >= 0) {
+      e.preventDefault();
+      selectSuggestion(activeSuggestion);
+    } else {
+      handleSearch();
+    }
+  } else if (e.key === 'Escape') {
+    setSearchDropdownVisible(false);
+  }
+};
+
+// DESKTOP specific renderer (keep existing renderSuggestionItem for mobile contexts)
+// DESKTOP specific renderer (keep existing renderSuggestionItem for mobile contexts)
+const renderDesktopSuggestionItem = (item, idx) => {
+  const id = item._id || item.id || idx;
+  const price = item.special_price ?? item.price;
+  const isActive = idx === activeSuggestion; 
+  //console.log(item);
+  // handle image correctly
+  const imageSrc = item.image || (Array.isArray(item.images) && item.images.length > 0 ? `/uploads/products/${item.images[0]}` : null);
+
+  return (
+    <div
+      key={id}
+      role="option"
+      aria-selected={isActive}
+      onMouseEnter={() => setActiveSuggestion(idx)}
+      onMouseDown={() => selectSuggestion(idx)}
+      className={`flex gap-4 px-4 py-3 cursor-pointer rounded-md transition-colors group bg-[#f2f2f2]`}
+    >
+      {/* Thumbnail */}
+      <div className="w-[50px] h-[50px] rounded-md overflow-hidden bg-white flex items-center justify-center border border-gray-200 shrink-0">
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            alt={item.name || 'Product'}
+            className="object-contain w-full h-full"
+            loading="lazy"
+          />
+        ) : (
+          <span className="text-[10px] text-gray-400">NO IMG</span>
+        )}
+      </div>
+
+      {/* Text Content */}
+      <div className="flex-1 min-w-0">
+        {/* Product Name */}
+        <div
+          className={`text-[14px] font-medium leading-snug line-clamp-2 ${
+            isActive ? 'text-blue-700' : 'text-gray-800 group-hover:text-gray-900'
+          }`}
+        >
+          {item.name || 'Unnamed'}
+        </div>
+      
+
+        {/* Price */}
+        {price && (
+          <div className="text-[14px] font-semibold text-blue-600 mt-1">
+            ₹{price.toLocaleString('en-IN')}
+          </div>
+        )}
+       
+      </div>
+    </div>
+  );
+};
+
+
+// DESKTOP search input onKeyDown (replace its onKeyDown prop)
+
+
+/* REPLACE the DESKTOP SUGGESTIONS DROPDOWN block (near end) */
+{searchDropdownVisible && searchContext === 'desktop' && (
+  <div
+    ref={searchDropdownRef}
+    className="hidden sm:flex flex-col fixed z-[80] bg-white shadow-xl rounded-xl border border-gray-200 overflow-hidden"
+    style={{
+      top: `${searchDropdownTop}px`,
+      left: `${searchDropdownLeft}px`,
+      width: `${searchDropdownWidth}px`,
+      maxHeight: '500px'
+    }}
+    role="listbox"
+    aria-label="Search product suggestions"
+  >
+    <div className="px-5 pt-3 pb-2 text-[11px] font-semibold tracking-[0.12em] text-gray-500 uppercase select-none">
+      Products
+    </div>
+    <div className="px-3 pb-3 overflow-y-auto custom-scrollbar space-y-2">
+      {suggestions.length > 0
+        ? suggestions.map(renderDesktopSuggestionItem)
+        : (searchQuery.trim() && (
+           <div className="py-10 flex flex-col items-center justify-center text-gray-500">
+  {/* Icon */}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-12 h-12 mb-3 text-gray-400"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.5}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
+
+  {/* Message */}
+  <p className="text-sm font-medium">No products found</p>
+  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
+</div>
+
+          ))
+      }
+    </div>
+  </div>
+)}
 
     return (
       <>
@@ -1064,7 +1267,7 @@ const href =
                       <select
                         value={selectedCategory}
                         onChange={(e)=>setSelectedCategory(e.target.value)}
-                        className="h-full text-[11px] xs:text-xs bg-white px-2 pr-5 border-r border-gray-200 outline-none shrink-0 max-w-[110px]"
+                        className="h-full text-[11px] xs:text-xs bg-white px-2 pr-5 border-r border-gray-300 outline-none shrink-0 max-w-[110px]"
                         aria-label="Category"
                       >
                         <option value="All Categories">All Categories</option>
@@ -1113,10 +1316,41 @@ const href =
                 </div>
 
                 {/* MOBILE TOP SUGGESTIONS (outside menu) */}
-                {searchDropdownVisible && suggestions.length > 0 && searchContext === 'mobileTop' && !isMobileMenuOpen && (
+                {searchDropdownVisible && searchContext === 'mobileTop' && !isMobileMenuOpen && (
                   <div ref={searchDropdownRef} className="sm:hidden absolute z-[70] left-0 right-0 px-3 mt-1">
                     <div className="bg-white rounded-lg shadow-lg border max-h-72 overflow-y-auto">
-                      {suggestions.map(renderSuggestionItem)}
+                      <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-gray-500">
+                        PRODUCTS
+                      </div>
+                      <div className="px-3 pb-2">
+                        {suggestions.length > 0
+                          ? suggestions.map(renderSuggestionItem)
+                          : (searchQuery.trim() && (
+                              <div className="py-10 flex flex-col items-center justify-center text-gray-500">
+  {/* Icon */}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-12 h-12 mb-3 text-gray-400"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.5}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
+
+  {/* Message */}
+  <p className="text-sm font-medium">No products found</p>
+  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
+</div>
+
+                            ))
+                        }
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1180,7 +1414,7 @@ const href =
                               if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
                               setSearchDropdownVisible(true);
                             }}
-                            onKeyDown={handleKeyPress}
+                            onKeyDown={handleDesktopKeyDown}  // correct usage
                             className={`search-input ${searchQuery.trim() ? 'has-value' : ''}`}
                             placeholder=" "
                             aria-label="Search query"
@@ -1360,66 +1594,40 @@ const href =
                       {/* Category List */}
                       {!suggestions.length || searchContext !== 'mobileMenu' || !searchDropdownVisible ? null : (
                         <div ref={searchDropdownRef} className="bg-white border rounded-lg mb-4 max-h-72 overflow-y-auto shadow">
-                          {suggestions.map(renderSuggestionItem)}
+                          <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-gray-500">
+                            PRODUCTS
+                          </div>
+                          <div className="px-3 pb-2">
+                            {suggestions.length > 0
+                              ? suggestions.map(renderSuggestionItem)
+                              : (searchQuery.trim() && (
+                                  <div className="py-10 flex flex-col items-center justify-center text-gray-500">
+  {/* Icon */}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-12 h-12 mb-3 text-gray-400"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.5}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
+
+  {/* Message */}
+  <p className="text-sm font-medium">No products found</p>
+  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
+</div>
+
+                                ))
+                            }
+                          </div>
                         </div>
                       )}
-                      <div className="mb-4">
-                          <div className="font-bold mb-2 text-blue-700">Categories</div>
-                          <nav className="space-y-2">
-                              <div
-                                  role="button"
-                                  tabIndex={0}
-                                  className={`block w-full text-left px-2 py-1 rounded cursor-pointer ${selectedCategory === 'All Categories' ? 'bg-blue-100' : ''}`}
-                                  onClick={(e) => {
-                                      e.preventDefault();
-                                      console.log('All categories clicked');
-                                      setSelectedCategory('All Categories');
-                                      setIsMobileMenuOpen(false);
-                                      setTimeout(() => {
-                                          window.location.href = 'https://bea.divinfosys.com/category';
-                                      }, 50);
-                                  }}>
-                                  All Categories
-                              </div>
-                              {categories.map(cat => {
-                                  const url = `https://bea.divinfosys.com/category/${cat.category_slug}`;
-                                  // console.log('Rendering category:', cat.category_name, 'URL:', url);
-                                  
-                                  const handleCategoryClick = () => {
-                                      console.log('Category clicked:', cat.category_name, 'navigating to:', url);
-                                      setSelectedCategory(cat.category_name);
-                                      setIsMobileMenuOpen(false);
-                                      setTimeout(() => {
-                                          console.log('Navigating now to:', url);
-                                          window.location.href = url;
-                                      }, 50);
-                                  };
-
-                                  return (
-                                      <button
-                                          key={cat._id}
-                                          type="button"
-                                          className={`block w-full text-left px-2 py-1 rounded cursor-pointer hover:bg-blue-50 active:bg-blue-100 ${selectedCategory === cat.category_name ? 'bg-blue-100' : ''}`}
-                                          style={{ WebkitTapHighlightColor: 'rgba(0,0,0,0)' }}
-                                          onClick={handleCategoryClick}
-                                          onTouchEnd={(e) => {
-                                              e.preventDefault();
-                                              console.log('Touch event on category:', cat.category_name);
-                                              handleCategoryClick();
-                                          }}
-                                          onKeyDown={(e) => {
-                                              if (e.key === 'Enter' || e.key === ' ') {
-                                                  e.preventDefault();
-                                                  console.log('Keyboard event on category:', cat.category_name);
-                                                  handleCategoryClick();
-                                              }
-                                          }}>
-                                          {cat.category_name}
-                                      </button>
-                                  );
-                              })}
-                          </nav>
-                      </div>
                       {/* Mobile Menu Links */}
                       <div className="space-y-3">
                           <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
@@ -1652,7 +1860,7 @@ const href =
                                                 setShowAuthModal(true); // reopen login
                                             }, 1500);
                                         } catch (err) {
-                                            setForgotPasswordError(err.message);
+                                                                                       setForgotPasswordError(err.message);
                                         } finally {
                                             setForgotPasswordLoading(false);
                                         }
@@ -1836,18 +2044,51 @@ const href =
         </header>
 
         {/* DESKTOP SUGGESTIONS DROPDOWN */}
-        {searchDropdownVisible && suggestions.length > 0 && searchContext === 'desktop' && (
+        {searchDropdownVisible && searchContext === 'desktop' && (
           <div
             ref={searchDropdownRef}
-            className="hidden sm:block fixed z-[80] bg-white border rounded-lg shadow-lg overflow-y-auto"
+            className="hidden sm:flex flex-col fixed z-[80] bg-white shadow-xl rounded-xl border border-gray-200 overflow-hidden"
             style={{
               top: `${searchDropdownTop}px`,
               left: `${searchDropdownLeft}px`,
               width: `${searchDropdownWidth}px`,
-              maxHeight: '420px'
+              maxHeight: '500px'
             }}
+            role="listbox"
+            aria-label="Search product suggestions"
           >
-            {suggestions.map(renderSuggestionItem)}
+            <div className="px-5 pt-3 pb-2 text-[11px] font-semibold tracking-[0.12em] text-gray-500 uppercase select-none">
+              Products
+            </div>
+            <div className="px-3 pb-3 overflow-y-auto custom-scrollbar space-y-2">
+              {suggestions.length > 0
+                ? suggestions.map(renderDesktopSuggestionItem)
+                : (searchQuery.trim() && (
+                    <div className="py-10 flex flex-col items-center justify-center text-gray-500">
+  {/* Icon */}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-12 h-12 mb-3 text-gray-400"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.5}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
+
+  {/* Message */}
+  <p className="text-sm font-medium">No products found</p>
+  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
+</div>
+
+                  ))
+              }
+            </div>
           </div>
         )}
       </>
