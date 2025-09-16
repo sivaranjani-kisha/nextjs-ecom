@@ -1373,7 +1373,7 @@ const [registerData, setRegisterData] = useState({
                 {/* DESKTOP ROW (unchanged original content) */}
                 <div className="hidden sm:flex justify-between items-center">
                     {/* Logo (Hidden on mobile) */}
-                    <div className="hidden sm:block mr-12 bg-white py-2 rounded-lg">
+                    <div className="hidden sm:block mr-10 bg-white py-2 rounded-lg">
                         <Link href="/index" className="mx-auto">
                             <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={100} height={30} />
                         </Link>
