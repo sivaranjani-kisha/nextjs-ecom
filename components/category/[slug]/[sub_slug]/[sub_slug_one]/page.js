@@ -313,48 +313,50 @@ const handleProductClick = (product) => {
       return newFilters;
     });
   };
- const [brandMap, setBrandMap] = useState([]);
+
+  const [brandMap, setBrandMap] = useState([]);
  
-const fetchBrand = async () => {
-  try {
-    const response = await fetch("/api/brand");
-    const result = await response.json();
-    if (result.error) {
-      console.error(result.error);
-    } else {
-      const data = result.data;
- 
-      // Store as map for quick access
-      const map = {};
-      data.forEach((b) => {
-        map[b._id] = b.brand_name;
-      });
-      setBrandMap(map);
+  const fetchBrand = async () => {
+    try {
+      const response = await fetch("/api/brand");
+      const result = await response.json();
+      if (result.error) {
+        console.error(result.error);
+      } else {
+        const data = result.data;
+  
+        // Store as map for quick access
+        const map = {};
+        data.forEach((b) => {
+          map[b._id] = b.brand_name;
+        });
+        setBrandMap(map);
+      }
+    } catch (error) {
+      console.error(error.message);
     }
-  } catch (error) {
-    console.error(error.message);
-  }
-};
+  };
  
-useEffect(() => {
-  fetchBrand();
-}, []);
- const handlePriceChange = (values) => {
-  let min = Math.max(1, values[0]);     // clamp to >= 1
-  let max = Math.max(1, values[1]);   // clamp to <= 100
+  useEffect(() => {
+    fetchBrand();
+  }, []);
 
-  // Ensure min never exceeds max
-  if (min > max) {
-    min = max;
-  }
+  const handlePriceChange = (values) => {
+    let min = Math.max(1, values[0]);     // clamp to >= 1
+    let max = Math.max(1, values[1]);   // clamp to <= 100
 
-  setSelectedFilters((prev) => ({
-    ...prev,
-    price: { min, max }
-  }));
-};
+    // Ensure min never exceeds max
+    if (min > max) {
+      min = max;
+    }
 
-const STEP = 100;
+    setSelectedFilters((prev) => ({
+      ...prev,
+      price: { min, max }
+    }));
+  };
+
+  const STEP = 100;
   const MIN = priceRange[0];
   const MAX = priceRange[1];
 
@@ -364,10 +366,10 @@ const STEP = 100;
     selectedFilters.price.max,
   ]);
 
-   // sync with external filters (e.g. reset button)
-    useEffect(() => {
-      setValues([selectedFilters.price.min, selectedFilters.price.max]);
-    }, [selectedFilters.price.min, selectedFilters.price.max]);
+  // sync with external filters (e.g. reset button)
+  useEffect(() => {
+    setValues([selectedFilters.price.min, selectedFilters.price.max]);
+  }, [selectedFilters.price.min, selectedFilters.price.max]);
 
 
   useEffect(() => {
@@ -385,89 +387,89 @@ const STEP = 100;
     });
   };
 
-    const handlePageChange = (page) => {
-      if (page >= 1 && page <= pagination.totalPages) {
-        fetchFilteredProducts(categoryData.category._id, page);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    };
-  
-    const renderPagination = () => {
-      if (pagination.totalPages <= 1) return null;
-      
-      const pages = [];
-      const maxVisiblePages = 5;
-      const hasPrev = pagination.currentPage > 1;
-      const hasNext = pagination.currentPage < pagination.totalPages;
-      let startPage = Math.max(1, pagination.currentPage - Math.floor(maxVisiblePages / 2));
-      let endPage = Math.min(pagination.totalPages, startPage + maxVisiblePages - 1);
-      
-      if (endPage - startPage + 1 < maxVisiblePages) {
-        startPage = Math.max(1, endPage - maxVisiblePages + 1);
-      }
-      
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(
-          <button
-            key={i}
-            onClick={() => handlePageChange(i)}
-            className={`px-3 py-1 rounded-md ${
-              pagination.currentPage === i
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            {i}
-          </button>
-        );
-      }
-      
-      return (
-        <div className="flex justify-center items-center mt-8 space-x-2">
-          <button
-            onClick={() => handlePageChange(pagination.currentPage - 1)}
-            disabled={!hasPrev}
-            className={`p-2 rounded-md ${!hasPrev ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-          >
-            <ChevronLeft size={16} />
-          </button>
-          
-          {startPage > 1 && (
-            <>
-              <button
-                onClick={() => handlePageChange(1)}
-                className="px-3 py-1 rounded-md bg-white text-gray-700 hover:bg-gray-100"
-              >
-                1
-              </button>
-              {startPage > 2 && <span className="px-2">...</span>}
-            </>
-          )}
-          
-          {pages}
-          
-          {endPage < pagination.totalPages && (
-            <>
-              {endPage < pagination.totalPages - 1 && <span className="px-2">...</span>}
-              <button
-                onClick={() => handlePageChange(pagination.totalPages)}
-                className="px-3 py-1 rounded-md bg-white text-gray-700 hover:bg-gray-100"
-              >
-                {pagination.totalPages}
-              </button>
-            </>
-          )}
-          
-          <button
-            onClick={() => handlePageChange(pagination.currentPage + 1)}
-            disabled={!hasNext}
-            className={`p-2 rounded-md ${!hasNext ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      fetchFilteredProducts(categoryData.category._id, page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const renderPagination = () => {
+    if (pagination.totalPages <= 1) return null;
+    
+    const pages = [];
+    const maxVisiblePages = 5;
+    const hasPrev = pagination.currentPage > 1;
+    const hasNext = pagination.currentPage < pagination.totalPages;
+    let startPage = Math.max(1, pagination.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(pagination.totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-1 rounded-md ${
+            pagination.currentPage === i
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          {i}
+        </button>
       );
-    };
+    }
+    
+    return (
+      <div className="flex justify-center items-center mt-8 space-x-2">
+        <button
+          onClick={() => handlePageChange(pagination.currentPage - 1)}
+          disabled={!hasPrev}
+          className={`p-2 rounded-md ${!hasPrev ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+        >
+          <ChevronLeft size={16} />
+        </button>
+        
+        {startPage > 1 && (
+          <>
+            <button
+              onClick={() => handlePageChange(1)}
+              className="px-3 py-1 rounded-md bg-white text-gray-700 hover:bg-gray-100"
+            >
+              1
+            </button>
+            {startPage > 2 && <span className="px-2">...</span>}
+          </>
+        )}
+        
+        {pages}
+        
+        {endPage < pagination.totalPages && (
+          <>
+            {endPage < pagination.totalPages - 1 && <span className="px-2">...</span>}
+            <button
+              onClick={() => handlePageChange(pagination.totalPages)}
+              className="px-3 py-1 rounded-md bg-white text-gray-700 hover:bg-gray-100"
+            >
+              {pagination.totalPages}
+            </button>
+          </>
+        )}
+        
+        <button
+          onClick={() => handlePageChange(pagination.currentPage + 1)}
+          disabled={!hasNext}
+          className={`p-2 rounded-md ${!hasNext ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    );
+  };
   
     
   if ((loading || !categoryData.category) && page == 1) {
@@ -497,13 +499,13 @@ const STEP = 100;
   //     </div>
   //   );
   // }
+  // console.log(categoryData.banners);
  
   return(
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
-          {categoryData.banners && categoryData.banners.length > 0 && (
+      {categoryData.banners && categoryData.banners.length > 0 && (
         <div className="relative w-full mb-8 rounded-lg overflow-hidden shadow-md">
-          <div
-            className="relative h-48 md:h-64 lg:h-80 cursor-pointer"
+          <div className="relative w-full aspect-[16/6] sm:aspect-[16/7] lg:aspect-[16/5] cursor-pointer"
             onClick={() => {
               const redirectUrl = categoryData.banners[currentCategoryBannerIndex].redirect_url;
               if (redirectUrl) window.location.href = redirectUrl;
@@ -511,20 +513,20 @@ const STEP = 100;
           >
             <Image
               src={
-                categoryData.banners[currentCategoryBannerIndex].banner_image.startsWith("http")
+                categoryData.banners[currentCategoryBannerIndex].image.startsWith("http")
                   ? categoryData.banners[currentCategoryBannerIndex].banner_image
                   : `${categoryData.banners[currentCategoryBannerIndex].banner_image}`
               }
-              alt={categoryData.banners[currentCategoryBannerIndex].banner_name}
+              alt={categoryData.banners[currentCategoryBannerIndex].banner_name || "Category Banner"}
               fill
-              className="object-cover"
+              className="object-cover w-full h-full"
               unoptimized
             />
       
             {/* Navigation Arrows */}
-            {categoryData.banners.length > 1 && (
+            {/* {categoryData.banners.length > 1 && (
               <>
-                {/* <button
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setCurrentCategoryBannerIndex(
@@ -547,9 +549,9 @@ const STEP = 100;
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-colors"
                 >
                   <ChevronRight size={24} />
-                </button> */}
+                </button>
               </>
-            )}
+            )} */}
       
             {/* Radio Button Indicators */}
             {categoryData.banners.length > 1 && (
@@ -600,7 +602,7 @@ const STEP = 100;
           )} */}
         </div>
       )}
-      <ToastContainer/>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
         <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.category.category_name}</h1>
@@ -627,6 +629,7 @@ const STEP = 100;
           </div>
         </div>
       </div>
+
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
 
          {/* Filters Sidebar */}
@@ -881,7 +884,7 @@ const STEP = 100;
                               {/* Discount Badge */}
                               {Number(product.special_price) > 0 &&
                                 Number(product.special_price) < Number(product.price) && (
-                                  <span className="absolute top-3 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                                  <span className="absolute top-3 left-2 bg-orange-500 tracking-wider text-white text-xs font-bold px-4 py-0.5 rounded z-10">
                                     {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                                   </span>
                               )}
@@ -1019,6 +1022,7 @@ const STEP = 100;
         </div>
       )}
       </div>
+      <ToastContainer/>
     </div>
   );
 }

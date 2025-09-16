@@ -611,7 +611,7 @@ export default function BrandPage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-1 space-y-6">
               {brandData.brand?.image && (
-                <div className="w-32 h-12  relative mb-4">
+                <div className="w-32 h-12 relative mb-4">
                   <Image
                     src={brandData.brand.image.startsWith('http') ? brandData.brand.image : `/uploads/Brands/${brandData.brand.image}`}
                     alt={brandData.brand.brand_name}
@@ -912,7 +912,7 @@ export default function BrandPage() {
                           {/* Discount Badge */}
                           {Number(product.special_price) > 0 &&
                             Number(product.special_price) < Number(product.price) && (
-                              <span className="absolute top-3 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                              <span className="absolute top-3 left-2 bg-orange-500 tracking-wider text-white text-xs font-bold px-4 py-0.5 rounded z-10">
                                 {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                               </span>
                           )}

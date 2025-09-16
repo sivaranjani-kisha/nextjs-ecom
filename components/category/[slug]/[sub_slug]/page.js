@@ -556,7 +556,105 @@ export default function CategoryPage() {
 
   return (
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
-    
+      {categoryData.banners && categoryData.banners.length > 0 && (
+        <div className="relative w-full mb-8 rounded-lg overflow-hidden shadow-md">
+          <div className="relative w-full aspect-[16/6] sm:aspect-[16/7] lg:aspect-[16/5] cursor-pointer"
+            onClick={() => {
+              const redirectUrl = categoryData.banners[currentCategoryBannerIndex].redirect_url;
+              if (redirectUrl) window.location.href = redirectUrl;
+            }}
+          >
+            <Image
+              src={
+                categoryData.banners[currentCategoryBannerIndex].banner_image.startsWith("http")
+                  ? categoryData.banners[currentCategoryBannerIndex].banner_image
+                  : `${categoryData.banners[currentCategoryBannerIndex].banner_image}`
+              }
+              alt={categoryData.banners[currentCategoryBannerIndex].banner_name}
+              fill
+              className="object-cover w-full h-full"
+              unoptimized
+            />
+      
+            {/* Navigation Arrows */}
+            {/* {categoryData.banners.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentCategoryBannerIndex(
+                      (prev) =>
+                        prev === 0 ? categoryData.banners.length - 1 : prev - 1
+                    );
+                  }}
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-colors"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentCategoryBannerIndex(
+                      (prev) =>
+                        prev === categoryData.banners.length - 1 ? 0 : prev + 1
+                    );
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-colors"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            )} */}
+      
+            {/* Radio Button Indicators */}
+            {categoryData.banners.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                {categoryData.banners.map((_, index) => (
+                  <label
+                    key={index}
+                    className="flex items-center cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentCategoryBannerIndex(index);
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="category-banner-indicator"
+                      checked={index === currentCategoryBannerIndex}
+                      onChange={() => setCurrentCategoryBannerIndex(index)}
+                      className="sr-only"
+                    />
+                    <span
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        index === currentCategoryBannerIndex
+                          ? "bg-white border-white"
+                          : "bg-transparent border-white/70"
+                      }`}
+                    >
+                      {index === currentCategoryBannerIndex && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+      
+          {/* Banner Title */}
+          {/* {categoryData.banners[currentCategoryBannerIndex].banner_name && (
+            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-4">
+              <h2 className="text-xl font-semibold">
+                {categoryData.banners[currentCategoryBannerIndex].banner_name}
+              </h2>
+              {categoryData.banners[currentCategoryBannerIndex].redirect_url && (
+                <p className="text-sm mt-1 opacity-80">Click to explore</p>
+              )}
+            </div>
+          )} */}
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
           <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">{categoryData.main_category.category_name}</h1>
@@ -861,7 +959,7 @@ export default function CategoryPage() {
 
                           {Number(product.special_price) > 0 &&
                             Number(product.special_price) < Number(product.price) && (
-                              <span className="absolute top-3 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                              <span className="absolute top-3 left-2 bg-orange-500 tracking-wider text-white text-xs font-bold px-4 py-0.5 rounded z-10">
                                 {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
                               </span>
                           )}
