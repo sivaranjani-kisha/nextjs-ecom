@@ -479,6 +479,11 @@ const clearSearch = useCallback(() => {
     const [loadingAuth, setLoadingAuth] = useState(false);
     const [formError, setFormError] = useState('');
     const [error, setError] = useState('');
+    const [errors, setErrors] = useState({
+  login: { email: "", password: "" },
+  register: { name: "", email: "", mobile: "", password: "" },
+});
+
 const handleAuthSubmit = async (e) => {
   e.preventDefault();
   setLoadingAuth(false);
@@ -486,72 +491,45 @@ const handleAuthSubmit = async (e) => {
   // pick correct state depending on tab
   const currentData = activeTab === "login" ? loginData : registerData;
 
+// reset errors for current tab only
+  setErrors((prev) => ({
+    ...prev,
+    [activeTab]: { name: "", email: "", mobile: "", password: "" },
+  }));
+
+  let newErrors = {};
+
   // ---------- REGISTER VALIDATION ----------
   if (activeTab === "register") {
-    if (currentData.name === "") {
-      const nameError = document.getElementById("name-error");
-      if (nameError) {
-        nameError.textContent = "Name must be filled";
-        nameError.classList.add("text-red-500");
-      }
-      const nameInput = document.getElementById("name-input");
-      if (nameInput) nameInput.classList.add("border-red-500");
-    } else {
-      document.getElementById("name-error").textContent = "";
-      document.getElementById("name-input")?.classList.remove("border-red-500");
-    }
+    if (!currentData.name) newErrors.name = "Name must be filled";
 
-    if (currentData.mobile === "") {
-      const mobileError = document.getElementById("mobile-error");
-      if (mobileError) {
-        mobileError.textContent = "Mobile must be filled";
-        mobileError.classList.add("text-red-500");
-      }
-      document.getElementById("mobile-input")?.classList.add("border-red-500");
+    if (!currentData.mobile) {
+      newErrors.mobile = "Mobile must be filled";
     } else if (!isValidMobile(currentData.mobile)) {
-      const mobileError = document.getElementById("mobile-error");
-      if (mobileError) {
-        mobileError.textContent = "Enter a valid mobile number";
-        mobileError.classList.add("text-red-500");
-      }
-      document.getElementById("mobile-input")?.classList.add("border-red-500");
-    } else {
-      document.getElementById("mobile-error").textContent = "";
-      document.getElementById("mobile-input")?.classList.remove("border-red-500");
+      newErrors.mobile = "Enter a valid mobile number";
     }
   }
 
   // ---------- COMMON (LOGIN + REGISTER) ----------
-  if (currentData.email === "") {
-    const emailError = document.getElementById("email-error");
-    if (emailError) {
-      emailError.textContent = "Email must be filled";
-      emailError.classList.add("text-red-500");
-    }
-    document.getElementById("email-input")?.classList.add("border-red-500");
+  if (!currentData.email) {
+    newErrors.email = "Email must be filled";
   } else if (!isValidEmail(currentData.email)) {
-    const emailError = document.getElementById("email-error");
-    if (emailError) {
-      emailError.textContent = "Enter a valid email";
-      emailError.classList.add("text-red-500");
-    }
-    document.getElementById("email-input")?.classList.add("border-red-500");
-  } else {
-    document.getElementById("email-error").textContent = "";
-    document.getElementById("email-input")?.classList.remove("border-red-500");
+    newErrors.email = "Enter a valid email";
   }
 
   if (currentData.password.length < 6) {
-    const passwordError = document.getElementById("password-error");
-    if (passwordError) {
-      passwordError.textContent = "Password must be at least 6 characters";
-      passwordError.classList.add("text-red-500");
-    }
-    document.getElementById("password-input")?.classList.add("border-red-500");
-  } else {
-    document.getElementById("password-error").textContent = "";
-    document.getElementById("password-input")?.classList.remove("border-red-500");
+    newErrors.password = "Password must be at least 6 characters";
   }
+
+  // If errors exist, update state and stop
+  if (Object.keys(newErrors).length > 0) {
+    setErrors((prev) => ({
+      ...prev,
+      [activeTab]: { ...prev[activeTab], ...newErrors },
+    }));
+    return;
+  }
+
 
   // ---------- API CALL ----------
   if (
@@ -1696,7 +1674,7 @@ const [registerData, setRegisterData] = useState({
                 {showAuthModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
-                            <button onClick={() => { setShowAuthModal(false); setFormError(''); setError(''); }} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">
+                            <button onClick={() => { setShowAuthModal(false); setFormError(''); setError(''); setErrors({ login: {}, register: {} }); setLoginData({ email: "", password: "" }); setRegisterData({ name: "", email: "", mobile: "", password: "" }); }} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">
                                 &times;
                             </button>
                             <div className="flex gap-4 mb-6 border-b">
@@ -1709,38 +1687,75 @@ const [registerData, setRegisterData] = useState({
                             </div>
 
                              <form onSubmit={handleAuthSubmit} className="space-y-4">
-                                {activeTab === 'register' && (
-                                    <>
-                                    <input type="text" placeholder="Name" value={registerData.name}
-        onChange={(e) =>
-          setRegisterData({ ...registerData, name: e.target.value })
-        } className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"id="name-input"/>
-                                    <span id="name-error"></span>
-                                    </>
-                                )}
-                                <input type="text" placeholder="Email" value={activeTab === "login" ? loginData.email : registerData.email}
-    onChange={(e) =>
-      activeTab === "login"
-        ? setLoginData({ ...loginData, email: e.target.value })
-        : setRegisterData({ ...registerData, email: e.target.value })
-    } className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" id="email-input" />
-                                <span id="email-error"></span>
-                                {activeTab === 'register' && (
-                                <>
-                                <input type="tel" placeholder="Mobile" value={registerData.mobile}
-        onChange={(e) =>
-          setRegisterData({ ...registerData, mobile: e.target.value })
-        } className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"  id="mobile-input" />
-                                <span id="mobile-error"></span>
-                                </>
-                                )}
-                                <input type="password" placeholder="Password" value={activeTab === "login" ? loginData.password : registerData.password}
-    onChange={(e) =>
-      activeTab === "login"
-        ? setLoginData({ ...loginData, password: e.target.value })
-        : setRegisterData({ ...registerData, password: e.target.value })
-    } className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" minLength={6} id="password-input" />
-                                <span id="password-error"></span>
+                                 {activeTab === "register" && (
+          <>
+            <input
+              type="text"
+              placeholder="Name"
+              value={registerData.name}
+              onChange={(e) =>
+                setRegisterData({ ...registerData, name: e.target.value })
+              }
+              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.register.name ? "border-red-500" : ""
+              }`}
+            />
+            {errors.register.name && (
+              <p className="text-red-500 text-sm">{errors.register.name}</p>
+            )}
+          </>
+        )}
+                                <input
+          type="text"
+          placeholder="Email"
+          value={activeTab === "login" ? loginData.email : registerData.email}
+          onChange={(e) =>
+            activeTab === "login"
+              ? setLoginData({ ...loginData, email: e.target.value })
+              : setRegisterData({ ...registerData, email: e.target.value })
+          }
+          className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            errors[activeTab].email ? "border-red-500" : ""
+          }`}
+        />
+        {errors[activeTab].email && (
+          <p className="text-red-500 text-sm">{errors[activeTab].email}</p>
+        )}
+
+                                 {activeTab === "register" && (
+          <>
+            <input
+              type="tel"
+              placeholder="Mobile"
+              value={registerData.mobile}
+              onChange={(e) =>
+                setRegisterData({ ...registerData, mobile: e.target.value })
+              }
+              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.register.mobile ? "border-red-500" : ""
+              }`}
+            />
+            {errors.register.mobile && (
+              <p className="text-red-500 text-sm">{errors.register.mobile}</p>
+            )}
+          </>
+        )} <input
+          type="password"
+          placeholder="Password"
+          value={activeTab === "login" ? loginData.password : registerData.password}
+          onChange={(e) =>
+            activeTab === "login"
+              ? setLoginData({ ...loginData, password: e.target.value })
+              : setRegisterData({ ...registerData, password: e.target.value })
+          }
+          className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            errors[activeTab].password ? "border-red-500" : ""
+          }`}
+          minLength={6}
+        />
+        {errors[activeTab].password && (
+          <p className="text-red-500 text-sm">{errors[activeTab].password}</p>
+        )}
                                 {(formError || error) && (
                                     <div className="text-red-500 text-sm">
                                         {formError || error}
@@ -1753,7 +1768,7 @@ const [registerData, setRegisterData] = useState({
                                 {/* Moved Forgot Password button here - better placement */}
                                 {activeTab === 'login' && (
                                     <div className="text-center mt-2">
-                                        <button type="button" onClick={() => { setShowAuthModal(false); setShowForgotPasswordModal(true); setForgotStep(1); setForgotPasswordEmail(loginData.email || ''); setForgotOTP(''); setNewPassword(''); setConfirmPassword(''); setForgotPasswordMessage(''); setForgotPasswordError(''); }} className="text-sm text-blue-500 hover:underline">
+                                        <button type="button" onClick={() => { setShowAuthModal(false); setShowForgotPasswordModal(true); setForgotStep(1); setForgotPasswordEmail(formData.email || ''); setForgotOTP(''); setNewPassword(''); setConfirmPassword(''); setForgotPasswordMessage(''); setForgotPasswordError(''); }} className="text-sm text-blue-500 hover:underline">
                                             Forgot Password?
                                         </button>
                                     </div>
