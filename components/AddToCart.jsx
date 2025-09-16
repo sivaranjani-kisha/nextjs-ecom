@@ -141,24 +141,27 @@ if (selectedFrequentProducts?.length > 0) {
     };
   return (
     <>
-      <button 
+  <button
   onClick={handleAddToCart}
   disabled={isLoading || isOutOfStock || isprice}
   className={`px-2 py-2 md:px-2 md:py-2 mr-1 rounded-md shadow-md transition duration-300 text-md flex items-center justify-center gap-x-1
     ${isOutOfStock
-          ? 'bg-gray-400 cursor-not-allowed text-white'
-          :
-      isLoading 
-        ? 'bg-blue-700 cursor-not-allowed opacity-75' 
-        : cartSuccess 
-          ? 'bg-green-500 text-white hover:bg-green-600'
-          // : isprice
-          // ? 'bg-green-500 text-white hover:bg-green-600'
-          : 'bg-white text-[#2453D3] hover:bg-[#2453D3] hover:text-white'
+      ? 'bg-gray-400 cursor-not-allowed text-white'
+      : isLoading
+      ? 'bg-blue-700 cursor-not-allowed opacity-75'
+      : cartSuccess
+      ? 'bg-green-500 text-white hover:bg-green-600'
+      : 'bg-white text-[#2453D3] hover:bg-[#2453D3] hover:text-white'
     }
     active:scale-95 disabled:active:scale-100
     w-full min-[1400px]:w-[185px]`}
+  style={{
+    boxShadow:
+      "rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgb(209, 213, 219) 0px 0px 0px 1px inset",
+  }}
 >
+  
+
   {isOutOfStock ? (
         <span>Out of Stock</span>
       ) : isLoading ? (
