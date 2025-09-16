@@ -168,8 +168,8 @@ const RelatedProducts = ({ currentProductId,categoryId }) => {
 
                   {Number(product.special_price) > 0 &&
                     Number(product.special_price) < Number(product.price) && (
-                      <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
-                        {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
+                      <span className="absolute top-3 left-3 bg-orange-500 tracking-wider text-white text-xs font-bold px-2 py-0.5 rounded z-10">
+                        -{Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}%
                       </span>
                     )}
 
