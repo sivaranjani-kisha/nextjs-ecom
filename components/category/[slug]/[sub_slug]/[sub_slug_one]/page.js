@@ -40,10 +40,12 @@ export default function CategoryPage() {
   const toggleFilterGroup = (id) => {
     setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
   };
-   const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0);
+
+  const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0);
   const [nofound,setNofound]=useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
   // Pagination state
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -52,6 +54,7 @@ export default function CategoryPage() {
     hasPrev: false,
     totalProducts: 0
   });
+
   const itemsPerPage = 12;
   const productsContainerRef = useRef(null);
   const scrollPositionBeforeFetch = useRef({
@@ -59,8 +62,8 @@ export default function CategoryPage() {
     containerHeight: 0,
     isRestoring: false
   });
-  const sentinelRef = useRef(null);
 
+  const sentinelRef = useRef(null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
@@ -68,21 +71,23 @@ export default function CategoryPage() {
       fetchInitialData();
     }
   }, [sub_slug]);
-const handleProductClick = (product) => {
-        const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
 
-        const alreadyViewed = stored.find((p) => p._id === product._id);
+  const handleProductClick = (product) => {
+    const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
 
-        const updated = alreadyViewed
-            ? stored.filter((p) => p._id !== product._id)
-            : stored;
+    const alreadyViewed = stored.find((p) => p._id === product._id);
 
-        updated.unshift(product); // Add to beginning
+    const updated = alreadyViewed
+        ? stored.filter((p) => p._id !== product._id)
+        : stored;
 
-        const limited = updated.slice(0, 10); // Limit to 10 recent products
+    updated.unshift(product); // Add to beginning
 
-        localStorage.setItem('recentlyViewed', JSON.stringify(limited));
-    };
+    const limited = updated.slice(0, 10); // Limit to 10 recent products
+
+    localStorage.setItem('recentlyViewed', JSON.stringify(limited));
+  };
+
   const fetchInitialData = async () => {
     try {
       setLoading(true);
@@ -90,6 +95,7 @@ const handleProductClick = (product) => {
       const categoryRes = await fetch(`/api/categories/${sub_slug}/${sub_slug}/${sub_slug_one}`);
       const categoryData = await categoryRes.json();
       console.log(categoryData);
+      console.log(categoryData.category);
       setCategoryData(categoryData);
       
       // Set initial price range based on products in category
@@ -503,21 +509,21 @@ const handleProductClick = (product) => {
  
   return(
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
-      {categoryData.banners && categoryData.banners.length > 0 && (
+      {categoryData.category.banners && categoryData.category.banners.length > 0 && (
         <div className="relative w-full mb-8 rounded-lg overflow-hidden shadow-md">
           <div className="relative w-full aspect-[16/6] sm:aspect-[16/7] lg:aspect-[16/5] cursor-pointer"
             onClick={() => {
-              const redirectUrl = categoryData.banners[currentCategoryBannerIndex].redirect_url;
+              const redirectUrl = categoryData.category.banners[currentCategoryBannerIndex].redirect_url;
               if (redirectUrl) window.location.href = redirectUrl;
             }}
           >
             <Image
               src={
-                categoryData.banners[currentCategoryBannerIndex].image.startsWith("http")
-                  ? categoryData.banners[currentCategoryBannerIndex].banner_image
-                  : `${categoryData.banners[currentCategoryBannerIndex].banner_image}`
+                categoryData.category.banners[currentCategoryBannerIndex].banner_image.startsWith("http")
+                  ? categoryData.category.banners[currentCategoryBannerIndex].banner_image
+                  : `${categoryData.category.banners[currentCategoryBannerIndex].banner_image}`
               }
-              alt={categoryData.banners[currentCategoryBannerIndex].banner_name || "Category Banner"}
+              alt={categoryData.category.banners[currentCategoryBannerIndex].banner_name || "Category Banner"}
               fill
               className="object-cover w-full h-full"
               unoptimized
@@ -554,9 +560,9 @@ const handleProductClick = (product) => {
             )} */}
       
             {/* Radio Button Indicators */}
-            {categoryData.banners.length > 1 && (
+            {categoryData.category.banners.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                {categoryData.banners.map((_, index) => (
+                {categoryData.category.banners.map((_, index) => (
                   <label
                     key={index}
                     className="flex items-center cursor-pointer"
