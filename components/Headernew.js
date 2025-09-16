@@ -1963,47 +1963,40 @@ const [registerData, setRegisterData] = useState({
                       11
                     );
 
+                    // balance chunks if possible (avoid empty last row)
                     if (dropdownChunksLocal.length > 1) {
-                      const size = 11;
-                      const prevIdx = dropdownChunksLocal.length - 2;
-                      const lastIdx = dropdownChunksLocal.length - 1;
-                      const prevChunk = [...dropdownChunksLocal[prevIdx]];
-                      const lastChunk = [...dropdownChunksLocal[lastIdx]];
-                      const space = Math.max(0, size - prevChunk.length);
-                      if (space > 0 && lastChunk.length > 0) {
-                        const moving = lastChunk.splice(0, space);
-                        prevChunk.push(...moving);
-                        dropdownChunksLocal[prevIdx] = prevChunk;
-                        if (lastChunk.length === 0) dropdownChunksLocal.pop();
-                        else dropdownChunksLocal[lastIdx] = lastChunk;
+                      const lastChunk = dropdownChunksLocal[dropdownChunksLocal.length - 1];
+                      const secondLastChunk = dropdownChunksLocal[dropdownChunksLocal.length - 2];
+                      if (Array.isArray(lastChunk) && Array.isArray(secondLastChunk) && lastChunk.length < 11 && secondLastChunk.length > lastChunk.length) {
+                        const diff = 11 - lastChunk.length;
+                        const itemsToMove = secondLastChunk.splice(-diff);
+                        lastChunk.unshift(...itemsToMove);
                       }
                     }
-
-                    if (dropdownChunksLocal.length > 1) {
-                      const size = 11;
-                      for (let i = 0; i < dropdownChunksLocal.length - 1; i++) {
-                        const current = dropdownChunksLocal[i];
-                        const next = dropdownChunksLocal[i + 1];
-                        if (!Array.isArray(next) || next.length === 0) continue;
-                        if (next[0]?.type === 'brands-header' && current.length < size) {
-                          const space = Math.max(0, size - current.length);
-                          const moving = next.splice(0, space);
-                          dropdownChunksLocal[i] = [...current, ...moving];
-                          if (next.length === 0) dropdownChunksLocal.splice(i + 1, 1);
-                          else dropdownChunksLocal[i + 1] = next;
-                          break;
-                        }
+                    console.log(hoveredCategory.navImage);
+                    // --- Begin navImage columns logic ---
+                    let navImages = [];
+                    if (hoveredCategory?.navImage) {
+                      if (typeof hoveredCategory.navImage === "string") {
+                        // Handle comma-separated string or single URL
+                        navImages = hoveredCategory.navImage
+                          .split(',')
+                          .map(s => s.trim())
+                          .filter(Boolean);
+                      } else if (Array.isArray(hoveredCategory.navImage)) {
+                        navImages = hoveredCategory.navImage.filter(Boolean);
                       }
                     }
-
-                    const hasNavImage = Boolean(hoveredCategory && (hoveredCategory.navImage || hoveredCategory.image));
+                    // If navImages is array and has at least 1, use image columns
+                    const hasNavImage = navImages.length > 0;
                     const maxCols = 6;
                     const dataCols = dropdownChunksLocal;
-                    const maxDataCols = hasNavImage ? maxCols - 1 : maxCols;
+                    // If images, always reserve image columns at the right
+                    const maxDataCols = hasNavImage ? maxCols - navImages.length : maxCols;
                     const columns = dataCols.slice(0, maxDataCols);
 
                     const columnWidth = 220;
-                    const imageWidth = hasNavImage ? 220 : 0;
+                    const imageWidth = hasNavImage ? navImages.length * columnWidth : 0;
                     const gutter = 0;
                     let computedWidth = columns.length * columnWidth + imageWidth + gutter;
                     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
@@ -2028,16 +2021,17 @@ const [registerData, setRegisterData] = useState({
                         onMouseLeave={() => startHide(120)}
                       >
                         <div className="flex flex-wrap bg-white h-[390px]" style={{ width: '100%' }}>
+                          {/* --- CONTENT COLUMNS FIRST (so first column is always content) --- */}
                           {columns.map((chunk, index) => {
                             const scrollableClass = (Array.isArray(chunk) && chunk.length > 10) ? 'pr-2' : '';
                             const isEmpty = !Array.isArray(chunk) || chunk.length === 0;
-                            const bgClass = isEmpty ? 'bg-white' : (index % 2 === 0 ? 'bg-[#f2f2f2]' : 'bg-white');
+                            const bgClass = isEmpty ? 'bg-white' : ((index % 2 === 0) ? 'bg-[#f2f2f2]' : 'bg-white');
                             const colClass = isEmpty
                               ? `min-w-[220px] max-w-[250px] p-3 ${bgClass}`
                               : `min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start self-start ${scrollableClass} ${bgClass}`;
 
                             return (
-                              <div key={index} className={colClass} style={{ height: '100%' }}>
+                              <div key={`col-${index}`} className={colClass} style={{ height: '100%' }}>
                                 {Array.isArray(chunk) && chunk.length > 0
                                   ? chunk.map(item => renderFlatItem(item, hoveredCategory))
                                   : <div className="w-full">&nbsp;</div>}
@@ -2045,19 +2039,18 @@ const [registerData, setRegisterData] = useState({
                             );
                           })}
 
-                          {hasNavImage && (hoveredCategory?.navImage || hoveredCategory?.image) && (
+                          {/* --- IMAGE COLUMNS LAST (maintain original parity logic) --- */}
+                          {Array.isArray(navImages) && navImages.length > 0 && navImages.map((img, idx) => (
                             <div
-                              key="nav-image-panel"
-                              className={`w-[220px] h-[390px] flex items-center justify-center ${
-                                columns.length % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                              }`}
+                              key={`nav-image-panel-${idx}`}
+                              className={`w-[220px] h-[390px] flex items-center justify-center ${((columns.length + idx) % 2 === 0) ? 'bg-gray-50' : 'bg-white'}`}
                             >
                               <Link
                                 href={`/category/${hoveredCategory?.category_slug || ''}`}
                                 className="block w-full h-full"
                               >
                                 <Image
-                                  src={hoveredCategory.navImage || hoveredCategory.image}
+                                  src={img}
                                   alt={hoveredCategory.category_name || 'Category Image'}
                                   width={220}
                                   height={390}
@@ -2066,7 +2059,7 @@ const [registerData, setRegisterData] = useState({
                                 />
                               </Link>
                             </div>
-                          )}
+                          ))}
                         </div>
                       </div>
                     );
