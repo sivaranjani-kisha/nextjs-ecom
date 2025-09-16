@@ -77,7 +77,7 @@ const CategoryProducts = () => {
       setIsLoading(true);
       try {
         // Fetch category products
-        const response = await fetch("/api/categoryproduct/get");
+        const response = await fetch("/api/categoryproduct/settings");
         const result = await response.json();
         
         if (result.ok) {
