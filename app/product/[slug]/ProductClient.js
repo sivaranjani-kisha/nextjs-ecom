@@ -1107,21 +1107,14 @@ const fetchBrand = async () => {
       let features = [];
 
       if (product?.key_specifications) {
-        if (typeof product.key_specifications === "string") {
-          try {
-            const parsed = JSON.parse(product.key_specifications);
-            if (Array.isArray(parsed)) {
-              features = parsed;
-            } else if (parsed) {
-              features = [parsed];
-            }
-          } catch (error) {
-            if (product.key_specifications.trim() !== "") {
-              features = [product.key_specifications];
-            }
-          }
-        } else if (Array.isArray(product.key_specifications)) {
-          features = product.key_specifications;
+        if (Array.isArray(product.key_specifications)) {
+          // 🔥 Flatten and split by comma/pipe
+          features = product.key_specifications.flatMap(item =>
+            item.split(/[,|]/) // split each string inside the array
+          );
+        } else if (typeof product.key_specifications === "string") {
+          // handle if it's directly a string
+          features = product.key_specifications.split(/[,|]/);
         }
       }
 
@@ -1144,6 +1137,8 @@ const fetchBrand = async () => {
     })()}
   </div>
 )}
+
+
 
 
 
