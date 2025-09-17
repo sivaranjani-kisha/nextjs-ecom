@@ -1681,9 +1681,21 @@ const handleupdatefilterchange = (filters) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Key Specifications</label>
-              <textarea name="key_specifications" value={product.key_specifications|| ''} onChange={handleChange} className="w-full border p-2 rounded" rows="3"></textarea>
-            </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Key Specifications
+  </label>
+  <p className="text-xs text-gray-500 mb-2">
+    Example: key: value(Ram:8GB, capcity:1.5 ton)
+  </p>
+  <textarea
+    name="key_specifications"
+    value={product.key_specifications || ''}
+    onChange={handleChange}
+    className="w-full border p-2 rounded"
+    rows="3"
+  ></textarea>
+</div>
+
 
             
 

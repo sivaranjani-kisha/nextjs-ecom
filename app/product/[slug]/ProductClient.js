@@ -1101,24 +1101,23 @@ const fetchBrand = async () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
-        {showFeatures && (
+{showFeatures && (
   <div className="mt-3">
     {(() => {
       let features = [];
 
       if (product?.key_specifications) {
         if (Array.isArray(product.key_specifications)) {
-          // 🔥 Flatten and split by comma/pipe
           features = product.key_specifications.flatMap(item =>
-            item.split(/[,|]/) // split each string inside the array
+            // 🔥 Smart split: split by comma NOT inside parentheses
+            item.split(/,(?![^(]*\))/)
           );
         } else if (typeof product.key_specifications === "string") {
-          // handle if it's directly a string
-          features = product.key_specifications.split(/[,|]/);
+          features = product.key_specifications.split(/,(?![^(]*\))/);
         }
       }
 
-      // 🔥 Clean & filter empty entries
+      // 🔥 Clean & filter
       const cleanedFeatures = features
         .map(f => String(f).replace(/[{}\[\]"]/g, "").trim())
         .filter(f => f.length > 0);
@@ -1137,6 +1136,7 @@ const fetchBrand = async () => {
     })()}
   </div>
 )}
+
 
 
 
