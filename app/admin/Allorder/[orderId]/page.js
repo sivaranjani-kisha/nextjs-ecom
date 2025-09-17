@@ -129,7 +129,14 @@ const addHistory = async () => {
           <td className="p-2 flex items-center gap-2 font-semibold text-gray-700">
             <MdDeliveryDining className="bg-red-500 text-white p-1 rounded-md w-6 h-6" />
             Pickup:</td>
-          <td className="p-2">{order.delivery_type}</td>
+          <td className="p-2">
+            {order.delivery_type === "store_pickup" ? (
+              <span className="py-0.5 text-white px-2 bg-red-500 rounded">{order.delivery_type}</span>
+            ):(
+              order.delivery_type
+            )}
+            
+          </td>
         </tr>
         <tr>
           <td className="p-2 flex items-center gap-2 font-semibold text-gray-700">
