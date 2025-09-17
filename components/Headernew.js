@@ -468,8 +468,8 @@ const clearSearch = useCallback(() => {
             handleSearch();
         }
     };
-  const isValidEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-    const isValidMobile = (mobile) => /^[0-9]{10}$/.test(mobile);
+  // const isValidEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+    // const isValidMobile = (mobile) => /^[0-9]{10}$/.test(mobile);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -479,105 +479,199 @@ const clearSearch = useCallback(() => {
     const [loadingAuth, setLoadingAuth] = useState(false);
     const [formError, setFormError] = useState('');
     const [error, setError] = useState('');
-    const [errors, setErrors] = useState({
-  login: { email: "", password: "" },
-  register: { name: "", email: "", mobile: "", password: "" },
-});
+//     const [errors, setErrors] = useState({
+//   login: { email: "", password: "" },
+//   register: { name: "", email: "", mobile: "", password: "" },
+// });
 
-const handleAuthSubmit = async (e) => {
-  e.preventDefault();
-  setLoadingAuth(false);
-
-  // pick correct state depending on tab
-  const currentData = activeTab === "login" ? loginData : registerData;
-
-// reset errors for current tab only
-  setErrors((prev) => ({
-    ...prev,
-    [activeTab]: { name: "", email: "", mobile: "", password: "" },
-  }));
-
-  let newErrors = {};
-
-  // ---------- REGISTER VALIDATION ----------
-  if (activeTab === "register") {
-    if (!currentData.name) newErrors.name = "Name must be filled";
-
-    if (!currentData.mobile) {
-      newErrors.mobile = "Mobile must be filled";
-    } else if (!isValidMobile(currentData.mobile)) {
-      newErrors.mobile = "Enter a valid mobile number";
+  const [errors, setErrors] = useState({
+    login: {},
+    register: {}
+  });
+ 
+  // Validation functions
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+ 
+  const isValidMobile = (mobile) => {
+    const mobileRegex = /^[0-9]{10}$/;
+    return mobileRegex.test(mobile);
+  };
+ 
+  const validateLoginField = (name, value) => {
+    const newErrors = { ...errors.login };
+   
+    switch (name) {
+      case 'email':
+        if (!value) {
+          newErrors.email = 'Email is required';
+        } else if (!isValidEmail(value)) {
+          newErrors.email = 'Please enter a valid email';
+        } else {
+          delete newErrors.email;
+        }
+        break;
+       
+      case 'password':
+        if (!value) {
+          newErrors.password = 'Password is required';
+        } else if (value.length < 6) {
+          newErrors.password = 'Password must be at least 6 characters';
+        } else {
+          delete newErrors.password;
+        }
+        break;
+       
+      default:
+        break;
     }
-  }
-
-  // ---------- COMMON (LOGIN + REGISTER) ----------
-  if (!currentData.email) {
-    newErrors.email = "Email must be filled";
-  } else if (!isValidEmail(currentData.email)) {
-    newErrors.email = "Enter a valid email";
-  }
-
-  if (currentData.password.length < 6) {
-    newErrors.password = "Password must be at least 6 characters";
-  }
-
-  // If errors exist, update state and stop
-  if (Object.keys(newErrors).length > 0) {
-    setErrors((prev) => ({
-      ...prev,
-      [activeTab]: { ...prev[activeTab], ...newErrors },
-    }));
-    return;
-  }
-
-
-  // ---------- API CALL ----------
-  if (
-    (activeTab === "login" &&
-      currentData.email &&
-      currentData.password.length >= 6) ||
-    (activeTab === "register" &&
-      currentData.name &&
-      currentData.email &&
-      currentData.mobile &&
-      currentData.password.length >= 6)
-  ) {
-    try {
-      setLoadingAuth(true);
-      setFormError("");
-      setError("");
-
-      const endpoint =
-        activeTab === "login" ? "/api/auth/login" : "/api/auth/register";
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(currentData), // ✅ use currentData instead of formData
+   
+    setErrors(prev => ({ ...prev, login: newErrors }));
+  };
+ 
+  const validateRegisterField = (name, value, allData) => {
+    const newErrors = { ...errors.register };
+   
+    switch (name) {
+     
+       
+      case 'email':
+       
+        if (!value) {
+          newErrors.email = 'Email is required';
+        } else if (!isValidEmail(value)) {
+          newErrors.email = 'Please enter a valid email';
+        } else {
+          delete newErrors.email;
+          //  console.log(name,value,allData);
+        }
+        break;
+       
+      case 'mobile':
+        if (!value) {
+          newErrors.mobile = 'Mobile number is required';
+        } else if (!isValidMobile(value)) {
+          newErrors.mobile = 'Please enter a valid 10-digit mobile number';
+        } else {
+          delete newErrors.mobile;
+        }
+        break;
+       
+      case 'password':
+        if (!value) {
+          newErrors.password = 'Password is required';
+        } else if (value.length < 6) {
+          newErrors.password = 'Password must be at least 6 characters';
+        } else {
+          delete newErrors.password;
+        }
+       
+        // Also validate confirmPassword if it exists
+        if (allData.confirmPassword && allData.confirmPassword !== value) {
+          newErrors.confirmPassword = 'Passwords do not match';
+        } else if (allData.confirmPassword && allData.confirmPassword === value) {
+          delete newErrors.confirmPassword;
+        }
+        break;
+       
+      case 'confirmPassword':
+        if (!value) {
+          newErrors.confirmPassword = 'Please confirm your password';
+        } else if (value !== allData.password) {
+          newErrors.confirmPassword = 'Passwords do not match';
+        } else {
+          delete newErrors.confirmPassword;
+        }
+        break;
+         case 'name':
+        if (!value) {
+          newErrors.name = 'Name is required';
+        } else if (value.length < 2) {
+          newErrors.name = 'Name must be at least 2 characters';
+        } else {
+          delete newErrors.name;
+        }
+        break;
+       
+      default:
+        break;
+    }
+   
+    setErrors(prev => ({ ...prev, register: newErrors }));
+  };
+ 
+  // Handle input changes with validation
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+    setLoginData(prev => ({ ...prev, [name]: value }));
+    validateLoginField(name, value);
+  };
+ 
+  const handleRegisterChange = (e) => {
+    const { name, value } = e.target;
+    setRegisterData(prev => ({ ...prev, [name]: value }));
+    validateRegisterField(name, value, { ...registerData, [name]: value });
+  };
+ 
+  // Handle form submission
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+   
+    setFormError('');
+    setError('');
+ 
+    // Final validation before submission
+    if (activeTab === 'login') {
+      Object.keys(loginData).forEach(key => {
+        validateLoginField(key, loginData[key]);
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(
-          <span className="text-red-500">
-            {data.message || "Password Mismatch"}
-          </span>
-        );
+     
+      if (Object.keys(errors.login).length > 0) {
+        setLoadingAuth(false);
         return;
       }
-
+    } else {
+      Object.keys(registerData).forEach(key => {
+        console.log(key,registerData[key]);
+        validateRegisterField(key, registerData[key], registerData);
+      });
+     
+      if (Object.keys(errors.register).length > 0) {
+        setLoadingAuth(false);
+        return;
+      }
+    }
+ 
+    // If validation passes, proceed with API call
+    try {
+       setLoadingAuth(true);
+      const endpoint = activeTab === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const dataToSend = activeTab === 'login' ? loginData : registerData;
+     
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSend),
+      });
+ 
+      const data = await response.json();
+ 
+      if (!response.ok) {
+        setError(data.message || 'An error occurred');
+        setLoadingAuth(false);
+        return;
+      }
+ 
       if (data.token) {
-        localStorage.setItem("token", data.token);
-        setIsLoggedIn(true);
+        localStorage.setItem('token', data.token);
+         setIsLoggedIn(true);
         setIsAdmin(data.user.role === "admin");
         setUserData(data.user);
         setShowAuthModal(false);
-
-        // reset states
-        setLoginData({ email: "", password: "" });
-        setRegisterData({ name: "", email: "", mobile: "", password: "" });
-
+        setLoginData({ email: '', password: '' });
+        setRegisterData({ name: '', email: '', mobile: '', password: '', confirmPassword: '' });
         // update cart
         const cartResponse = await fetch("/api/cart/count", {
           headers: { Authorization: `Bearer ${data.token}` },
@@ -591,15 +685,11 @@ const handleAuthSubmit = async (e) => {
         setActiveTab("login");
       }
     } catch (err) {
-      setError(err.message);
+      setError('An error occurred. Please try again.');
     } finally {
       setLoadingAuth(false);
     }
-  } else {
-    return;
-  }
-};
-
+  };
 
     useEffect(() => {
         setHasMounted(true);
@@ -1085,6 +1175,7 @@ const [registerData, setRegisterData] = useState({
   email: "",
   mobile: "",
   password: "",
+  confirmPassword: "",
 });
 
 
@@ -1671,112 +1762,162 @@ const [registerData, setRegisterData] = useState({
                 
 
                 {/* Auth Modal */}
-                {showAuthModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
-                            <button onClick={() => { setShowAuthModal(false); setFormError(''); setError(''); setErrors({ login: {}, register: {} }); setLoginData({ email: "", password: "" }); setRegisterData({ name: "", email: "", mobile: "", password: "" }); }} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">
-                                &times;
-                            </button>
-                            <div className="flex gap-4 mb-6 border-b">
-                                <button className={`pb-2 px-1 ${activeTab === 'login' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('login')}>
-                                    Login
-                                </button>
-                                <button className={`pb-2 px-1 ${activeTab === 'register' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('register')}>
-                                    Register
-                                </button>
-                            </div>
-
-                             <form onSubmit={handleAuthSubmit} className="space-y-4">
-                                 {activeTab === "register" && (
-          <>
-            <input
-              type="text"
-              placeholder="Name"
-              value={registerData.name}
-              onChange={(e) =>
-                setRegisterData({ ...registerData, name: e.target.value })
-              }
-              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.register.name ? "border-red-500" : ""
-              }`}
-            />
-            {errors.register.name && (
-              <p className="text-red-500 text-sm">{errors.register.name}</p>
-            )}
-          </>
-        )}
-                                <input
-          type="text"
-          placeholder="Email"
-          value={activeTab === "login" ? loginData.email : registerData.email}
-          onChange={(e) =>
-            activeTab === "login"
-              ? setLoginData({ ...loginData, email: e.target.value })
-              : setRegisterData({ ...registerData, email: e.target.value })
-          }
-          className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors[activeTab].email ? "border-red-500" : ""
-          }`}
-        />
-        {errors[activeTab].email && (
-          <p className="text-red-500 text-sm">{errors[activeTab].email}</p>
-        )}
-
-                                 {activeTab === "register" && (
-          <>
-            <input
-              type="tel"
-              placeholder="Mobile"
-              value={registerData.mobile}
-              onChange={(e) =>
-                setRegisterData({ ...registerData, mobile: e.target.value })
-              }
-              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.register.mobile ? "border-red-500" : ""
-              }`}
-            />
-            {errors.register.mobile && (
-              <p className="text-red-500 text-sm">{errors.register.mobile}</p>
-            )}
-          </>
-        )} <input
-          type="password"
-          placeholder="Password"
-          value={activeTab === "login" ? loginData.password : registerData.password}
-          onChange={(e) =>
-            activeTab === "login"
-              ? setLoginData({ ...loginData, password: e.target.value })
-              : setRegisterData({ ...registerData, password: e.target.value })
-          }
-          className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors[activeTab].password ? "border-red-500" : ""
-          }`}
-          minLength={6}
-        />
-        {errors[activeTab].password && (
-          <p className="text-red-500 text-sm">{errors[activeTab].password}</p>
-        )}
-                                {(formError || error) && (
-                                    <div className="text-red-500 text-sm">
-                                        {formError || error}
-                                    </div>
-                                )}
-                                <button type="submit" disabled={loadingAuth} className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200">
-                                    {loadingAuth ? 'Processing...' : activeTab === 'login' ? 'Login' : 'Register'}
-                                </button>
-
-                                {/* Moved Forgot Password button here - better placement */}
-                                {activeTab === 'login' && (
-                                    <div className="text-center mt-2">
-                                        <button type="button" onClick={() => { setShowAuthModal(false); setShowForgotPasswordModal(true); setForgotStep(1); setForgotPasswordEmail(formData.email || ''); setForgotOTP(''); setNewPassword(''); setConfirmPassword(''); setForgotPasswordMessage(''); setForgotPasswordError(''); }} className="text-sm text-blue-500 hover:underline">
-                                            Forgot Password?
-                                        </button>
-                                    </div>
-                                )}
-                            </form>
-                        </div>
-                    </div>
+{showAuthModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShowAuthModal(false);
+                setFormError('');
+                setError('');
+                setErrors({ login: {}, register: {} });
+                setLoginData({ email: '', password: '' });
+                setRegisterData({ name: '', email: '', mobile: '', password: '', confirmPassword: '' });
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+            >
+              &times;
+            </button>
+ 
+            {/* Tabs */}
+            <div className="flex gap-4 mb-6 border-b">
+              <button
+                className={`pb-2 px-1 ${
+                  activeTab === 'login'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setActiveTab('login')}
+              >
+                Login
+              </button>
+              <button
+                className={`pb-2 px-1 ${
+                  activeTab === 'register'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setActiveTab('register')}
+              >
+                Register
+              </button>
+            </div>
+ 
+            {/* Form */}
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              {/* Name (Register only) */}
+              {activeTab === 'register' && (
+                <div>
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Name"
+                    value={registerData.name}
+                    onChange={handleRegisterChange}
+                    className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.register.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.register.name && (
+                    <p className="text-red-500 text-sm mt-1">{errors.register.name}</p>
+                  )}
+                </div>
+              )}
+ 
+              {/* Email */}
+              <div>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Email"
+                  value={activeTab === 'login' ? loginData.email : registerData.email}
+                  onChange={activeTab === 'login' ? handleLoginChange : handleRegisterChange}
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors[activeTab].email ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors[activeTab].email && (
+                  <p className="text-red-500 text-sm mt-1">{errors[activeTab].email}</p>
                 )}
+              </div>
+ 
+              {/* Mobile (Register only) */}
+              {activeTab === 'register' && (
+                <div>
+                  <input
+                    type="tel"
+                    name="mobile"
+                    placeholder="Mobile"
+                    value={registerData.mobile}
+                    onChange={handleRegisterChange}
+                    className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.register.mobile ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.register.mobile && (
+                    <p className="text-red-500 text-sm mt-1">{errors.register.mobile}</p>
+                  )}
+                </div>
+              )}
+ 
+              {/* Password */}
+              <div>
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={activeTab === 'login' ? loginData.password : registerData.password}
+                  onChange={activeTab === 'login' ? handleLoginChange : handleRegisterChange}
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors[activeTab].password ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors[activeTab].password && (
+                  <p className="text-red-500 text-sm mt-1">{errors[activeTab].password}</p>
+                )}
+              </div>
+ 
+              {/* Confirm Password (Register only) */}
+              {activeTab === 'register' && (
+                <div>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder="Confirm Password"
+                    value={registerData.confirmPassword}
+                    onChange={handleRegisterChange}
+                    className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.register.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.register.confirmPassword && (
+                    <p className="text-red-500 text-sm mt-1">{errors.register.confirmPassword}</p>
+                  )}
+                </div>
+              )}
+ 
+              {/* Global Form Error */}
+              {(formError || error) && (
+                <div className="text-red-500 text-sm py-2">{formError || error}</div>
+              )}
+ 
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loadingAuth || Object.keys(errors[activeTab]).length > 0}
+                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200"
+              >
+                {loadingAuth
+                  ? 'Processing...'
+                  : activeTab === 'login'
+                  ? 'Login'
+                  : 'Register'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
                 {showForgotPasswordModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg p-6 w-96 max-w-full relative">

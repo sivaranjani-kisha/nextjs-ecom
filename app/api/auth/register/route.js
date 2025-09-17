@@ -57,8 +57,9 @@ export async function POST(req) {
 
   } catch (error) {
     console.error("Registration API Error:", error.message);
+    let errmsg=error.message || "Server Error";
     return NextResponse.json(
-      { message: error.message || "Server Error" },
+      { message: errmsg.replace("ecom_users_info","")  || "Server Error" },
       { status: 500 }
     );
   }
