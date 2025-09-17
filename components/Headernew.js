@@ -19,14 +19,14 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Play } from "lucide-react";
 import { Navigation } from 'swiper/modules';
 import SideNavbar from '@/components/sideNavbar';
-import { useHeaderdetails } from "@/context/HeaderContext";
+import { useHeaderdetails } from "@/context/HeaderContext"; 
 import ProductCard from '@/components/ProductCard';
 import Addtocart from '@/components/AddToCart';
 import { getProducts } from '@/lib/productApi';
 const Header = () => {
     const router = useRouter();
     const pathname = usePathname();
-    const [category, setCategory] = useState('All Categories');
+    const [category, setCategory] = useState('All Category');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { wishlistCount } = useWishlist();
     const { cartCount, updateCartCount } = useCart();
@@ -44,9 +44,9 @@ const Header = () => {
     const [hasMounted, setHasMounted] = useState(false);
     const { userData, isLoggedIn, setIsLoggedIn, setUserData, isAdmin, setIsAdmin } = useHeaderdetails();
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState("All Categories");
+    const [selectedCategory, setSelectedCategory] = useState("All Category");
     const [searchQuery, setSearchQuery] = useState("");
-    const [placeholder, setPlaceholder] = useState("Search For");
+    const [placeholder, setPlaceholder] = useState("Search for");
     const [typedPreview, setTypedPreview] = useState("");
     const [words, setWords] = useState([]);
     const [categorieslist, setCategorieslist] = useState([]);
@@ -322,11 +322,11 @@ const saveCache = (key, data) => {
     // Add this search handler function
    const handleSearch = () => {
 
-    if (!searchQuery.trim() && selectedCategory === "All Categories") return;
+    if (!searchQuery.trim() && selectedCategory === "All Category") return;
 
     const params = new URLSearchParams();
     if (searchQuery.trim()) params.append("query", searchQuery.trim());
-    if (selectedCategory !== "All Categories") {
+    if (selectedCategory !== "All Category") {
       params.append("category", selectedCategory);
     }
 
@@ -468,8 +468,8 @@ const clearSearch = useCallback(() => {
             handleSearch();
         }
     };
-  // const isValidEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-    // const isValidMobile = (mobile) => /^[0-9]{10}$/.test(mobile);
+  const isValidEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+    const isValidMobile = (mobile) => /^[0-9]{10}$/.test(mobile);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -479,199 +479,105 @@ const clearSearch = useCallback(() => {
     const [loadingAuth, setLoadingAuth] = useState(false);
     const [formError, setFormError] = useState('');
     const [error, setError] = useState('');
-//     const [errors, setErrors] = useState({
-//   login: { email: "", password: "" },
-//   register: { name: "", email: "", mobile: "", password: "" },
-// });
+    const [errors, setErrors] = useState({
+  login: { email: "", password: "" },
+  register: { name: "", email: "", mobile: "", password: "" },
+});
 
-  const [errors, setErrors] = useState({
-    login: {},
-    register: {}
-  });
- 
-  // Validation functions
-  const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
- 
-  const isValidMobile = (mobile) => {
-    const mobileRegex = /^[0-9]{10}$/;
-    return mobileRegex.test(mobile);
-  };
- 
-  const validateLoginField = (name, value) => {
-    const newErrors = { ...errors.login };
-   
-    switch (name) {
-      case 'email':
-        if (!value) {
-          newErrors.email = 'Email is required';
-        } else if (!isValidEmail(value)) {
-          newErrors.email = 'Please enter a valid email';
-        } else {
-          delete newErrors.email;
-        }
-        break;
-       
-      case 'password':
-        if (!value) {
-          newErrors.password = 'Password is required';
-        } else if (value.length < 6) {
-          newErrors.password = 'Password must be at least 6 characters';
-        } else {
-          delete newErrors.password;
-        }
-        break;
-       
-      default:
-        break;
+const handleAuthSubmit = async (e) => {
+  e.preventDefault();
+  setLoadingAuth(false);
+
+  // pick correct state depending on tab
+  const currentData = activeTab === "login" ? loginData : registerData;
+
+// reset errors for current tab only
+  setErrors((prev) => ({
+    ...prev,
+    [activeTab]: { name: "", email: "", mobile: "", password: "" },
+  }));
+
+  let newErrors = {};
+
+  // ---------- REGISTER VALIDATION ----------
+  if (activeTab === "register") {
+    if (!currentData.name) newErrors.name = "Name must be filled";
+
+    if (!currentData.mobile) {
+      newErrors.mobile = "Mobile must be filled";
+    } else if (!isValidMobile(currentData.mobile)) {
+      newErrors.mobile = "Enter a valid mobile number";
     }
-   
-    setErrors(prev => ({ ...prev, login: newErrors }));
-  };
- 
-  const validateRegisterField = (name, value, allData) => {
-    const newErrors = { ...errors.register };
-   
-    switch (name) {
-     
-       
-      case 'email':
-       
-        if (!value) {
-          newErrors.email = 'Email is required';
-        } else if (!isValidEmail(value)) {
-          newErrors.email = 'Please enter a valid email';
-        } else {
-          delete newErrors.email;
-          //  console.log(name,value,allData);
-        }
-        break;
-       
-      case 'mobile':
-        if (!value) {
-          newErrors.mobile = 'Mobile number is required';
-        } else if (!isValidMobile(value)) {
-          newErrors.mobile = 'Please enter a valid 10-digit mobile number';
-        } else {
-          delete newErrors.mobile;
-        }
-        break;
-       
-      case 'password':
-        if (!value) {
-          newErrors.password = 'Password is required';
-        } else if (value.length < 6) {
-          newErrors.password = 'Password must be at least 6 characters';
-        } else {
-          delete newErrors.password;
-        }
-       
-        // Also validate confirmPassword if it exists
-        if (allData.confirmPassword && allData.confirmPassword !== value) {
-          newErrors.confirmPassword = 'Passwords do not match';
-        } else if (allData.confirmPassword && allData.confirmPassword === value) {
-          delete newErrors.confirmPassword;
-        }
-        break;
-       
-      case 'confirmPassword':
-        if (!value) {
-          newErrors.confirmPassword = 'Please confirm your password';
-        } else if (value !== allData.password) {
-          newErrors.confirmPassword = 'Passwords do not match';
-        } else {
-          delete newErrors.confirmPassword;
-        }
-        break;
-         case 'name':
-        if (!value) {
-          newErrors.name = 'Name is required';
-        } else if (value.length < 2) {
-          newErrors.name = 'Name must be at least 2 characters';
-        } else {
-          delete newErrors.name;
-        }
-        break;
-       
-      default:
-        break;
-    }
-   
-    setErrors(prev => ({ ...prev, register: newErrors }));
-  };
- 
-  // Handle input changes with validation
-  const handleLoginChange = (e) => {
-    const { name, value } = e.target;
-    setLoginData(prev => ({ ...prev, [name]: value }));
-    validateLoginField(name, value);
-  };
- 
-  const handleRegisterChange = (e) => {
-    const { name, value } = e.target;
-    setRegisterData(prev => ({ ...prev, [name]: value }));
-    validateRegisterField(name, value, { ...registerData, [name]: value });
-  };
- 
-  // Handle form submission
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-   
-    setFormError('');
-    setError('');
- 
-    // Final validation before submission
-    if (activeTab === 'login') {
-      Object.keys(loginData).forEach(key => {
-        validateLoginField(key, loginData[key]);
-      });
-     
-      if (Object.keys(errors.login).length > 0) {
-        setLoadingAuth(false);
-        return;
-      }
-    } else {
-      Object.keys(registerData).forEach(key => {
-        console.log(key,registerData[key]);
-        validateRegisterField(key, registerData[key], registerData);
-      });
-     
-      if (Object.keys(errors.register).length > 0) {
-        setLoadingAuth(false);
-        return;
-      }
-    }
- 
-    // If validation passes, proceed with API call
+  }
+
+  // ---------- COMMON (LOGIN + REGISTER) ----------
+  if (!currentData.email) {
+    newErrors.email = "Email must be filled";
+  } else if (!isValidEmail(currentData.email)) {
+    newErrors.email = "Enter a valid email";
+  }
+
+  if (currentData.password.length < 6) {
+    newErrors.password = "Password must be at least 6 characters";
+  }
+
+  // If errors exist, update state and stop
+  if (Object.keys(newErrors).length > 0) {
+    setErrors((prev) => ({
+      ...prev,
+      [activeTab]: { ...prev[activeTab], ...newErrors },
+    }));
+    return;
+  }
+
+
+  // ---------- API CALL ----------
+  if (
+    (activeTab === "login" &&
+      currentData.email &&
+      currentData.password.length >= 6) ||
+    (activeTab === "register" &&
+      currentData.name &&
+      currentData.email &&
+      currentData.mobile &&
+      currentData.password.length >= 6)
+  ) {
     try {
-       setLoadingAuth(true);
-      const endpoint = activeTab === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const dataToSend = activeTab === 'login' ? loginData : registerData;
-     
+      setLoadingAuth(true);
+      setFormError("");
+      setError("");
+
+      const endpoint =
+        activeTab === "login" ? "/api/auth/login" : "/api/auth/register";
+
       const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSend),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentData), // ✅ use currentData instead of formData
       });
- 
+
       const data = await response.json();
- 
+
       if (!response.ok) {
-        setError(data.message || 'An error occurred');
-        setLoadingAuth(false);
+        setError(
+          <span className="text-red-500">
+            {data.message || "Password Mismatch"}
+          </span>
+        );
         return;
       }
- 
+
       if (data.token) {
-        localStorage.setItem('token', data.token);
-         setIsLoggedIn(true);
+        localStorage.setItem("token", data.token);
+        setIsLoggedIn(true);
         setIsAdmin(data.user.role === "admin");
         setUserData(data.user);
         setShowAuthModal(false);
-        setLoginData({ email: '', password: '' });
-        setRegisterData({ name: '', email: '', mobile: '', password: '', confirmPassword: '' });
+
+        // reset states
+        setLoginData({ email: "", password: "" });
+        setRegisterData({ name: "", email: "", mobile: "", password: "" });
+
         // update cart
         const cartResponse = await fetch("/api/cart/count", {
           headers: { Authorization: `Bearer ${data.token}` },
@@ -685,11 +591,15 @@ const clearSearch = useCallback(() => {
         setActiveTab("login");
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(err.message);
     } finally {
       setLoadingAuth(false);
     }
-  };
+  } else {
+    return;
+  }
+};
+
 
     useEffect(() => {
         setHasMounted(true);
@@ -1175,281 +1085,256 @@ const [registerData, setRegisterData] = useState({
   email: "",
   mobile: "",
   password: "",
-  confirmPassword: "",
 });
 
+// ADD: mobile accordion open-state + helpers
+const [openCategories, setOpenCategories] = useState({});
+const toggleMobileCategory = useCallback((id) => {
+  setOpenCategories((prev) => ({ ...prev, [id]: !prev[id] }));
+}, []);
+const gotoMobileSubCategory = useCallback(
+  (parentSlug, subSlug) => {
+    setIsMobileMenuOpen(false);
+    router.push(
+      `/category/${encodeURIComponent(parentSlug)}/${encodeURIComponent(subSlug)}`
+    );
+  },
+  [router]
+);
 
+// REMOVE (unused): selectedMobileCategoryId
+// const [selectedMobileCategoryId, setSelectedMobileCategoryId] = useState(null);
 
 // DESKTOP search input onKeyDown (replace its onKeyDown prop)
 
 
-/* REPLACE the DESKTOP SUGGESTIONS DROPDOWN block (near end) */
-{searchDropdownVisible && searchContext === 'desktop' && (
-  <div
-    ref={searchDropdownRef}
-    className="hidden sm:flex flex-col fixed z-[80] bg-white shadow-xl rounded-xl border border-gray-200 overflow-hidden"
-    style={{
-      top: `${searchDropdownTop}px`,
-      left: `${searchDropdownLeft}px`,
-      width: `${searchDropdownWidth}px`,
-      maxHeight: '500px'
-    }}
-    role="listbox"
-    aria-label="Search product suggestions"
-  >
-    <div className="px-5 pt-3 pb-2 text-[11px] font-semibold tracking-[0.12em] text-gray-500 uppercase select-none">
-      Products
-    </div>
-    <div className="px-3 pb-3 overflow-y-auto custom-scrollbar space-y-2">
-      {suggestions.length > 0
-        ? suggestions.map(renderDesktopSuggestionItem)
-        : (searchQuery.trim() && (
-           <div className="py-10 flex flex-col items-center justify-center text-gray-500">
-  {/* Icon */}
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-12 h-12 mb-3 text-gray-400"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.5}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
-    />
-  </svg>
-
-  {/* Message */}
-  <p className="text-sm font-medium">No products found</p>
-  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
-</div>
-
-          ))
-      }
-    </div>
-  </div>
-)}
-
-    return (
-      <>
-        <header className="sticky top-0 z-50">
-            <style jsx global>{`
-              :root{--height:38px;--radius:12px;--outline:#e3e3e9;--bg:#ffffff;--accent:#5b46f0;--muted:#6b7280;--shadow:0 8px 18px rgba(36,83,211,0.04)}
-              .search-bar{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:4px 8px;border:3px solid var(--outline);box-shadow:var(--shadow);transition:box-shadow .25s ease,transform .12s ease,border-color .18s ease;width:100%;max-width:900px;margin:0 auto}
-              .search-bar:focus-within{box-shadow:0 12px 30px rgba(36,83,211,.04);border-color:rgba(36,83,211,.04)}
-              .search-bar-inner{position:relative;display:flex;align-items:center;gap:10px;width:100%;padding:2px;border-radius:8px}
-               /* select */
-               /* default: no visible border, show only when focused or has value */
-               .search-select{height:var(--height);min-width:140px;max-width:200px;border-radius:10px;border:1px solid transparent;padding:0 36px 0 14px;font-size:15px;color:#111;background:#fff;-webkit-appearance:none;appearance:none;cursor:pointer}
-               .select-wrap{position:relative;display:inline-block}
-               .select-wrap::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:10px;height:10px;background-image:linear-gradient(135deg,#6b7280,#6b7280);clip-path:polygon(50% 70%,0 25%,100% 25%);opacity:.85;pointer-events:none}
-               /* input */
-               .search-input{flex:1 1 auto;height:var(--height);padding:8px 12px;border-radius:10px;border:1px solid transparent;background:#fff;color:#0f172a;font-size:15px;width:100%;}
-               /* when user has typed or on focus, show light border */
-               .search-input.has-value, .search-input:focus, .search-select:focus { border-color: #e3e3e9; box-shadow: 0 6px 20px rgba(36,83,211,0.04); }
-               /* remove default browser outline to avoid black focus ring */
-               .search-input:focus, .search-select:focus { outline: none; }
-               @keyframes shimmer{from{left:-120%}to{left:120%}}
-               @media (max-width:900px){:root{--height:36px}.search-btn{width:48px;color:#2453d3;}.search-select{min-width:100px}}
-            `}</style>
-            
-            {/* Top Announcement Bar */}
-            {/* {offers.some(
-                (offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active"
-            ) ? (
-                // ✅ Active offer banner
-                <div className={`bg-customBlue text-yellow-300 px-4 py-1 overflow-hidden relative w-full ${isMobileMenuOpen ? 'hidden' : ''}`}>
-                    <div className="relative w-full overflow-hidden h-6 flex items-center">
-                        <motion.div initial={{ x: "100%" }} animate={{ x: "-100%" }} transition={{ ease: "linear", duration: 20, repeat: Infinity }} className="absolute whitespace-nowrap flex items-center space-x-8">
-                            {offers
-                                .filter((offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active")
-                                .map((offer, index) => (
-                                    <span key={index} className="font-medium text-xs sm:text-sm">
-                                        {offer.notes} {offer.percentage}% | Code:{" "}
-                                        <strong>{offer.offer_code}</strong>
-                                    </span>
-                                ))
-                            }
-                        </motion.div>
-                    </div>
-                </div>
-            ) : (
-                // ❌ No active offers
-                <div className={`bg-customBlue text-yellow-300 px-4 py-1 overflow-hidden relative w-full ${isMobileMenuOpen ? 'hidden' : ''}`}>
-                    <div className="relative w-full overflow-hidden h-6 flex items-center">
-                        <motion.div initial={{ x: "100%" }} animate={{ x: "-100%" }} transition={{ ease: "linear", duration: 20, repeat: Infinity }} className="absolute whitespace-nowrap flex items-center space-x-8">
-                            <span className="font-medium text-xs sm:text-sm">
-                                No current offers available — shop now and stay tuned for exciting discounts coming soon!
-                            </span>
-                        </motion.div>
-                    </div>
-                </div>
-            )} */}
-
-            {/* Main Header */}
-            <div className={`${isMobileMenuOpen ? "fixed inset-0 mt-0 pt-0 z-50 overflow-y-auto" : "bg-white px-4 sm:px-6 md:px-6 py-1 sticky top-0 z-40"}`}>
-                {/* NEW MOBILE TOP ROW (from reference) */}
-                <div className="sm:hidden flex items-center justify-between w-full relative">
-                    <Link href="/" className="p-1 rounded-lg">
-                      <img src="/user/bea-new.png" alt="Logo" width={48} height={28} className="h-auto" />
-                    </Link>
-                    <div className="flex items-center gap-4 pr-1 text-customBlue">
-                      <Link href="/location">
-                        <FiMapPin size={20} />
-                      </Link>
-                        <Link href="/wishlist" className="relative">
-                          <FiHeart size={20} />
-                          <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
-                            {wishlistCount}
-                          </span>
-                        </Link>
-                        <Link href="/cart" className="relative">
-                          <FiShoppingCart size={20} />
-                          <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
-                            {cartCount}
-                          </span>
-                        </Link>
-                        <div className="relative">
-                          {isLoggedIn ? (
-                            <button onClick={() => setDropdownOpen(!dropdownOpen)}>
-                              <FiUser size={20} />
-                            </button>
-                          ) : (
-                            <button onClick={() => setShowAuthModal(true)}>
-                              <FiUser size={20} />
-                            </button>
-                          )}
-                          {dropdownOpen && isLoggedIn && (
-                            <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-50">
-                              {isAdmin && (
-                                <Link href="/admin/dashboard" className="block px-3 py-2 text-xs hover:bg-blue-50">
-                                  Admin Panel
-                                </Link>
-                              )}
-                              <Link href="/order" className="block px-3 py-2 text-xs hover:bg-blue-50">
-                                My Orders
-                              </Link>
-                              <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-xs hover:bg-red-50">
-                                Logout
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <button onClick={toggleMobileMenu} aria-label="Menu">
-                          {isMobileMenuOpen ? <FiX size={24} /> : <FaBars size={24} />}
-                        </button>
-                    </div>
-                </div>
-
-                {/* NEW MOBILE SEARCH BAR */}
-                <div className="sm:hidden mt-2 -mx-4 px-0">
-                  <div className="bg-[#2453D3] w-full px-3 py-3">
-                    <div className="flex items-center bg-white h-12 rounded-xl border border-gray-300 shadow-sm overflow-hidden w-full transition-all duration-150 focus-within:border-[#2453d3] focus-within:shadow-[0_0_0_2px_rgba(36,83,211,0.15)]">
-                      {/* ADDED category dropdown for mobile */}
-                      <select
-                        value={selectedCategory}
-                        onChange={(e)=>setSelectedCategory(e.target.value)}
-                        className="h-full text-[11px] xs:text-xs bg-white px-2 pr-5 border-r border-gray-300 outline-none shrink-0 max-w-[110px]"
-                        aria-label="Category"
-                      >
-                        <option value="All Categories">All Categories</option>
-                        {categories.map(cat => (
-                          <option key={cat._id} value={cat.category_name}>{cat.category_name}</option>
-                        ))}
-                      </select>
-                      <div className="flex-1 relative h-full flex items-center">
-                        <input
-                          type="search"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          onKeyDown={handleKeyPress}
-                          placeholder=" "
-                          className="w-full h-full text-sm outline-none bg-transparent px-1 focus:text-[#111] placeholder-transparent"
-                          ref={searchInputRef}
-                          onFocus={() => {
-                            setSearchContext('mobileTop'); // ADDED
-                            if (searchInputRef.current) {
-                              const rect = searchInputRef.current.getBoundingClientRect();
-                              setSearchDropdownLeft(rect.left);
-                              setSearchDropdownTop(rect.bottom + window.scrollY);
-                              setSearchDropdownWidth(rect.width);
-                            }
-                            if (searchQuery.trim().length >= 1) fetchSuggestions(searchQuery);
-                            setSearchDropdownVisible(true);
-                          }}
-                        />
-                        {searchQuery.trim() === "" && (
-                          <div className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] pointer-events-none">
-                            <span className="text-gray-400">Search For</span>
-                            <span className="text-gray-900">"{typedPreview}"</span>
-                          </div>
-                        )}
-                      </div>
-                   
-                      <button
-                        onClick={handleSearch}
-                        aria-label="Search"
-                        className="h-full px-4 bg-[#2453D3] text-white flex items-center justify-center active:scale-[0.97] transition"
-                      >
-                        <FaSearch size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* MOBILE TOP SUGGESTIONS (outside menu) */}
-                {searchDropdownVisible && searchContext === 'mobileTop' && !isMobileMenuOpen && (
-                  <div ref={searchDropdownRef} className="sm:hidden absolute z-[70] left-0 right-0 px-3 mt-1">
-                    <div className="bg-white rounded-lg shadow-lg border max-h-72 overflow-y-auto">
-                      <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-gray-500">
-                        PRODUCTS
-                      </div>
-                      <div className="px-3 pb-2">
-                        {suggestions.length > 0
-                          ? suggestions.map(renderSuggestionItem)
-                          : (searchQuery.trim() && (
-                              <div className="py-10 flex flex-col items-center justify-center text-gray-500">
-  {/* Icon */}
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-12 h-12 mb-3 text-gray-400"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.5}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
-    />
-  </svg>
-
-  {/* Message */}
-  <p className="text-sm font-medium">No products found</p>
-  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
-</div>
-
+return (
+  <>
+    <header className="sticky top-0 z-50">
+        <style jsx global>{`
+          :root{--height:38px;--radius:12px;--outline:#e3e3e9;--bg:#ffffff;--accent:#5b46f0;--muted:#6b7280;--shadow:0 8px 18px rgba(36,83,211,0.04)}
+          .search-bar{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:4px 8px;border:3px solid var(--outline);box-shadow:var(--shadow);transition:box-shadow .25s ease,transform .12s ease,border-color .18s ease;width:100%;max-width:900px;margin:0 auto}
+          .search-bar:focus-within{box-shadow:0 12px 30px rgba(36,83,211,.04);border-color:rgba(36,83,211,.04)}
+          .search-bar-inner{position:relative;display:flex;align-items:center;gap:10px;width:100%;padding:2px;border-radius:8px}
+           /* select */
+           /* default: no visible border, show only when focused or has value */
+           .search-select{height:var(--height);min-width:140px;max-width:200px;border-radius:10px;border:1px solid transparent;padding:0 36px 0 14px;font-size:15px;color:#111;background:#fff;-webkit-appearance:none;appearance:none;cursor:pointer}
+           .select-wrap{position:relative;display:inline-block}
+           .select-wrap::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:10px;height:10px;background-image:linear-gradient(135deg,#6b7280,#6b7280);clip-path:polygon(50% 70%,0 25%,100% 25%);opacity:.85;pointer-events:none}
+           /* input */
+           .search-input{flex:1 1 auto;height:var(--height);padding:8px 12px;border-radius:10px;border:1px solid transparent;background:#fff;color:#0f172a;font-size:15px;width:100%;}
+           /* when user has typed or on focus, show light border */
+           .search-input.has-value, .search-input:focus, .search-select:focus { border-color: #e3e3e9; box-shadow: 0 6px 20px rgba(36,83,211,0.04); }
+           /* remove default browser outline to avoid black focus ring */
+           .search-input:focus, .search-select:focus { outline: none; }
+           @keyframes shimmer{from{left:-120%}to{left:120%}}
+           @media (max-width:900px){:root{--height:36px}.search-btn{width:48px;color:#2453d3;}.search-select{min-width:100px}}
+        `}</style>
+        
+        {/* Top Announcement Bar */}
+        {/* {offers.some(
+            (offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active"
+        ) ? (
+            // ✅ Active offer banner
+            <div className={`bg-customBlue text-yellow-300 px-4 py-1 overflow-hidden relative w-full ${isMobileMenuOpen ? 'hidden' : ''}`}>
+                <div className="relative w-full overflow-hidden h-6 flex items-center">
+                    <motion.div initial={{ x: "100%" }} animate={{ x: "-100%" }} transition={{ ease: "linear", duration: 20, repeat: Infinity }} className="absolute whitespace-nowrap flex items-center space-x-8">
+                        {offers
+                            .filter((offer) => String(offer.fest_offer_status).trim().toLowerCase() === "active")
+                            .map((offer, index) => (
+                                <span key={index} className="font-medium text-xs sm:text-sm">
+                                    {offer.notes} {offer.percentage}% | Code:{" "}
+                                    <strong>{offer.offer_code}</strong>
+                                </span>
                             ))
                         }
+                    </motion.div>
+                </div>
+            </div>
+        ) : (
+            // ❌ No active offers
+            <div className={`bg-customBlue text-yellow-300 px-4 py-1 overflow-hidden relative w-full ${isMobileMenuOpen ? 'hidden' : ''}`}>
+                <div className="relative w-full overflow-hidden h-6 flex items-center">
+                    <motion.div initial={{ x: "100%" }} animate={{ x: "-100%" }} transition={{ ease: "linear", duration: 20, repeat: Infinity }} className="absolute whitespace-nowrap flex items-center space-x-8">
+                        <span className="font-medium text-xs sm:text-sm">
+                            No current offers available — shop now and stay tuned for exciting discounts coming soon!
+                        </span>
+                    </motion.div>
+                </div>
+            </div>
+        )} */}
+
+        {/* Main Header */}
+        <div className={`${isMobileMenuOpen ? "fixed inset-0 mt-0 pt-0 z-50 overflow-y-auto" : "bg-white px-4 sm:px-6 md:px-6 py-1 sticky top-0 z-40"}`}>
+            {/* NEW MOBILE TOP ROW (from reference) */}
+            <div className="sm:hidden flex items-center justify-between w-full relative">
+                <Link href="/" className="p-1 rounded-lg">
+                  <img src="/user/bea-new.png" alt="Logo" width={48} height={28} className="h-auto" />
+                </Link>
+                <div className="flex items-center gap-3 pr-1 text-customBlue">
+                  {/* Feedback Icon */}
+                  <Link href="/feedback" className="relative">
+                      <FiMessageSquare size={16} />
+                  </Link>
+
+                  {/* Contact Icon */}
+                  <Link href="/contact" className="relative">
+                      <FiPhoneCall size={16}  />
+                  </Link>
+                  <Link href="/location">
+                    <FiMapPin size={16} />
+                  </Link>
+                    <Link href="/wishlist" className="relative">
+                      <FiHeart size={16} />
+                      <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
+                        {wishlistCount}
+                      </span>
+                    </Link>
+                    <Link href="/cart" className="relative">
+                      <FiShoppingCart size={16} />
+                      <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
+                        {cartCount}
+                      </span>
+                    </Link>
+                    <div className="relative">
+                      {isLoggedIn ? (
+                        <button onClick={() => setDropdownOpen(!dropdownOpen)}>
+                          <FiUser size={16} />
+                        </button>
+                      ) : (
+                        <button onClick={() => setShowAuthModal(true)}>
+                          <FiUser size={16} />
+                        </button>
+                      )}
+                      {dropdownOpen && isLoggedIn && (
+                        <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-50">
+                          {isAdmin && (
+                            <Link href="/admin/dashboard" className="block px-3 py-2 text-xs hover:bg-blue-50">
+                              Admin Panel
+                            </Link>
+                          )}
+                          <Link href="/order" className="block px-3 py-2 text-xs hover:bg-blue-50">
+                            My Orders
+                          </Link>
+                          <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-xs hover:bg-red-50">
+                            Logout
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={toggleMobileMenu} aria-label="Menu">
+                      {isMobileMenuOpen ? <FiX size={24} /> : <FaBars size={24} />}
+                    </button>
+                </div>
+            </div>
+
+            {/* NEW MOBILE SEARCH BAR */}
+            <div className="sm:hidden mt-2 -mx-4 px-0">
+              <div className="bg-[#2453D3] w-full px-3 py-3">
+                <div className="flex items-center bg-white h-12 rounded-xl border border-gray-300 shadow-sm overflow-hidden w-full transition-all duration-150 focus-within:border-[#2453d3] focus-within:shadow-[0_0_0_2px_rgba(36,83,211,0.15)]">
+                  {/* ADDED category dropdown for mobile */}
+                  <select
+                    value={selectedCategory}
+                    onChange={(e)=>setSelectedCategory(e.target.value)}
+                    className="h-full text-[11px] xs:text-xs bg-white px-2 pr-5 border-r border-gray-300 outline-none shrink-0 max-w-[110px]"
+                    aria-label="Category"
+                  >
+                    <option value="All Category">All Category</option>
+                    {categories.map(cat => (
+                      <option key={cat._id} value={cat.category_name}>{cat.category_name}</option>
+                    ))}
+                  </select>
+                  <div className="flex-1 relative h-full flex items-center">
+                    <input
+                      type="search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      placeholder=" "
+                      className="w-full h-full text-sm outline-none bg-transparent px-1 focus:text-[#111] placeholder-transparent"
+                      ref={searchInputRef}
+                      onFocus={() => {
+                        setSearchContext('mobileTop'); // ADDED
+                        if (searchInputRef.current) {
+                          const rect = searchInputRef.current.getBoundingClientRect();
+                          setSearchDropdownLeft(rect.left);
+                          setSearchDropdownTop(rect.bottom + window.scrollY);
+                          setSearchDropdownWidth(rect.width);
+                        }
+                        if (searchQuery.trim().length >= 1) fetchSuggestions(searchQuery);
+                        setSearchDropdownVisible(true);
+                      }}
+                    />
+                    {searchQuery.trim() === "" && (
+                      <div className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] pointer-events-none">
+                        <span className="text-gray-400">Search for</span>
+                        <span className="text-gray-900">"{typedPreview}"</span>
                       </div>
-                    </div>
+                    )}
                   </div>
-                )}
+               
+                  <button
+                    onClick={handleSearch}
+                    aria-label="Search"
+                    className="h-full px-4 bg-[#2453D3] text-white flex items-center justify-center active:scale-[0.97] transition"
+                  >
+                    <FaSearch size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                {/* DESKTOP ROW (unchanged original content) */}
-                <div className="hidden sm:flex justify-between items-center">
-                    {/* Logo (Hidden on mobile) */}
-                    <div className="hidden sm:block mr-10 bg-white py-2 rounded-lg">
-                        <Link href="/index" className="mx-auto">
-                            <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={100} height={30} />
-                        </Link>
-                    </div>
+            {/* MOBILE TOP SUGGESTIONS (outside menu) */}
+            {searchDropdownVisible && searchContext === 'mobileTop' && !isMobileMenuOpen && (
+              <div ref={searchDropdownRef} className="sm:hidden absolute z-[70] left-0 right-0 px-3 mt-1">
+                <div className="bg-white rounded-lg shadow-lg border max-h-72 overflow-y-auto">
+                  <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-gray-500">
+                    PRODUCTS
+                  </div>
+                  <div className="px-3 pb-2">
+                    {suggestions.length > 0
+                      ? suggestions.map(renderSuggestionItem)
+                      : (searchQuery.trim() && (
+                          <div className="py-10 flex flex-col items-center justify-center text-gray-500">
+  {/* Icon */}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-12 h-12 mb-3 text-gray-400"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.5}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
 
-                    {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
-                    <div className="search-bar relative hidden sm:flex flex-1 w-full max-w-[900px] mx-auto items-center bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200" role="search" style={{minHeight: '40px', display: 'flex',
+  {/* Message */}
+  <p className="text-sm font-medium">No products found</p>
+  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
+</div>
+
+                        ))
+                    }
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DESKTOP ROW (unchanged original content) */}
+            <div className="hidden sm:flex justify-between items-center">
+                {/* Logo (Hidden on mobile) */}
+                <div className="hidden sm:block mr-10 bg-white py-2 rounded-lg">
+                    <Link href="/index" className="mx-auto">
+                        <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={100} height={30} />
+                    </Link>
+                </div>
+
+                {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
+                <div className="search-bar relative hidden sm:flex flex-1 w-full max-w-[900px] mx-auto items-center bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200" role="search" style={{minHeight: '40px', display: 'flex',
     alignItems: 'center',
     gap: '10px',
     background: 'var(--bg)',
@@ -1462,462 +1347,365 @@ const [registerData, setRegisterData] = useState({
     width: '100%',
     maxWidth: '900px',
     margin: '0 auto',}}>
-                      <div className="search-bar-inner" style={{ position: 'relative', width: '100%' }}>
-                        <div className="select-wrap">
-                          <select
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="search-select"
-                            aria-label="Search category"
-                          >
-                            <option value="All Categories">All Categories</option>
-                            {categories.map((cat) => (
-                              <option key={cat._id} value={cat.category_name}>
-                                {cat.category_name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        {/* input wrapper with absolute overlay */}
-                        <div className="relative flex-1">
-                          <input
-                            type="search"
-                            name="q"
-                            id="q"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            ref={searchInputRef}
-                            onFocus={() => {
-                              setSearchContext('desktop'); // ADDED
-                              if (searchInputRef.current) {
-                                const rect = searchInputRef.current.getBoundingClientRect();
-                                setSearchDropdownLeft(rect.left);
-                                setSearchDropdownTop(rect.bottom + window.scrollY);
-                                setSearchDropdownWidth(rect.width);
-                              }
-                              if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
-                              setSearchDropdownVisible(true);
-                            }}
-                            onKeyDown={handleDesktopKeyDown}  // correct usage
-                            className={`search-input ${searchQuery.trim() ? 'has-value' : ''}`}
-                            placeholder=" "
-                            aria-label="Search query"
-                          />
-                          {/* typed-overlay: "Search For" light gray, typedPreview black */}
-                          {searchQuery.trim() === "" && (
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
-                              <span className="text-gray-400 text-sm">Search For</span>
-                              <span className="text-black text-sm">"{typedPreview}"</span>
-                            </div>
-                          )}
-                        </div>
-                        <button type="button" className="search-btn" style={{color:'#2453d3'}} onClick={handleSearch} aria-label="Search">
-                          <FaSearch />
-                        </button>
-                        <div className="shimmer" aria-hidden="true"></div>
-                        {/* DROPDOWN MOVED OUTSIDE TO SUPPORT MOBILE */ }
-                        {/* (was here previously) */}
-                      </div>
+                  <div className="search-bar-inner" style={{ position: 'relative', width: '100%' }}>
+                    <div className="select-wrap">
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="search-select"
+                        aria-label="Search category"
+                      >
+                        <option value="All Category">All Category</option>
+                        {categories.map((cat) => (
+                          <option key={cat._id} value={cat.category_name}>
+                            {cat.category_name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    {/* Icons Group */}
-                    <div className="flex items-center gap-[2rem] sm:gap-4">
-                        {/* Mobile Search Button (Hidden on desktop) */}
-                        <button onClick={toggleMobileMenu} className="sm:hidden text-customBlue">
-                            <FiSearch size={20} />
-                        </button>
-
-                        {/* Feedback Icon */}
-                        <Link href="/feedback" className="hidden sm:flex items-center relative">
-                            <FiMessageSquare size={18} className="text-customBlue" />
-                        </Link>
-
-                        {/* Contact Icon */}
-                        <Link href="/contact" className="hidden sm:flex items-center relative">
-                            <FiPhoneCall size={18} className="text-customBlue" />
-                        </Link>
-
-                        {/* Location (Hidden on mobile) */}
-                        <Link href="/location" className="hidden sm:flex items-center relative">
-                            <FiMapPin size={18} className="text-customBlue" />
-                                {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Location</span> */}
-                        </Link>
-
-                        {/* Wishlist */}
-                        <Link href="/wishlist" className="flex items-center relative p-1 sm:p-0">
-                            <FiHeart size={18} className="text-customBlue" />
-                            {/* {wishlistCount > 0 && ( */}
-                                <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
-                                    {wishlistCount}
-                                </span>
-                            {/* )} */}
-                            {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Wishlist</span> */}
-                        </Link>
-
-                        {/* Cart */}
-                        <Link href="/cart" className="flex items-center relative p-1 sm:p-0 ">
-                            <FiShoppingCart size={18} className="text-customBlue" />
-                            <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
-                                {cartCount}
-                            </span>
-                            {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Cart</span> */}
-                        </Link>
-
-                        {/* User Account */}
-                        <div className="relative" ref={dropdownRef}>
-                            {isLoggedIn ? (
-                                <>
-                                    <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center text-black focus:outline-none p-1 sm:p-0">
-                                        <FiUser size={18} className="text-customBlue" />
-                                        <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">
-                                            Hi, {userData?.name || userData?.username || "User"}
-                                        </span>
-                                    </button>
-                                    {dropdownOpen && (
-                                        <div className="absolute right-0 mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
-                                            <div className="py-2 px-2">
-                                                {isAdmin && (
-                                                    <>
-                                                        <Link href="/admin/dashboard" className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
-                                                            <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
-                                                                <FaUserShield className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                            </span>
-                                                            Admin Panel
-                                                        </Link>
-                                                    </>
-                                                )}
-                                                <Link href="/order" className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
-                                                    <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
-                                                        <FaShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                    </span>My Orders</Link>
-                                                <hr className="my-2 border-gray-200" />
-                                                <button onClick={handleLogout} className="flex items-center gap-2 sm:gap-3 w-full text-left px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-red-50 transition-colors">
-                                                    <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
-                                                        <IoLogOut className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                    </span>Logout
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
-                            ) : (
-                                <button onClick={() => setShowAuthModal(true)} className="flex items-center text-black p-1 sm:p-0">
-                                    <FiUser size={18} className="text-customBlue" />
-                                    {/* <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">Sign In</span> */}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Mobile Menu (Hidden on desktop) */}
-                {isMobileMenuOpen && (
-                    <div
-                      className="sm:hidden bg-white fixed inset-0 z-50 p-4 pt-3 rounded-lg shadow-lg overflow-y-auto transition-all duration-300"
-                      style={{ touchAction: 'auto', userSelect: 'auto', WebkitUserSelect: 'auto' }}
-                    >
-                      {/* Internal sticky header */}
-                      <div className="flex items-center justify-between mb-3 sticky top-0 bg-white pb-2 border-b">
-                        <div className="flex items-center gap-2 text-customBlue font-semibold text-sm">
-                          <FiMenu size={18} />
-                          <span>Menu</span>
-                        </div>
-                        <button
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          aria-label="Close menu"
-                          className="p-2 rounded-full text-customBlue hover:bg-blue-50 active:bg-blue-100 focus:outline-none focus:ring focus:ring-blue-200"
-                        >
-                          <FiX size={22} />
-                        </button>
-                      </div>
-
-                      {/* Mobile Search Bar inside menu */}
-                      <div className="flex items-center bg-gray-200 border border-gray-300 overflow-hidden mb-4 h-11 transition-colors duration-150 focus-within:border-[#2453d3] focus-within:bg-white">
-                        {/* ADDED category dropdown inside mobile menu */}
-                        <select
-                          value={selectedCategory}
-                          onChange={(e)=>setSelectedCategory(e.target.value)}
-                          className="h-full text-[11px] bg-gray-200 px-2 pr-4 border-r border-gray-300 outline-none max-w-[115px]"
-                          aria-label="Category"
-                        >
-                          <option value="All Categories">All</option>
-                          {categories.map(cat => (
-                            <option key={cat._id} value={cat.category_name}>{cat.category_name}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="text"
-                          tabIndex={0}
-                          autoFocus
-                          placeholder={placeholder || "Search products..."}
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          onKeyDown={handleKeyPress}
-                          className="flex-1 px-3 py-2 text-sm outline-none bg-transparent h-full"
-                          onFocus={() => {
-                            setSearchContext('mobileMenu'); // ADDED
-                            if (searchInputRef.current) {
-                              const rect = searchInputRef.current.getBoundingClientRect();
-                              setSearchDropdownLeft(rect.left);
-                              setSearchDropdownTop(rect.bottom + window.scrollY);
-                              setSearchDropdownWidth(rect.width);
-                            }
-                            if (searchQuery.trim().length >= 1) fetchSuggestions(searchQuery);
-                            setSearchDropdownVisible(true);
-                          }}
-                        />
-                        <button
-                          className="px-3 text-customBlue h-full active:scale-95"
-                          onClick={handleSearch}
-                          tabIndex={0}
-                          aria-label="Search"
-                        >
-                          <FaSearch />
-                        </button>
-                      </div>
-
-                      {/* Category List */}
-                      {!suggestions.length || searchContext !== 'mobileMenu' || !searchDropdownVisible ? null : (
-                        <div ref={searchDropdownRef} className="bg-white border rounded-lg mb-4 max-h-72 overflow-y-auto shadow">
-                          <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-gray-500">
-                            PRODUCTS
-                          </div>
-                          <div className="px-3 pb-2">
-                            {suggestions.length > 0
-                              ? suggestions.map(renderSuggestionItem)
-                              : (searchQuery.trim() && (
-                                  <div className="py-10 flex flex-col items-center justify-center text-gray-500">
-  {/* Icon */}
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-12 h-12 mb-3 text-gray-400"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.5}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
-    />
-  </svg>
-
-  {/* Message */}
-  <p className="text-sm font-medium">No products found</p>
-  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
-</div>
-
-                                ))
-                            }
-                          </div>
+                    {/* input wrapper with absolute overlay */}
+                    <div className="relative flex-1">
+                      <input
+                        type="search"
+                        name="q"
+                        id="q"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        ref={searchInputRef}
+                        onFocus={() => {
+                          setSearchContext('desktop'); // ADDED
+                          if (searchInputRef.current) {
+                            const rect = searchInputRef.current.getBoundingClientRect();
+                            setSearchDropdownLeft(rect.left);
+                            setSearchDropdownTop(rect.bottom + window.scrollY);
+                            setSearchDropdownWidth(rect.width);
+                          }
+                          if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
+                          setSearchDropdownVisible(true);
+                        }}
+                        onKeyDown={handleDesktopKeyDown}  // correct usage
+                        className={`search-input ${searchQuery.trim() ? 'has-value' : ''}`}
+                        placeholder=" "
+                        aria-label="Search query"
+                      />
+                      {/* typed-overlay: "Search for" light gray, typedPreview black */}
+                      {searchQuery.trim() === "" && (
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                          <span className="text-gray-400 text-sm">Search for</span>
+                          <span className="text-black text-sm">"{typedPreview}"</span>
                         </div>
                       )}
-                      {/* Mobile Menu Links */}
-                      <div className="space-y-3">
-                          <Link href="/location" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
-                              <FaLocationDot className="mr-2 text-customBlue" />Location
-                          </Link>
-                          <Link href="/wishlist" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
-                              <FaHeart className="mr-2 text-customBlue" />Wishlist
-                              {wishlistCount > 0 && (
-                                  <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{wishlistCount}</span>
-                              )}
-                          </Link>
-                          <Link href="/cart" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
-                              <FaShoppingCart className="mr-2 text-customBlue" />Cart
-                              {cartCount > 0 && (
-                                  <span className="ml-auto bg-customBlue text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
-                              )}
-                          </Link>
-                          {isLoggedIn && isAdmin && (
-                              <Link href="/admin/dashboard" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}><FaUserShield className="mr-2 text-customBlue" />Admin Panel</Link>
-                          )}
-                          {isLoggedIn ? (
-                              <>
-                                  <Link href="/order" className="flex items-center text-gray-700 p-2 rounded hover:bg-gray-200" onClick={() => setIsMobileMenuOpen(false)}>
-                                      <FaShoppingBag className="mr-2 text-customBlue" />My Orders
-                                  </Link>
-                                  <button onClick={handleLogout} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-200">
-                                      <IoLogOut className="mr-2 text-customBlue" />Logout
-                                  </button>
-                              </>
-                          ) : (
-                              <button onClick={() => { setShowAuthModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center text-gray-700 p-2 rounded hover:bg-gray-200">
-                                  <FiUser className="mr-2 text-customBlue" />Sign In
-                              </button>
-                          )}
-                      </div>
+                    </div>
+                    <button type="button" className="search-btn" style={{color:'#2453d3'}} onClick={handleSearch} aria-label="Search">
+                      <FaSearch />
+                    </button>
+                    <div className="shimmer" aria-hidden="true"></div>
+                    {/* DROPDOWN MOVED OUTSIDE TO SUPPORT MOBILE */ }
+                    {/* (was here previously) */}
+                  </div>
+                </div>
+                {/* Icons Group */}
+                <div className="flex items-center gap-[2rem] sm:gap-4">
+                    {/* Mobile Search Button (Hidden on desktop) */}
+                    <button onClick={toggleMobileMenu} className="sm:hidden text-customBlue">
+                        <FiSearch size={20} />
+                    </button>
 
-                      {/* Spacer & floating close button */}
-                      <div className="h-16" />
-                      <button
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="fixed bottom-4 right-4 bg-[#2453D3] text-white px-5 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-2 active:scale-95"
-                        aria-label="Close menu"
-                      >
-                        <FiX size={18} /> Close
-                      </button>
+                    {/* Feedback Icon */}
+                    <Link href="/feedback" className="hidden sm:flex items-center relative">
+                        <FiMessageSquare size={18} className="text-customBlue" />
+                    </Link>
+
+                    {/* Contact Icon */}
+                    <Link href="/contact" className="hidden sm:flex items-center relative">
+                        <FiPhoneCall size={18} className="text-customBlue" />
+                    </Link>
+
+                    {/* Location (Hidden on mobile) */}
+                    <Link href="/location" className="hidden sm:flex items-center relative">
+                        <FiMapPin size={18} className="text-customBlue" />
+                            {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Location</span> */}
+                    </Link>
+
+                    {/* Wishlist */}
+                    <Link href="/wishlist" className="flex items-center relative p-1 sm:p-0">
+                        <FiHeart size={18} className="text-customBlue" />
+                        {/* {wishlistCount > 0 && ( */}
+                            <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
+                                {wishlistCount}
+                            </span>
+                        {/* )} */}
+                        {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Wishlist</span> */}
+                    </Link>
+
+                    {/* Cart */}
+                    <Link href="/cart" className="flex items-center relative p-1 sm:p-0 ">
+                        <FiShoppingCart size={18} className="text-customBlue" />
+                        <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
+                            {cartCount}
+                        </span>
+                        {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Cart</span> */}
+                    </Link>
+
+                    {/* User Account */}
+                    <div className="relative" ref={dropdownRef}>
+                        {isLoggedIn ? (
+                            <>
+                                <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center text-black focus:outline-none p-1 sm:p-0">
+                                    <FiUser size={18} className="text-customBlue" />
+                                    <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">
+                                        Hi, {userData?.name || userData?.username || "User"}
+                                    </span>
+                                </button>
+                                {dropdownOpen && (
+                                    <div className="absolute right-0 mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
+                                        <div className="py-2 px-2">
+                                            {isAdmin && (
+                                                <>
+                                                    <Link href="/admin/dashboard" className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
+                                                        <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
+                                                            <FaUserShield className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                        </span>
+                                                        Admin Panel
+                                                    </Link>
+                                                </>
+                                            )}
+                                            <Link href="/order" className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
+                                                <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
+                                                    <FaShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                </span>My Orders</Link>
+                                            <hr className="my-2 border-gray-200" />
+                                            <button onClick={handleLogout} className="flex items-center gap-2 sm:gap-3 w-full text-left px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-red-50 transition-colors">
+                                                <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
+                                                    <IoLogOut className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                </span>Logout
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <button onClick={() => setShowAuthModal(true)} className="flex items-center text-black p-1 sm:p-0">
+                                <FiUser size={18} className="text-customBlue" />
+                                {/* <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">Sign In</span> */}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Menu (Hidden on desktop) */}
+            {isMobileMenuOpen && (
+                <div
+                  className="sm:hidden bg-white fixed inset-0 z-50 p-4 pt-3 rounded-lg shadow-lg overflow-y-auto transition-all duration-300"
+                  style={{ touchAction: 'auto', userSelect: 'auto', WebkitUserSelect: 'auto' }}
+                >
+                  {/* Internal sticky header */}
+                  <div className="flex items-center justify-between mb-3 sticky top-0 bg-white pb-2 border-b">
+                    <div className="flex items-center gap-2 text-customBlue font-semibold text-sm">
+                      <FiMenu size={18} />
+                      <span>Menu</span>
+                    </div>
+                    <button
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      aria-label="Close menu"
+                      className="p-2 rounded-full text-customBlue hover:bg-blue-50 active:bg-blue-100 focus:outline-none focus:ring focus:ring-blue-200"
+                    >
+                      <FiX size={22} />
+                    </button>
+                  </div>
+
+                  {/* Mobile Category Block (accordion) */}
+                  <div className="mt-3 bg-white rounded-md border border-gray-200 overflow-hidden">
+                    <div className="px-3 py-2 text-[12px] font-semibold tracking-wide text-gray-500 uppercase bg-gray-50">
+                      Browse Categories
+                    </div>
+
+                    <div className="divide-y divide-gray-100">
+                      {Array.isArray(categories) && categories.length > 0 ? (
+                        categories.map((cat) => {
+                          const isOpen = !!openCategories[cat._id];
+                          return (
+                            <div
+                              key={cat._id}
+                              className={isOpen ? "bg-blue-50/40" : "bg-white"}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => toggleMobileCategory(cat._id)}
+                                className={`w-full flex items-center justify-between px-3 py-3 text-sm ${
+                                  isOpen ? "text-blue-700" : "text-gray-800"
+                                }`}
+                              >
+                                <span className="truncate">{cat.category_name}</span>
+                                <FiChevronRight
+                                  className={`text-gray-500 transition-transform duration-200 ${
+                                    isOpen ? "rotate-90" : "rotate-0"
+                                  }`}
+                                  size={16}
+                                />
+                              </button>
+
+                              {isOpen && (
+                                <div className="pb-2">
+                                  {/* "All" link for the main category */}
+                                  <div className="px-4">
+                                    <Link
+                                      href={`/category/${encodeURIComponent(cat.category_slug)}`}
+                                      onClick={() => setIsMobileMenuOpen(false)}
+                                      className="block text-[13px] px-2 py-2 rounded text-blue-700 bg-blue-50 hover:bg-blue-100"
+                                    >
+                                      View all in {cat.category_name}
+                                    </Link>
+                                  </div>
+
+                                  {/* Immediate sub-categories */}
+                                  <div className="mt-1">
+                                    {Array.isArray(cat.subcategories) && cat.subcategories.length > 0 ? (
+                                      cat.subcategories.map((sub) => (
+                                        <button
+                                          key={sub._id}
+                                          type="button"
+                                          onClick={() =>
+                                            gotoMobileSubCategory(
+                                              cat.category_slug,
+                                              sub.category_slug
+                                            )
+                                          }
+                                          className="w-full text-left text-[13px] text-gray-700 hover:text-blue-700 hover:bg-blue-50 px-6 py-2"
+                                        >
+                                          {sub.category_name}
+                                        </button>
+                                      ))
+                                    ) : (
+                                      <div className="px-6 py-2 text-[12px] text-gray-500">
+                                        No subcategories
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="px-3 py-4 text-sm text-gray-500">
+                          Loading categories…
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* REMOVED: old mobile hover dropdown under swiper */}
+                  {/* (Was: hoveredCategory dropdown block for mobile – not needed for tap/expand UX) */}
+                </div>
+              )}
+
+              {/* Auth Modal */}
+              {showAuthModal && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                      <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
+                          <button onClick={() => { setShowAuthModal(false); setFormError(''); setError(''); setErrors({ login: {}, register: {} }); setLoginData({ email: "", password: "" }); setRegisterData({ name: "", email: "", mobile: "", password: "" }); }} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">
+                              &times;
+                          </button>
+                          <div className="flex gap-4 mb-6 border-b">
+                              <button className={`pb-2 px-1 ${activeTab === 'login' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('login')}>
+                                  Login
+                              </button>
+                              <button className={`pb-2 px-1 ${activeTab === 'register' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('register')}>
+                                  Register
+                              </button>
+                          </div>
+
+                           <form onSubmit={handleAuthSubmit} className="space-y-4">
+                       {activeTab === "register" && (
+          <>
+            <input
+              type="text"
+              placeholder="Name"
+              value={registerData.name}
+              onChange={(e) =>
+                setRegisterData({ ...registerData, name: e.target.value })
+              }
+              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.register.name ? "border-red-500" : ""
+              }`}
+            />
+            {errors.register.name && (
+              <p className="text-red-500 text-sm">{errors.register.name}</p>
+            )}
+          </>
+        )}                                <input
+          type="text"
+          placeholder="Email"
+          value={activeTab === "login" ? loginData.email : registerData.email}
+          onChange={(e) =>
+            activeTab === "login"
+              ? setLoginData({ ...loginData, email: e.target.value })
+              : setRegisterData({ ...registerData, email: e.target.value })
+          }
+          className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            errors[activeTab].email ? "border-red-500" : ""
+          }`}
+        />
+        {errors[activeTab].email && (
+          <p className="text-red-500 text-sm">{errors[activeTab].email}</p>
+        )}
+
+                                 {activeTab === "register" && (
+          <>
+            <input
+              type="tel"
+              placeholder="Mobile"
+              value={registerData.mobile}
+              onChange={(e) =>
+                setRegisterData({ ...registerData, mobile: e.target.value })
+              }
+              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.register.mobile ? "border-red-500" : ""
+              }`}
+            />
+            {errors.register.mobile && (
+              <p className="text-red-500 text-sm">{errors.register.mobile}</p>
+            )}
+          </>
+        )} <input
+          type="password"
+          placeholder="Password"
+          value={activeTab === "login" ? loginData.password : registerData.password}
+          onChange={(e) =>
+            activeTab === "login"
+              ? setLoginData({ ...loginData, password: e.target.value })
+              : setRegisterData({ ...registerData, password: e.target.value })
+          }
+          className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            errors[activeTab].password ? "border-red-500" : ""
+          }`}
+          minLength={6}
+        />
+        {errors[activeTab].password && (
+          <p className="text-red-500 text-sm">{errors[activeTab].password}</p>
+        )}
+                                {(formError || error) && (
+                                    <div className="text-red-500 text-sm">
+                                        {formError || error}
+                                    </div>
+                                )}
+                                <button type="submit" disabled={loadingAuth} className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200">
+                                    {loadingAuth ? 'Processing...' : activeTab === 'login' ? 'Login' : 'Register'}
+                                </button>
+
+                                {/* Moved Forgot Password button here - better placement */}
+                                {activeTab === 'login' && (
+                                    <div className="text-center mt-2">
+                                        <button type="button" onClick={() => { setShowAuthModal(false); setShowForgotPasswordModal(true); setForgotStep(1); setForgotPasswordEmail(formData.email || ''); setForgotOTP(''); setNewPassword(''); setConfirmPassword(''); setForgotPasswordMessage(''); setForgotPasswordError(''); }} className="text-sm text-blue-500 hover:underline">
+                                            Forgot Password?
+                                        </button>
+                                    </div>
+                                )}
+                            </form>
+                        </div>
                     </div>
                 )}
-                
-
-                {/* Auth Modal */}
-{showAuthModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 w-96 max-w-full relative">
-            {/* Close Button */}
-            <button
-              onClick={() => {
-                setShowAuthModal(false);
-                setFormError('');
-                setError('');
-                setErrors({ login: {}, register: {} });
-                setLoginData({ email: '', password: '' });
-                setRegisterData({ name: '', email: '', mobile: '', password: '', confirmPassword: '' });
-              }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
-            >
-              &times;
-            </button>
- 
-            {/* Tabs */}
-            <div className="flex gap-4 mb-6 border-b">
-              <button
-                className={`pb-2 px-1 ${
-                  activeTab === 'login'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setActiveTab('login')}
-              >
-                Login
-              </button>
-              <button
-                className={`pb-2 px-1 ${
-                  activeTab === 'register'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setActiveTab('register')}
-              >
-                Register
-              </button>
-            </div>
- 
-            {/* Form */}
-            <form onSubmit={handleAuthSubmit} className="space-y-4">
-              {/* Name (Register only) */}
-              {activeTab === 'register' && (
-                <div>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Name"
-                    value={registerData.name}
-                    onChange={handleRegisterChange}
-                    className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.register.name ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.register.name && (
-                    <p className="text-red-500 text-sm mt-1">{errors.register.name}</p>
-                  )}
-                </div>
-              )}
- 
-              {/* Email */}
-              <div>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={activeTab === 'login' ? loginData.email : registerData.email}
-                  onChange={activeTab === 'login' ? handleLoginChange : handleRegisterChange}
-                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors[activeTab].email ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-                {errors[activeTab].email && (
-                  <p className="text-red-500 text-sm mt-1">{errors[activeTab].email}</p>
-                )}
-              </div>
- 
-              {/* Mobile (Register only) */}
-              {activeTab === 'register' && (
-                <div>
-                  <input
-                    type="tel"
-                    name="mobile"
-                    placeholder="Mobile"
-                    value={registerData.mobile}
-                    onChange={handleRegisterChange}
-                    className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.register.mobile ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.register.mobile && (
-                    <p className="text-red-500 text-sm mt-1">{errors.register.mobile}</p>
-                  )}
-                </div>
-              )}
- 
-              {/* Password */}
-              <div>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  value={activeTab === 'login' ? loginData.password : registerData.password}
-                  onChange={activeTab === 'login' ? handleLoginChange : handleRegisterChange}
-                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors[activeTab].password ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-                {errors[activeTab].password && (
-                  <p className="text-red-500 text-sm mt-1">{errors[activeTab].password}</p>
-                )}
-              </div>
- 
-              {/* Confirm Password (Register only) */}
-              {activeTab === 'register' && (
-                <div>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    placeholder="Confirm Password"
-                    value={registerData.confirmPassword}
-                    onChange={handleRegisterChange}
-                    className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.register.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.register.confirmPassword && (
-                    <p className="text-red-500 text-sm mt-1">{errors.register.confirmPassword}</p>
-                  )}
-                </div>
-              )}
- 
-              {/* Global Form Error */}
-              {(formError || error) && (
-                <div className="text-red-500 text-sm py-2">{formError || error}</div>
-              )}
- 
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={loadingAuth || Object.keys(errors[activeTab]).length > 0}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200"
-              >
-                {loadingAuth
-                  ? 'Processing...'
-                  : activeTab === 'login'
-                  ? 'Login'
-                  : 'Register'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
                 {showForgotPasswordModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg p-6 w-96 max-w-full relative">
@@ -2100,7 +1888,7 @@ const [registerData, setRegisterData] = useState({
                                     <SwiperSlide key={category._id} className="!w-auto">
                                         <div ref={(el) => (slideRefs.current[category._id] = el)} onMouseEnter={() => handleMouseEnter(category._id)} onMouseLeave={() => startHide(120)} className="px-5 py-2 flex flex-col items-center text-center" >
                                             <Link href={`/category/${category.category_slug}`} className="text-sm text-base text-white hover:text-orange-500 whitespace-nowrap" 
-                                            
+                                                    
                                             >
                                                 {category.category_name}
                                             </Link>
