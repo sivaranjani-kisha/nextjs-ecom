@@ -1708,6 +1708,7 @@ const fetchBrand = async () => {
     </div>
   )}
   {/* Buy Now */}
+ {product.stock_status === "In Stock" && (
   <button
     onClick={handleBuyNow}
     className="w-full bg-white hover:bg-customBlue hover:text-white text-customBlue border border-blue-200 font-semibold py-3 rounded-md shadow-md flex items-center justify-center gap-3"
@@ -1715,6 +1716,8 @@ const fetchBrand = async () => {
     <FaStore className="h-5 w-5" />
     <span>Buy Now</span>
   </button>
+)}
+
 
   {/* Add to Cart */}
   <ProductAddtoCart
