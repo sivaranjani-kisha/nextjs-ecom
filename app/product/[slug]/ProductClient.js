@@ -2,8 +2,7 @@
 
 
 import ProductDetailsSection from "@/components/ProductDetailsSection";
-import { useCart } from '@/context/CartContext';
-import { useModal } from '@/context/ModalContext';
+// import RelatedProducts from "@/components/RelatedProducts";
 import {  useEffect, useState, useRef, useCallback } from "react";
 import { Icon } from '@iconify/react';
 import { useParams } from "next/navigation";
@@ -14,6 +13,8 @@ import { FiShoppingCart } from "react-icons/fi";
 import { TbTruckDelivery } from "react-icons/tb";
 import { IoFastFoodOutline, IoReload, IoCardOutline, IoShieldCheckmark, IoStorefront } from "react-icons/io5";
 import Link from "next/link";
+import { useCart } from '@/context/CartContext';
+import { useModal } from '@/context/ModalContext';
 import ProductCard from "@/components/ProductCard";
 import ProductAddtoCart from "@/components/ProductAddtoCart"
 import Addtocart from "@/components/AddToCart";
@@ -72,66 +73,118 @@ const handleIncrease = () => {
 //     if (categoryId) fetchCategoryProducts();
 //   }, [categoryId]);
 
+
+
 const { updateCartCount } = useCart();
   const { openAuthModal } = useModal();
+const handleBuyNow = async () => {
+  console.log("Buying now with warranty:", selectedWarranty, selectedExtendedWarranty);
+  try {
+    const token = localStorage.getItem("token");
 
-  const handleBuyNow = async () => {
-    try {
-      const token = localStorage.getItem("token");
+    // ✅ Check authentication
+    const response = await fetch("/api/auth/check", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
 
-      // ✅ Check authentication
-      const response = await fetch('/api/auth/check', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        }
+    const data = await response.json();
+    if (!data.loggedIn) {
+      openAuthModal({
+        error: "Please log in to continue.",
+        onSuccess: () => handleBuyNow(), // retry on success
       });
-      const data = await response.json();
-      if (!data.loggedIn) {
-        openAuthModal({
-          error: 'Please log in to continue.',
-          onSuccess: () => handleBuyNow(), // retry on success
-        });
-        return;
-      }
+      return;
+    }
 
-      // ✅ Add to cart
-      const cartResponse = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ productId: product._id, quantity }),
-      });
+    // ✅ Add main product
+    const cartResponse = await fetch("/api/cart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        productId: product._id,
+        quantity,
+        selectedWarranty: selectedWarranty,
+        selectedExtendedWarranty: selectedExtendedWarranty,
+      }),
+    });
 
-      if (!cartResponse.ok) {
-        throw new Error('Failed to add to cart');
-      }
+    if (!cartResponse.ok) {
+      throw new Error("Failed to add main product to cart");
+    }
 
-      const cartData = await cartResponse.json();
-      updateCartCount(cartData.cart.totalItems);
+    // ✅ Add frequent & related products
+    const additionalProducts = [
+      ...selectedFrequentProducts.map((p) => p._id),
+      ...selectedRelatedProducts.map((p) => p._id),
+    ];
 
-      // ✅ Save buy now state in localStorage
-      localStorage.setItem(
-        "buyNowData",
-        JSON.stringify({
-          cart: {
-            items: [{ ...product, quantity }],
-          },
-          total: product.special_price > 0 ? product.special_price : product.price,
+    if (additionalProducts.length > 0) {
+      await Promise.all(
+        additionalProducts.map(async (id) => {
+          const res = await fetch("/api/cart", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ productId: id, quantity: 1 }),
+          });
+          if (!res.ok) throw new Error("Failed to add extra product");
         })
       );
-
-      // ✅ Redirect
-      window.location.href = "/checkout";
-    } catch (err) {
-      console.error("Buy Now error:", err);
     }
-  };
+
+    const cartData = await cartResponse.json();
+    updateCartCount(cartData.cart.totalItems + additionalProducts.length);
+
+    // ✅ Build Buy Now items
+    const items = [
+  {
+    ...product,
+    quantity,
+    warranty: selectedWarranty || 0,             // ✅ add warranty
+    extendedWarranty: selectedExtendedWarranty || 0, // ✅ add extended warranty
+  },
+  ...selectedFrequentProducts.map((p) => ({ ...p, quantity: 1 })),
+  ...selectedRelatedProducts.map((p) => ({ ...p, quantity: 1 })),
+];
 
 
+    const total = items.reduce((sum, item) => {
+  const basePrice =
+    (item.special_price && item.special_price > 0
+      ? item.special_price
+      : item.price) * item.quantity;
+
+  const warrantyCost = (item.warranty || 0) * item.quantity;
+  const extendedCost = (item.extendedWarranty || 0) * item.quantity;
+
+  return sum + basePrice + warrantyCost + extendedCost;
+}, 0);
+
+
+    // ✅ Save Buy Now state in localStorage
+    localStorage.setItem(
+      "buyNowData",
+      JSON.stringify({
+        cart: { items },
+        total,
+      })
+    );
+
+    // ✅ Redirect
+    window.location.href = "/checkout";
+  } catch (err) {
+    console.error("Buy Now error:", err);
+  }
+};
 
 
 
@@ -185,6 +238,8 @@ const toggleFrequentProduct = (product) => {
   //     fetchRelatedProducts(product._id);
   //   }
   // }, [product]);
+
+  
 
 
   const categoryId = product?.category;
@@ -628,34 +683,32 @@ const fetchBrand = async () => {
         {/* Thumbnails */}
        {/* Thumbnails */}
 <div className="flex gap-2 mt-3 overflow-x-auto pb-2 -mt-1">
-  {product.images && product.images.length > 0 ? (
-    product.images.map((image, index) => (
-      <div key={index} className="flex-shrink-0">
-        <img
-          src={
-            image.startsWith("http") ||
-            image.startsWith("blob:") ||
-            image.startsWith("data:")
-              ? image
-              : `/uploads/products/${image || "no-image.jpg"}`
-          }
-          alt={`Thumbnail ${index + 1}`}
-          className="w-20 h-20 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300 object-cover"
-          onClick={() => handleThumbnailClick(index)}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = "/no-image.jpg";
-          }}
-        />
-      </div>
-    ))
-  ) : (
-    <img
-      src="/no-image.jpg"
-      alt="No Thumbnail"
-      className="w-20 h-20 border border-gray-400 rounded-lg object-cover"
-    />
-  )}
+  {product.images && product.images.filter(img => img && img.trim() !== "").length > 0 && (
+  <div className="flex gap-2 mt-3 overflow-x-auto pb-2 -mt-1">
+    {product.images
+      .filter(img => img && img.trim() !== "") // remove empty or invalid entries
+      .map((image, index) => (
+        <div key={index} className="flex-shrink-0">
+          <img
+            src={
+              image.startsWith("http") ||
+              image.startsWith("blob:") ||
+              image.startsWith("data:")
+                ? image
+                : `/uploads/products/${image}`
+            }
+            alt={`Thumbnail ${index + 1}`}
+            className="w-20 h-20 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300 object-cover"
+            onClick={() => handleThumbnailClick(index)}
+            onError={(e) => {
+              e.currentTarget.style.display = "none"; // hide if broken
+            }}
+          />
+        </div>
+      ))}
+  </div>
+)}
+
 </div>
 
 {/* Lightbox Modal */}
@@ -743,11 +796,11 @@ const fetchBrand = async () => {
                   {/* Price Section */}
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold text-blue-800">
-                      Rs.{product.special_price || product.price}
+                     Rs.{Math.round(product.special_price || product.price)}
                     </span>
                     {product.special_price && (
                       <span className="text-gray-800 line-through text-sm">
-                        Rs.{product.price}
+                        Rs.{Math.round(product.price)}
                       </span>
                     )}
                   </div>
@@ -1553,8 +1606,8 @@ const fetchBrand = async () => {
     <h2 className="text-sm font-bold text-customBlue underline mb-2">
       Related Products
     </h2>
-    {relatedProducts.filter(item => item.stock_status === "In Stock").slice(0, 3).map((item,index) => (
-      <div key={`${item._id}-${index}`} className="flex items-start mb-4">
+    {relatedProducts.filter(item => item.stock_status === "In Stock").slice(0, 3).map((item) => (
+      <div key={item._id} className="flex items-start mb-4">
         <input
           type="checkbox"
           className="mt-2 mr-3"
@@ -1629,27 +1682,57 @@ const fetchBrand = async () => {
  
   {/* ================= Buttons Block (Below Box) ================= */}
   <div className="w-full space-y-3">
-    {/* Buy Now */}
-    <button
-      onClick={handleBuyNow}
-      className="w-full bg-white hover:bg-customBlue hover:text-white text-customBlue border border-blue-200 font-semibold py-3 rounded-md shadow-md flex items-center justify-center gap-3"
-    >
-      <FaStore className="h-5 w-5" />
-      <span>Buy Now</span>
-    </button>
- 
-    {/* Add to Cart */}
-    <ProductAddtoCart
-      productId={product._id}
-      stockQuantity={product.quantity}
-      quantity={quantity}
-      additionalProducts={selectedFrequentProducts.map((p) => p._id)}
-      warranty={selectedWarranty}
-      extendedWarranty={selectedExtendedWarranty}
-      selectedFrequentProducts={selectedFrequentProducts}
-      className="w-full bg-customBlue hover:bg-blue-700 text-white font-semibold py-3 rounded-md shadow-md text-center"
-    />
-  </div>
+    {/* Cart total */}
+
+    {(selectedRelatedProducts.length > 0 ||
+    selectedFrequentProducts.length > 0 ||
+    selectedWarranty ||
+    selectedExtendedWarranty) && (
+    <div className="w-full bg-customBlue text-white border border-gray-400 font-semibold py-2 rounded-md shadow-md flex items-center justify-between px-4">
+      {/* Left - Icon + Label */}
+      <div className="flex items-center gap-2">
+        <FaCartPlus className="text-white w-5 h-5" />
+        <span className="text-md font-semibold">Cart Total</span>
+      </div>
+
+      {/* Right - Price + View Cart */}
+      <div className="flex flex-col items-end leading-tight">
+        <span className="text-md font-semibold">₹{cartTotal.toLocaleString()}</span>
+        <Link
+          href="/cart"
+          className="text-[12px] text-white hover:underline mt-0.5"
+        >
+          View Cart
+        </Link>
+      </div>
+    </div>
+  )}
+  {/* Buy Now */}
+  <button
+    onClick={handleBuyNow}
+    className="w-full bg-white hover:bg-customBlue hover:text-white text-customBlue border border-blue-200 font-semibold py-3 rounded-md shadow-md flex items-center justify-center gap-3"
+  >
+    <FaStore className="h-5 w-5" />
+    <span>Buy Now</span>
+  </button>
+
+  {/* Add to Cart */}
+  <ProductAddtoCart
+    productId={product._id}
+    stockQuantity={product.quantity}
+    quantity={quantity}
+    additionalProducts={[
+      ...selectedFrequentProducts.map((p) => p._id),
+      ...selectedRelatedProducts.map((p) => p._id),
+    ]}
+    warranty={selectedWarranty}
+    selectedRelatedProducts={selectedRelatedProducts}
+    extendedWarranty={selectedExtendedWarranty}
+    selectedFrequentProducts={selectedFrequentProducts}
+    className="w-full bg-customBlue hover:bg-blue-700 text-white font-semibold py-3 rounded-md shadow-md text-center"
+  />
+</div>
+
 </div>
         </div>
         
