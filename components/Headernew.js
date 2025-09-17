@@ -1549,6 +1549,7 @@ return (
                               {isOpen && (
                                 <div className="pb-2">
                                   {/* "All" link for the main category */}
+                                  {/* Removed: 
                                   <div className="px-4">
                                     <Link
                                       href={`/category/${encodeURIComponent(cat.category_slug)}`}
@@ -1558,7 +1559,7 @@ return (
                                       View all in {cat.category_name}
                                     </Link>
                                   </div>
-
+                                  */}
                                   {/* Immediate sub-categories */}
                                   <div className="mt-1">
                                     {Array.isArray(cat.subcategories) && cat.subcategories.length > 0 ? (
@@ -1755,7 +1756,7 @@ return (
                                         </button>
                                     </form>
                                 </>
-                            )}
+                                                       )}
 
                             {/* STEP 2: Enter OTP */}
                             {forgotStep === 2 && (
