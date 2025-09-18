@@ -45,65 +45,49 @@ export async function POST(req) {
         const existingProduct = await Product.findOne({
             item_code: item.name,
         });
-         const existingBrand = await Brand.findOne({ brand_name: item.brand });
-          const brand_id = existingBrand?._id?.toString() || null;
-          let Status = "Active";
-          let item_Status = item.status.toLowerCase();
-            if (item_Status == "inactive") {
-                Status = "Inactive";
-            }
         if (existingProduct) {
-             const updateFields = {
-                price: parseFloat(item.MRP),
-                special_price: parseFloat(item.SellingPrice),
-                quantity: parseFloat(item.stock),
-                status: Status,
-            };
-            if(brand_id) {
-                updateFields['brand'] = brand_id;
-            }
             await Product.updateOne(
                 {
                  item_code: item.name 
                 },
-                { $set: updateFields }
+                {
+                    $set: {
+                        price: parseFloat(item.MRP),
+                        special_price: parseFloat(item.SellingPrice),
+                        quantity: parseFloat(item.stock),
+                        movement: item.movement,
+                    },
+                }
                 
             );
         }else{
             const existingProductall = await Product_all.findOne({
                 item_code: item.name,
             });
-             const updateFields = {
-                price: parseFloat(item.MRP),
-                special_price: parseFloat(item.SellingPrice),
-                quantity: parseFloat(item.stock),
-                status: Status,
-            };
-            if(brand_id) {
-                updateFields['brand'] = brand_id;
-            }
             if (existingProductall) {
                 await Product_all.updateOne(
                     {
                     item_code: item.name 
                     },
                     {
-                        $set: updateFields,
+                        $set: {
+                            price: parseFloat(item.MRP),
+                            special_price: parseFloat(item.SellingPrice),
+                            quantity: parseFloat(item.stock),
+                            movement: item.movement,
+                        },
                     }
                     
                 );
             }else{
-                  const updateFields = {
+                await Product_all.create({
                     item_code: item.name,
                     price: parseFloat(item.MRP),
                     special_price: parseFloat(item.SellingPrice),
                     quantity: parseFloat(item.stock),
-                    status: Status,
-            };
-            if(brand_id) {
-                updateFields['brand'] = brand_id;
-            }
-                await Product_all.create(updateFields);
+                    brand   : item.brand,
+                    movement: item.movement,
+                });
 
             }
 
