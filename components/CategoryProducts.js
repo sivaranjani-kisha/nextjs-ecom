@@ -126,10 +126,13 @@ const CategoryProducts = () => {
                     )}
 
                     {/* Category Products Section */}
-                    <div className={`bg-white rounded-lg flex flex-col md:flex-row mb-8 ${alignment === "right" ? "md:flex-row-reverse" : ""}`}>
+                    <div className={`bg-white flex flex-col md:flex-row mb-8 ${alignment === "right" ? "md:flex-row-reverse" : ""}`}>
                       {/* Category Banner */}
                       <div className="flex-shrink-0 relative w-full md:w-[350px] h-48 sm:h-64 md:h-auto">
-                        <div className="absolute inset-0 bg-cover bg-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none"
+                        <div className={`absolute inset-0 bg-cover bg-center    ${alignment === "right" 
+      ? "md:rounded-tr-lg md:rounded-br-lg" 
+      : "md:rounded-tl-lg md:rounded-bl-lg"
+    }`}
                           style={{ backgroundImage: `url(${categoryProduct.categoryImage || categoryStyle.backgroundImage})` }}
                         />
                         <div className="relative z-10 h-full flex flex-col justify-end p-4 sm:p-6 text-white">
