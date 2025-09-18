@@ -61,6 +61,7 @@ export async function POST(req) {
                 
             );
         }else{
+          if(item.Status == 'Yes'){
             const existingProductall = await Product_all.findOne({
                 item_code: item.name,
             });
@@ -90,6 +91,7 @@ export async function POST(req) {
                 });
 
             }
+          }
 
         }
     }
