@@ -1084,6 +1084,21 @@ const renderDesktopSuggestionItem = (item, idx) => {
 const [loadedCategoryIds, setLoadedCategoryIds] = useState({});
 const [openCategories, setOpenCategories] = useState({});
 
+// NEW: unified nodes for mobile = categories + hoveredCategory.subcategories
+const nodes = useMemo(() => {
+  const base = Array.isArray(categories) ? categories : [];
+  const extra = (hoveredCategory && Array.isArray(hoveredCategory.subcategories))
+    ? hoveredCategory.subcategories
+    : [];
+
+  if (!extra.length) return base;
+
+  const map = new Map();
+  base.forEach(n => { if (n && n._id) map.set(n._id, n); });
+  extra.forEach(n => { if (n && n._id && !map.has(n._id)) map.set(n._id, n); });
+  return Array.from(map.values());
+}, [categories, hoveredCategory]);
+
 // Ensures the subcategories for a category are present by rebuilding from cache/API if needed
 const ensureSubcategories = useCallback(async (categoryId) => {
   if (!categoryId) return;
@@ -1177,13 +1192,16 @@ function renderCategoryLevel(nodes, ancestorSlugs = [], level = 0) {
         const slugs = [...ancestorSlugs, nodeSlug];
         const href = getNodeHref(ancestorSlugs, nodeSlug, level);
 
+        // ADDED: make spacing natural if no toggle button
+        const rowJustify = hasChildren ? "justify-between" : "justify-start";
+
         return (
           <div
             key={node._id}
             className={`${isOpen ? "bg-blue-50/40" : "bg-white"} hover:bg-[#f2f2f2]`}
           >
             <div
-              className={`w-full flex items-center justify-between ${
+              className={`w-full flex items-center ${rowJustify} ${
                 level === 0 ? "px-3 py-3 text-sm" : "pl-5 pr-3 py-2 text-[13px]"
               } ${
                 isOpen
@@ -1200,27 +1218,47 @@ function renderCategoryLevel(nodes, ancestorSlugs = [], level = 0) {
                 {node.category_name || "Category"}
               </Link>
 
-              <button
-                type="button"
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  // Make sure children are there before opening to avoid empty flashes
-                  await ensureSubcategories(node._id);
-                  setOpenCategories((prev) => ({ ...prev, [node._id]: !prev[node._id] }));
-                }}
-                aria-label="Toggle"
-                className="ml-2"
-              >
-                <FiChevronRight
-                  className={`text-white rounded-full p-1 transition-transform duration-200 bg-[#2453D3] ${
-                    isOpen ? "rotate-90" : "rotate-0"
-                  }`}
-                  size={18}
-                />
-              </button>
+              {/* CHANGED: Hide the toggle button if this is the last level */}
+              {hasChildren && (
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await ensureSubcategories(node._id);
+
+                    // One-by-one open for top-level: only one top-level open at a time
+                    setOpenCategories((prev) => {
+                      const next = { ...prev };
+                      const willOpen = !prev[node._id];
+
+                      if (level === 0) {
+                        // close all, then open this one if not already open
+                        Object.keys(next).forEach((k) => { delete next[k]; });
+                        if (willOpen) next[node._id] = true;
+                        return next;
+                      }
+
+                      // nested levels can open independently
+                      next[node._id] = willOpen;
+                      return next;
+                    });
+                  }}
+                  aria-label="Toggle"
+                  className="ml-2"
+                >
+                  <FiChevronRight
+                    className={`text-white rounded-full p-1 transition-transform duration-200 bg-[#2453D3] ${
+                      isOpen ? "rotate-90" : "rotate-0"
+                      
+                    }`}
+                    size={18}
+                  />
+                </button>
+              )}
             </div>
 
-            {isOpen && Array.isArray(node.subcategories) && node.subcategories.length > 0 && (
+            {/* CHANGED: Render children only if there are any */}
+            {isOpen && hasChildren && (
               <div className="pb-2">
                 {renderCategoryLevel(node.subcategories, slugs, level + 1)}
               </div>
@@ -1232,78 +1270,13 @@ function renderCategoryLevel(nodes, ancestorSlugs = [], level = 0) {
   );
 }
 
-// Mobile-only: keep categories available when menu opens (retry + cached fallback)
+// Prefetch subcategories for a few top categories when the mobile menu opens
 useEffect(() => {
   if (!isMobileMenuOpen) return;
-  let cancelled = false;
-  const NESTED_KEY = "categories_nested_cache";
+  const ids = (Array.isArray(categories) ? categories : []).slice(0, 5).map(c => c._id);
+  ids.forEach((id) => { ensureSubcategories(id); });
+}, [isMobileMenuOpen, categories, ensureSubcategories]);
 
-  const tryLoadNestedFromCache = () => {
-    const cached = loadCache(NESTED_KEY);
-    const fresh =
-      cached &&
-      (Date.now() - cached.ts) < CACHE_TTL_MS &&
-      Array.isArray(cached.data) &&
-      cached.data.length > 0;
-    if (fresh && !cancelled) {
-      setCategories((prev) => (Array.isArray(prev) && prev.length ? prev : cached.data));
-      return true;
-    }
-    return false;
-  };
-
-  const buildNested = (rawData) => {
-    const active = Array.isArray(rawData)
-      ? rawData.filter((c) => c.status === "Active")
-      : [];
-    const map = {};
-    active.forEach((c) => {
-      map[c._id] = { ...c, subcategories: [] };
-    });
-    const nested = [];
-    active.forEach((c) => {
-      const node = map[c._id];
-      if (c.parentid === "none" || !c.parentid || !map[c.parentid]) {
-        nested.push(node);
-      } else {
-        map[c.parentid].subcategories.push(node);
-      }
-    });
-    saveCache(NESTED_KEY, nested);
-    return nested;
-  };
-
-  const fetchWithRetry = async (retries = 2) => {
-    for (let i = 0; i <= retries; i++) {
-      try {
-        const res = await fetch("/api/categories/get");
-        if (!res.ok) throw new Error("Bad status");
-        const raw = await res.json();
-        const nested = buildNested(raw);
-        if (!cancelled && Array.isArray(nested) && nested.length) {
-          setCategories(nested);
-          return true;
-        }
-      } catch {
-        await new Promise((r) => setTimeout(r, 400 * (i + 1)));
-      }
-    }
-    return false;
-  };
-
-  if (!Array.isArray(categories) || categories.length === 0) {
-    if (!tryLoadNestedFromCache()) {
-      fetchWithRetry().then((ok) => {
-        if (!ok) tryLoadNestedFromCache();
-      });
-    }
-  }
-
-  return () => {
-    cancelled = true;
-  };
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [isMobileMenuOpen]);
     return (
       <>
         {/* Add suppressHydrationWarning to silence residual attribute diffs */}
@@ -1329,7 +1302,7 @@ useEffect(() => {
            @media (max-width:900px){:root{--height:36px}.search-btn{width:48px;color:#2453d3;}.search-select{min-width:100px}}
         `}</style>
           {/* Main Header */}
-          <div className={`${isMobileMenuOpen ? "fixed inset-0 mt-0 pt-0 z-50 overflow-y-auto" : "bg-white px-4 sm:px-6 md:px-6 py-1 sticky top-0 z-40"}`}>
+        <div className={`${isMobileMenuOpen ? "fixed inset-0 mt-0 pt-0 z-50 overflow-y-auto" : "bg-white px-4 sm:px-6 md:px-6 py-1 sticky top-0 z-40"}`}>
               {/* NEW MOBILE TOP ROW (from reference) */}
               <div className="sm:hidden flex items-center justify-between w-full relative">
                   <Link href="/" className="p-1 rounded-lg">
@@ -1392,271 +1365,269 @@ useEffect(() => {
                   </div>
               </div>
 
-              {/* NEW MOBILE SEARCH BAR */}
-              <div className="sm:hidden mt-2 -mx-4 px-0">
-                <div className="bg-[#2453D3] w-full px-3 py-3">
-                  <div className="flex items-center bg-white h-12 rounded-xl border border-gray-300 shadow-sm overflow-hidden w-full transition-all duration-150 focus-within:border-[#2453d3] focus-within:shadow-[0_0_0_2px_rgba(36,83,211,0.15)]">
-                    {/* ADDED category dropdown for mobile */}
-                    <select
-                      value={selectedCategory}
-                      onChange={(e)=>setSelectedCategory(e.target.value)}
-                      className="h-full text-[11px] xs:text-xs bg-white px-2 pr-3 border-r border-gray-300 outline-none shrink-0 max-w-[110px]" 
-                      aria-label="Category">
-                      <option value="All Category">All Category</option>
-                      {categories.map(cat => (
-                        <option key={cat._id} value={cat.category_name}>{cat.category_name}</option>
-                      ))}
-                    </select>
-                    <div className="flex-1 relative h-full flex items-center">
-                      <input
-                        type="search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                        placeholder=" "
-                        className="w-full h-full text-sm outline-none bg-transparent px-1 focus:text-[#111] placeholder-transparent"
-                        ref={searchInputRef}
-                        onFocus={() => {
-                          setSearchContext('mobileTop'); // ADDED
-                          if (searchInputRef.current) {
-                            const rect = searchInputRef.current.getBoundingClientRect();
-                            setSearchDropdownLeft(rect.left);
-                            setSearchDropdownTop(rect.bottom + window.scrollY);
-                            setSearchDropdownWidth(rect.width);
-                          }
-                          if (searchQuery.trim().length >= 1) fetchSuggestions(searchQuery);
-                          setSearchDropdownVisible(true);
-                        }}
-                      />
-                      {searchQuery.trim() === "" && (
-                        <div className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] pointer-events-none">
-                          <span className="text-gray-400">Search for</span>
-                          <span className="text-gray-900">"{typedPreview}"</span>
-                        </div>
-                      )}
-                    </div>
-                 
-                    <button
-                      onClick={handleSearch}
-                      aria-label="Search"
-                      className="h-full px-4 bg-[#2453D3] text-white flex items-center justify-center active:scale-[0.97] transition"
-                    >
-                      <FaSearch size={16} />
-                    </button>
+        {/* NEW MOBILE SEARCH BAR */}
+        <div className="sm:hidden mt-2 -mx-4 px-0">
+          <div className="bg-[#2453D3] w-full px-3 py-3">
+            <div className="flex items-center bg-white h-12 rounded-xl border border-gray-300 shadow-sm overflow-hidden w-full transition-all duration-150 focus-within:border-[#2453d3] focus-within:shadow-[0_0_0_2px_rgba(36,83,211,0.15)]">
+              {/* ADDED category dropdown for mobile */}
+              <select
+                value={selectedCategory}
+                onChange={(e)=>setSelectedCategory(e.target.value)}
+                className="h-full text-[11px] xs:text-xs bg-white px-2 pr-3 border-r border-gray-300 outline-none shrink-0 max-w-[110px]" 
+                aria-label="Category">
+                <option value="All Category">All Category</option>
+                {categories.map(cat => (
+                  <option key={cat._id} value={cat.category_name}>{cat.category_name}</option>
+                ))}
+              </select>
+              <div className="flex-1 relative h-full flex items-center">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder=" "
+                  className="w-full h-full text-sm outline-none bg-transparent px-1 focus:text-[#111] placeholder-transparent"
+                  ref={searchInputRef}
+                  onFocus={() => {
+                    setSearchContext('mobileTop'); // ADDED
+                    if (searchInputRef.current) {
+                      const rect = searchInputRef.current.getBoundingClientRect();
+                      setSearchDropdownLeft(rect.left);
+                      setSearchDropdownTop(rect.bottom + window.scrollY);
+                      setSearchDropdownWidth(rect.width);
+                    }
+                    if (searchQuery.trim().length >= 1) fetchSuggestions(searchQuery);
+                    setSearchDropdownVisible(true);
+                  }}
+                />
+                {searchQuery.trim() === "" && (
+                  <div className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] pointer-events-none">
+                    <span className="text-gray-400">Search for</span>
+                    <span className="text-gray-900">"{typedPreview}"</span>
                   </div>
-                </div>
+                )}
               </div>
+            
+              <button
+                onClick={handleSearch}
+                aria-label="Search"
+                className="h-full px-4 bg-[#2453D3] text-white flex items-center justify-center active:scale-[0.97] transition"
+              >
+                <FaSearch size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
 
-              {/* MOBILE TOP SUGGESTIONS (outside menu) */}
-              {searchDropdownVisible && searchContext === 'mobileTop' && !isMobileMenuOpen && (
-                <div ref={searchDropdownRef} className="sm:hidden absolute z-[70] left-0 right-0 px-3 mt-1">
-                  <div className="bg-white rounded-lg shadow-lg border max-h-72 overflow-y-auto">
-                    <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-gray-500">
-                      PRODUCTS
-                    </div>
-                    <div className="px-3 pb-2">
-                      {suggestions.length > 0
-                        ? suggestions.map(renderSuggestionItem)
-                        : (searchQuery.trim() && (
-                            <div className="py-10 flex flex-col items-center justify-center text-gray-500">
-                        {/* Icon */}
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="w-12 h-12 mb-3 text-gray-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
+        {/* MOBILE TOP SUGGESTIONS (outside menu) */}
+        {searchDropdownVisible && searchContext === 'mobileTop' && !isMobileMenuOpen && (
+          <div ref={searchDropdownRef} className="sm:hidden absolute z-[70] left-0 right-0 px-3 mt-1">
+            <div className="bg-white rounded-lg shadow-lg border max-h-72 overflow-y-auto">
+              <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-gray-500">
+                PRODUCTS
+              </div>
+              <div className="px-3 pb-2">
+                {suggestions.length > 0
+                  ? suggestions.map(renderSuggestionItem)
+                  : (searchQuery.trim() && (
+                      <div className="py-10 flex flex-col items-center justify-center text-gray-500">
+                  {/* Icon */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-12 h-12 mb-3 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
 
-                        {/* Message */}
-                        <p className="text-sm font-medium">No products found</p>
-                        <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
-                      </div>
+                  {/* Message */}
+                  <p className="text-sm font-medium">No products found</p>
+                  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
+                </div>
 
-                        ))
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        )}
+        {/* DESKTOP ROW (unchanged original content) */}
+        <div className="hidden sm:flex justify-between items-center">
+            {/* Logo (Hidden on mobile) */}
+            <div className="hidden sm:block mr-10 bg-white py-2 rounded-lg">
+                <Link href="/index" className="mx-auto">
+                    <img src="/user/bea-new.png" alt="Logo" className="h-auto w-sm" width={70} height={45} />
+                </Link>
+            </div>
+
+            {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
+            <div className="search-bar relative hidden sm:flex flex-1 w-full max-w-[900px] mx-auto items-center bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200" role="search" style={{minHeight: '40px', display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            background: 'var(--bg)',
+            borderRadius: '10px',
+            padding: '4px 8px',
+            border: '3px solid var(--outline)',
+            boxShadow: 'var(--shadow)',
+            transition:
+              'box-shadow .25s ease, transform .12s ease, border-color .18s ease',
+            width: '100%',
+            maxWidth: '900px',
+            margin: '0 auto',}}>
+              <div className="search-bar-inner" style={{ position: 'relative', width: '100%' }}>
+                <div className="select-wrap">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="search-select"
+                    aria-label="Search category"
+                  >
+                    <option value="All Category">All Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat._id} value={cat.category_name}>
+                        {cat.category_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {/* input wrapper with absolute overlay */}
+                <div className="relative flex-1">
+                  <input
+                    type="search"
+                    name="q"
+                    id="q"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    ref={searchInputRef}
+                    onFocus={() => {
+                      setSearchContext('desktop'); // ADDED
+                      if (searchInputRef.current) {
+                        const rect = searchInputRef.current.getBoundingClientRect();
+                        setSearchDropdownLeft(rect.left);
+                        setSearchDropdownTop(rect.bottom + window.scrollY);
+                        setSearchDropdownWidth(rect.width);
                       }
+                      if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
+                      setSearchDropdownVisible(true);
+                    }}
+                    onKeyDown={handleDesktopKeyDown}  // correct usage
+                    className={`search-input ${searchQuery.trim() ? 'has-value' : ''}`}
+                    placeholder=" "
+                    aria-label="Search query"
+                  />
+                  {/* typed-overlay: "Search for" light gray, typedPreview black */}
+                  {searchQuery.trim() === "" && (
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                      <span className="text-gray-400 text-sm">Search for</span>
+                      <span className="text-black text-sm">"{typedPreview}"</span>
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
+                <button type="button" className="search-btn" style={{color:'#2453d3'}} onClick={handleSearch} aria-label="Search">
+                  <FaSearch />
+                </button>
+                <div className="shimmer" aria-hidden="true"></div>
+                {/* DROPDOWN MOVED OUTSIDE TO SUPPORT MOBILE */ }
+                {/* (was here previously) */}
+              </div>
+            </div>
+            {/* Icons Group */}
+            <div className="flex items-center gap-[2rem] sm:gap-4">
+                {/* Mobile Search Button (Hidden on desktop) */}
+                <button onClick={toggleMobileMenu} className="sm:hidden text-customBlue">
+                    <FiSearch size={20} />
+                </button>
 
-              {/* DESKTOP ROW (unchanged original content) */}
-              <div className="hidden sm:flex justify-between items-center">
-                  {/* Logo (Hidden on mobile) */}
-                  <div className="hidden sm:block mr-10 bg-white py-2 rounded-lg">
-                      <Link href="/index" className="mx-auto">
-                          <img src="/user/bea-new.png" alt="Logo" className="h-auto w-sm" width={70} height={45} />
-                      </Link>
-                  </div>
+                {/* Feedback Icon */}
+                <Link href="/feedback" className="hidden sm:flex items-center relative">
+                    <FiMessageSquare size={18} className="text-customBlue" />
+                </Link>
 
-                  {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
-                  <div className="search-bar relative hidden sm:flex flex-1 w-full max-w-[900px] mx-auto items-center bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200" role="search" style={{minHeight: '40px', display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  background: 'var(--bg)',
-                  borderRadius: '10px',
-                  padding: '4px 8px',
-                  border: '3px solid var(--outline)',
-                  boxShadow: 'var(--shadow)',
-                  transition:
-                    'box-shadow .25s ease, transform .12s ease, border-color .18s ease',
-                  width: '100%',
-                  maxWidth: '900px',
-                  margin: '0 auto',}}>
-                    <div className="search-bar-inner" style={{ position: 'relative', width: '100%' }}>
-                      <div className="select-wrap">
-                        <select
-                          value={selectedCategory}
-                          onChange={(e) => setSelectedCategory(e.target.value)}
-                          className="search-select"
-                          aria-label="Search category"
-                        >
-                          <option value="All Category">All Category</option>
-                          {categories.map((cat) => (
-                            <option key={cat._id} value={cat.category_name}>
-                              {cat.category_name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      {/* input wrapper with absolute overlay */}
-                      <div className="relative flex-1">
-                        <input
-                          type="search"
-                          name="q"
-                          id="q"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          ref={searchInputRef}
-                          onFocus={() => {
-                            setSearchContext('desktop'); // ADDED
-                            if (searchInputRef.current) {
-                              const rect = searchInputRef.current.getBoundingClientRect();
-                              setSearchDropdownLeft(rect.left);
-                              setSearchDropdownTop(rect.bottom + window.scrollY);
-                              setSearchDropdownWidth(rect.width);
-                            }
-                            if (searchQuery.trim().length >= 2) fetchSuggestions(searchQuery);
-                            setSearchDropdownVisible(true);
-                          }}
-                          onKeyDown={handleDesktopKeyDown}  // correct usage
-                          className={`search-input ${searchQuery.trim() ? 'has-value' : ''}`}
-                          placeholder=" "
-                          aria-label="Search query"
-                        />
-                        {/* typed-overlay: "Search for" light gray, typedPreview black */}
-                        {searchQuery.trim() === "" && (
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
-                            <span className="text-gray-400 text-sm">Search for</span>
-                            <span className="text-black text-sm">"{typedPreview}"</span>
-                          </div>
-                        )}
-                      </div>
-                      <button type="button" className="search-btn" style={{color:'#2453d3'}} onClick={handleSearch} aria-label="Search">
-                        <FaSearch />
-                      </button>
-                      <div className="shimmer" aria-hidden="true"></div>
-                      {/* DROPDOWN MOVED OUTSIDE TO SUPPORT MOBILE */ }
-                      {/* (was here previously) */}
-                    </div>
-                  </div>
-                  {/* Icons Group */}
-                  <div className="flex items-center gap-[2rem] sm:gap-4">
-                      {/* Mobile Search Button (Hidden on desktop) */}
-                      <button onClick={toggleMobileMenu} className="sm:hidden text-customBlue">
-                          <FiSearch size={20} />
-                      </button>
+                {/* Contact Icon */}
+                <Link href="/contact" className="hidden sm:flex items-center relative">
+                    <FiPhoneCall size={18} className="text-customBlue" />
+                </Link>
 
-                      {/* Feedback Icon */}
-                      <Link href="/feedback" className="hidden sm:flex items-center relative">
-                          <FiMessageSquare size={18} className="text-customBlue" />
-                      </Link>
+                {/* Location (Hidden on mobile) */}
+                <Link href="/location" className="hidden sm:flex items-center relative">
+                    <FiMapPin size={18} className="text-customBlue" />
+                        {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Location</span> */}
+                </Link>
 
-                      {/* Contact Icon */}
-                      <Link href="/contact" className="hidden sm:flex items-center relative">
-                          <FiPhoneCall size={18} className="text-customBlue" />
-                      </Link>
+                {/* Wishlist */}
+                <Link href="/wishlist" className="flex items-center relative p-1 sm:p-0">
+                    <FiHeart size={18} className="text-customBlue" />
+                    {/* {wishlistCount > 0 && ( */}
+                        <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
+                            {wishlistCount ?? 0}
+                        </span>
+                    {/* )} */}
+                    {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Wishlist</span> */}
+                </Link>
 
-                      {/* Location (Hidden on mobile) */}
-                      <Link href="/location" className="hidden sm:flex items-center relative">
-                          <FiMapPin size={18} className="text-customBlue" />
-                              {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Location</span> */}
-                      </Link>
+                {/* Cart */}
+                <Link href="/cart" className="flex items-center relative p-1 sm:p-0 ">
+                    <FiShoppingCart size={18} className="text-customBlue" />
+                    <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
+                        {cartCount ?? 0}
+                    </span>
+                    {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Cart</span> */}
+                </Link>
 
-                      {/* Wishlist */}
-                      <Link href="/wishlist" className="flex items-center relative p-1 sm:p-0">
-                          <FiHeart size={18} className="text-customBlue" />
-                          {/* {wishlistCount > 0 && ( */}
-                              <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
-                                  {wishlistCount ?? 0}
-                              </span>
-                          {/* )} */}
-                          {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Wishlist</span> */}
-                      </Link>
-
-                      {/* Cart */}
-                      <Link href="/cart" className="flex items-center relative p-1 sm:p-0 ">
-                          <FiShoppingCart size={18} className="text-customBlue" />
-                          <span className="absolute -top-2 -right-2 text-[10px] bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
-                              {cartCount ?? 0}
-                          </span>
-                          {/* <span className="ml-1 text-xs sm:text-sm text-customBlue hidden lg:inline">Cart</span> */}
-                      </Link>
-
-                      {/* User Account */}
-                      <div className="relative" ref={dropdownRef}>
-                          {isLoggedIn ? (
-                              <>
-                                  <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center text-black focus:outline-none p-1 sm:p-0">
-                                      <FiUser size={18} className="text-customBlue" />
-                                      <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">
-                                          Hi, {userData?.name || userData?.username || "User"}
-                                      </span>
-                                  </button>
-                                  {dropdownOpen && (
-                                      <div className="absolute right-0 mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
-                                          <div className="py-2 px-2">
-                                              {isAdmin && (
-                                                  <>
-                                                      <Link href="/admin/dashboard" className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
-                                                          <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
-                                                              <FaUserShield className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                          </span>
-                                                          Admin Panel
-                                                      </Link>
-                                                  </>
-                                              )}
-                                              <Link href="/order" className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
-                                                  <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
-                                                      <FaShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                  </span>My Orders</Link>
-                                              <hr className="my-2 border-gray-200" />
-                                              <button onClick={handleLogout} className="flex items-center gap-2 sm:gap-3 w-full text-left px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-red-50 transition-colors">
-                                                  <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
-                                                      <IoLogOut className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                  </span>Logout
-                                              </button>
-                                          </div>
-                                      </div>
-                                  )}
-                                </>
-                            ) : (
-                                <button onClick={() => setShowAuthModal(true)} className="flex items-center text-black p-1 sm:p-0">
-                                    <FiUser size={18} className="text-customBlue" />
-                                    {/* <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">Sign In</span> */}
-                                </button>
+                {/* User Account */}
+                <div className="relative" ref={dropdownRef}>
+                    {isLoggedIn ? (
+                        <>
+                            <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center text-black focus:outline-none p-1 sm:p-0">
+                                <FiUser size={18} className="text-customBlue" />
+                                <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">
+                                    Hi, {userData?.name || userData?.username || "User"}
+                                </span>
+                            </button>
+                            {dropdownOpen && (
+                                <div className="absolute right-0 mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
+                                    <div className="py-2 px-2">
+                                        {isAdmin && (
+                                            <>
+                                                <Link href="/admin/dashboard" className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
+                                                    <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
+                                                        <FaUserShield className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                    </span>
+                                                    Admin Panel
+                                                </Link>
+                                            </>
+                                        )}
+                                        <Link href="/order" className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-blue-50 transition-colors">
+                                            <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
+                                                <FaShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
+                                            </span>My Orders</Link>
+                                        <hr className="my-2 border-gray-200" />
+                                        <button onClick={handleLogout} className="flex items-center gap-2 sm:gap-3 w-full text-left px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm text-gray-700 hover:bg-red-50 transition-colors">
+                                            <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-customBlue text-white">
+                                                <IoLogOut className="w-3 h-3 sm:w-4 sm:h-4" />
+                                            </span>Logout
+                                        </button>
+                                    </div>
+                                </div>
                             )}
-                        </div>
-                    </div>
-                </div>
-
+                          </>
+                      ) : (
+                          <button onClick={() => setShowAuthModal(true)} className="flex items-center text-black p-1 sm:p-0">
+                              <FiUser size={18} className="text-customBlue" />
+                              {/* <span className="ml-1 font-bold text-xs sm:text-sm text-customBlue hidden lg:inline">Sign In</span> */}
+                          </button>
+                      )}
+                  </div>
+              </div>
+        </div>
         {/* Mobile Menu (Hidden on desktop) */}
         {isMobileMenuOpen && (
           <div
@@ -1680,12 +1651,12 @@ useEffect(() => {
 
             {/* Mobile Category Block (accordion) */}
               <div className=" bg-white rounded-md border border-gray-200 overflow-hidden">
-                  <div className="px-3 py-4 text-[12px] font-semibold tracking-wide text-white uppercase bg-[#2453D3]">
+                  <div className="px-3 py-4 text-[12px] font-semibold tracking-wide text-white  bg-[#2453D3]">
                     Browse Categories
                   </div>
-                  {/* REPLACED: use recursive renderer with dividers at every level */}
-                  {Array.isArray(categories) && categories.length > 0 ? (
-                    renderCategoryLevel(categories, [], 0)
+                  {/* Use unified nodes (categories + hoveredCategory subcategories when available) */}
+                  {Array.isArray(nodes) && nodes.length > 0 ? (
+                    renderCategoryLevel(nodes, [], 0)
                   ) : (
                     <div className="px-3 py-4 text-sm text-gray-500">
                       Loading categories…
@@ -1694,7 +1665,6 @@ useEffect(() => {
                 </div>
           </div>
         )}
-
         {/* Auth Modal */}
         {showAuthModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1805,166 +1775,166 @@ useEffect(() => {
         </form>
                   </div>
               </div>
-                )}
-                {showForgotPasswordModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 w-96 max-w-full relative">
-                            <button onClick={() => setShowForgotPasswordModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-                            {/* STEP 1: Enter Email */}
-                            {forgotStep === 1 && (
-                                <>
-                                    <h2 className="text-lg font-semibold mb-4">Reset Password</h2>
-                                    <form onSubmit={async (e) => {
-                                        e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage(''); setForgotPasswordLoading(true);
-                                        try {
-                                            const res = await fetch('/api/auth/request-reset', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ email: forgotPasswordEmail }),
-                                            });
-                                            const data = await res.json();
-                                            if (!res.ok) throw new Error(data.message || 'Error sending OTP');
-                                            setForgotPasswordMessage('OTP sent to your email.');
-                                            setForgotStep(2);
-                                        } catch (err) {
-                                            setForgotPasswordError(err.message);
-                                        } finally {
-                                            setForgotPasswordLoading(false);
-                                        }
-                                    }} className="space-y-4">
-                                        <input
-                                            type="email"
-                                            placeholder="Enter your email"
-                                            value={forgotPasswordEmail}
-                                            onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                                            required
-                                            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        {forgotPasswordError && (
-                                            <p className="text-red-500 text-sm">{forgotPasswordError}</p>
-                                        )}
-                                        {forgotPasswordMessage && (
-                                            <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
-                                        )}
-                                        <button
-                                            type="submit"
-                                            disabled={forgotPasswordLoading}
-                                            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
-                                        >
-                                            {forgotPasswordLoading ? 'Sending...' : 'Send OTP'}
-                                        </button>
-                                    </form>
-                                </>
-                                                       )}
+          )}
+          {showForgotPasswordModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 w-96 max-w-full relative">
+                      <button onClick={() => setShowForgotPasswordModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                      {/* STEP 1: Enter Email */}
+                      {forgotStep === 1 && (
+                          <>
+                              <h2 className="text-lg font-semibold mb-4">Reset Password</h2>
+                              <form onSubmit={async (e) => {
+                                  e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage(''); setForgotPasswordLoading(true);
+                                  try {
+                                      const res = await fetch('/api/auth/request-reset', {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ email: forgotPasswordEmail }),
+                                      });
+                                      const data = await res.json();
+                                      if (!res.ok) throw new Error(data.message || 'Error sending OTP');
+                                      setForgotPasswordMessage('OTP sent to your email.');
+                                      setForgotStep(2);
+                                  } catch (err) {
+                                      setForgotPasswordError(err.message);
+                                  } finally {
+                                      setForgotPasswordLoading(false);
+                                  }
+                              }} className="space-y-4">
+                                  <input
+                                      type="email"
+                                      placeholder="Enter your email"
+                                      value={forgotPasswordEmail}
+                                      onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                                      required
+                                      className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  />
+                                  {forgotPasswordError && (
+                                      <p className="text-red-500 text-sm">{forgotPasswordError}</p>
+                                  )}
+                                  {forgotPasswordMessage && (
+                                      <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
+                                  )}
+                                  <button
+                                      type="submit"
+                                      disabled={forgotPasswordLoading}
+                                      className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+                                  >
+                                      {forgotPasswordLoading ? 'Sending...' : 'Send OTP'}
+                                  </button>
+                              </form>
+                          </>
+                                                  )}
 
-                            {/* STEP 2: Enter OTP */}
-                            {forgotStep === 2 && (
-                                <>
-                                    <h2 className="text-lg font-semibold mb-4">Enter OTP</h2>
-                                                                       <p className="text-sm mb-2">Email: <strong>{forgotPasswordEmail}</strong></p>
-                                    <form onSubmit={async (e) => {
-                                        e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage('');
-                                        if (!forgotOTP.trim()) {
-                                            setForgotPasswordError('Please enter OTP.');
-                                            return;
-                                        }
-                                        setForgotPasswordLoading(true);
-                                        try {
-                                            const res = await fetch('/api/auth/verify-otp', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    email: forgotPasswordEmail,
-                                                    otp: forgotOTP,
-                                                }),
-                                            });
-                                            const data = await res.json();
-                                            if (!res.ok) throw new Error(data.message || 'Invalid OTP');
-                                            setForgotPasswordMessage('OTP verified. Please set your new password.');
-                                            setForgotStep(3);
-                                        } catch (err) {
-                                            setForgotPasswordError(err.message);
-                                        } finally {
-                                            setForgotPasswordLoading(false);
-                                        }
-                                    }} className="space-y-4">
-                                        <input type="text" placeholder="Enter OTP" value={forgotOTP} onChange={(e) => setForgotOTP(e.target.value)} required className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                        {forgotPasswordError && (
-                                            <p className="text-red-500 text-sm">{forgotPasswordError}</p>
-                                        )}
-                                        {forgotPasswordMessage && (
-                                            <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
-                                        )}
-                                        <button type="submit" disabled={forgotPasswordLoading} className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400">
-                                            {forgotPasswordLoading ? 'Validating...' : 'Validate OTP'}
-                                        </button>
-                                    </form>
-                                </>
-                            )}
+                      {/* STEP 2: Enter OTP */}
+                      {forgotStep === 2 && (
+                          <>
+                              <h2 className="text-lg font-semibold mb-4">Enter OTP</h2>
+                                                                  <p className="text-sm mb-2">Email: <strong>{forgotPasswordEmail}</strong></p>
+                              <form onSubmit={async (e) => {
+                                  e.preventDefault(); setForgotPasswordError(''); setForgotPasswordMessage('');
+                                  if (!forgotOTP.trim()) {
+                                      setForgotPasswordError('Please enter OTP.');
+                                      return;
+                                  }
+                                  setForgotPasswordLoading(true);
+                                  try {
+                                      const res = await fetch('/api/auth/verify-otp', {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({
+                                              email: forgotPasswordEmail,
+                                              otp: forgotOTP,
+                                          }),
+                                      });
+                                      const data = await res.json();
+                                      if (!res.ok) throw new Error(data.message || 'Invalid OTP');
+                                      setForgotPasswordMessage('OTP verified. Please set your new password.');
+                                      setForgotStep(3);
+                                  } catch (err) {
+                                      setForgotPasswordError(err.message);
+                                  } finally {
+                                      setForgotPasswordLoading(false);
+                                  }
+                              }} className="space-y-4">
+                                  <input type="text" placeholder="Enter OTP" value={forgotOTP} onChange={(e) => setForgotOTP(e.target.value)} required className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                  {forgotPasswordError && (
+                                      <p className="text-red-500 text-sm">{forgotPasswordError}</p>
+                                  )}
+                                  {forgotPasswordMessage && (
+                                      <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
+                                  )}
+                                  <button type="submit" disabled={forgotPasswordLoading} className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400">
+                                      {forgotPasswordLoading ? 'Validating...' : 'Validate OTP'}
+                                  </button>
+                              </form>
+                          </>
+                      )}
 
-                            {/* STEP 3: New Password */}
-                            {forgotStep === 3 && (
-                                <>
-                                    <h2 className="text-lg font-semibold mb-4">Set New Password</h2>
-                                    <p className="text-sm mb-2">Email: <strong>{forgotPasswordEmail}</strong></p>
-                                    <form onSubmit={async (e) => {
-                                        e.preventDefault();
-                                        setForgotPasswordError('');
-                                        setForgotPasswordMessage('');
-                                        if (newPassword !== confirmPassword) {
-                                            setForgotPasswordError('Passwords do not match.');
-                                            return;
-                                        }
-                                        setForgotPasswordLoading(true);
-                                        try {
-                                              const res = await fetch('/api/auth/reset-password', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    email: forgotPasswordEmail,
-                                                    otp: forgotOTP,
-                                                    newPassword,
-                                                }),
-                                            });
+                      {/* STEP 3: New Password */}
+                      {forgotStep === 3 && (
+                          <>
+                              <h2 className="text-lg font-semibold mb-4">Set New Password</h2>
+                              <p className="text-sm mb-2">Email: <strong>{forgotPasswordEmail}</strong></p>
+                              <form onSubmit={async (e) => {
+                                  e.preventDefault();
+                                  setForgotPasswordError('');
+                                  setForgotPasswordMessage('');
+                                  if (newPassword !== confirmPassword) {
+                                      setForgotPasswordError('Passwords do not match.');
+                                      return;
+                                  }
+                                  setForgotPasswordLoading(true);
+                                  try {
+                                        const res = await fetch('/api/auth/reset-password', {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({
+                                              email: forgotPasswordEmail,
+                                              otp: forgotOTP,
+                                              newPassword,
+                                          }),
+                                      });
 
-                                            const data = await res.json();
-                                            if (!res.ok) throw new Error(data.message || 'Error resetting password');
+                                      const data = await res.json();
+                                      if (!res.ok) throw new Error(data.message || 'Error resetting password');
 
-                                            setForgotPasswordMessage('Password reset successful.');
-                                            setTimeout(() => {
-                                                setShowForgotPasswordModal(false);
-                                                setShowAuthModal(true); // reopen login
-                                            }, 1500);
-                                        } catch (err) {
-                                                                                       setForgotPasswordError(err.message);
-                                        } finally {
-                                            setForgotPasswordLoading(false);
-                                        }
-                                    }} className="space-y-4">
-                                        <input type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={6} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                        <input type="password" placeholder="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                        {forgotPasswordError && (
-                                            <p className="text-red-500 text-sm">{forgotPasswordError}</p>
-                                        )}
-                                        {forgotPasswordMessage && (
-                                            <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
-                                        )}
-                                        <button
-                                            type="submit"
-                                            disabled={forgotPasswordLoading}
-                                            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
-                                        >
-                                            {forgotPasswordLoading ? 'Resetting...' : 'Reset Password'}
-                                        </button>
-                                    </form>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
+                                      setForgotPasswordMessage('Password reset successful.');
+                                      setTimeout(() => {
+                                          setShowForgotPasswordModal(false);
+                                          setShowAuthModal(true); // reopen login
+                                      }, 1500);
+                                  } catch (err) {
+                                                                                  setForgotPasswordError(err.message);
+                                  } finally {
+                                      setForgotPasswordLoading(false);
+                                  }
+                              }} className="space-y-4">
+                                  <input type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={6} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                  <input type="password" placeholder="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                  {forgotPasswordError && (
+                                      <p className="text-red-500 text-sm">{forgotPasswordError}</p>
+                                  )}
+                                  {forgotPasswordMessage && (
+                                      <p className="text-green-500 text-sm">{forgotPasswordMessage}</p>
+                                  )}
+                                  <button
+                                      type="submit"
+                                      disabled={forgotPasswordLoading}
+                                      className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+                                  >
+                                      {forgotPasswordLoading ? 'Resetting...' : 'Reset Password'}
+                                  </button>
+                              </form>
+                          </>
+                      )}
+                  </div>
+              </div>
+          )}
+        </div>
 
-          <div className="hidden sm:flex relative p-2 mt-0 px-1 bg-[#2453D3] min-h-[64px] border-gray-200 shadow items-center">
+        <div className="hidden sm:flex relative p-2 mt-0 px-1 bg-[#2453D3] min-h-[64px] border-gray-200 shadow items-center">
                 <div className="w-full  relative">
                     {/* Arrows */}
                     {/*
@@ -2017,7 +1987,7 @@ useEffect(() => {
                         lastChunk.unshift(...itemsToMove);
                       }
                     }
-                    console.log(hoveredCategory.navImage);
+                    //console.log(hoveredCategory.navImage);
                     // --- Begin navImage columns logic ---
                     let navImages = [];
                     if (hoveredCategory?.navImage) {
@@ -2108,10 +2078,9 @@ useEffect(() => {
                       </div>
                     );
                 })()}
-            </div>
+        </div>
 
         </header>
-
         {/* DESKTOP SUGGESTIONS DROPDOWN */}
         {searchDropdownVisible && searchContext === 'desktop' && (
           <div
