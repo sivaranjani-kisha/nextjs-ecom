@@ -15,6 +15,7 @@ export default function CategoryPage() {
     brands: [],
     filters: []
   });
+  console.log(categoryData);
   const [showEndMessage, setShowEndMessage] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState({
@@ -41,6 +42,7 @@ export default function CategoryPage() {
   const toggleFilterGroup = (id) => {
     setExpandedFilters(prev => ({ ...prev, [id]: !prev[id] }));
   };
+  const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0);
   const [nofound,setNofound]=useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -556,21 +558,21 @@ export default function CategoryPage() {
 
   return (
     <div className="container mx-auto px-4 py-2 pb-3 max-w-7xl">
-      {categoryData.banners && categoryData.banners.length > 0 && (
+      {categoryData.main_category.banners && categoryData.main_category.banners.length > 0 && (
         <div className="relative w-full mb-8 rounded-lg overflow-hidden shadow-md">
           <div className="relative w-full aspect-[16/6] sm:aspect-[16/7] lg:aspect-[16/5] cursor-pointer"
             onClick={() => {
-              const redirectUrl = categoryData.banners[currentCategoryBannerIndex].redirect_url;
+              const redirectUrl = categoryData.main_category.banners[currentCategoryBannerIndex].redirect_url;
               if (redirectUrl) window.location.href = redirectUrl;
             }}
           >
             <Image
               src={
-                categoryData.banners[currentCategoryBannerIndex].banner_image.startsWith("http")
-                  ? categoryData.banners[currentCategoryBannerIndex].banner_image
-                  : `${categoryData.banners[currentCategoryBannerIndex].banner_image}`
+                categoryData.main_category.banners[currentCategoryBannerIndex].banner_image.startsWith("http")
+                  ? categoryData.main_category.banners[currentCategoryBannerIndex].banner_image
+                  : `${categoryData.main_category.banners[currentCategoryBannerIndex].banner_image}`
               }
-              alt={categoryData.banners[currentCategoryBannerIndex].banner_name}
+              alt={categoryData.main_category.banners[currentCategoryBannerIndex].banner_name}
               fill
               className="object-cover w-full h-full"
               unoptimized
@@ -607,9 +609,9 @@ export default function CategoryPage() {
             )} */}
       
             {/* Radio Button Indicators */}
-            {categoryData.banners.length > 1 && (
+            {categoryData.main_category.banners.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                {categoryData.banners.map((_, index) => (
+                {categoryData.main_category.banners.map((_, index) => (
                   <label
                     key={index}
                     className="flex items-center cursor-pointer"
