@@ -1396,237 +1396,230 @@ const fetchBrand = async () => {
           <div className="md:col-span-3 w-full max-w-sm flex flex-col space-y-4">
  
   {/* ================= Box: Featured + Warranty + Related ================= */}
-  <div className="border border-gray-300 rounded-lg shadow-md bg-white max-h-[500px] overflow-y-scroll scrollbar-hide">
+ <div className="border border-gray-300 rounded-lg shadow-md bg-white max-h-[500px] overflow-y-scroll scrollbar-hide">
    
-    {/* Featured Products */}
-    {featuredProducts?.length > 0 && (
-  <div className="px-4 py-4 border-b border-gray-300">
-    <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
-      Frequently Bought Together:
-    </h3>
- 
-    {featuredProducts.map((item) => (
-      <div key={item._id} className="flex items-start mb-4">
-        <input
-          type="checkbox"
-          className="mt-2 mr-3"
-          checked={selectedFrequentProducts.some(p => p._id === item._id)}
-          onChange={() => toggleFrequentProduct(item)}
-        />
-        <div className="flex items-start gap-3">
-         {item.images?.[0] && (
-  <img
-    src={'/uploads/products/' + item.images[0]} // Change this line
-    alt={item.name}
-    className="w-16 h-16 object-contain"
-  />
-)}
- 
-          <div className="text-sm">
-            {/* Product Name with Slug Link */}
-            <Link
-              href={`/product/${item.slug}`}
-              className="block mb-1"
-              onClick={() => handleProductClick(item)}
-            >
-              <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                {item.name}
-              </h3>
-            </Link>
- 
-            {/* Price with special price handling */}
-            <div className="flex items-center gap-2">
-              <span className="text-base font-semibold text-red-600">
-                ₹ {(
-                  item.special_price &&
+  {/* Featured Products */}
+  {featuredProducts?.length > 0 && (
+    <div className="px-4 py-4 border-b border-gray-300">
+      <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
+        Frequently Bought Together:
+      </h3>
+  
+      {featuredProducts.map((item) => (
+        <div key={item._id} className="flex items-start mb-4">
+          <input
+            type="checkbox"
+            className="mt-2 mr-3"
+            checked={selectedFrequentProducts.some(p => p._id === item._id)}
+            onChange={() => toggleFrequentProduct(item)}
+          />
+          <div className="flex items-start gap-3">
+            {item.images?.[0] && (
+              <img
+                src={'/uploads/products/' + item.images[0]}
+                alt={item.name}
+                className="w-16 h-16 object-contain"
+              />
+            )}
+            <div className="text-sm">
+              <Link
+                href={`/product/${item.slug}`}
+                className="block mb-1"
+                onClick={() => handleProductClick(item)}
+              >
+                <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                  {item.name}
+                </h3>
+              </Link>
+
+              <div className="flex items-center gap-2">
+                <span className="text-base font-semibold text-red-600">
+                  ₹ {(
+                    item.special_price &&
+                    item.special_price > 0 &&
+                    item.special_price !== "0" &&
+                    item.special_price < item.price
+                      ? item.special_price
+                      : item.price
+                  ).toLocaleString()}
+                </span>
+
+                {item.special_price &&
                   item.special_price > 0 &&
                   item.special_price !== "0" &&
-                  item.special_price < item.price
-                    ? item.special_price
-                    : item.price
-                ).toLocaleString()}
-              </span>
- 
-              {item.special_price &&
-                item.special_price > 0 &&
-                item.special_price !== "0" &&
-                item.special_price < item.price && (
-                  <span className="text-xs text-gray-500 line-through">
-                    ₹ {item.price.toLocaleString()}
-                  </span>
-                )}
+                  item.special_price < item.price && (
+                    <span className="text-xs text-gray-500 line-through">
+                      ₹ {item.price.toLocaleString()}
+                    </span>
+                  )}
+              </div>
+
+              <h4
+                className={`text-xs ${
+                  item.stock_status === "In Stock"
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {item.stock_status}
+                {item.stock_status === "In Stock" && item.quantity
+                  ? `, ${item.quantity} units`
+                  : ""}
+              </h4>
             </div>
- 
-            {/* Stock Status + Units */}
-            <h4
-              className={`text-xs ${
-                item.stock_status === "In Stock"
-                  ? "text-green-600"
-                  : "text-red-600"
-              }`}
-            >
-              {item.stock_status}
-              {item.stock_status === "In Stock" && item.quantity
-                ? `, ${item.quantity} units`
-                : ""}
-            </h4>
           </div>
         </div>
-      </div>
-    ))}
-  </div>
-)}
- 
-    {/* Warranty Section */}
-    {(product?.warranty || product?.extended_warranty) && (
-      <div className="px-4 py-4 border-b border-gray-300">
-        <h4 className="text-sm font-semibold text-blue-600 mb-2">
-          Want to protect your product?
-        </h4>
- 
-        {product?.warranty && (
-          <>
-            <p className="text-sm font-bold text-gray-800 underline mb-2">
-              Accidental and Liquid Damage Protection Plan
-            </p>
-            <div className="text-sm text-gray-800 space-y-2 mb-4">
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  name="protection"
-                  className="mr-2"
-                  checked={selectedWarranty === product.warranty}
-                  onClick={() =>
-                    setSelectedWarranty(prev =>
-                      prev === product.warranty ? null : product.warranty
-                    )
-                  }
-                  readOnly
-                />
-                <label>
-                  1 Year Accidental And Liquid Damage
-                  <span className="text-green-600 font-bold ml-2">
-                    ₹ {product.warranty}
-                  </span>
-                </label>
-              </div>
+      ))}
+    </div>
+  )}
+  
+  {/* Warranty Section */}
+  {(product?.warranty || product?.extended_warranty) && (
+    <div className="px-4 py-4 border-b border-gray-300">
+      <h4 className="text-sm font-semibold text-blue-600 mb-2">
+        Want to protect your product?
+      </h4>
+
+      {product?.warranty && (
+        <>
+          <p className="text-sm font-bold text-gray-800 underline mb-2">
+            Accidental and Liquid Damage Protection Plan
+          </p>
+          <div className="text-sm text-gray-800 space-y-2 mb-4">
+            <div className="flex items-center">
+              <input
+                type="radio"
+                name="protection"
+                className="mr-2"
+                checked={selectedWarranty === product.warranty}
+                onClick={() =>
+                  setSelectedWarranty(prev =>
+                    prev === product.warranty ? null : product.warranty
+                  )
+                }
+                readOnly
+              />
+              <label>
+                1 Year Accidental And Liquid Damage
+                <span className="text-green-600 font-bold ml-2">
+                  ₹ {product.warranty}
+                </span>
+              </label>
             </div>
-          </>
-        )}
- 
-        {product?.extended_warranty && (
-          <>
-            <p className="text-sm font-bold text-gray-800 underline mb-2">
-              Extended Warranty
-            </p>
-            <div className="text-sm text-gray-800">
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  name="extended"
-                  className="mr-2"
-                  checked={selectedExtendedWarranty === product.extended_warranty}
-                  onClick={() =>
-                    setSelectedExtendedWarranty(prev =>
-                      prev === product.extended_warranty ? null : product.extended_warranty
-                    )
-                  }
-                  readOnly
-                />
-                <label>
-                  1 Year Extended Warranty Protection
-                  <span className="text-green-600 font-bold ml-2">
-                    ₹ {product.extended_warranty}
-                  </span>
-                </label>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    )}
- 
-    {/* Related Products Section */}
- 
- 
-{relatedProducts.length > 0 && (
-  <div className="px-4 py-4">
-    <h2 className="text-sm font-bold text-customBlue underline mb-2">
-      Related Products
-    </h2>
-    {relatedProducts.filter(item => item.stock_status === "In Stock").slice(0, 3).map((item) => (
-      <div key={item._id} className="flex items-start mb-4">
-        <input
-          type="checkbox"
-          className="mt-2 mr-3"
-          checked={selectedRelatedProducts.some(p => p._id === item._id)}
-          onChange={() => toggleRelatedProduct(item)}
-        />
-        <div className="flex items-start gap-3">
-          {item.images?.[0] && (
-  <img
-    src={'/uploads/products/' + item.images[0]} // Change this line
-    alt={item.name}
-    className="w-16 h-16 object-contain"
-  />
-)}
-          <div className="text-sm">
-            {/* Product Name with slug link */}
-            <Link
-              href={`/product/${item.slug}`}
-              className="block mb-1"
-              onClick={() => handleProductClick(item)}
-            >
-              <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                {item.name}
-              </h3>
-            </Link>
- 
-            {/* Price with strike-through if special price */}
-            <div className="flex items-center gap-2">
-              <span className="text-base font-semibold text-red-600">
-                ₹ {(
-                  item.special_price &&
-                  item.special_price > 0 &&
-                  item.special_price !== "0" &&
-                  item.special_price < item.price
-                    ? item.special_price
-                    : item.price
-                ).toLocaleString()}
-              </span>
- 
-              {item.special_price &&
-                item.special_price > 0 &&
-                item.special_price !== "0" &&
-                item.special_price < item.price && (
-                  <span className="text-xs text-gray-500 line-through">
-                    ₹ {item.price.toLocaleString()}
-                  </span>
-                )}
-            </div>
- 
-            {/* Stock Status + Units */}
-            <h4
-              className={`text-xs ${
-                item.stock_status === "In Stock"
-                  ? "text-green-600"
-                  : "text-red-600"
-              }`}
-            >
-              {item.stock_status}
-              {item.stock_status === "In Stock" && item.quantity
-                ? `, ${item.quantity} units`
-                : ""}
-            </h4>
           </div>
-        </div>
-      </div>
-    ))}
-  </div>
-)}
- 
- 
-  </div>
+        </>
+      )}
+
+      {product?.extended_warranty && (
+        <>
+          <p className="text-sm font-bold text-gray-800 underline mb-2">
+            Extended Warranty
+          </p>
+          <div className="text-sm text-gray-800">
+            <div className="flex items-center">
+              <input
+                type="radio"
+                name="extended"
+                className="mr-2"
+                checked={selectedExtendedWarranty === product.extended_warranty}
+                onClick={() =>
+                  setSelectedExtendedWarranty(prev =>
+                    prev === product.extended_warranty ? null : product.extended_warranty
+                  )
+                }
+                readOnly
+              />
+              <label>
+                1 Year Extended Warranty Protection
+                <span className="text-green-600 font-bold ml-2">
+                  ₹ {product.extended_warranty}
+                </span>
+              </label>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )}
+
+  {/* Related Products Section - show ONLY if no featured products */}
+  {featuredProducts?.length === 0 && relatedProducts.length > 0 && (
+    <div className="px-4 py-4">
+      <h2 className="text-sm font-bold text-customBlue underline mb-2">
+        Related Products
+      </h2>
+      {relatedProducts
+        .filter(item => item.stock_status === "In Stock")
+        .slice(0, 3)
+        .map((item) => (
+          <div key={item._id} className="flex items-start mb-4">
+            <input
+              type="checkbox"
+              className="mt-2 mr-3"
+              checked={selectedRelatedProducts.some(p => p._id === item._id)}
+              onChange={() => toggleRelatedProduct(item)}
+            />
+            <div className="flex items-start gap-3">
+              {item.images?.[0] && (
+                <img
+                  src={'/uploads/products/' + item.images[0]}
+                  alt={item.name}
+                  className="w-16 h-16 object-contain"
+                />
+              )}
+              <div className="text-sm">
+                <Link
+                  href={`/product/${item.slug}`}
+                  className="block mb-1"
+                  onClick={() => handleProductClick(item)}
+                >
+                  <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                    {item.name}
+                  </h3>
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-semibold text-red-600">
+                    ₹ {(
+                      item.special_price &&
+                      item.special_price > 0 &&
+                      item.special_price !== "0" &&
+                      item.special_price < item.price
+                        ? item.special_price
+                        : item.price
+                    ).toLocaleString()}
+                  </span>
+
+                  {item.special_price &&
+                    item.special_price > 0 &&
+                    item.special_price !== "0" &&
+                    item.special_price < item.price && (
+                      <span className="text-xs text-gray-500 line-through">
+                        ₹ {item.price.toLocaleString()}
+                      </span>
+                    )}
+                </div>
+
+                <h4
+                  className={`text-xs ${
+                    item.stock_status === "In Stock"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {item.stock_status}
+                  {item.stock_status === "In Stock" && item.quantity
+                    ? `, ${item.quantity} units`
+                    : ""}
+                </h4>
+              </div>
+            </div>
+          </div>
+        ))}
+    </div>
+  )}
+</div>
+
  
   {/* ================= Buttons Block (Below Box) ================= */}
   <div className="w-full space-y-3">

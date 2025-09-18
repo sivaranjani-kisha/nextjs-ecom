@@ -6,6 +6,7 @@ const ProductallSchema = new mongoose.Schema({
   special_price: Number,
   quantity: Number,
   brand: String,
+  movement: String,
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
