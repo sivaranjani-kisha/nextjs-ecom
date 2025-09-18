@@ -244,27 +244,32 @@ const toggleFrequentProduct = (product) => {
 
   const categoryId = product?.category;
   const currentProductId = product?._id;
+  const brandId = product?.brand;
 useEffect(() => {
-    const fetchRelatedProducts = async () => {
-      try {
-        const res = await fetch(`/api/product/related?category=${categoryId}&exclude=${currentProductId}&limit=5`);
-        const data = await res.json();
-        if (res.ok) {
-  if (data.success && data.products) {
-    setRelatedProducts(data.products);
-  } else if (data.relatedProducts) {
-    setRelatedProducts(data.relatedProducts);
-  } else {
-    setRelatedProducts([]);
-  }
-}
-      } catch (err) {
-        console.error(err);
-      }
-    };
+  const fetchRelatedProducts = async () => {
+    try {
+      const res = await fetch(
+        `/api/product/relatedpro?category=${categoryId}&brand=${brandId}&exclude=${currentProductId}&limit=5`
+      );
+      const data = await res.json();
 
-    if (categoryId) fetchRelatedProducts();
-  }, [categoryId, currentProductId]); // De
+      if (res.ok) {
+        if (data.success && data.products) {
+          setRelatedProducts(data.products);
+        } else if (data.relatedProducts) {
+          setRelatedProducts(data.relatedProducts);
+        } else {
+          setRelatedProducts([]);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  if (categoryId && brandId) fetchRelatedProducts();
+}, [categoryId, brandId, currentProductId]);
+
 
   const toggleRelatedProduct = (product) => {
     setSelectedRelatedProducts(prev => {
@@ -1546,7 +1551,7 @@ const fetchBrand = async () => {
   {featuredProducts?.length === 0 && relatedProducts.length > 0 && (
     <div className="px-4 py-4">
       <h2 className="text-sm font-bold text-customBlue underline mb-2">
-        Related Products
+        Similar Products
       </h2>
       {relatedProducts
         .filter(item => item.stock_status === "In Stock")
