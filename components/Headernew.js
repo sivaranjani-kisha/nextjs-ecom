@@ -1020,60 +1020,7 @@ const handleDesktopKeyDown = (e) => {
 
 // DESKTOP specific renderer (keep existing renderSuggestionItem for mobile contexts)
 // DESKTOP specific renderer (keep existing renderSuggestionItem for mobile contexts)
-const renderDesktopSuggestionItem = (item, idx) => {
-  const id = item._id || item.id || idx;
-  const price = item.special_price ?? item.price;
-  const isActive = idx === activeSuggestion; 
-  //console.log(item);
-  // handle image correctly
-  const imageSrc = item.image || (Array.isArray(item.images) && item.images.length > 0 ? `/uploads/products/${item.images[0]}` : null);
 
-  return (
-    <div
-      key={id}
-      role="option"
-      aria-selected={isActive}
-      onMouseEnter={() => setActiveSuggestion(idx)}
-      onMouseDown={() => selectSuggestion(idx)}
-      className={`flex gap-4 px-4 py-3 cursor-pointer rounded-md transition-colors group bg-[#f2f2f2]`}
-    >
-      {/* Thumbnail */}
-      <div className="w-[50px] h-[50px] rounded-md overflow-hidden bg-white flex items-center justify-center border border-gray-200 shrink-0">
-        {imageSrc ? (
-          <img
-            src={imageSrc}
-            alt={item.name || 'Product'}
-            className="object-contain w-full h-full"
-            loading="lazy"
-          />
-        ) : (
-          <span className="text-[10px] text-gray-400">NO IMG</span>
-        )}
-      </div>
-
-      {/* Text Content */}
-      <div className="flex-1 min-w-0">
-        {/* Product Name */}
-        <div
-          className={`text-[14px] font-medium leading-snug line-clamp-2 ${
-            isActive ? 'text-blue-700' : 'text-gray-800 group-hover:text-gray-900'
-          }`}
-        >
-          {item.name || 'Unnamed'}
-        </div>
-      
-
-        {/* Price */}
-        {price && (
-          <div className="text-[14px] font-semibold text-blue-600 mt-1">
-            ₹{price.toLocaleString('en-IN')}
-          </div>
-        )}
-       
-      </div>
-    </div>
-  );
-};
 
 const [loginData, setLoginData] = useState({
   email: "",
@@ -1141,6 +1088,264 @@ const [selectedMobileCategoryId, setSelectedMobileCategoryId] = useState(null);
     </div>
   </div>
 )}
+
+
+
+
+// DESKTOP specific renderer (keep existing renderSuggestionItem for mobile contexts)
+const renderDesktopSuggestionItem = (item, idx) => {
+  const id = item._id || item.id || idx;
+  const price = item.special_price ?? item.price;
+  const isActive = idx === activeSuggestion; 
+  //console.log(item);
+  // handle image correctly
+  const imageSrc = item.image || (Array.isArray(item.images) && item.images.length > 0 ? `/uploads/products/${item.images[0]}` : null);
+
+  return (
+    <div
+      key={id}
+      role="option"
+      aria-selected={isActive}
+      onMouseEnter={() => setActiveSuggestion(idx)}
+      onMouseDown={() => selectSuggestion(idx)}
+      className={`flex gap-4 px-4 py-3 cursor-pointer rounded-md transition-colors group bg-[#f2f2f2]`}
+    >
+      {/* Thumbnail */}
+      <div className="w-[50px] h-[50px] rounded-md overflow-hidden bg-white flex items-center justify-center border border-gray-200 shrink-0">
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            alt={item.name || 'Product'}
+            className="object-contain w-full h-full"
+            loading="lazy"
+          />
+        ) : (
+          <span className="text-[10px] text-gray-400">NO IMG</span>
+        )}
+      </div>
+
+      {/* Text Content */}
+      <div className="flex-1 min-w-0">
+        {/* Product Name */}
+        <div
+          className={`text-[14px] font-medium leading-snug line-clamp-2 ${
+            isActive ? 'text-blue-700' : 'text-gray-800 group-hover:text-gray-900'
+          }`}
+        >
+          {item.name || 'Unnamed'}
+        </div>
+      
+
+        {/* Price */}
+        {price && (
+          <div className="text-[14px] font-semibold text-blue-600 mt-1">
+            ₹{price.toLocaleString('en-IN')}
+          </div>
+        )}
+       
+      </div>
+    </div>
+  );
+};
+
+// ADD: mobile accordion open-state + helpers
+// FIX: replace wrong useState with real loader function + tracking map
+const [loadedCategoryIds, setLoadedCategoryIds] = useState({});
+const [openCategories, setOpenCategories] = useState({});
+
+// NEW: unified nodes for mobile = categories + hoveredCategory.subcategories
+const nodes = useMemo(() => {
+  const base = Array.isArray(categories) ? categories : [];
+  const extra = (hoveredCategory && Array.isArray(hoveredCategory.subcategories))
+    ? hoveredCategory.subcategories
+    : [];
+
+  if (!extra.length) return base;
+
+  const map = new Map();
+  base.forEach(n => { if (n && n._id) map.set(n._id, n); });
+  extra.forEach(n => { if (n && n._id && !map.has(n._id)) map.set(n._id, n); });
+  return Array.from(map.values());
+}, [categories, hoveredCategory]);
+
+// Ensures the subcategories for a category are present by rebuilding from cache/API if needed
+const ensureSubcategories = useCallback(async (categoryId) => {
+  if (!categoryId) return;
+
+  // already ensured this id in this session
+  if (loadedCategoryIds[categoryId]) return;
+
+  // find node in current nested tree
+  const findNodeById = (list, id) => {
+    for (const n of list || []) {
+      if (n?._id === id) return n;
+      const hit = findNodeById(n?.subcategories || [], id);
+      if (hit) return hit;
+    }
+    return null;
+  };
+
+  const node = findNodeById(categories, categoryId);
+  if (node && Array.isArray(node.subcategories) && node.subcategories.length > 0) {
+    setLoadedCategoryIds((m) => ({ ...m, [categoryId]: true }));
+    return;
+  }
+
+  try {
+    // use raw cache if available, otherwise fetch
+    let raw = loadCache('categories_raw_cache')?.data;
+    if (!Array.isArray(raw) || raw.length === 0) {
+      const res = await fetch('/api/categories/get');
+      raw = await res.json();
+      saveCache('categories_raw_cache', raw);
+    }
+
+    // rebuild nested tree
+    const active = Array.isArray(raw) ? raw.filter((c) => c.status === 'Active') : [];
+    const map = {};
+    active.forEach((c) => { map[c._id] = { ...c, subcategories: [] }; });
+    active.forEach((c) => {
+      if (c.parentid && map[c.parentid]) map[c.parentid].subcategories.push(map[c._id]);
+    });
+
+    const nested = [];
+    active.forEach((c) => {
+      if (c.parentid === 'none' || !map[c.parentid]) nested.push(map[c._id]);
+    });
+
+    setCategories(nested);
+    saveCache('categories_nested_cache', nested);
+  } catch (e) {
+    console.error('ensureSubcategories failed:', e);
+  } finally {
+    setLoadedCategoryIds((m) => ({ ...m, [categoryId]: true }));
+  }
+}, [categories, loadedCategoryIds]);
+
+const toggleMobileCategory = useCallback(async (id) => {
+  await ensureSubcategories(id);
+  setOpenCategories((prev) => ({ ...prev, [id]: !prev[id] }));
+}, [ensureSubcategories]);
+
+// Add missing slug helpers used by renderCategoryLevel
+const safeSlugify = (s, fallback = "") => {
+  const base = (s || "").toString().trim();
+  if (!base) return fallback;
+  return base.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+};
+const getCategorySlug = (cat) =>
+  cat?.category_slug || cat?.slug || safeSlugify(cat?.category_name, cat?._id || "category");
+
+// NEW: compute href for node based on level (parent/child)
+const getNodeHref = (ancestorSlugs = [], nodeSlug) => {
+  // Join all ancestors + current node
+  const fullPath = [...ancestorSlugs, nodeSlug]
+    .map((slug) => encodeURIComponent(slug))
+    .join("/");
+
+  return `/category/${fullPath}`;
+};
+
+
+// NEW: recursive renderer for unlimited category levels
+function renderCategoryLevel(nodes, ancestorSlugs = [], level = 0) {
+  if (!Array.isArray(nodes) || nodes.length === 0) return null;
+  return (
+    <div className="divide-y divide-gray-100">
+      {nodes.map((node) => {
+        const hasChildren =
+          Array.isArray(node.subcategories) && node.subcategories.length > 0;
+        const isOpen = !!openCategories[node._id];
+        const nodeSlug = getCategorySlug(node);
+        const slugs = [...ancestorSlugs, nodeSlug];
+        const href = getNodeHref(ancestorSlugs, nodeSlug, level);
+        const rowJustify = hasChildren ? "justify-between" : "justify-start";
+
+        return (
+          <div key={node._id} className={`${isOpen ? "bg-blue-50/40" : "bg-white"} hover:bg-[#f2f2f2]`}>
+            <div
+              className={`w-full flex items-center ${rowJustify} ${
+                level === 0 ? "px-3 py-3 text-sm" : "pl-5 pr-3 py-2 text-[13px]"
+              } ${isOpen ? "text-blue-700 bg-[#f2f2f2]" : "text-gray-800 hover:bg-[#f2f2f2]"}`}
+            >
+              <Link
+                href={href}
+                onClick={async (e) => {
+                  if (level === 0 || hasChildren) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await ensureSubcategories(node._id);
+                    setOpenCategories((prev) => {
+                      const next = { ...prev };
+                      const willOpen = !prev[node._id];
+                      if (level === 0) {
+                        Object.keys(next).forEach((k) => delete next[k]);
+                        if (willOpen) next[node._id] = true;
+                        return next;
+                      }
+                      next[node._id] = willOpen;
+                      return next;
+                    });
+                    return;
+                  }
+                  setIsMobileMenuOpen(false); // leaf: navigate and close
+                }}
+                className="flex-1 text-left truncate"
+                style={{ paddingLeft: level > 0 ? Math.min(level * 8, 24) : 0 }}
+              >
+                {node.category_name || "Category"}
+              </Link>
+
+              {hasChildren && (
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await ensureSubcategories(node._id);
+                    setOpenCategories((prev) => {
+                      const next = { ...prev };
+                      const willOpen = !prev[node._id];
+                      if (level === 0) {
+                        Object.keys(next).forEach((k) => delete next[k]);
+                        if (willOpen) next[node._id] = true;
+                        return next;
+                      }
+                      next[node._id] = willOpen;
+                      return next;
+                    });
+                  }}
+                  aria-label="Toggle"
+                  className="ml-2"
+                >
+                  <FiChevronRight
+                    className={`text-white rounded-full p-1 transition-transform duration-200 bg-[#2453D3] ${
+                      isOpen ? "rotate-90" : "rotate-0"
+                    }`}
+                    size={18}
+                  />
+                </button>
+              )}
+            </div>
+
+            {isOpen && hasChildren && (
+              <div className="pb-2">
+                {renderCategoryLevel(node.subcategories, slugs, level + 1)}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Prefetch subcategories for a few top categories when the mobile menu opens
+useEffect(() => {
+  if (!isMobileMenuOpen) return;
+  const ids = (Array.isArray(categories) ? categories : []).slice(0, 5).map(c => c._id);
+  ids.forEach((id) => { ensureSubcategories(id); });
+}, [isMobileMenuOpen, categories, ensureSubcategories]);
 
     return (
       <>
@@ -1530,62 +1735,42 @@ const [selectedMobileCategoryId, setSelectedMobileCategoryId] = useState(null);
 
                 {/* Mobile Menu (Hidden on desktop) */}
                 {isMobileMenuOpen && (
-                    <div
-                      className="sm:hidden bg-white fixed inset-0 z-50 p-4 pt-3 rounded-lg shadow-lg overflow-y-auto transition-all duration-300"
-                      style={{ touchAction: 'auto', userSelect: 'auto', WebkitUserSelect: 'auto' }}
-                    >
-                      {/* Internal sticky header */}
-                      <div className="flex items-center justify-between mb-3 sticky top-0 bg-white pb-2 border-b">
-                        <div className="flex items-center gap-2 text-customBlue font-semibold text-sm">
-                          <FiMenu size={18} />
-                          <span>Menu</span>
-                        </div>
-                        <button
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          aria-label="Close menu"
-                          className="p-2 rounded-full text-customBlue hover:bg-blue-50 active:bg-blue-100 focus:outline-none focus:ring focus:ring-blue-200"
-                        >
-                          <FiX size={22} />
-                        </button>
-                      </div>
-
-                      {/* Mobile Category Block (button-style, wraps, no scrollbar) */}
-                      <div className="flex flex-col bg-gray-200 border border-gray-300 overflow-visible mb-4 transition-colors duration-150 focus-within:border-[#2453d3] focus-within:bg-white py-2">
-                        <div className="w-full px-2">
-                          {/* Top-level Categories */}
-                          <div className="flex flex-wrap items-start gap-2">
-                            {categories.map((cat) => (
-                              <Link
-  key={cat._id}
-  href={`/category/${cat.category_slug}`}
-  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors
-    ${selectedMobileCategoryId === cat._id
-      ? 'bg-[#2453D3] text-white border-[#2453D3]'
-      : 'bg-white text-[#2453D3] border-[#2453D3]/30 hover:bg-[#2453D3]/5 hover:border-[#2453D3]'}
-    focus:outline-none focus:ring-2 focus:ring-[#2453D3]/30`}
->
-  {cat.category_name}
-</Link>
-
-                            ))}
+                          <div
+                      
+                            className="sm:hidden bg-white fixed inset-0 z-50 p-4 pt-3 rounded-lg shadow-lg overflow-y-auto transition-all duration-300"
+                            style={{ touchAction: 'auto', userSelect: 'auto', WebkitUserSelect: 'auto' }}
+                          >
+                            {/* Internal sticky header */}
+                            <div className="flex items-center justify-between mb-3 sticky top-0 bg-white pb-2 border-b">
+                              <div className="flex items-center gap-2 text-customBlue font-semibold text-sm">
+                                <FiMenu size={18} />
+                                <span>Menu</span>
+                              </div>
+                              <button
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                aria-label="Close menu"
+                                className="p-2 rounded-full text-customBlue hover:bg-blue-50 active:bg-blue-100 focus:outline-none focus:ring focus:ring-blue-200"
+                              >
+                                <FiX size={22} />
+                              </button>
+                            </div>
+                
+                            {/* Mobile Category Block (accordion) */}
+                              <div className=" bg-white rounded-md border border-gray-200 overflow-hidden">
+                                  <div className="px-3 py-4 text-[12px] font-semibold tracking-wide text-white  bg-[#2453D3]">
+                                    Browse Categories
+                                  </div>
+                                  {/* Use unified nodes (categories + hoveredCategory subcategories when available) */}
+                                  {Array.isArray(nodes) && nodes.length > 0 ? (
+                                    renderCategoryLevel(nodes, [], 0)
+                                  ) : (
+                                    <div className="px-3 py-4 text-sm text-gray-500">
+                                      Loading categories…
+                                    </div>
+                                  )}
+                                </div>
                           </div>
-
-                        </div>
-                      </div>
-
-                      {/* Category List (previous search-suggestions container) */}
-                      {/* ...existing code... keep the rest of the mobile menu content unchanged */}
-                      {/* Spacer & floating close button */}
-                      <div className="h-16" />
-                      <button
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="fixed bottom-4 right-4 bg-[#2453D3] text-white px-5 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-2 active:scale-95"
-                        aria-label="Close menu"
-                      >
-                        <FiX size={18} /> Close
-                      </button>
-                    </div>
-                )}
+                        )}
                 
 
                 {/* Auth Modal */}
