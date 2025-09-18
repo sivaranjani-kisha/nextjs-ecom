@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation'; // ← use this in App Router
 
 import { useEffect, useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
 import DateRangePicker from '@/components/DateRangePicker';
 
 const OrdersTable = () => {
@@ -128,6 +129,7 @@ const OrdersTable = () => {
 
   return (
      <div className="container mx-auto">
+       <ToastContainer position="top-right" autoClose={5000} />
       {/* Alert Message */}
       {/* {showAlert && (
         <div className="bg-green-500 text-white px-4 py-2 rounded-md mb-4 mt-5">
@@ -245,47 +247,93 @@ const OrdersTable = () => {
 
           {/* Categories Table */}
           <div className="overflow-x-auto">
-            <table className="w-full border border-gray-300">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="p-2">Action</th>
-                  <th className="p-2">Order Id</th>
-                  <th className="p-2">Order status</th>
-                  <th className="p-2">Name</th>
-                  <th className="p-2">Amount</th>
-                  <th className="p-2">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-{paginatedOrders.length ? (
-  paginatedOrders.map((o, i) => (
-    <tr key={i} className="border-t">
-      <td className="p-2 border flex justify-center items-center">
-        <button
-          onClick={() => router.push(`/admin/Allorder/${o._id}`)}
-          className="flex items-center gap-1 text-sm text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-md transition-all shadow-sm"
-        >
-          👁 View
-        </button>
-      </td>
-      <td className="p-2 border">{o.order_number}</td>
-      <td className="p-2 border capitalize">{o.order_status}</td>
-      <td className="p-2 border">{o.order_username}</td>
-      <td className="p-2 border">₹{o.order_amount}</td>
-      <td className="p-2 border">{new Date(o.createdAt).toLocaleDateString()}</td>
-    </tr>
-  ))
-) : (
-  <tr>
-    <td colSpan="6" className="text-center text-gray-500 p-4">
-      No orders found.
-    </td>
-  </tr>
-)}
+  <table className="w-full border border-gray-300">
+    <thead>
+      <tr className="bg-gray-200">
+        <th className="p-2">Action</th>
+        <th className="p-2">Order Id</th>
+        <th className="p-2">Order Status</th>
+        <th className="p-2">Name</th>
+        <th className="p-2">Amount</th>
+        <th className="p-2">Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {paginatedOrders.length ? (
+        paginatedOrders.map((o, i) => (
+          <tr key={i} className="border-t">
+            <td className="p-2 border flex justify-center items-center">
+              <button
+                onClick={() => router.push(`/admin/Allorder/${o._id}`)}
+                className="flex items-center gap-1 text-sm text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-md transition-all shadow-sm"
+              >
+                👁 View
+              </button>
+            </td>
 
-              </tbody>
-            </table>
-          </div>
+            <td className="p-2 border">{o.order_number}</td>
+
+            {/* ✅ Dropdown for order status */}
+            <td className="p-2 border">
+  <select
+    value={o.order_status}
+    onChange={async (e) => {
+      const newStatus = e.target.value;
+      const oldStatus = o.order_status;
+
+      try {
+        const res = await fetch(`/api/orders/${o._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+
+        if (!res.ok) throw new Error("Failed to update status");
+
+        const data = await res.json();
+        toast.success("Order Status updated successfully");
+
+        // 👇 Update local state immediately so dropdown stays updated
+        setOrders((prev) =>
+          prev.map((ord) =>
+            ord._id === o._id ? { ...ord, order_status: newStatus } : ord
+          )
+        );
+
+      } catch (err) {
+        console.error(err);
+        alert("❌ Failed to update status, reverting...");
+        e.target.value = oldStatus; // revert dropdown
+      }
+    }}
+    className="border px-2 py-1 rounded-md text-sm"
+  >
+    <option value="pending">Pending</option>
+    <option value="shipped">Shipped</option>
+    <option value="cancelled">Cancelled</option>
+  </select>
+</td>
+
+
+
+            <td className="p-2 border">{o.order_username}</td>
+            <td className="p-2 border">₹{o.order_amount}</td>
+            <td className="p-2 border">
+              {new Date(o.createdAt).toLocaleDateString()}
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="6" className="text-center text-gray-500 p-4">
+            No orders found.
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
 
           {/* Pagination */}
           <div className="flex justify-between items-center mt-6 flex-wrap gap-3">

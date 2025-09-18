@@ -7,7 +7,16 @@ export async function PUT(req, { params }) {
   const { orderId } = params;
 
   try {
-    // Check if order exists and is pending
+    const { status } = await req.json(); // ✅ get new status from request
+
+    if (!status) {
+      return NextResponse.json(
+        { success: false, message: "Status is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if order exists
     const order = await Order.findById(orderId);
     if (!order) {
       return NextResponse.json(
@@ -16,17 +25,10 @@ export async function PUT(req, { params }) {
       );
     }
 
-    if (order.order_status !== "pending") {
-      return NextResponse.json(
-        { success: false, message: "Only pending orders can be cancelled" },
-        { status: 400 }
-      );
-    }
-
-    // Update order status to cancelled
+    // ✅ Update with new status
     const updatedOrder = await Order.findByIdAndUpdate(
       orderId,
-      { order_status: "cancelled" },
+      { order_status: status },
       { new: true }
     );
 
