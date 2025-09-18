@@ -1400,7 +1400,7 @@ useEffect(() => {
                     <select
                       value={selectedCategory}
                       onChange={(e)=>setSelectedCategory(e.target.value)}
-                      className="h-full text-[11px] xs:text-xs bg-white px-2 pr-3 border-r border-gray-300 outline-none shrink-0 max-w-[110px]"
+                      className="h-full text-[11px] xs:text-xs bg-white px-2 pr-3 border-r border-gray-300 outline-none shrink-0 max-w-[110px]" 
                       aria-label="Category">
                       <option value="All Category">All Category</option>
                       {categories.map(cat => (
