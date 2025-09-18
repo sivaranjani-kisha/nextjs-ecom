@@ -193,108 +193,81 @@ const [isSubmitting, setIsSubmitting] = useState(false);
     fetchStores();
   }, []);
 
-  const fetchData = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setShowAuthModal(true);
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+  const buyNowData = localStorage.getItem("buyNowData");
+  const checkoutData = localStorage.getItem("checkoutData");
 
-    try {
-      const decoded = jwtDecode(token);
-      const userId = decoded.userId;
-      const buyNowData = localStorage.getItem('buyNowData'); 
-       const checkoutData = localStorage.getItem('checkoutData');
-        console.log(checkoutData);
-        if (checkoutData) {
-          const parsedData = JSON.parse(checkoutData);
-          setCartItems(parsedData.cart.items);
-        }else{
-      // Fetch cart data
-      const cartResponse = await fetch('/api/cart', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+  if (buyNowData) {
+    const parsedData = JSON.parse(buyNowData);
+    setCartItems(parsedData.cart.items);
+    localStorage.removeItem("buyNowData"); // ✅ clear after use
+  } else if (checkoutData) {
+    const parsedData = JSON.parse(checkoutData);
+    setCartItems(parsedData.cart.items);
+  }
+
+  // Then run fetchData for user address & fallback cart
+  fetchData();
+}, []);
+
+
+  const fetchData = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    setShowAuthModal(true);
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const decoded = jwtDecode(token);
+    const userId = decoded.userId;
+
+    // ✅ Only fetch cart if no items already set
+    if (cartItems.length === 0) {
+      const cartResponse = await fetch("/api/cart", {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!cartResponse.ok) {
-        throw new Error('Failed to fetch cart data');
-      }
+      if (!cartResponse.ok) throw new Error("Failed to fetch cart data");
 
       const cartData = await cartResponse.json();
       setCartItems(cartData.cart.items);
     }
-    
-    
-    // Check for buy now data first
-      if (buyNowData) {
-        const parsedData = JSON.parse(buyNowData);
-        setCartItems(parsedData.cart.items);
-        localStorage.removeItem('buyNowData'); // Clean up after use
-      }
-      // Then check for checkout data
-      else if (checkoutData) {
-        const parsedData = JSON.parse(checkoutData);
-        setCartItems(parsedData.cart.items);
-      }
-      // Fallback to fetching the cart from the API
-      else {
-        const cartResponse = await fetch('/api/cart', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
- 
-        if (!cartResponse.ok) {
-          throw new Error('Failed to fetch cart data');
-        }
- 
-        const cartData = await cartResponse.json();
-        setCartItems(cartData.cart.items);
-      }
-      
-      
-      
-      // Fetch user address
-      const addressResponse = await fetch(`/api/useraddress?user_id=${userId}`);
-      if (!addressResponse.ok) {
-        throw new Error('Failed to fetch address data');
-      }
 
-      const addressData = await addressResponse.json();
-      setUseraddress(addressData.userAddress);
+    // Fetch user address
+    const addressResponse = await fetch(`/api/useraddress?user_id=${userId}`);
+    if (!addressResponse.ok) throw new Error("Failed to fetch address data");
 
-      // Pre-fill form with first address if available
-      if (addressData.userAddress.length > 0) {
-        const addr = addressData.userAddress[0];
-        setFormData(prev => ({
-          ...prev,
-          firstName: addr.firstName || "",
-          lastName: addr.lastName || "",
-          country: addr.country || "",
-          address: addr.address || "",
-          city: addr.city || "",
-          state: addr.state || "",
-          postCode: addr.postCode || "",
-          phonenumber: addr.phonenumber || "",
-          landmark: addr.landmark || "",
-          email: addr.email || "",
-          businessName: addr.businessName || "",
-          additionalInfo: addr.additionalInfo || ""
-        }));
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load checkout data");
-    } finally {
-      setLoading(false);
+    const addressData = await addressResponse.json();
+    setUseraddress(addressData.userAddress);
+
+    if (addressData.userAddress.length > 0) {
+      const addr = addressData.userAddress[0];
+      setFormData(prev => ({
+        ...prev,
+        firstName: addr.firstName || "",
+        lastName: addr.lastName || "",
+        country: addr.country || "",
+        address: addr.address || "",
+        city: addr.city || "",
+        state: addr.state || "",
+        postCode: addr.postCode || "",
+        phonenumber: addr.phonenumber || "",
+        landmark: addr.landmark || "",
+        email: addr.email || "",
+        businessName: addr.businessName || "",
+        additionalInfo: addr.additionalInfo || ""
+      }));
     }
-  };
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    toast.error("Failed to load checkout data");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
