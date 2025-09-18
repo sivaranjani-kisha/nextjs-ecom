@@ -348,6 +348,12 @@ useEffect(() => {
   const [showReplacementModal, setShowReplacementModal] = useState(false);
   const [showWarrantyModal, setshowWarrantyModal] = useState(false);
   const [showGstInvoiceModal, setshowGstInvoiceModal] = useState(false);
+
+  // ###### Show Customer Reviews ###### //
+  const [reviews, setReviews] = useState([]);
+  const [avgRating, setAvgRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -372,6 +378,21 @@ useEffect(() => {
         // If API returns a single product object
         else if (data && data.slug) {
           setProduct(data);
+          // ###### Fetch Customer Reviews ###### //
+          try {
+            // fetch reviews
+            const reviewsRes = await fetch(`/api/reviews/${data._id}`);
+            const reviewsData = await reviewsRes.json();
+ 
+            if (reviewsData.success) {
+              setReviews(reviewsData.reviews);
+              setAvgRating(reviewsData.avgRating);
+              setReviewCount(reviewsData.count);
+            }
+          } catch (error) {
+            console.error("Error fetching product or reviews:", error);
+          }
+ 
         }
         else {
           throw new Error("Invalid product data");
@@ -1689,8 +1710,13 @@ const fetchBrand = async () => {
       </div>
      
 
-         <div className="space-y-8">
-           <ProductDetailsSection product={product} />
+        <div className="space-y-8">
+          <ProductDetailsSection 
+            product={product} 
+            reviews={reviews}
+            avgRating={avgRating}
+            reviewCount={reviewCount}
+          />
            <RecentlyViewedProducts className="w-full" />
          
           

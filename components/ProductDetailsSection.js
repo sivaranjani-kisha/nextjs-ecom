@@ -8,11 +8,12 @@ import { FaShoppingCart, FaStar } from "react-icons/fa";
 import Link from "next/link";
 import { Poppins } from "next/font/google";
 const poppins = Poppins({ subsets: ["latin"], weight: ["400","500","600"] });
+import { formatDistanceToNow, format } from "date-fns";
 
 
-export default function ProductDetailsSection({ product }) {
+export default function ProductDetailsSection({ product, reviews=[], avgRating=0, reviewCount=0}) {
 
-   const [brand, setBrand] = useState([]);
+  const [brand, setBrand] = useState([]);
   const [activeTab, setActiveTab] = useState("description");
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
@@ -23,10 +24,21 @@ export default function ProductDetailsSection({ product }) {
     overview: product.overview || "No overview available.",
     description: product.description || "No description available.",
     videos: product.videos || [],
+    // reviews: {
+    //   rating: product.rating || 0,
+    //   count: product.reviews || 0,
+    //   items: product.reviewItems || []
+    // }
     reviews: {
-      rating: product.rating || 0,
-      count: product.reviews || 0,
-      items: product.reviewItems || []
+      rating: avgRating,
+      count: reviewCount,
+      items: reviews.map(r => ({
+        title: r.reviews_title,
+        rating: r.reviews_rating,
+        comment: r.reviews_comments,
+        userName: r.user_id?.name || "Anonymous",
+        date: r.created_date
+      }))
     }
   };
 
@@ -92,57 +104,58 @@ export default function ProductDetailsSection({ product }) {
   };
 
   // put this near the top of your component (before return)
-const parseJSONSafe = (value) => {
-  if (!value) return null;
-  if (typeof value === "object") return value; // already an object
-  if (typeof value !== "string") return null;
+  const parseJSONSafe = (value) => {
+    if (!value) return null;
+    if (typeof value === "object") return value; // already an object
+    if (typeof value !== "string") return null;
 
-  const tryParse = (str) => {
-    try {
-      return JSON.parse(str);
-    } catch {
-      return undefined;
+    const tryParse = (str) => {
+      try {
+        return JSON.parse(str);
+      } catch {
+        return undefined;
+      }
+    };
+
+    let s = value.trim();
+
+    // 1) direct parse
+    let parsed = tryParse(s);
+    if (parsed !== undefined) {
+      // if parsed is a string again (double-encoded), recurse
+      return typeof parsed === "string" ? parseJSONSafe(parsed) : parsed;
     }
+
+    // 2) strip wrapping quotes if present and try again
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+      s = s.slice(1, -1).trim();
+      parsed = tryParse(s);
+      if (parsed !== undefined) return typeof parsed === "string" ? parseJSONSafe(parsed) : parsed;
+    }
+
+    // 3) unescape common escaped quotes/slashes and try one last time
+    try {
+      const unescaped = s.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, "\\");
+      parsed = tryParse(unescaped);
+      if (parsed !== undefined) return typeof parsed === "string" ? parseJSONSafe(parsed) : parsed;
+    } catch {}
+
+    return null; // couldn't parse
   };
 
-  let s = value.trim();
+  const decodeAndClean = (str) => {
+    if (!str) return "";
 
-  // 1) direct parse
-  let parsed = tryParse(s);
-  if (parsed !== undefined) {
-    // if parsed is a string again (double-encoded), recurse
-    return typeof parsed === "string" ? parseJSONSafe(parsed) : parsed;
-  }
+    // Create a temporary element to decode HTML entities
+    const temp = document.createElement("textarea");
+    temp.innerHTML = str;
+    let decoded = temp.value;
 
-  // 2) strip wrapping quotes if present and try again
-  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
-    s = s.slice(1, -1).trim();
-    parsed = tryParse(s);
-    if (parsed !== undefined) return typeof parsed === "string" ? parseJSONSafe(parsed) : parsed;
-  }
+    // Remove both actual LRM char and literal "&lrm;"
+    decoded = decoded.replace(/\u200E/g, "").replace(/&lrm;/gi, "");
 
-  // 3) unescape common escaped quotes/slashes and try one last time
-  try {
-    const unescaped = s.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, "\\");
-    parsed = tryParse(unescaped);
-    if (parsed !== undefined) return typeof parsed === "string" ? parseJSONSafe(parsed) : parsed;
-  } catch {}
-
-  return null; // couldn't parse
-};
-const decodeAndClean = (str) => {
-  if (!str) return "";
-
-  // Create a temporary element to decode HTML entities
-  const temp = document.createElement("textarea");
-  temp.innerHTML = str;
-  let decoded = temp.value;
-
-  // Remove both actual LRM char and literal "&lrm;"
-  decoded = decoded.replace(/\u200E/g, "").replace(/&lrm;/gi, "");
-
-  return decoded.trim();
-};
+    return decoded.trim();
+  };
 
 
   const fetchRecentlyViewed = async () => {
@@ -238,6 +251,18 @@ const decodeAndClean = (str) => {
       </div>
     );
   };
+
+  function formatReviewDate(date) {
+    const reviewDate = new Date(date);
+    const now = new Date();
+    const diffInDays = Math.floor((now - reviewDate) / (1000 * 60 * 60 * 24));
+
+    if (diffInDays < 7) {
+      return formatDistanceToNow(reviewDate, { addSuffix: true });
+    } else {
+      return format(reviewDate, "MMM d, yyyy"); 
+    }
+  }
 
   return (
     <div className="mt-4 sm:mt-8 bg-gray-100 w-full py-6">
@@ -453,7 +478,7 @@ const decodeAndClean = (str) => {
             <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Customer Reviews</h2>
             <div className="flex items-center mt-1 sm:mt-2">
               {[...Array(5)].map((_, i) => (
-                <span key={i} className={`text-lg sm:text-xl ${i < Math.floor(tabData.reviews.rating) ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
+                <span key={i} className={`text-lg sm:text-2xl ${i < Math.floor(tabData.reviews.rating) ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
               ))}
               <span className="text-gray-700 ml-1 sm:ml-2 text-sm sm:text-base">
                 {tabData.reviews.rating.toFixed(1)} ({tabData.reviews.count} Reviews)
@@ -463,15 +488,15 @@ const decodeAndClean = (str) => {
             {tabData.reviews.items.length > 0 ? (
               <div className="mt-2 sm:mt-4 space-y-2 sm:space-y-3">
                 {tabData.reviews.items.map((review, index) => (
-                  <div key={index} className="border-b pb-2 sm:pb-3">
-                    <p className="font-medium text-sm sm:text-base">"{review.title}"</p>
-                    <div className="flex text-yellow-400 text-xs sm:text-sm mt-1">
+                  <div key={index} className={`border-b border-gray-300  pb-2 sm:pb-3 ${index === 0 ? "border-t" : ""} `}>
+                    <div className="flex text-lg items-baseline sm:text-lg mt-1">
                       {[...Array(5)].map((_, i) => (
-                        <span key={i}>{i < review.rating ? '★' : '☆'}</span>
+                        <span className="text-yellow-400" key={i}>{i < review.rating ? '★' : '☆'}</span>
                       ))}
+                      <p className="text-gray-700 font-medium text-sm sm:text-base">&nbsp;{review.title}</p>
                     </div>
-                    <p className="text-gray-700 mt-1 sm:mt-2 text-sm sm:text-base">{review.comment}</p>
-                    <p className="text-gray-600 text-xs sm:text-sm mt-1">By {review.userName} on {new Date(review.date).toLocaleDateString()}</p>
+                    <p className="text-gray-700 text-left mt-1 sm:mt-2 text-sm sm:text-base">{review.comment}</p>
+                    <p className="text-gray-400 text-left text-xs sm:text-sm mt-1">Reviewed By {review.userName} on {formatReviewDate(review.date)}</p>
                   </div>
                 ))}
               </div>
