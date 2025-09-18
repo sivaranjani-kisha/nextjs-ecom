@@ -98,7 +98,7 @@ const CategoryProducts = () => {
             </div>
 
             {categoryProducts
-              .filter(cp => priorityCategories.includes(cp.subcategoryId?.category_slug))
+              // .filter(cp => priorityCategories.includes(cp.subcategoryId?.category_slug))
               .map((categoryProduct) => {
                 const category = categoryProduct.subcategoryId;
                 const products = categoryProduct.products || [];
