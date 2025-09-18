@@ -1024,84 +1024,57 @@ const fetchBrand = async () => {
             {/* Product More Info */}
 
             <div className="mt-4 bg-gray-50 p-4 rounded-md">
-  <div 
-    className="flex items-center justify-between cursor-pointer"
-    onClick={() => setShowMoreInfo(!showMoreInfo)}
-  >
-    <h3 className="text-sm font-semibold text-gray-900">MORE INFO</h3>
-    <svg 
-      className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showMoreInfo ? 'transform rotate-180' : ''}`} 
-      fill="none" 
-      stroke="currentColor" 
-      viewBox="0 0 24 24"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  </div>
+  {/* Static Title */}
+  <h3 className="text-sm font-semibold text-gray-900 mb-3">MORE INFO</h3>
 
-  {showMoreInfo && (
-    <div className="mt-3">
-      <div className="flex flex-row gap-4">
-        {/* Image Section (Left) */}
-        <div className="w-[30%] flex-shrink-0">
-          <img
-            src={selectedImage || "/user/placeholder.png"}
-            alt={product?.name || "Product"}
-            className="w-full h-auto max-w-[150px] max-h-[150px] object-contain rounded-md border border-gray-200 mx-auto"
-          />
-        </div>
-        
-        {/* Content Section (Right) */}
-        <div className="w-[70%] flex flex-col">
-          {/* Brand Information */}
-          <div className="mb-4">
-            <h4 className="text-sm font-semibold text-gray-900 mb-1">Brand</h4>
-            <p className="text-gray-700 text-sm">
-              {brand.find((b) => b.value === product.brand)?.label || "No Brand Info Available"}
-            </p>
-          </div>
+  <div className="flex flex-row gap-4">
+    {/* Image Section (Left) */}
+    <div className="w-[30%] flex-shrink-0">
+      <img
+        src={selectedImage || "/user/placeholder.png"}
+        alt={product?.name || "Product"}
+        className="w-full h-auto max-w-[150px] max-h-[150px] object-contain rounded-md border border-gray-200 mx-auto"
+      />
+    </div>
+    
+    {/* Content Section (Right) */}
+    <div className="w-[70%] flex flex-col">
+      {/* Brand Information */}
+      <div className="mb-4">
+        <h4 className="text-sm font-semibold text-gray-900 mb-1">Brand</h4>
+        <p className="text-gray-700 text-sm">
+          {brand.find((b) => b.value === product.brand)?.label || "No Brand Info Available"}
+        </p>
+      </div>
 
-          {/* Quantity Information */}
-          <div className="mb-4">
-            <h4 className="text-sm font-semibold text-gray-900 mb-1">Available Quantity</h4>
-            <p className="text-gray-700 text-sm">
-              {product.quantity ? `${product.quantity} units available` : "Out of stock"}
-            </p>
-            {product.quantity && (
-              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                <div 
-                  className="bg-green-600 h-1.5 rounded-full" 
-                  style={{ width: `${Math.min(100, product.quantity)}%` }}
-                ></div>
-              </div>
-            )}
+      {/* Quantity Information */}
+      <div className="mb-4">
+        <h4 className="text-sm font-semibold text-gray-900 mb-1">Available Quantity</h4>
+        <p className="text-gray-700 text-sm">
+          {product.quantity ? `${product.quantity} units available` : "Out of stock"}
+        </p>
+        {product.quantity && (
+          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+            <div 
+              className="bg-green-600 h-1.5 rounded-full" 
+              style={{ width: `${Math.min(100, product.quantity)}%` }}
+            ></div>
           </div>
-        </div>
+        )}
       </div>
     </div>
-  )}
+  </div>
 </div>
+
 
             <div className="border-b border-gray-400 mt-2"></div>
 
             {/* Product feature section */}
 
-             <div className="mt-4 bg-gray-50 p-4 rounded-md">
-              <div 
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => setShowFeatures(!showFeatures)}
-              >
-                <h3 className="text-sm font-semibold text-gray-900">PRODUCT FEATURES</h3>
-                <svg 
-                  className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showFeatures ? 'transform rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-{showFeatures && (
+            <div className="mt-4 bg-gray-50 p-4 rounded-md">
+  {/* Static Title */}
+  <h3 className="text-sm font-semibold text-gray-900 mb-3">PRODUCT FEATURES</h3>
+
   <div className="mt-3">
     {(() => {
       let features = [];
@@ -1135,14 +1108,7 @@ const fetchBrand = async () => {
       );
     })()}
   </div>
-)}
-
-
-
-
-
-
-            </div>
+</div>
 
             <div className="border-b border-gray-400 mt-2"></div>
 
@@ -1181,23 +1147,10 @@ const fetchBrand = async () => {
                   )}
             </div> */}
             <div className="mt-4 bg-gray-50 p-4 rounded-md">
-              <div 
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => setShowHighlights(!showHighlights)}
-              >
-                <h3 className="text-sm font-semibold text-gray-900">PRODUCT HIGHLIGHTS</h3>
-                <svg 
-                  className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showHighlights ? 'transform rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+  {/* Static Title */}
+  <h3 className="text-sm font-semibold text-gray-900 mb-3">PRODUCT HIGHLIGHTS</h3>
 
-              {showHighlights && (
-                <div className="mt-3 overflow-auto">
+  <div className="mt-3 overflow-auto">
     {Array.isArray(product.product_highlights) &&
     product.product_highlights
       .flatMap(item => item.split(/[\n,]+/).map(i => i.trim()))
@@ -1215,7 +1168,7 @@ const fetchBrand = async () => {
             .filter(item => item.length > 0)
             .map((item, index) => {
               const cleanedItem = item
-                .replace(/[\[\]{}"]/g, '') // <-- removes curly braces, square brackets, quotes
+                .replace(/[\[\]{}"]/g, '') // remove braces, brackets, quotes
                 .replace(/\s+/g, ' ')
                 .trim();
               const [key, ...rest] = cleanedItem.split(':');
@@ -1233,8 +1186,8 @@ const fetchBrand = async () => {
       <p className="text-gray-500 text-xs">No highlights available.</p>
     )}
   </div>
-              )}
-            </div>
+</div>
+
 
           <div className="border-b border-gray-400 mt-2"></div>
 
