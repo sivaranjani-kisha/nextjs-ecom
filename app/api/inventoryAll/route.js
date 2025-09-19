@@ -45,21 +45,40 @@ export async function POST(req) {
         const existingProduct = await Product.findOne({
             item_code: item.name,
         });
+        const existingBrand = await Brand.findOne({  brand_name: { $regex: new RegExp(`^${item.brand}$`, "i") } });
+        const brand_id = existingBrand?._id?.toString() || null;
+        console.log(item.brand,existingBrand,brand_id);
         if (existingProduct) {
-            await Product.updateOne(
-                {
-                 item_code: item.name 
-                },
-                {
-                    $set: {
-                        price: parseFloat(item.MRP),
-                        special_price: parseFloat(item.SellingPrice),
-                        quantity: parseFloat(item.stock),
-                        movement: item.movement,
-                    },
-                }
+            // await Product.updateOne(
+            //     {
+            //      item_code: item.name 
+            //     },
+            //     {
+            //         $set: {
+            //             price: parseFloat(item.MRP),
+            //             special_price: parseFloat(item.SellingPrice),
+            //             quantity: parseFloat(item.stock),
+            //             movement: item.movement,
+            //         },
+            //     }
                 
-            );
+            // );
+              const updateFields = {
+                  price: parseFloat(item.MRP),
+                  special_price: parseFloat(item.SellingPrice),
+                  quantity: parseFloat(item.stock),
+                  // movement: item.movement,
+              };
+              if(brand_id) {
+                  updateFields['brand'] = brand_id;
+              }
+              await Product.updateOne(
+                  {
+                    item_code: item.name 
+                  },
+                  { $set: updateFields }
+                  
+              );
         }else{
           if(item.Status == 'Yes'){
             const existingProductall = await Product_all.findOne({
@@ -75,7 +94,7 @@ export async function POST(req) {
                             price: parseFloat(item.MRP),
                             special_price: parseFloat(item.SellingPrice),
                             quantity: parseFloat(item.stock),
-                            movement: item.movement,
+                            // movement: item.movement,
                         },
                     }
                     
@@ -87,7 +106,7 @@ export async function POST(req) {
                     special_price: parseFloat(item.SellingPrice),
                     quantity: parseFloat(item.stock),
                     brand   : item.brand,
-                    movement: item.movement,
+                    // movement: item.movement,
                 });
 
             }

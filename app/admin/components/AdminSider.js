@@ -43,6 +43,15 @@ export default function AdminSider({ collapsed }) {
     { icon: 'mdi:note-text-outline', label: 'Blog', link: 'blog' },
     { icon: 'mdi:account-outline', label: 'User', link: 'user' },
     { icon: 'mdi:phone-outline', label: 'Contact', link: 'contact' },
+    {
+  icon: 'mdi:file-chart-outline', // changed to reports icon
+  label: 'Reports',
+  submenu: [
+    { icon: 'mdi:plus-box-outline', label: 'New Product', link: 'newproduct', dotColor: 'bg-green-500' },
+
+  ]
+},
+
     // ✅ Updated Settings with new icon + submenu
   {
     icon: 'mdi:cog-outline',  // changed from phone to settings cog
