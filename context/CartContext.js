@@ -1,53 +1,59 @@
-// context/CartContext.js
 "use client";
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
+
+
 
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const [cartCount, setCartCount] = useState(0);
 
-useEffect(() => {
+  useEffect(() => {
     const fetchCartCount = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await fetch('/api/cart/count', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await response.json();
-          setCartCount(data.count);
-        } catch (error) {
-          console.error('Failed to fetch cart count:', error);
-        }
+      try {
+        const token = localStorage.getItem("token");
+        let guestCartId = null;
+         if (!token) {
+
+          // ✅ If not logged in → use guestCartId
+              
+             // if (!isLoggedIn) {
+                guestCartId = localStorage.getItem("guestCartId") || uuidv4();
+                localStorage.setItem("guestCartId", guestCartId);
+             // }
+       
+
+         }
+
+        const response = await fetch("/api/cart/count", {
+          headers: token ? { Authorization: `Bearer ${token}` } : { guestCartId: guestCartId},
+        });
+
+        const data = await response.json();
+        setCartCount(data.count || 0);
+      } catch (error) {
+        console.error("Failed to fetch cart count:", error);
+        setCartCount(0);
       }
     };
+
     fetchCartCount();
   }, []);
-  
+
   const updateCartCount = (count) => {
     setCartCount(count);
-    // Optionally, only persist if guest
   };
 
   const clearCart = () => {
-
     setCartCount(0);
   };
 
-
-//   const updateCartCount = (count) => {
-//     setCartCount(count);
-//     localStorage.setItem('cartCount', count.toString());
-//   };
-
   return (
-    <CartContext.Provider value={{ cartCount, updateCartCount,clearCart }}>
+    <CartContext.Provider value={{ cartCount, updateCartCount, clearCart }}>
       {children}
     </CartContext.Provider>
   );
 };
 
-export const useCart = () => {
-  return useContext(CartContext);
-};
+export const useCart = () => useContext(CartContext);

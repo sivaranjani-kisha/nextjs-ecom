@@ -601,14 +601,14 @@ const Header = () => {
           setLoadingAuth(true);
           setFormError("");
           setError("");
-
+          const guestId = localStorage.getItem("guestCartId");
           const endpoint =
             activeTab === "login" ? "/api/auth/login" : "/api/auth/register";
 
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(currentData), 
+            body: JSON.stringify({ ...currentData, guestId }), 
           });
 
           const data = await response.json();
@@ -641,6 +641,10 @@ const Header = () => {
               const cartData = await cartResponse.json();
               updateCartCount(cartData.count);
             }
+
+            // 👇 Optional: clear guestId after merge
+                localStorage.removeItem("guestCartId");
+                location.reload();
           } else {
             setShowAuthModal(true);
             setActiveTab("login");
@@ -662,6 +666,8 @@ const Header = () => {
         setIsLoggedIn(false);
         setUserData(null);
         updateCartCount(0); // Reset cart count on logout
+
+        location.reload();
     };
     useEffect(() => {
         const fetchOffers = async () => {
