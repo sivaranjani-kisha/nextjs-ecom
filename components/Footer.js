@@ -220,7 +220,7 @@ const capitalizeFirstLetter = (str) =>
               <div className="space-y-3">
           <h3 className="text-white font-semibold text-lg mb-4">Corporate Office</h3>
           <p>
-            26/1 Drr. Alagappa Chettiyar Rd, Tatabad, Near Kovai Scan Centre,
+            26/1 Dr. Alagappa Chettiyar Rd, Tatabad, Near Kovai Scan Centre,
             Coimbatore-641012
           </p>
 
@@ -340,171 +340,141 @@ const capitalizeFirstLetter = (str) =>
 
 
         {/* Bottom Section */}
-        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 md:grid-cols-[70%_30%]"> 
-        {/* <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white grid grid-cols-1 ">  */}
-          <div className="">
-            <div className="mb-2 container mx-auto px-3 flex flex-col md:flex-row justify-between items-center gap-6 ">
-              <div className="text-center md:text-left ml-1 mb-1">
-                <p>
-                  <a href="#" className="hover:underline text-white">Bharath Electronics ©</a> 2025 All rights reserved.
-                </p>
-              </div>
-              {/*
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <div className="flex gap-2">
-                  <img src="https://estore.bharathelectronics.in/assets/images/gplay-img.jpg" alt="Google Play" className="p-1 w-[120px]" />
-                  <img src="https://estore.bharathelectronics.in/assets/images/app-store-img.jpg" alt="App Store" className="p-1 w-[120px]" />
-                </div>
-                <div>
-                  <img src="https://estore.bharathelectronics.in/assets/images/payments.png" alt="Payment methods" className="p-2 w-[200px]" />
-                </div>
-              </div> */}
-            </div>
-              
-          <div className="bg-[#2e2a2a]">
-              <div className="container mx-auto px-4 mt-4  space-y-4">
-                {groupedCategories.main.map((mainCat) => (
-                  <div key={mainCat._id}>
-                    {/* Main Category */}
-                    {/* <Link
-                      href={`/category/${mainCat.category_slug}`}
-                      className="font-semibold text-white hover:underline whitespace-nowrap"
-                    >
-                      {capitalizeFirstLetter(mainCat.category_name)} :
-                    </Link> */}
+        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white">
+  <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-[70%_30%] gap-8">
+    
+    {/* LEFT SECTION (Categories + Brands) */}
+    <div>
+      <div className="mb-2 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="text-center md:text-left ml-1 mb-1">
+          <p>
+            <a href="#" className="hover:underline text-white">
+              Bharath Electronics ©
+            </a>{" "}
+            2025 All rights reserved.
+          </p>
+        </div>
+      </div>
 
-                    {/* Sub Categories */}
-                    <span className="text-gray-400">
-                      {groupedCategories.subs[mainCat._id]?.map((subcat, i) => (
-                        <span key={subcat._id}>
+      <div className="space-y-4 mt-4">
+        {groupedCategories.main.map((mainCat) => (
+          <div key={mainCat._id}>
+            <span className="text-gray-400">
+              {groupedCategories.subs[mainCat._id]?.map((subcat, i) => (
+                <span key={subcat._id}>
+                  <Link
+                    href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
+                    className="text-white hover:underline"
+                  >
+                    {capitalizeFirstLetter(subcat.category_name)} :
+                  </Link>
+
+                  {/* Sub-Sub Categories */}
+                  {groupedCategories.subs[subcat._id]?.length > 0 && (
+                    <span className="ml-2 text-gray-500">
+                      {groupedCategories.subs[subcat._id].map((child, j) => (
+                        <span key={child._id}>
                           <Link
-                            href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
-                            className="text-white hover:underline"
+                            href={`/category/${mainCat.category_slug}/${subcat.category_slug}/${child.category_slug}`}
+                            className="hover:text-white hover:underline"
                           >
-                            {capitalizeFirstLetter(subcat.category_name)} :
+                            {capitalizeFirstLetter(child.category_name)}
                           </Link>
-
-                          {/* Sub-Sub Categories */}
-                          {groupedCategories.subs[subcat._id]?.length > 0 && (
-                            <span className="ml-2  text-gray-500">
-                              {/* {" ("} */}
-                              {groupedCategories.subs[subcat._id].map((child, j) => (
-                                <span key={child._id}>
-                                  <Link
-                                    href={`/category/${mainCat.category_slug}/${subcat.category_slug}/${child.category_slug}`}
-                                    className="hover:text-white hover:underline"
-                                  >
-                                    {capitalizeFirstLetter(child.category_name)}
-                                  </Link>
-                                  {j < groupedCategories.subs[subcat._id].length - 1 && " / "}
-                                </span>
-                              ))}
-                              {/* {")"} */}
-                            </span>
-                          )}
-
-                          {mainCat.brands.length > 0 && (
-                          <>
-                            <br /> {/* 👈 Force new line before brands */}
-                            <span className="font-semibold text-white">Brands :</span>
-                            <span className="ml-2  text-gray-500">
-                              {mainCat.brands.map((brand, i) => (
-                                <span key={brand._id}>
-                                 <Link
-                                    href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
-                                    className="hover:text-white hover:underline"
-                                  >
-                                    {brand.brand_name.charAt(0).toUpperCase() + brand.brand_name.slice(1).toLowerCase()}
-                                  </Link>
-
-                                  {i < mainCat.brands.length - 1 && " / "}
-                                </span>
-                              ))}
-                            </span>
-                          </>
-                        )}
-
-                        {i < groupedCategories.subs[mainCat._id].length - 1 && (
-                          <span className="block mb-4"></span>
-                        )}
+                          {j < groupedCategories.subs[subcat._id].length - 1 && " / "}
                         </span>
                       ))}
                     </span>
+                  )}
+
+                  {/* Brands */}
+                  {mainCat.brands.length > 0 && (
+                    <>
+                      <br />
+                      <span className="font-semibold text-white">Brands :</span>
+                      <span className="ml-2 text-gray-500">
+                        {mainCat.brands.map((brand, i) => (
+                          <span key={brand._id}>
+                            <Link
+                              href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
+                              className="hover:text-white hover:underline"
+                            >
+                              {brand.brand_name.charAt(0).toUpperCase() +
+                                brand.brand_name.slice(1).toLowerCase()}
+                            </Link>
+                            {i < mainCat.brands.length - 1 && " / "}
+                          </span>
+                        ))}
+                      </span>
+                    </>
+                  )}
+
+                  {i < groupedCategories.subs[mainCat._id].length - 1 && (
+                    <span className="block mb-4"></span>
+                  )}
+                </span>
+              ))}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* RIGHT SECTION (Our Location) */}
+    <div className="space-y-4">
+      <h3 className="text-white font-semibold text-lg mb-4">Our Location</h3>
+      {Object.entries(groupedStores).map(([city, orgs], index) => (
+        <div key={index}>
+          <p className="text-sm text-gray-400">{orgs.join(", ")}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+        <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5">
+          <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-[70%_30%] gap-8">
+            {/* LEFT SECTION */}
+              <div className="space-y-8">
+                {/* SEO Content */}
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-white font-semibold">
+                        Buy Best Laptops & Gadgets Online
+                      </h2>
+                      <p className="text-gray-400 py-2">
+                        Unleash the Power of Technology with{" "}
+                        <span className="font-semibold text-white">
+                          Bharath Electronics' Laptop & Computers Collection
+                        </span>
+                        . Find the Perfect Device for Your Computing Needs, including Gaming
+                        Laptops, Everyday Laptops, and Business Laptops. We Offer a Wide
+                        Selection from Top Brands such as Samsung, Asus, Apple, HP, Lenovo, and
+                        More. Our Laptops and Computers Boast Premium Design, High-Capacity RAM,
+                        Latest Processors, Quality Graphics Cards, Excellent Battery Life, and
+                        Incredible Display & Sound Features. Don’t Forget to Check Out our Range
+                        of Smart Watches, Chargers, Power Banks, Headphones, and Bluetooth
+                        Speakers for a Complete Tech Experience.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h2 className="text-white font-semibold">
+                        Buy Kitchen Appliances at Best Prices Online – Shop Now
+                      </h2>
+                      <p className="text-gray-400 py-2">
+                        Revolutionize Your Kitchen with Bharath Electronics' Kitchen Appliances Collection. 
+                        Explore a Wide Range of Colours, Sizes, Manufacturers, and Types to Find the Perfect 
+                        Appliances for Your Culinary Needs. From Multi-Functional Mixer Juicer Grinders to 
+                        Energy-Efficient Electric Cookers, Kitchen Chimneys, Gas Stoves, Induction Stoves, 
+                        Water Purifiers, Microwave Ovens, and Pressure Cookers, we Offer a Diverse Selection. 
+                        Upgrade Your Cooking Experience Today with our Affordable and High-Quality Kitchen Appliances.
+                      </p>
+                    </div>
                   </div>
-                ))}
               </div>
             </div>
-          </div>
-        {/* Right Column - Our Location + Stores */}
-        <div className="container mx-auto px-4 space-y-4">
-          <h3 className="text-white font-semibold flex text-lg mb-4">Our Location</h3>
-
-          {Object.entries(groupedStores).map(([city, orgs], index) => (
-            <div key={index} className="space-y-2">
-              {/* <h5 className="text-white font-medium flex items-center gap-2 mb-1">
-                Showroom in {city}:
-              </h5> */}
-              <p className="text-sm text-gray-400 ">
-                {orgs.join(", ")}
-              </p>
-            </div>
-          ))}
         </div>
 
-        {/* {Object.entries(groupedStores).map(([city, orgs], index) => (
-        <div key={index} className="container mx-auto px-4  space-y-4">
-        
-         <h5 className="text-white font-medium flex items-center gap-2 mb-2">
-            Showroom in {city}:
-            <span className="text-sm text-gray-500">
-              {orgs.join(", ")}
-            </span>
-          </h5>
-
-          
-        </div>
-      ))} */}
-
-        </div>
-        <div className="container mx-auto ml-4  py-4 space-y-4">
-
-  
-          <div>
-            <h2 className="text-white ">
-              Buy Best Laptops & Gadgets Online
-            </h2>
-            <p className="text-gray-400 py-2">
-              Unleash the Power of Technology with{" "}
-              <span className="font-semibold text-white">
-                Bharath Electronics' Laptop & Computers Collection
-              </span>
-              . Find the Perfect Device for Your Computing Needs, including Gaming
-              Laptops, Everyday Laptops, and Business Laptops. We Offer a Wide
-              Selection from Top Brands such as Samsung, Asus, Apple, HP, Lenovo, and
-              More. Our Laptops and Computers Boast Premium Design, High-Capacity RAM,
-              Latest Processors, Quality Graphics Cards, Excellent Battery Life, and
-              Incredible Display & Sound Features. Don’t Forget to Check Out our Range
-              of Smart Watches, Chargers, Power Banks, Headphones, and Bluetooth
-              Speakers for a Complete Tech Experience.
-            </p>
-          </div>
-
-          <div className="mt-4">
-            <h2 className=" text-white ">
-              Buy Kitchen Appliances at Best Prices Online – Shop Now
-            </h2>
-            <p className="text-gray-400 py-2">
-              Revolutionize Your Kitchen with Bharath Electronics' Kitchen Appliances Collection. Explore a Wide Range of Colours, Sizes, Manufacturers, and Types to
-              Find the Perfect Appliances for Your Culinary Needs. From Multi-Functional
-              Mixer Juicer Grinders to Energy-Efficient Electric Cookers, Kitchen
-              Chimneys, Gas Stoves, Induction Stoves, Water Purifiers, Microwave Ovens,
-              and Pressure Cookers, we Offer a Diverse Selection. Upgrade Your Cooking
-              Experience Today with our Affordable and High-Quality Kitchen Appliances.
-            </p>
-          </div>
-
-
-        </div>
 
 
       </footer>
