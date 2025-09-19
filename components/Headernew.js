@@ -23,6 +23,7 @@ import { useHeaderdetails } from "@/context/HeaderContext";
 import ProductCard from '@/components/ProductCard';
 import Addtocart from '@/components/AddToCart';
 import { getProducts } from '@/lib/productApi';
+
 const Header = () => {
     const router = useRouter();
     const pathname = usePathname();
@@ -332,7 +333,17 @@ const saveCache = (key, data) => {
 
     router.push(`/search?${params.toString()}`);
   };
-  
+    const handleSearchBtnClick = () => {
+      if (!searchQuery.trim() && selectedCategory === "All Category") return;
+
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.append("query", searchQuery.trim());
+      if (selectedCategory !== "All Category") {
+        params.append("category", selectedCategory);
+      }
+
+      router.push(`/search?${params.toString()}`);
+  };
     // Load products once using shared util (for instant local filtering)
 useEffect(() => {
   let mounted = true;
@@ -480,125 +491,139 @@ const clearSearch = useCallback(() => {
     const [formError, setFormError] = useState('');
     const [error, setError] = useState('');
     const [errors, setErrors] = useState({
-  login: { email: "", password: "" },
-  register: { name: "", email: "", mobile: "", password: "" },
-});
+      login: { email: "", password: "" },
+      register: { name: "", email: "", mobile: "", password: "" },
+    });
 
-const handleAuthSubmit = async (e) => {
-  e.preventDefault();
-  setLoadingAuth(false);
+    // ADD: define missing auth states to avoid ReferenceError
+    const [loginData, setLoginData] = useState({ email: "", password: "" });
+    const [registerData, setRegisterData] = useState({ name: "", email: "", mobile: "", password: "" });
 
-  // pick correct state depending on tab
-  const currentData = activeTab === "login" ? loginData : registerData;
+    const handleAuthSubmit = async (e) => {
+      e.preventDefault();
+      setLoadingAuth(false);
 
-// reset errors for current tab only
-  setErrors((prev) => ({
-    ...prev,
-    [activeTab]: { name: "", email: "", mobile: "", password: "" },
-  }));
-
-  let newErrors = {};
-
-  // ---------- REGISTER VALIDATION ----------
-  if (activeTab === "register") {
-    if (!currentData.name) newErrors.name = "Name must be filled";
-
-    if (!currentData.mobile) {
-      newErrors.mobile = "Mobile must be filled";
-    } else if (!isValidMobile(currentData.mobile)) {
-      newErrors.mobile = "Enter a valid mobile number";
-    }
-  }
-
-  // ---------- COMMON (LOGIN + REGISTER) ----------
-  if (!currentData.email) {
-    newErrors.email = "Email must be filled";
-  } else if (!isValidEmail(currentData.email)) {
-    newErrors.email = "Enter a valid email";
-  }
-
-  if (currentData.password.length < 6) {
-    newErrors.password = "Password must be at least 6 characters";
-  }
-
-  // If errors exist, update state and stop
-  if (Object.keys(newErrors).length > 0) {
-    setErrors((prev) => ({
-      ...prev,
-      [activeTab]: { ...prev[activeTab], ...newErrors },
-    }));
-    return;
-  }
-
-
-  // ---------- API CALL ----------
-  if (
-    (activeTab === "login" &&
-      currentData.email &&
-      currentData.password.length >= 6) ||
-    (activeTab === "register" &&
-      currentData.name &&
-      currentData.email &&
-      currentData.mobile &&
-      currentData.password.length >= 6)
-  ) {
-    try {
-      setLoadingAuth(true);
-      setFormError("");
-      setError("");
-
-      const endpoint =
-        activeTab === "login" ? "/api/auth/login" : "/api/auth/register";
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(currentData), // ✅ use currentData instead of formData
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(
-          <span className="text-red-500">
-            {data.message || "Password Mismatch"}
-          </span>
-        );
+      // SAFE CHECKS: prevent "ReferenceError: loginData is not defined"
+      if (activeTab === "login" && !(typeof loginData !== "undefined" && loginData)) {
+        setFormError("Login form is not ready. Please try again.");
+        return;
+      }
+      if (activeTab === "register" && !(typeof registerData !== "undefined" && registerData)) {
+        setFormError("Register form is not ready. Please try again.");
         return;
       }
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        setIsLoggedIn(true);
-        setIsAdmin(data.user.role === "admin");
-        setUserData(data.user);
-        setShowAuthModal(false);
+      // pick correct state depending on tab
+      const currentData = activeTab === "login" ? loginData : registerData;
 
-        // reset states
-        setLoginData({ email: "", password: "" });
-        setRegisterData({ name: "", email: "", mobile: "", password: "" });
+      // reset errors for current tab only
+      setErrors((prev) => ({
+        ...prev,
+        [activeTab]: { name: "", email: "", mobile: "", password: "" },
+      }));
 
-        // update cart
-        const cartResponse = await fetch("/api/cart/count", {
-          headers: { Authorization: `Bearer ${data.token}` },
-        });
-        if (cartResponse.ok) {
-          const cartData = await cartResponse.json();
-          updateCartCount(cartData.count);
+      let newErrors = {};
+
+      // ---------- REGISTER VALIDATION ----------
+      if (activeTab === "register") {
+        if (!currentData.name) newErrors.name = "Name must be filled";
+
+        if (!currentData.mobile) {
+          newErrors.mobile = "Mobile must be filled";
+        } else if (!isValidMobile(currentData.mobile)) {
+          newErrors.mobile = "Enter a valid mobile number";
+        }
+      }
+
+      // ---------- COMMON (LOGIN + REGISTER) ----------
+      if (!currentData.email) {
+        newErrors.email = "Email must be filled";
+      } else if (!isValidEmail(currentData.email)) {
+        newErrors.email = "Enter a valid email";
+      }
+
+      if (currentData.password.length < 6) {
+        newErrors.password = "Password must be at least 6 characters";
+      }
+
+      // If errors exist, update state and stop
+      if (Object.keys(newErrors).length > 0) {
+        setErrors((prev) => ({
+          ...prev,
+          [activeTab]: { ...prev[activeTab], ...newErrors },
+        }));
+        return;
+      }
+
+
+      // ---------- API CALL ----------
+      if (
+        (activeTab === "login" &&
+          currentData.email &&
+          currentData.password.length >= 6) ||
+        (activeTab === "register" &&
+          currentData.name &&
+          currentData.email &&
+          currentData.mobile &&
+          currentData.password.length >= 6)
+      ) {
+        try {
+          setLoadingAuth(true);
+          setFormError("");
+          setError("");
+
+          const endpoint =
+            activeTab === "login" ? "/api/auth/login" : "/api/auth/register";
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(currentData), // ✅ use currentData instead of formData
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            setError(
+              <span className="text-red-500">
+                {data.message || "Password Mismatch"}
+              </span>
+            );
+            return;
+          }
+
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+            setIsLoggedIn(true);
+            setIsAdmin(data.user.role === "admin");
+            setUserData(data.user);
+            setShowAuthModal(false);
+
+            // reset states
+            setLoginData({ email: "", password: "" });
+            setRegisterData({ name: "", email: "", mobile: "", password: "" });
+
+            // update cart
+            const cartResponse = await fetch("/api/cart/count", {
+              headers: { Authorization: `Bearer ${data.token}` },
+            });
+            if (cartResponse.ok) {
+              const cartData = await cartResponse.json();
+              updateCartCount(cartData.count);
+            }
+          } else {
+            setShowAuthModal(true);
+            setActiveTab("login");
+          }
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoadingAuth(false);
         }
       } else {
-        setShowAuthModal(true);
-        setActiveTab("login");
+        return;
       }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoadingAuth(false);
-    }
-  } else {
-    return;
-  }
-};
+    };
 
 
     useEffect(() => {
@@ -1019,87 +1044,15 @@ const handleDesktopKeyDown = (e) => {
 };
 
 // DESKTOP specific renderer (keep existing renderSuggestionItem for mobile contexts)
-// DESKTOP specific renderer (keep existing renderSuggestionItem for mobile contexts)
-
-
-const [loginData, setLoginData] = useState({
-  email: "",
-  password: "",
-});
-
-const [registerData, setRegisterData] = useState({
-  name: "",
-  email: "",
-  mobile: "",
-  password: "",
-});
-
-// NEW: Track selected category (mobile menu only)
-const [selectedMobileCategoryId, setSelectedMobileCategoryId] = useState(null);
-
-// DESKTOP search input onKeyDown (replace its onKeyDown prop)
-
-
-/* REPLACE the DESKTOP SUGGESTIONS DROPDOWN block (near end) */
-{searchDropdownVisible && searchContext === 'desktop' && (
-  <div
-    ref={searchDropdownRef}
-    className="hidden sm:flex flex-col fixed z-[80] bg-white shadow-xl rounded-xl border border-gray-200 overflow-hidden"
-    style={{
-      top: `${searchDropdownTop}px`,
-      left: `${searchDropdownLeft}px`,
-      width: `${searchDropdownWidth}px`,
-      maxHeight: '500px'
-    }}
-    role="listbox"
-    aria-label="Search product suggestions"
-  >
-    <div className="px-5 pt-3 pb-2 text-[11px] font-semibold tracking-[0.12em] text-gray-500 uppercase select-none">
-      Products
-    </div>
-    <div className="px-3 pb-3 overflow-y-auto custom-scrollbar space-y-2">
-      {suggestions.length > 0
-        ? suggestions.map(renderDesktopSuggestionItem)
-        : (searchQuery.trim() && (
-           <div className="py-10 flex flex-col items-center justify-center text-gray-500">
-  {/* Icon */}
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-12 h-12 mb-3 text-gray-400"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.5}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
-    />
-  </svg>
-
-  {/* Message */}
-  <p className="text-sm font-medium">No products found</p>
-  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
-</div>
-
-          ))
-      }
-    </div>
-  </div>
-)}
-
-
-
-
-// DESKTOP specific renderer (keep existing renderSuggestionItem for mobile contexts)
-const renderDesktopSuggestionItem = (item, idx) => {
+function renderDesktopSuggestionItem(item, idx) {
   const id = item._id || item.id || idx;
   const price = item.special_price ?? item.price;
-  const isActive = idx === activeSuggestion; 
-  //console.log(item);
-  // handle image correctly
-  const imageSrc = item.image || (Array.isArray(item.images) && item.images.length > 0 ? `/uploads/products/${item.images[0]}` : null);
+  const isActive = idx === activeSuggestion;
+  const imageSrc =
+    item.image ||
+    (Array.isArray(item.images) && item.images.length > 0
+      ? `/uploads/products/${item.images[0]}`
+      : null);
 
   return (
     <div
@@ -1110,7 +1063,6 @@ const renderDesktopSuggestionItem = (item, idx) => {
       onMouseDown={() => selectSuggestion(idx)}
       className={`flex gap-4 px-4 py-3 cursor-pointer rounded-md transition-colors group bg-[#f2f2f2]`}
     >
-      {/* Thumbnail */}
       <div className="w-[50px] h-[50px] rounded-md overflow-hidden bg-white flex items-center justify-center border border-gray-200 shrink-0">
         {imageSrc ? (
           <img
@@ -1123,10 +1075,7 @@ const renderDesktopSuggestionItem = (item, idx) => {
           <span className="text-[10px] text-gray-400">NO IMG</span>
         )}
       </div>
-
-      {/* Text Content */}
       <div className="flex-1 min-w-0">
-        {/* Product Name */}
         <div
           className={`text-[14px] font-medium leading-snug line-clamp-2 ${
             isActive ? 'text-blue-700' : 'text-gray-800 group-hover:text-gray-900'
@@ -1134,9 +1083,6 @@ const renderDesktopSuggestionItem = (item, idx) => {
         >
           {item.name || 'Unnamed'}
         </div>
-      
-
-        {/* Price */}
         {price && (
           <div className="text-[14px] font-semibold text-blue-600 mt-1">
             ₹{price.toLocaleString('en-IN')}
@@ -1408,7 +1354,7 @@ useEffect(() => {
                 {/* NEW MOBILE TOP ROW (from reference) */}
                 <div className="sm:hidden flex items-center justify-between w-full relative">
                     <Link href="/" className="p-1 rounded-lg">
-                      <img src="/user/bea-new.png" alt="Logo" width={48} height={28} className="h-auto" />
+                      <img src="/user/bea-new.png" alt="Logo" width={70} height={45} className="h-auto" />
                     </Link>
                     <div className="flex items-center gap-3 pr-1 text-customBlue">
                       {/* Feedback Icon */}
@@ -1475,7 +1421,7 @@ useEffect(() => {
                       <select
                         value={selectedCategory}
                         onChange={(e)=>setSelectedCategory(e.target.value)}
-                        className="h-full text-[11px] xs:text-xs bg-white px-2 pr-5 border-r border-gray-300 outline-none shrink-0 max-w-[110px]"
+                        className="h-full text-[11px] xs:text-xs bg-white px-2 pr-3 border-r border-gray-300 outline-none shrink-0 max-w-[110px]"
                         aria-label="Category"
                       >
                         <option value="All Category">All Category</option>
@@ -1535,26 +1481,26 @@ useEffect(() => {
                           ? suggestions.map(renderSuggestionItem)
                           : (searchQuery.trim() && (
                               <div className="py-10 flex flex-col items-center justify-center text-gray-500">
-  {/* Icon */}
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-12 h-12 mb-3 text-gray-400"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.5}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
-    />
-  </svg>
+                                {/* Icon */}
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="w-12 h-12 mb-3 text-gray-400"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={1.5}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9 13h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
 
-  {/* Message */}
-  <p className="text-sm font-medium">No products found</p>
-  <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
-</div>
+                                {/* Message */}
+                                <p className="text-sm font-medium">No products found</p>
+                                <p className="text-xs text-gray-400 mt-1">Try a different keyword</p>
+                              </div>
 
                             ))
                         }
@@ -1568,24 +1514,24 @@ useEffect(() => {
                     {/* Logo (Hidden on mobile) */}
                     <div className="hidden sm:block mr-10 bg-white py-2 rounded-lg">
                         <Link href="/index" className="mx-auto">
-                            <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={100} height={30} />
+                            <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={80} height={45} />
                         </Link>
                     </div>
 
                     {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
                     <div className="search-bar relative hidden sm:flex flex-1 w-full max-w-[900px] mx-auto items-center bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200" role="search" style={{minHeight: '40px', display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    background: 'var(--bg)',
-    borderRadius: '10px',
-    padding: '4px 8px',
-    border: '3px solid var(--outline)',
-    boxShadow: 'var(--shadow)',
-    transition:
-      'box-shadow .25s ease, transform .12s ease, border-color .18s ease',
-    width: '100%',
-    maxWidth: '900px',
-    margin: '0 auto',}}>
+              alignItems: 'center',
+              gap: '10px',
+              background: 'var(--bg)',
+              borderRadius: '10px',
+              padding: '4px 8px',
+              border: '3px solid var(--outline)',
+              boxShadow: 'var(--shadow)',
+              transition:
+                'box-shadow .25s ease, transform .12s ease, border-color .18s ease',
+              width: '100%',
+              maxWidth: '900px',
+              margin: '0 auto',}}>
                       <div className="search-bar-inner" style={{ position: 'relative', width: '100%' }}>
                         <div className="select-wrap">
                           <select
@@ -1635,7 +1581,14 @@ useEffect(() => {
                             </div>
                           )}
                         </div>
-                        <button type="button" className="search-btn" style={{color:'#2453d3'}} onClick={handleSearch} aria-label="Search">
+                        {/* CHANGE: wire desktop .search-btn to immediate redirect handler */}
+                        <button
+                          type="button"
+                          className="search-btn"
+                          style={{color:'#2453d3'}}
+                          onClick={handleSearchBtnClick}
+                          aria-label="Search"
+                        >
                           <FaSearch />
                         </button>
                         <div className="shimmer" aria-hidden="true"></div>
