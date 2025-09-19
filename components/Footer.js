@@ -341,11 +341,11 @@ const capitalizeFirstLetter = (str) =>
 
         {/* Bottom Section */}
         <div className="bg-[#2e2a2a] text-gray-400 mt-10 pt-5 border-t border-white">
-  <div className="container mx-auto px-2 grid grid-cols-1 md:grid-cols-[60%_40%] gap-8">
+  <div className="container mx-auto px-2 grid grid-cols-1 md:grid-cols-[55%_45%] gap-8">
     
     {/* LEFT SECTION (Categories + Brands) */}
     <div>
-      <div className="mb-2 px-1 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="mb-2  flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="text-center md:text-left ml-1 mb-1">
           <p>
             <a href="#" className="hover:underline text-white">
