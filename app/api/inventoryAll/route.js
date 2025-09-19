@@ -110,6 +110,13 @@ export async function POST(req) {
                 });
 
             }
+          } else if(item.Status == 'No'){
+            const existingProductall = await Product_all.findOne({
+                item_code: item.name,
+            });
+            if(existingProductall){
+            await Product_all.deleteOne({ item_code: item.name });
+            }
           }
 
         }
