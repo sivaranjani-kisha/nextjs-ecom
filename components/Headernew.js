@@ -228,7 +228,12 @@ const Header = () => {
           ? currentWord.substring(0, Math.max(0, charIndex.current - 1))
           : currentWord.substring(0, Math.min(currentWord.length, charIndex.current + 1));
 
-        setTypedPreview(updatedText || "");
+        // Count words in updatedText
+        const wordCount = updatedText.trim().split(/\s+/).filter(Boolean).length;
+
+        if (wordCount <= 2) {
+          setTypedPreview(updatedText || "");
+        }
 
         charIndex.current = isDeleting.current
           ? Math.max(0, charIndex.current - 1)
@@ -245,8 +250,11 @@ const Header = () => {
           delay = 1000; // pause before typing next
         }
 
-        setTimeout(() => { if (!cancelled) typeEffect(); }, delay);
+        setTimeout(() => {
+          if (!cancelled) typeEffect();
+        }, delay);
       };
+
 
       typeEffect();
       return () => { cancelled = true; };
