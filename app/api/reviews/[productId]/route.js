@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/db";
 import Review from "@/models/Review";
+import User from "@/models/User";
 import mongoose from "mongoose";
 
 export async function GET(request, { params }) {
