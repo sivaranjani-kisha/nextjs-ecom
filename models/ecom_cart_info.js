@@ -36,15 +36,14 @@ const cartItemSchema = new mongoose.Schema({
 
 const cartSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    default: null, // ✅ allow null
-  },
-  guestId: {
-    type: String, // UUID for guest cart
-    default: null,
-    index: true, // ✅ indexed for fast lookup
-  },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: undefined, // ⚡ important: undefined skips index
+    },
+    guestId: {
+      type: String,
+      default: undefined,
+    },
   items: [cartItemSchema],
   totalItems: { type: Number, default: 0 },
   totalPrice: { type: Number, default: 0 },
@@ -53,8 +52,18 @@ const cartSchema = new mongoose.Schema({
 });
 
 // ✅ Unique either on userId OR guestId
-cartSchema.index({ userId: 1 }, { unique: true, sparse: true });
-cartSchema.index({ guestId: 1 }, { unique: true, sparse: true });
+//cartSchema.index({ userId: 1 }, { unique: true, sparse: true });
+//cartSchema.index({ guestId: 1 }, { unique: true, sparse: true });
+
+// ✅ Unique either on userId OR guestId (with partial filter)
+cartSchema.index(
+  { userId: 1 },
+  { unique: true, partialFilterExpression: { userId: { $exists: true, $ne: null } } }
+);
+cartSchema.index(
+  { guestId: 1 },
+  { unique: true, partialFilterExpression: { guestId: { $exists: true, $ne: null } } }
+);
 
 /*
 const cartSchema = new mongoose.Schema({
