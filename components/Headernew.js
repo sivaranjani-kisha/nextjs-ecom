@@ -1296,7 +1296,7 @@ const Header = () => {
                /* select */
                /* default: no visible border, show only when focused or has value */
                .search-select{height:var(--height);min-width:140px;max-width:200px;border-radius:10px;border:1px solid transparent;padding:0 36px 0 14px;font-size:15px;color:#111;background:#fff;-webkit-appearance:none;appearance:none;cursor:pointer}
-               .select-wrap{position:relative;display:inline-block}
+               .select-wrap{position:relative;display:inline-block;max-width:35%;flex:0 0 auto;}
                .select-wrap::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:10px;height:10px;background-image:linear-gradient(135deg,#6b7280,#6b7280);clip-path:polygon(50% 70%,0 25%,100% 25%);opacity:.85;pointer-events:none}
                /* input */
                .search-input{flex:1 1 auto;height:var(--height);padding:8px 12px;border-radius:10px;border:1px solid transparent;background:#fff;color:#0f172a;font-size:15px;width:100%;}
@@ -1468,7 +1468,7 @@ const Header = () => {
                 )}
 
                 {/* DESKTOP ROW (unchanged original content) */}
-                <div className="hidden sm:flex justify-between items-center">
+                <div className="hidden sm:flex justify-between items-center gap-4">
                     {/* Logo (Hidden on mobile) */}
                     <div className="hidden sm:block mr-10 bg-white py-2 rounded-lg">
                         <Link href="/index" className="mx-auto">
@@ -1695,95 +1695,128 @@ const Header = () => {
                                     Register
                                 </button>
                             </div>
-
                             <form onSubmit={handleAuthSubmit} className="space-y-4">
-                                {activeTab === "register" && (
-                                  <>
-                                    <input
-                                      type="text"
-                                      placeholder="Name"
-                                      value={registerData.name}
-                                      onChange={(e) =>
-                                        setRegisterData({ ...registerData, name: e.target.value })
-                                      }
-                                      className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                        errors.register.name ? "border-red-500" : ""
-                                      }`}
-                                    />
-                                    {errors.register.name && (
-                                      <p className="text-red-500 text-sm">{errors.register.name}</p>
-                                    )}
-                                  </>
-                                )}
-                                <input
+                              {/* Register Name Field */}
+                              {activeTab === "register" && (
+                                <>
+                                  <input
                                     type="text"
-                                    placeholder="Email"
-                                    value={activeTab === "login" ? loginData.email : registerData.email}
+                                    placeholder="Name"
+                                    value={registerData.name}
                                     onChange={(e) =>
-                                      activeTab === "login"
-                                        ? setLoginData({ ...loginData, email: e.target.value })
-                                        : setRegisterData({ ...registerData, email: e.target.value })
+                                      setRegisterData({ ...registerData, name: e.target.value })
                                     }
                                     className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                      errors[activeTab].email ? "border-red-500" : ""
+                                      errors?.register?.name ? "border-red-500" : ""
                                     }`}
                                   />
-                                  {errors[activeTab].email && (
-                                    <p className="text-red-500 text-sm">{errors[activeTab].email}</p>
+                                  {errors?.register?.name && (
+                                    <p className="text-red-500 text-sm">{errors.register.name}</p>
                                   )}
+                                </>
+                              )}
 
-                                {activeTab === "register" && (
-                                  <>
-                                    <input
-                                      type="tel"
-                                      placeholder="Mobile"
-                                      value={registerData.mobile}
-                                      onChange={(e) =>
-                                        setRegisterData({ ...registerData, mobile: e.target.value })
-                                      }
-                                      className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                        errors.register.mobile ? "border-red-500" : ""
-                                      }`}
-                                    />
-                                    {errors.register.mobile && (
-                                      <p className="text-red-500 text-sm">{errors.register.mobile}</p>
-                                    )}
-                                  </>
-                                )} <input
-                                 
-                                  type="password"
-                                  placeholder="Password"
-                                  value={activeTab === "login" ? loginData.password : registerData.password}
-                                  onChange={(e) =>
-                                    activeTab === "login"
-                                      ? setLoginData({ ...loginData, password: e.target.value })
-                                      : setRegisterData({ ...registerData, password: e.target.value })
-                                  }
-                                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                    errors[activeTab].password ? "border-red-500" : ""
-                                  }`}
-                                  minLength={6}
-                                />
-                                {errors[activeTab].password && (
-                                  <p className="text-red-500 text-sm">{errors[activeTab].password}</p>
-                                )}
-                                {(formError || error) && (
-                                    <div className="text-red-500 text-sm">
-                                        {formError || error}
-                                    </div>
-                                )}
-                                <button type="submit" disabled={loadingAuth} className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200">
-                                    {loadingAuth ? 'Processing...' : activeTab === 'login' ? 'Login' : 'Register'}
-                                </button>
+                              {/* Email Field */}
+                              <input
+                                type="text"
+                                placeholder="Email"
+                                value={
+                                  activeTab === "login" ? loginData.email : registerData.email
+                                }
+                                onChange={(e) =>
+                                  activeTab === "login"
+                                    ? setLoginData({ ...loginData, email: e.target.value })
+                                    : setRegisterData({ ...registerData, email: e.target.value })
+                                }
+                                className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  errors?.[activeTab]?.email ? "border-red-500" : ""
+                                }`}
+                              />
+                              {errors?.[activeTab]?.email && (
+                                <p className="text-red-500 text-sm">{errors[activeTab].email}</p>
+                              )}
 
-                                {/* Moved Forgot Password button here - better placement */}
-                                {activeTab === 'login' && (
-                                    <div className="text-center mt-2">
-                                        <button type="button" onClick={() => { setShowAuthModal(false); setShowForgotPasswordModal(true); setForgotStep(1); setForgotPasswordEmail(formData.email || ''); setForgotOTP(''); setNewPassword(''); setConfirmPassword(''); setForgotPasswordMessage(''); setForgotPasswordError(''); }} className="text-sm text-blue-500 hover:underline">
-                                            Forgot Password?
-                                        </button>
-                                    </div>
-                                )}
+                              {/* Register Mobile Field */}
+                              {activeTab === "register" && (
+                                <>
+                                  <input
+                                    type="tel"
+                                    placeholder="Mobile"
+                                    value={registerData.mobile}
+                                    onChange={(e) =>
+                                      setRegisterData({ ...registerData, mobile: e.target.value })
+                                    }
+                                    className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                      errors?.register?.mobile ? "border-red-500" : ""
+                                    }`}
+                                  />
+                                  {errors?.register?.mobile && (
+                                    <p className="text-red-500 text-sm">{errors.register.mobile}</p>
+                                  )}
+                                </>
+                              )}
+
+                              {/* Password Field */}
+                              <input
+                                type="password"
+                                placeholder="Password"
+                                value={
+                                  activeTab === "login" ? loginData.password : registerData.password
+                                }
+                                onChange={(e) =>
+                                  activeTab === "login"
+                                    ? setLoginData({ ...loginData, password: e.target.value })
+                                    : setRegisterData({ ...registerData, password: e.target.value })
+                                }
+                                className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  errors?.[activeTab]?.password ? "border-red-500" : ""
+                                }`}
+                                minLength={6}
+                              />
+                              {errors?.[activeTab]?.password && (
+                                <p className="text-red-500 text-sm">{errors[activeTab].password}</p>
+                              )}
+
+                              {/* Global Form Error */}
+                              {(formError || error) && (
+                                <div className="text-red-500 text-sm">{formError || error}</div>
+                              )}
+
+                              {/* Submit Button */}
+                              <button
+                                type="submit"
+                                disabled={loadingAuth}
+                                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors duration-200"
+                              >
+                                {loadingAuth
+                                  ? "Processing..."
+                                  : activeTab === "login"
+                                  ? "Login"
+                                  : "Register"}
+                              </button>
+
+                              {/* Forgot Password (only in login) */}
+                              {activeTab === "login" && (
+                                <div className="text-center mt-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setShowAuthModal(false);
+                                      setShowForgotPasswordModal(true);
+                                      setForgotStep(1);
+                                      setForgotPasswordEmail(formData?.email || "");
+                                      setForgotOTP("");
+                                      setNewPassword("");
+                                      setConfirmPassword("");
+                                      setForgotPasswordMessage("");
+                                      setForgotPasswordError("");
+                                    }}
+                                    className="text-sm text-blue-500 hover:underline"
+                                  >
+                                    Forgot Password?
+                                  </button>
+                                </div>
+                              )}
                             </form>
                         </div>
                     </div>
