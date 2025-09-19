@@ -35,6 +35,8 @@ const ProductSchema = new mongoose.Schema({
   extended_warranty:Number,
   overviewdescription: String,
   product_highlights: {type: [String],default: [],},
+  meta_title: { type: String, default: "" }, // Add meta_title field
+  meta_description: { type: String, default: "" }, // Add meta_description field
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
