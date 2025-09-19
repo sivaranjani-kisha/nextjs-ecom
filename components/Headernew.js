@@ -1757,8 +1757,8 @@ useEffect(() => {
                 
                             {/* Mobile Category Block (accordion) */}
                               <div className=" bg-white rounded-md border border-gray-200 overflow-hidden">
-                                  <div className="px-3 py-4 text-[12px] font-semibold tracking-wide text-white  bg-[#2453D3]">
-                                    Browse Categories
+                                  <div className="px-3 py-4 text-[14px] font-semibold tracking-wide text-white  bg-[#2453D3]">
+                                    Browse Category
                                   </div>
                                   {/* Use unified nodes (categories + hoveredCategory subcategories when available) */}
                                   {Array.isArray(nodes) && nodes.length > 0 ? (
