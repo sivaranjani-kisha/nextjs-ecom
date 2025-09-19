@@ -1470,7 +1470,7 @@ const Header = () => {
                 {/* DESKTOP ROW (unchanged original content) */}
                 <div className="hidden sm:flex justify-between items-center gap-4">
                     {/* Logo (Hidden on mobile) */}
-                    <div className="hidden sm:block mr-10 bg-white py-2 rounded-lg">
+                    <div className="hidden sm:block mr-5 bg-white py-2 rounded-lg">
                         <Link href="/index" className="mx-auto">
                             <img src="/user/bea-new.png" alt="Logo" className="h-auto" width={80} height={45} />
                         </Link>
