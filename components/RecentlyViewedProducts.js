@@ -209,7 +209,7 @@ const RecentlyViewedProducts = () => {
                   {visibleProducts.map((product) => (
                     <div
                       key={product._id}
-                      className="group border border-gray-200 hover:border-[#0069c1] hover:shadow-md transition-all duration-300 rounded-lg"
+                      className="group border border-gray-200 hover:border-[#0069c1] hover:shadow-md transition-all duration-300 rounded-lg min-w-[230px]"
                     >
                       
                       {/* Product Image */}
