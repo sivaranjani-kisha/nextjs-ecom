@@ -1950,86 +1950,10 @@ return (
                 </div>
               </motion.section>
           )
-
-          default:
-              return null;
-      }
-    };
-    
-        // Map section names from API to our component names
-        const getSectionComponentName = (sectionName) => {
-            const mapping = {
-                'categorybanner': 'category_banner',
-                'flashsale': 'flash_sales',
-                'Brands': 'brands',
-                'topbanner' : 'topbanner',
-                'features' : 'features',
-                'product'  :'product',
-                // Add more mappings as needed
-            };
-            
-            return mapping[sectionName] || sectionName.toLowerCase();
-        };
-
-    return (
-        <>
-
-            {navigating && (
-            <div className="fixed inset-0 z-[9999] flex justify-center items-center bg-black bg-opacity-30">
-              <div className="p-4  shadow-lg">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
-              </div>
-            </div>
-          )}
-            {isLoading && (
-                // <div className="preloader fixed inset-0 z-[9999] flex justify-center items-center bg-white">
-                //     <Image 
-                //     src="/images/thumbs/bea.webp"
-                //     alt="Loading"
-                //     width={64}
-                //     height={64}
-                //     className="animate-spin"
-                //     />
-                // </div>
-               <div className="preloader fixed inset-0 z-[9999] flex justify-center items-center bg-white">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                </div>
-            )}
-            {/* main div start */}
-            <div className={`relative transition-opacity duration-300 ${isLoading ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`} ref={containerRef} >
-              
-                    
-                          
-                  {/* Banner Section start */}
-              
-                  <div className="home-container">
-                    {isSectionLoading ? (
-                        <div className="flex justify-center items-center h-64">
-                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-                        </div>
-                    ) : homeSectionData.sections.length > 0 ? (
-                        // Render sections in the order specified by homeSectionData
-                        homeSectionData.sections
-                            .sort((a, b) => a.position - b.position)
-                            .map(section => (
-                                <div key={section.id}>
-                                    {renderSection(getSectionComponentName(section.name))}
-                                </div>
-                            ))
-                    ) : (
-                        // Fallback order if no sections are configured
-                        <>
-                            {renderSection('category_banner')}
-                            {renderSection('flash_sales')}
-                            {renderSection('brands')}
-                            {renderSection('features')}
-                        </>
-                    )}
-                  </div>
-              
-                  
-
-                  {/* Existing offer code start */}
+          case 'offer':
+            return(
+              <>
+              <div className="overflow-hidden pt-6 px-4 sm:px-6 md:px-6">
                   {offerProducts.length > 0 && (
                     <section id="offer">
                     <div className="px-2 py-4">
@@ -2148,6 +2072,88 @@ return (
                     </div>
                     </section>
                   )}
+                  </div>
+                  </>
+                  )
+          default:
+              return null;
+            }
+          };
+    
+        // Map section names from API to our component names
+        const getSectionComponentName = (sectionName) => {
+            const mapping = {
+                'categorybanner': 'category_banner',
+                'flashsale': 'flash_sales',
+                'Brands': 'brands',
+                'topbanner' : 'topbanner',
+                'features' : 'features',
+                'product'  :'product',
+                // Add more mappings as needed
+            };
+            
+            return mapping[sectionName] || sectionName.toLowerCase();
+        };
+
+    return (
+        <>
+
+            {navigating && (
+            <div className="fixed inset-0 z-[9999] flex justify-center items-center bg-black bg-opacity-30">
+              <div className="p-4  shadow-lg">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
+              </div>
+            </div>
+          )}
+            {isLoading && (
+                // <div className="preloader fixed inset-0 z-[9999] flex justify-center items-center bg-white">
+                //     <Image 
+                //     src="/images/thumbs/bea.webp"
+                //     alt="Loading"
+                //     width={64}
+                //     height={64}
+                //     className="animate-spin"
+                //     />
+                // </div>
+               <div className="preloader fixed inset-0 z-[9999] flex justify-center items-center bg-white">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                </div>
+            )}
+            {/* main div start */}
+            <div className={`relative transition-opacity duration-300 ${isLoading ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`} ref={containerRef} >
+              
+                    
+                          
+                  {/* Banner Section start */}
+              
+                  <div className="home-container">
+                    {isSectionLoading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+                        </div>
+                    ) : homeSectionData.sections.length > 0 ? (
+                        // Render sections in the order specified by homeSectionData
+                        homeSectionData.sections
+                            .sort((a, b) => a.position - b.position)
+                            .map(section => (
+                                <div key={section.id}>
+                                    {renderSection(getSectionComponentName(section.name))}
+                                </div>
+                            ))
+                    ) : (
+                        // Fallback order if no sections are configured
+                        <>
+                            {renderSection('category_banner')}
+                            {renderSection('flash_sales')}
+                            {renderSection('brands')}
+                            {renderSection('features')}
+                        </>
+                    )}
+                  </div>
+              
+                  
+
+                 
                   <RecentlyViewedProducts /> 
             </div>
         </>
