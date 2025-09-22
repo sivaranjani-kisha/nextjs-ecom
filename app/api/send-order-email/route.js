@@ -4,6 +4,14 @@ import path from "path";
 import fs from "fs";
 
 export async function POST(req) {
+  const [siteUrl, setSiteUrl] = useState("");
+
+  useEffect(() => {
+    setSiteUrl(window.location.origin);
+  }, []);
+
+  // console.log(siteUrl);
+
   const { orderDetails, customerEmail, adminEmail } = await req.json();
 
   try {
@@ -76,7 +84,7 @@ export async function POST(req) {
       </p>
 
       <div style="text-align: center; margin-top: 30px;">
-        <a href="https://yourwebsite.com/orders/${orderDetails.order_number}" 
+        <a href="${siteUrl}/orders/${orderDetails.order_number}" 
           style="background-color:#e5e2c9; color:#f71c1c; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">
           View Your Order
         </a>

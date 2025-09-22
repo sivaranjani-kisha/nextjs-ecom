@@ -321,30 +321,30 @@ const toggleFrequentProduct = (product) => {
   const categoryId = product?.category;
   const currentProductId = product?._id;
   const brandId = product?.brand;
-useEffect(() => {
-  const fetchRelatedProducts = async () => {
-    try {
-      const res = await fetch(
-        `/api/product/relatedpro?category=${categoryId}&brand=${brandId}&exclude=${currentProductId}&limit=5`
-      );
-      const data = await res.json();
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      try {
+        const res = await fetch(
+          `/api/product/relatedpro?category=${categoryId}&brand=${brandId}&exclude=${currentProductId}&limit=5`
+        );
+        const data = await res.json();
 
-      if (res.ok) {
-        if (data.success && data.products) {
-          setRelatedProducts(data.products);
-        } else if (data.relatedProducts) {
-          setRelatedProducts(data.relatedProducts);
-        } else {
-          setRelatedProducts([]);
+        if (res.ok) {
+          if (data.success && data.products) {
+            setRelatedProducts(data.products);
+          } else if (data.relatedProducts) {
+            setRelatedProducts(data.relatedProducts);
+          } else {
+            setRelatedProducts([]);
+          }
         }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    };
 
-  if (categoryId && brandId) fetchRelatedProducts();
-}, [categoryId, brandId, currentProductId]);
+    if (categoryId && brandId) fetchRelatedProducts();
+  }, [categoryId, brandId, currentProductId]);
 
 
   const toggleRelatedProduct = (product) => {
@@ -1793,14 +1793,14 @@ const fetchBrand = async () => {
             avgRating={avgRating}
             reviewCount={reviewCount}
           />
-           <RecentlyViewedProducts className="w-full" />
+           {/* <RecentlyViewedProducts className="w-full" /> */}
          
           
-           <RelatedProducts
+           {/* <RelatedProducts
              className="w-full"
              categoryId={product.category}
              currentProductId={product._id}
-           />
+           /> */}
          
          
          

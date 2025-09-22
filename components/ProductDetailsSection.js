@@ -9,7 +9,8 @@ import Link from "next/link";
 import { Poppins } from "next/font/google";
 const poppins = Poppins({ subsets: ["latin"], weight: ["400","500","600"] });
 import { formatDistanceToNow, format } from "date-fns";
-
+import { useHeaderdetails } from '@/context/HeaderContext';
+import { ToastContainer, toast } from 'react-toastify';
 
 export default function ProductDetailsSection({ product, reviews=[], avgRating=0, reviewCount=0}) {
 
@@ -19,6 +20,7 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [loadingRecentlyViewed, setLoadingRecentlyViewed] = useState(false);
+  const { updateHeaderdetails, setIsLoggedIn, setUserData,setIsAdmin } = useHeaderdetails();
 
   const tabData = {
     overview: product.overview || "No overview available.",
@@ -167,7 +169,8 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
         setRecentlyViewed(data.products);
       }
     } catch (error) {
-      console.error("Error fetching recently viewed products:", error);
+      // console.error("Error fetching recently viewed products:", error);
+       toast.error("Error fetching recently viewed products:", error);
     } finally {
       setLoadingRecentlyViewed(false);
     }
@@ -264,8 +267,99 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
     }
   }
 
+  const [reviewForm, setReviewForm] = useState({
+    title: "",
+    rating: 0,
+    comment: "",
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+  const userId = "66f03a7b8f...";
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const reslt = await fetch('/api/auth/check', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        }
+      });
+
+      const data1 = await reslt.json();
+      if (!data1.loggedIn) {
+          openAuthModal({
+          error: 'Please login to continue.',
+          onSuccess: () => handleReviewSubmit(),
+        });
+        // alert("Please login to continue!..");
+         toast.error("Please login to continue!..");
+        return;
+      }
+
+      if(data1.loggedIn) {
+        const userId    = data1.user.userId;
+        const productId = product._id;
+        const res = await fetch(`/api/reviews/${product._id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            productId,
+            reviews_title: reviewForm.title,
+            reviews_rating: reviewForm.rating,
+            reviews_comments: reviewForm.comment,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+           toast.success("Review added successfully!");
+          // window.location.reload();
+        } else {
+           toast.error("Error: " + data.error);
+        }
+      }else {
+         toast.error("Please login to review the product!..");
+        // alert("Please login to review the product!..")
+      }
+    } catch (error) {
+      // console.error("Error submitting review:", error);
+       toast.error("Error submitting review:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  function StarRating({ value, onChange }) {
+    return (
+      <div className="flex space-x-1 mb-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            className="focus:outline-none"
+          >
+            <span
+              className={`text-2xl ${
+                star <= value ? "text-yellow-400" : "text-gray-300"
+              }`}
+            >
+              ★
+            </span>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
+    
     <div className="mt-4 sm:mt-8 bg-gray-100 w-full py-6">
+        <ToastContainer position="top-right" autoClose={5000} />
       {/* Tabs */}
       <div className={`flex justify-center  ${poppins.className}`}>
         {/* <div className="flex justify-center gap-8"> */}
@@ -475,6 +569,28 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
 
         {activeTab === "reviews" && (
           <div>
+            
+            <form onSubmit={handleReviewSubmit} className="bg-white p-4 rounded-md shadow mt-3">
+              <h3 className="font-semibold text-left mb-2">Write a Review</h3>
+
+              <input type="text" placeholder="Review Title" value={reviewForm.title} onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })} required className="w-full border rounded p-2 mb-2" />
+
+              {/* <select value={reviewForm.rating} onChange={(e) => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })} required className="w-full border rounded p-2 mb-2" >
+                <option value="">Select Rating</option>
+                {[1,2,3,4,5].map(n => (
+                  <option key={n} value={n}>{n} Star{n>1 && "s"}</option>
+                ))}
+              </select> */}
+
+              <StarRating value={reviewForm.rating} onChange={(rating) => setReviewForm({ ...reviewForm, rating })} />
+
+              <textarea placeholder="Write your comments..." value={reviewForm.comment} onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })} className="w-full border rounded p-2 mb-2" rows="3" ></textarea>
+
+              <button type="submit" disabled={submitting} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                {submitting ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
+
             <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Customer Reviews</h2>
             <div className="flex items-center mt-1 sm:mt-2">
               {[...Array(5)].map((_, i) => (
