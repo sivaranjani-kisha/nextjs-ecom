@@ -205,11 +205,12 @@ const RecentlyViewedProducts = () => {
                 </div>
 
                 {/* Products Row */}
-                <div className="flex grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-x-auto sm:overflow-visible px-0">
+                <div className="flex grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-20 overflow-x-auto sm:overflow-visible px-0">
                   {visibleProducts.map((product) => (
                     <div
                       key={product._id}
                       className="group border border-gray-200 hover:border-[#0069c1] hover:shadow-md transition-all duration-300 rounded-lg min-w-[230px]"
+
                     >
                       
                       {/* Product Image */}
