@@ -114,7 +114,10 @@ export async function GET(req) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
-    const items = await Wishlist.find({  userId }).lean();
+    let items = await Wishlist.find({ userId }).populate("productId").lean();
+
+    // filter out null productId
+    items = items.filter((entry) => entry.productId);
     const count = items.length;
 
     return NextResponse.json(

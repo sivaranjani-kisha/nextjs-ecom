@@ -15,7 +15,8 @@ export async function GET(req) {
 
     const wishlist = await Wishlist.find({ userId }).populate("productId");
 
-    const items = wishlist.map((entry) => {
+    const items = wishlist .filter((entry) => entry.productId)
+  .map((entry) => {
       const product = entry.productId;
       return {
         id: entry._id,

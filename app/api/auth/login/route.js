@@ -47,7 +47,7 @@ export async function POST(req) {
         name: existingUser.name 
       }, 
       process.env.JWT_SECRET, 
-      { expiresIn: "1h" }
+      { expiresIn: "12h" }
     );
 
     //return NextResponse.json({ test_vk: guestId });
