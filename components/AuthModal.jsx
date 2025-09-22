@@ -29,7 +29,7 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
     e.preventDefault();
     setLoading(true);
     clearErrors();
-
+    const guestId = localStorage.getItem("guestCartId");
     try {
       const endpoint = activeTab === 'login' ? '/api/auth/login' : '/api/auth/register';
       const response = await fetch(endpoint, {
@@ -37,7 +37,8 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(activeTab === 'login' ? {
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          guestId: guestId
         } : {
           name: formData.name,
           email: formData.email,
@@ -105,6 +106,10 @@ export const AuthModal = ({ onClose, onSuccess, error }) => {
           const wishlistData = await wishlistResponse.json();
           updateWishlist(wishlistData.items, wishlistData.count);
         }
+
+        // 👇 Optional: clear guestId after merge
+        localStorage.removeItem("guestCartId");
+        location.reload();
       }
       
       onSuccess();

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useCart } from '@/context/CartContext';
 import Link from "next/link";
+import { v4 as uuidv4 } from "uuid";
 
 const slugify = (str) => {
   return str
@@ -202,7 +203,14 @@ export default function CartComponent() {
     const fetchCartData = async () => {
       try {
         const token = localStorage.getItem('token');
+        let response = '';
+        //let isLoggedIn = false;
+        
+       
+        /*
+        
         if (!token) {
+          console.log("🔑 Token from localStorage:");
           return;
         }
 
@@ -212,6 +220,45 @@ export default function CartComponent() {
           },
           method: "GET"
         });
+
+        */
+        
+
+        
+
+        if(token)
+        {
+
+         
+
+        response = await fetch('/api/cart', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          method: "GET"
+        });
+
+         }
+         else
+         {
+          // console.log("🔑 Token from localStorage test:");
+          const guestCartId = localStorage.getItem("guestCartId") || uuidv4();
+          //localStorage.setItem("guestCartId", guestCartId);
+
+          //console.log("🔑 Token from localStorage test:", guestCartId);
+
+          response = await fetch('/api/cart', {
+          headers: {
+            'guestCartId': guestCartId
+          },
+          method: "GET"
+           });
+
+         }
+
+        //const datares = await response.json();
+
+        
 
         if (!response.ok) {
            const datares = await response.json();
@@ -233,6 +280,7 @@ export default function CartComponent() {
           discount: 0
         }));
         
+        //console.log("🔑 Token from localStorage testvk:", data);
         setCartData({
           ...data.cart,
           items: itemsWithDiscount
@@ -295,9 +343,11 @@ const updateQuantity = async (productId, newQuantity, original_quantity = null) 
       setShowErrorModal(true);
       return;
     }
-
+    let response = '';
     const token = localStorage.getItem('token');
-    const response = await fetch('/api/cart', {
+    if(token)
+    {
+    response = await fetch('/api/cart', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -305,6 +355,20 @@ const updateQuantity = async (productId, newQuantity, original_quantity = null) 
       },
       body: JSON.stringify({ productId, quantity: newQuantity })
     });
+    }
+    else
+    {
+      const guestCartId = localStorage.getItem("guestCartId") || uuidv4();
+      response = await fetch('/api/cart', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'guestCartId': guestCartId
+      },
+      body: JSON.stringify({ productId, quantity: newQuantity })
+    });
+
+    }
 
     if (!response.ok) {
       throw new Error('Failed to update quantity');
@@ -356,8 +420,11 @@ const updateQuantity = async (productId, newQuantity, original_quantity = null) 
 
   const removeItem = async () => {
     try {
+      let response = '';
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/cart', {
+      if(token)
+      {
+        response = await fetch('/api/cart', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -365,6 +432,20 @@ const updateQuantity = async (productId, newQuantity, original_quantity = null) 
         },
         body: JSON.stringify({ productId: productToDelete })
       });
+      }
+      else
+      {
+        const guestCartId = localStorage.getItem("guestCartId") || uuidv4();
+        response = await fetch('/api/cart', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'guestCartId': guestCartId
+        },
+        body: JSON.stringify({ productId: productToDelete })
+      });
+
+      }
 
       if (!response.ok) {
         throw new Error('Failed to remove item');
@@ -747,8 +828,8 @@ const validateCoupon = async () => {
                             </p>
                           </Link>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-base font-semibold text-red-600">₹{item.price.toFixed(2)}</h3>
-                            <h3 className="text-xs text-gray-500 line-through">₹{item.actual_price.toFixed(2)}</h3>
+                            <h3 className="text-base font-semibold text-red-600">₹{(item.price ?? 0).toFixed(2)}</h3>
+                            <h3 className="text-xs text-gray-500 line-through">₹{(item.actual_price ?? item.price ?? 0).toFixed(2)}</h3>
                           </div>
                         </div>
                       </td>
@@ -777,7 +858,7 @@ const validateCoupon = async () => {
                         </button>
                       </td>
                       <td className="py-4 px-4 text-center font-semibold text-gray-900">
-                        ₹{(item.price * item.quantity).toFixed(2)}
+                        ₹{((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
                       </td>
                       <td className="py-4 px-4 text-center">&emsp;</td>
                     </tr>

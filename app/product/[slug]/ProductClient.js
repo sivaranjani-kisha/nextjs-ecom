@@ -22,6 +22,7 @@ import ProductBreadcrumb from "@/components/ProductBreadcrumb";
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import RelatedProducts from "@/components/RelatedProducts";
 import RazorpayOffers from "@/components/RazorpayOffers";
+import { v4 as uuidv4 } from "uuid";
 
 export default function ProductClient() {
   const router = useRouter(); 
@@ -82,6 +83,11 @@ const handleBuyNow = async () => {
   try {
     const token = localStorage.getItem("token");
 
+    let isLoggedIn = false;
+    let userData = null;
+
+    /*
+
     // ✅ Check authentication
     const response = await fetch("/api/auth/check", {
       method: "GET",
@@ -99,8 +105,35 @@ const handleBuyNow = async () => {
       });
       return;
     }
+      */
+
+    if (token) {
+      const response = await fetch("/api/auth/check", {
+        method: "GET",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      isLoggedIn = data.loggedIn;
+      userData = data.user;
+
+          //updateHeaderdetails({ user: data.user });
+          //setIsLoggedIn(true);
+          //const role = data.role;
+          //if(role == 'admin'){
+            //setIsAdmin(true);
+          //}
+        }
+
+        // ✅ If not logged in → use guestCartId
+        let guestCartId = null;
+        if (!isLoggedIn) {
+          guestCartId = localStorage.getItem("guestCartId") || uuidv4();
+          localStorage.setItem("guestCartId", guestCartId);
+        }
 
     // ✅ Add main product
+
+    /*
     const cartResponse = await fetch("/api/cart", {
       method: "POST",
       headers: {
@@ -115,6 +148,24 @@ const handleBuyNow = async () => {
       }),
     });
 
+    */
+
+     // ✅ Add main product to cart
+    const cartResponse = await fetch("/api/cart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(isLoggedIn && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({
+        productId: product._id,
+        quantity,
+        selectedWarranty: selectedWarranty,
+        selectedExtendedWarranty: selectedExtendedWarranty,
+        ...(guestCartId && { guestCartId }), // ✅ include only if guest
+      }),
+    });
+
     if (!cartResponse.ok) {
       throw new Error("Failed to add main product to cart");
     }
@@ -124,7 +175,8 @@ const handleBuyNow = async () => {
       ...selectedFrequentProducts.map((p) => p._id),
       ...selectedRelatedProducts.map((p) => p._id),
     ];
-
+    
+    /*
     if (additionalProducts.length > 0) {
       await Promise.all(
         additionalProducts.map(async (id) => {
@@ -137,6 +189,28 @@ const handleBuyNow = async () => {
             body: JSON.stringify({ productId: id, quantity: 1 }),
           });
           if (!res.ok) throw new Error("Failed to add extra product");
+        })
+      );
+    } */
+
+    
+    // ✅ Add additional products (if any)
+    if (additionalProducts.length > 0) {
+      await Promise.all(
+        additionalProducts.map(async (id) => {
+          const res = await fetch("/api/cart", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(isLoggedIn && { Authorization: `Bearer ${token}` }),
+            },
+            body: JSON.stringify({
+              productId: id,
+              quantity: 1,
+              ...(guestCartId && { guestCartId }),
+            }),
+          });
+          if (!res.ok) throw new Error("Failed to add additional product");
         })
       );
     }
@@ -171,6 +245,7 @@ const handleBuyNow = async () => {
 
 
     // ✅ Save Buy Now state in localStorage
+    /*
     localStorage.setItem(
       "buyNowData",
       JSON.stringify({
@@ -178,6 +253,7 @@ const handleBuyNow = async () => {
         total,
       })
     );
+    */
 
     // ✅ Redirect
     window.location.href = "/checkout";

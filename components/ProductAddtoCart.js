@@ -8,6 +8,8 @@ import { trackAddToCart } from "@/utils/nextjs-event-tracking.js";
 
 import { FaShoppingCart} from "react-icons/fa";
 
+import { v4 as uuidv4 } from "uuid";
+
 const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts = [],extendedWarranty, selectedFrequentProducts = [], stockQuantity = 1,special_price }) => {
   const { openAuthModal } = useModal();
   const { updateHeaderdetails, setIsLoggedIn, setUserData,setIsAdmin } = useHeaderdetails();
@@ -31,7 +33,13 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
       
       try {
         const token = localStorage.getItem('token');
+
+        let isLoggedIn = false;
+        let userData = null;
+
+
         // Check authentication
+        /*
         const response = await fetch('/api/auth/check', {
           method: 'GET',
           headers: {
@@ -59,6 +67,31 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
             setIsAdmin(true);
           }
         }
+          */
+
+        if (token) {
+      const response = await fetch("/api/auth/check", {
+        method: "GET",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      isLoggedIn = data.loggedIn;
+      userData = data.user;
+
+          updateHeaderdetails({ user: data.user });
+          setIsLoggedIn(true);
+          const role = data.role;
+          if(role == 'admin'){
+            setIsAdmin(true);
+          }
+        }
+
+        // ✅ If not logged in → use guestCartId
+        let guestCartId = null;
+        if (!isLoggedIn) {
+          guestCartId = localStorage.getItem("guestCartId") || uuidv4();
+          localStorage.setItem("guestCartId", guestCartId);
+        }
 
         const proresponse = await fetch(`/api/product/get/${productId}`);
        
@@ -69,6 +102,7 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
         const productData = await proresponse.json();
   
         // Add main product to cart
+        /*
         const cartResponse = await fetch('/api/cart', {
           method: 'POST',
           headers: { 
@@ -78,13 +112,30 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
           body: JSON.stringify({ productId, quantity, 
           selectedWarranty: warranty,
           selectedExtendedWarranty: extendedWarranty,}),
-        });
+        }); */
+
+        // ✅ Add main product to cart
+      const cartResponse = await fetch("/api/cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(isLoggedIn && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          productId,
+          quantity,
+          selectedWarranty: warranty,
+          selectedExtendedWarranty: extendedWarranty,
+          ...(guestCartId && { guestCartId }), // ✅ include only if guest
+        }),
+      });
   
         if (!cartResponse.ok) {
           throw new Error('Failed to add to cart');
         }
   
         // Add additional products if any
+        /*
         if (additionalProducts.length > 0) {
           await Promise.all(
             additionalProducts.map(async (additionalId) => {
@@ -100,27 +151,50 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
             })
           );
         }
+          */
+
+        if (additionalProducts.length > 0) {
+      await Promise.all(
+        additionalProducts.map(async (additionalId) => {
+          const res = await fetch("/api/cart", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(isLoggedIn && { Authorization: `Bearer ${token}` }),
+            },
+            body: JSON.stringify({
+              productId: additionalId,
+              quantity: 1,
+              ...(guestCartId && { guestCartId }),
+            }),
+          });
+          if (!res.ok) throw new Error("Failed to add additional product");
+        })
+      );
+    }
   
         const responseData = await cartResponse.json();
         updateCartCount(responseData.cart.totalItems + additionalProducts.length);
 
-         // Event Tracking
-              trackAddToCart({
-                user: {
-                  name: data.user.name,
-                  phone: data.phone,
-                  email: data.user.email,
-                },
-                product: {
-                  id: productId,
-                  name: responseData.cart.items[0].name,
-                  price: responseData.cart.items[0].price,
-                  link: `${apiUrl}/product/${productData.data.slug}`,
-                  image: `${apiUrl}/uploads/products/`+responseData.cart.items[0].image,
-                  qty: responseData.cart.items[0].quantity,
-                  currency: "INR",
-                },
-              });
+         // ✅ Track events (skip if guest)
+    if (isLoggedIn) {
+      trackAddToCart({
+        user: {
+          name: userData?.name,
+          phone: userData?.phone,
+          email: userData?.email,
+        },
+        product: {
+          id: productId,
+          name: responseData.cart.items[0].name,
+          price: responseData.cart.items[0].price,
+          link: `${apiUrl}/product/${productData.data.slug}`,
+          image: `${apiUrl}/uploads/products/${responseData.cart.items[0].image}`,
+          qty: responseData.cart.items[0].quantity,
+          currency: "INR",
+        },
+      });
+    }
         
 
         // ✅ Store selected product IDs for persistence
