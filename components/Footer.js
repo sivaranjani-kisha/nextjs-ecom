@@ -356,7 +356,7 @@ const capitalizeFirstLetter = (str) =>
         </div>
       </div>
 
-      <div className="space-y-4 mt-4">
+      <div className="space-y-4 mt-4 ml-1 mb-1">
         {groupedCategories.main.map((mainCat) => (
           <div key={mainCat._id}>
             <span className="text-gray-400">
