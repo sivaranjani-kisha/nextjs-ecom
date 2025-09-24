@@ -174,6 +174,12 @@ export default function CheckoutPage() {
   const [authError, setAuthError] = useState('');
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  // / ✅ NEW: summary state
+  const [orderSummary, setOrderSummary] = useState({
+    discount: 0,
+    subtotal: 0,
+    total: 0
+  });
   console.log(cartItems);
 const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
@@ -194,22 +200,27 @@ const [isSubmitting, setIsSubmitting] = useState(false);
   }, []);
 
   useEffect(() => {
-  const buyNowData = localStorage.getItem("buyNowData");
-  const checkoutData = localStorage.getItem("checkoutData");
-  
+    const buyNowData = localStorage.getItem("buyNowData");
+    const checkoutData = localStorage.getItem("checkoutData");
 
-  if (buyNowData) {
-    const parsedData = JSON.parse(buyNowData);
-    setCartItems(parsedData.cart.items);
-    localStorage.removeItem("buyNowData"); // ✅ clear after use
-  } else if (checkoutData) {
-    const parsedData = JSON.parse(checkoutData);
-    setCartItems(parsedData.cart.items);
-  }
+    if (buyNowData) {
+      const parsedData = JSON.parse(buyNowData);
+      setCartItems(parsedData.cart.items);
+      localStorage.removeItem("buyNowData");
+    } else if (checkoutData) {
+      const parsedData = JSON.parse(checkoutData);
+      setCartItems(parsedData.cart.items);
 
-  // Then run fetchData for user address & fallback cart
-  fetchData();
-}, []);
+      // ✅ also load discount, subtotal, total
+      setOrderSummary({
+        discount: parsedData.discount || 0,
+        subtotal: parsedData.subtotal || 0,
+        total: parsedData.total || 0
+      });
+    }
+
+    fetchData();
+  }, []);
 
 
   const fetchData = async () => {
@@ -494,10 +505,8 @@ const grandTotal = subtotal - totalDiscount;
     setIsSubmitting(true);
       setError("");
   
-           const totalAmount = cartItems.reduce(
-        (sum, item) => sum + (item.price * item.quantity) - (item.discount || 0),
-        0
-      );
+           const totalAmount = orderSummary.total;
+
       let paymentId = "";
       let paymentStatus = "";
       let paymentMode = "";
@@ -973,34 +982,25 @@ const grandTotal = subtotal - totalDiscount;
 )}
 
 
-            <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
-              <span>Subtotal:</span>
-              <span>
-                ₹{cartItems.reduce(
-                  (sum, item) =>
-                    sum +
-                    (item.price * item.quantity) +
-                    (item.warranty || 0) +
-                    (item.extendedWarranty || 0),
-                  0
-                ).toFixed(2)}
-              </span>
+            {/* Discount Row */}
+          {orderSummary.discount > 0 && (
+            <div className="flex justify-between text-green-600 mb-2">
+              <span>Discount:</span>
+              <span>-₹{orderSummary.discount.toFixed(2)}</span>
             </div>
+          )}
 
-            <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
-              <span>Total:</span>
-              <span>
-                ₹{cartItems.reduce(
-                  (sum, item) =>
-                    sum +
-                    (item.price * item.quantity) +
-                    (item.warranty || 0) +
-                    (item.extendedWarranty || 0) -
-                    (item.discount || 0),
-                  0
-                ).toFixed(2)}
-              </span>
-            </div>
+          {/* Subtotal */}
+          <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
+            <span>Subtotal:</span>
+            <span>₹{orderSummary.subtotal.toFixed(2)}</span>
+          </div>
+
+          {/* Total */}
+          <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
+            <span>Total:</span>
+            <span>₹{orderSummary.total.toFixed(2)}</span>
+          </div>
 
             <div className="mt-6">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">Payment Method</h3>
