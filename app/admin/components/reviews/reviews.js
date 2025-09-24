@@ -9,15 +9,17 @@ import Link from 'next/link';
 import * as XLSX from 'xlsx';
 
 export default function ReviewComponent() {
-    const [showAlert, setShowAlert]         = useState(false);
-    const [alertMessage, setAlertMessage]   = useState("");
-    const [searchQuery, setSearchQuery]     = useState("");
-    const [isLoading, setIsLoading]         = useState(true);
-    const [currentPage, setCurrentPage]     = useState(0);
-    const [Reviews, setReviews]             = useState([]);
-    const [itemsPerPage]                    = useState(20);
-    const [statusFilter, setStatusFilter]   = useState("");
-    const [dateFilter, setDateFilter]       = useState({
+    const [showAlert, setShowAlert]             = useState(false);
+    const [alertMessage, setAlertMessage]       = useState("");
+    const [showModal, setShowModal]             = useState(false);
+    const [selectedReview, setSelectedReview]   = useState(null);
+    const [searchQuery, setSearchQuery]         = useState("");
+    const [isLoading, setIsLoading]             = useState(true);
+    const [currentPage, setCurrentPage]         = useState(0);
+    const [Reviews, setReviews]                 = useState([]);
+    const [itemsPerPage]                        = useState(20);
+    const [statusFilter, setStatusFilter]       = useState("");
+    const [dateFilter, setDateFilter]           = useState({
         startDate: null,
         endDate: null
     });
@@ -79,7 +81,6 @@ export default function ReviewComponent() {
         
         return matchesSearch && matchesStatus && matchesDate;
     });
-    console.log(FilteredReviews);
 
     // Pagination variables
     const totalEntries  = FilteredReviews.length;
@@ -235,9 +236,9 @@ export default function ReviewComponent() {
                                                 </td>
                                                 <td className="p-2"> {review.created_date}</td>
                                                 <td className="p-2 font-semibold">
-                                                    <span className={review.review_status === "active" ? "py-1.5 px-3 rounded bg-green-500 text-white-500" : "py-1.5 px-3 rounded bg-red-500 text-white-500"}>
+                                                    <button onClick={() => { setSelectedReview(review); setShowModal(true); }} className={review.review_status === "active" ? "py-1.5 px-5 rounded bg-green-500 text-white" : "py-1.5 px-3.5 rounded bg-red-500 text-white"} title="update status">
                                                         {review.review_status}
-                                                    </span>
+                                                    </button>
                                                 </td>             
                                             </tr>
                                         ))}
@@ -249,6 +250,67 @@ export default function ReviewComponent() {
                     )}
                 </div>
             )}
+
+            {showModal && selectedReview && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                    <div className="bg-white p-6 rounded-md shadow-lg w-96">
+                    <h2 className="text-lg text-center font-bold mb-4">Update Review Status</h2>
+
+                    <p className="mb-2">Review: <strong>{selectedReview.reviews_title}</strong></p>
+                    <p className="mb-4">Current Status: 
+                        <span className="ml-2 font-semibold">{selectedReview.review_status}</span>
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <button onClick={async () => {
+                                try {
+                                const newStatus = selectedReview.review_status === "active" ? "inactive" : "active";
+
+                                const res = await fetch("/api/reviews/update", {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: selectedReview._id, status: newStatus }),
+                                });
+
+                                const result = await res.json();
+
+                                if (result.success) {
+                                    setAlertMessage("Review status updated successfully!");
+                                    setShowAlert(true);
+
+                                    // update local state so UI reflects immediately
+                                    setReviews((prev) =>
+                                    prev.map((r) =>
+                                        r._id === selectedReview._id ? { ...r, review_status: newStatus } : r
+                                    )
+                                    );
+                                } else {
+                                    setAlertMessage("Error updating review: " + result.error);
+                                    setShowAlert(true);
+                                }
+                                } catch (err) {
+                                console.error("Update error:", err);
+                                setAlertMessage("Error updating review!");
+                                setShowAlert(true);
+                                } finally {
+                                setShowModal(false);
+                                setTimeout(() => setShowAlert(false), 3000);
+                                }
+                            }}
+                            className={
+                                selectedReview.review_status === "active"
+                                ? "px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                : "px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                            }
+                        >{selectedReview.review_status === "active" ? "Inactive" : "Active"}
+                        </button>
+
+                        <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500" >Cancel</button>
+                    </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
     
