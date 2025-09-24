@@ -686,39 +686,40 @@ const grandTotal = subtotal - totalDiscount;
         localStorage.removeItem('appliedCoupon')
         const orderData = await orderRes.json()
         // Prepare email data
-        const emailData = {
-          orderDetails: {
-            order_number: orderData.order_number || "ORD" + Date.now(),
-            order_amount: totalAmount,
-            payment_method: paymentMethod === 'Cash on Delivery' ? 'Cash on Delivery' : 'Online Payment',
-            order_item: cartItems,
-            order_username: `${addressData.firstName} ${addressData.lastName}`,
-            order_phonenumber: addressData.phonenumber,
-            order_deliveryaddress: deliveryAddress
-          },
-          customerEmail: addressData.email,
-          adminEmail: 'msivaranjani2036@gmail.com'
-        };
-
+        // console.log(orderData,orderData.order.order_number);
+        // const emailData = {
+        //   orderDetails: {
+        //     order_number: orderData.order.order_number || "ORD" + Date.now(),
+        //     order_amount: totalAmount,
+        //     payment_method: paymentMethod === 'Cash on Delivery' ? 'Cash on Delivery' : 'Online Payment',
+        //     order_item: cartItems,
+        //     order_username: `${addressData.firstName} ${addressData.lastName}`,
+        //     order_phonenumber: addressData.phonenumber,
+        //     order_deliveryaddress: deliveryAddress
+        //   },
+        //   customerEmail: addressData.email,
+        //   adminEmail: 'msivaranjani2036@gmail.com'
+        // };
+ 
        // console.log(cartItems);
-
+ 
         const proresponse = await fetch(`/api/product/get/${cartItems[0].productId}`);
        
         if (!proresponse.ok) {
           throw new Error(`HTTP error! status: ${proresponse.status}`);
         }
-        
+       
         const productData = await proresponse.json();
-
+ 
         const authResponse = await fetch('/api/auth/check', {
-				method: 'GET',
-				headers: {
-				  'Content-Type': 'application/json',
-				  Authorization: token ? `Bearer ${token}` : '',
-				},
-			  });
-			  const authData = await authResponse.json();
-			  //console.log(cartItems);
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        });
+        const authData = await authResponse.json();
+        //console.log(cartItems);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         trackCheckout({
           user: {
@@ -736,24 +737,44 @@ const grandTotal = subtotal - totalDiscount;
             currency: "INR",
           },
         });
-        
-        
+       
+       
         // Send confirmation emails
-        const emailResponse = await fetch('/api/send-order-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(emailData)
+        // const emailResponse = await fetch('/api/send-order-email', {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify(emailData)
+        // });
+ 
+        // if (!emailResponse.ok) {
+        //   const errorData = await emailResponse.json();
+        //   console.error('Email sending failed:', errorData.error);
+        // }
+     
+          const name = addressData.firstName + ' ' + addressData.lastName;
+       
+        // FIXED: Renamed this variable as well to avoid conflict
+        const emailFormData = new FormData();
+        emailFormData.append("campaign_id", "725edb8a-490e-4302-9b1f-3cc9c5af3d33");
+        emailFormData.append("email", addressData.email);
+        emailFormData.append(
+          "params",
+          JSON.stringify([name, orderData.order.order_number])
+        );
+       
+        const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
+          },
+          body: emailFormData, // Use the renamed variable
         });
-
-        if (!emailResponse.ok) {
-          const errorData = await emailResponse.json();
-          console.error('Email sending failed:', errorData.error);
-        }
+ 
+        const data = await response.json();
+ 
+        toast.success("Order placed successfully!");
+        router.push('/order');
       }
-
-      toast.success("Order placed successfully!");
-      router.push('/order');
-      
     } catch (error) {
       console.error("Error submitting order:", error);
       toast.error("Failed to place order. Please try again.");
