@@ -95,6 +95,66 @@ const OrdersTable = () => {
     dateFilter?.endDate,
   ]);
 
+  // 📧 Send cancellation email function
+  const sendCancellationEmail = async (order) => {
+    console.log(order,order.order_number);
+    try {
+      const name = order.order_username || "Customer";
+      
+      const emailFormData = new FormData();
+      emailFormData.append("campaign_id", "c7e3fb47-8bb0-4062-ac32-f56d5877536f");
+      emailFormData.append("email", order.email_address || "kbsiva1234@gmail.com");
+      emailFormData.append(
+        "params",
+        JSON.stringify([name, order.order_number])
+      );
+     
+      const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
+        },
+        body: emailFormData,
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error sending cancellation email:", error);
+      throw error;
+    }
+  };
+
+  // 📧 Send shipped email function
+  const sendShippedEmail = async (order) => {
+    console.log("Sending shipped email for:", order.order_number);
+    try {
+      const name = order.order_username || "Customer";
+      
+      const emailFormData = new FormData();
+      emailFormData.append("campaign_id", "cd130643-911e-4519-83e8-b6a3e03c15cf");
+      emailFormData.append("email", order.email_address || "kbsiva1234@gmail.com");
+      emailFormData.append(
+        "params",
+        JSON.stringify([name, order.order_number])
+      );
+     
+      const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
+        },
+        body: emailFormData,
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error sending shipped email:", error);
+      throw error;
+    }
+  };
+
   // 📅 Handle date
   const handleDateChange = ({ startDate, endDate }) => {
     setDateFilter({ startDate, endDate });
@@ -265,7 +325,27 @@ const OrdersTable = () => {
                                 )
                               );
 
-                              // 📌 If Pending → Shipped, open modal
+                              // 📌 If status changed to "cancelled", send email immediately
+                              if (newStatus.toLowerCase() === "cancelled") {
+                                try {
+                                  await sendCancellationEmail(o);
+                                  toast.success("Cancellation email sent successfully!");
+                                } catch (error) {
+                                  toast.error("Failed to send cancellation email");
+                                }
+                              }
+
+                              // 📌 If status changed to "shipped", send email immediately
+                              if (newStatus.toLowerCase() === "shipped") {
+                                try {
+                                  await sendShippedEmail(o);
+                                  toast.success("Shipped email sent successfully!");
+                                } catch (error) {
+                                  toast.error("Failed to send shipped email");
+                                }
+                              }
+
+                              // 📌 If Pending → Shipped, open modal (keeping your existing logic)
                               if (
                                 prevStatus.toLowerCase() === "pending" &&
                                 newStatus.toLowerCase() === "shipped"
@@ -384,8 +464,8 @@ const OrdersTable = () => {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
-                        to: "estore.bharathelectronics.in",
-                        to: "",
+                        to: "kbsiva1234@gmail.com",
+                        cc:"siva96852@gmail.com",
                         subject: `Order ${selectedOrder.order_number} Status Update`,
                         text: `Hi, Order ${selectedOrder.order_number} for ${selectedOrder.order_username} was updated from ${oldStatus} to ${selectedOrder.newStatus}.`,
                       }),
