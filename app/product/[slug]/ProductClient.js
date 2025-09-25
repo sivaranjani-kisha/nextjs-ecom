@@ -4,10 +4,12 @@
 import ProductDetailsSection from "@/components/ProductDetailsSection";
 // import RelatedProducts from "@/components/RelatedProducts";
 import {  useEffect, useState, useRef, useCallback } from "react";
+import { ShieldHalf } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { FaStore } from "react-icons/fa";
+import { FaShield } from "react-icons/fa6";
 import { FaShoppingCart, FaHeart, FaShareAlt, FaRupeeSign, FaCartPlus, FaBell } from "react-icons/fa";
 import { FiShoppingCart } from "react-icons/fi";
 import { TbTruckDelivery } from "react-icons/tb";
@@ -40,6 +42,10 @@ export default function ProductClient() {
   const [quantity, setQuantity] = useState(1);
   const [showEMIModal, setShowEMIModal] = useState(false);
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [selectedWarrantyAmount, setSelectedWarrantyAmount] = useState(0);
+  const [showNoWarrantyModal, setShowNoWarrantyModal] = useState(false);
+
+
 
 const handleDecrease = () => {
   setQuantity(Math.max(1, quantity - 1));
@@ -264,6 +270,8 @@ const handleBuyNow = async () => {
 
 
 
+
+const warranties = product?.extend_warranty || [];
 
 
 
@@ -1123,6 +1131,128 @@ const fetchBrand = async () => {
   </div>
 )}
 
+{/* Extended Warranty Section */}
+
+{/* Extended Warranty Section */}
+{product.extend_warranty && product.extend_warranty.length > 0 && (
+  <div className="mt-4 bg-white p-4">
+    {/* Top heading section */}
+    <div className="flex items-center text-lg text-blue-800 font-bold mb-4 gap-2">
+      <FaShield className="w-6 h-6 text-blue-800" />
+      <span className="font-bold">BEA Care</span>
+      <span className="text-gray-700 font-normal text-sm">Add extra protection to your products</span>
+    </div>
+
+    {/* Divider */}
+    <div className="border-t border-gray-300 mb-4"></div>
+
+    {/* Main content section */}
+    <div className="flex flex-col md:flex-row items-start gap-6">
+      {/* Left side - Image */}
+      <div className="flex-shrink-0 mx-auto md:mx-0">
+        <img
+          src="/images/beashield.png"
+          alt="Sathya Shield"
+          className="w-36 h-36 object-contain"
+        />
+      </div>
+
+      {/* Right side - Content */}
+      <div className="flex-1">
+        <p className="font-semibold text-gray-900 mb-3 text-md">
+          Brand Authorised Repair/Replacement Guarantee As Per Manufacturer.
+        </p>
+        
+        <p className="text-gray-700 text-sm mb-4">
+          If you would like to cover your product under extended warranty for additional years. You may choose the plans as given below.
+        </p>
+
+        {/* Warranty Options */}
+        <div className="space-y-3 mb-6">
+          {product.extend_warranty.map((warranty, index) => (
+            <label 
+              key={warranty._id || index}
+              className="flex items-center gap-3 p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors"
+            >
+              <input
+                type="radio"
+                name="extendedWarranty"
+                value={warranty.amount}
+                checked={selectedWarrantyAmount === warranty.amount}
+                onChange={() => setSelectedWarrantyAmount(warranty.amount)}
+                className="w-4 h-4 accent-blue-800"
+              />
+              <span className="text-gray-700 text-sm">
+                Include {warranty.year} Year{warranty.year > 1 ? "s" : ""} for 
+                <span className="font-semibold"> ₹{warranty.amount.toLocaleString()}</span>
+              </span>
+            </label>
+          ))}
+
+          <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
+            <input
+              type="radio"
+              name="extendedWarranty"
+              value={0}
+              checked={selectedWarrantyAmount === 0}
+              onChange={() => setSelectedWarrantyAmount(0)}
+              className="w-4 h-4 accent-blue-800"
+            />
+            <span className="text-gray-700 text-sm">No Extended Warranty</span>
+          </label>
+        </div>
+
+        {/* Calculation Box - Only show when warranty is selected */}
+        {selectedWarrantyAmount > 0 && (
+          <div className="bg-gray-100 border border-gray-300 rounded-lg p-4">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-300">
+                  <th className="text-left pb-2 font-semibold text-gray-700">Product</th>
+                  <th className="text-left pb-2 font-semibold text-gray-700">Warranty</th>
+                  <th className="text-right pb-2 font-semibold text-gray-700">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="py-2 font-semibold text-gray-900">
+                    ₹{(product.special_price || product.price).toLocaleString()}
+                  </td>
+                  <td className="py-2 font-semibold text-gray-900">
+                    ₹{selectedWarrantyAmount.toLocaleString()}
+                  </td>
+                  <td className="py-2 text-right font-bold text-blue-800 text-lg">
+                    ₹{((product.special_price || product.price) + selectedWarrantyAmount).toLocaleString()}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            
+            {/* Mobile View */}
+            <div className="md:hidden mt-3 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-700">Product:</span>
+                <span className="font-semibold">₹{(product.special_price || product.price).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-700">Warranty:</span>
+                <span className="font-semibold">₹{selectedWarrantyAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between border-t border-gray-300 pt-2">
+                <span className="font-semibold text-gray-900">Total:</span>
+                <span className="font-bold text-blue-800 text-lg">
+                  ₹{((product.special_price || product.price) + selectedWarrantyAmount).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
+
             {/* Product More Info */}
 
             <div className="mt-4 bg-gray-50 p-4 rounded-md">
@@ -1575,7 +1705,7 @@ const fetchBrand = async () => {
     </div>
   )}
   
-  {/* Warranty Section */}
+  {/* Warranty Section
   {(product?.warranty || product?.extended_warranty) && (
     <div className="px-4 py-4 border-b border-gray-300">
       <h4 className="text-sm font-semibold text-blue-600 mb-2">
@@ -1642,10 +1772,10 @@ const fetchBrand = async () => {
         </>
       )}
     </div>
-  )}
+  )} */}
 
   {/* Related Products Section - show ONLY if no featured products */}
-  {featuredProducts?.length === 0 && relatedProducts.length > 0 && (
+  
     <div className="px-4 py-4">
       <h2 className="text-sm font-bold text-customBlue underline mb-2">
         Similar Products
@@ -1719,7 +1849,7 @@ const fetchBrand = async () => {
           </div>
         ))}
     </div>
-  )}
+  
 </div>
 
  
@@ -1771,9 +1901,10 @@ const fetchBrand = async () => {
       ...selectedFrequentProducts.map((p) => p._id),
       ...selectedRelatedProducts.map((p) => p._id),
     ]}
-    warranty={selectedWarranty}
+    // warranty={selectedWarranty}
     selectedRelatedProducts={selectedRelatedProducts}
-    extendedWarranty={selectedExtendedWarranty}
+    // extendedWarranty={selectedExtendedWarranty}
+    extendedWarranty={selectedWarrantyAmount}
     selectedFrequentProducts={selectedFrequentProducts}
     className="w-full bg-customBlue hover:bg-blue-700 text-white font-semibold py-3 rounded-md shadow-md text-center"
   />

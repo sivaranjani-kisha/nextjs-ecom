@@ -101,6 +101,31 @@ export default function AddProductPage({ mode = "add", productData = null, produ
   const [allproducts, setAllProducts] = useState([]);
   const router = useRouter();
 
+
+  // Extended warranty 
+  const [warranties, setWarranties] = useState(
+  product.extend_warranty && product.extend_warranty.length > 0
+    ? product.extend_warranty
+    : [{ year: "", amount: "" }]
+);
+
+const handleWarrantyChange = (index, field, value) => {
+  const updated = [...warranties];
+  updated[index][field] = value;
+  setWarranties(updated);
+};
+
+const addWarranty = () => {
+  setWarranties([...warranties, { year: "", amount: "" }]);
+};
+
+const removeWarranty = (index) => {
+  setWarranties(warranties.filter((_, i) => i !== index));
+};
+
+
+
+
   const handleRelatedProductsChange = (selectedOptions) => {
   setProduct(prev => ({
     ...prev,
@@ -163,6 +188,13 @@ export default function AddProductPage({ mode = "add", productData = null, produ
    useEffect(() => {
     if (mode === "edit" && productData) {
         console.log(productData);
+
+        // Initialize warranties from productData
+    if (productData.extend_warranty && productData.extend_warranty.length > 0) {
+      setWarranties(productData.extend_warranty);
+    } else {
+      setWarranties([{ year: "", amount: "" }]);
+    }
 
         // This code sets the state for the 'product' object
         setProduct(prevProduct => ({
@@ -1050,6 +1082,7 @@ const handleupdatefilterchange = (filters) => {
     // clean product (⚠️ do NOT send images)
     const cleanedProduct = {
       ...product,
+      extend_warranty: warranties, // Add this line
       filters: (product.filters || []).map(f => f.value),
       related_products: product.related_products || [],
       category: product.category || "",
@@ -1057,7 +1090,9 @@ const handleupdatefilterchange = (filters) => {
       images: product.images.filter(img => typeof img === "string") // clear images so no blob goes to DB
     };
 
-    console.log(product);
+    console.log("Submitting product with warranties:", cleanedProduct.extend_warranty);
+
+    // console.log(product);
     // return false;
     // ✅ Upload product images
     (product.files || []).forEach(file => {
@@ -1080,12 +1115,12 @@ const handleupdatefilterchange = (filters) => {
       return { ...variant, images: [] }; // backend fills real filenames
     });
 
-    formData.append("product", JSON.stringify({
-    ...product,
-    images: existingImages,   // keep old DB images
-  }));
-
-    formData.append("product", JSON.stringify(cleanedProduct));
+   const finalProductData = {
+  ...cleanedProduct,
+  images: existingImages,  // old images
+  extend_warranty: warranties,
+};
+    formData.append("product", JSON.stringify(finalProductData));
     formData.append("variant", JSON.stringify(variantsWithImages));
     formData.append("highlights", JSON.stringify(cleanedProduct.product_highlights));
 
@@ -1638,32 +1673,66 @@ const handleupdatefilterchange = (filters) => {
 
         {/* Step 3: Variants & Filters */}
         {currentStep === 3 && (
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold mb-4">Filters</h3>
-    
-           
-           
-           <div className="border p-4 rounded">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Filter</label>
-            <Select
-              options={Filter}
-              isMulti
-              value={
-                // Ensure value is always full `{ label, value }` array for react-select
-                Array.isArray(product.filters)
-                  ? product.filters.every(f => typeof f === 'string')
-                    ? Filter.filter(option => product.filters.includes(option.value))
-                    : product.filters
-                  : []
-              }
-              onChange={handleFilterChange}
-              placeholder="Select filters..."
-            />
+  <div className="space-y-4">
+    <h3 className="text-xl font-semibold mb-4">Filters</h3>
 
-          </div>
+    <div className="border p-4 rounded">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Filter</label>
+      <Select
+        options={Filter}
+        isMulti
+        value={
+          Array.isArray(product.filters)
+            ? product.filters.every(f => typeof f === 'string')
+              ? Filter.filter(option => product.filters.includes(option.value))
+              : product.filters
+            : []
+        }
+        onChange={handleFilterChange}
+        placeholder="Select filters..."
+      />
+    </div>
 
-          </div>
-        )}
+    {/* Extended Warranty Section */}
+    <div className="border p-4 rounded">
+  <label className="block text-sm font-medium text-gray-700 mb-2">Extended Warranty</label>
+
+ {warranties.map((warranty, index) => (
+  <div key={index} className="flex space-x-2 mb-2">
+    <label className="text-sm font-medium mt-2">Years:</label>
+    <input
+      type="number"
+      value={warranty.year || ""}
+      onChange={(e) => handleWarrantyChange(index, "year", e.target.value)}
+      className="w-1/2 border p-2 rounded"
+      placeholder="Years"
+    />
+<label className="text-sm font-medium mt-2">Price:</label>
+    <input
+      type="number"
+      value={warranty.amount || ""}
+      onChange={(e) => handleWarrantyChange(index, "amount", e.target.value)}
+      className="w-1/2 border p-2 rounded"
+      placeholder="Amount"
+    />
+
+    <button type="button" onClick={addWarranty} className="p-2 bg-green-600 text-white rounded-full">+</button>
+    {warranties.length > 1 && (
+      <button
+        type="button"
+        onClick={() => removeWarranty(index)}
+        className="p-2 bg-red-600 text-white rounded-full"
+      >
+        -
+      </button>
+    )}
+  </div>
+))}
+
+</div>
+
+  </div>
+)}
 
    
 

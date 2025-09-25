@@ -27,6 +27,13 @@ console.log("..............................................................");
     const md5_cat_name = md5(slug);
 
     await connectDB();
+ // ✅ Get extend_warranty from productData instead of separate formData
+    const extend_warranty = (productData.extend_warranty || []).map(item => ({
+      year: Number(item.year) || 0,
+      amount: Number(item.amount) || 0,
+    }));
+
+    console.log("Processed extend_warranty:", extend_warranty);
 console.log(imageFiles);
 // Updated pathing for more reliability
     // ...
@@ -96,6 +103,8 @@ for (const file of imageFiles) {
     productData.variants = variants;
     productData.md5_name = md5_cat_name;
 
+productData.extend_warranty = extend_warranty;
+
     if (productData.quantity <= 0) {
       productData.stock_status = "Out of Stock";
     }
@@ -122,10 +131,13 @@ const updatedProduct = await Product.findByIdAndUpdate(
     overview_image: savedOverviewImages.length > 0 
       ? savedOverviewImages 
       : productData.overview_image,
-    filters: filterIds   // ✅ Save filters directly to product
+    filters: filterIds,  // ✅ Save filters directly to product
+    extend_warranty: extend_warranty,
   },
   { new: true }
 );
+
+console.log("Updated product extend_warranty:", updatedProduct?.extend_warranty);
 // Filters = array of strings
 console.log(Filters);
 const product_id = updatedProduct?._id;
@@ -161,7 +173,7 @@ if (product_id){
 
 
     return NextResponse.json(
-      { message: "Product updated successfully", product: updatedProduct },
+      { message: "Product updated successfully", product: updatedProduct, extend_warranty: updatedProduct.extend_warranty },
       { status: 200 }
     );
   } catch (error) {
