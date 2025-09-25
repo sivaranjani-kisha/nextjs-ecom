@@ -296,11 +296,11 @@ const addHistory = async () => {
 
 
         {/* Order History */}
-<div className="bg-white p-4 shadow rounded mt-6">
-  <h3 className="font-semibold text-gray-600 border-b pb-2">Order History</h3>
+{/* <div className="bg-white p-4 shadow rounded mt-6">
+  <h3 className="font-semibold text-gray-600 border-b pb-2">Order History</h3> */}
 
   {/* Order History Table */}
-  <table className="w-full text-sm mt-3 border text-gray-700">
+  {/* <table className="w-full text-sm mt-3 border text-gray-700">
     <thead>
       <tr className="bg-gray-100 border-b">
         <th className="p-2">Date Added</th>
@@ -321,15 +321,14 @@ const addHistory = async () => {
         </tr>
       ))}
     </tbody>
-  </table>
+  </table> */}
 
   {/* Add Order History Form */}
-  <div className="mt-6">
+  {/* <div className="mt-6">
     <h4 className="font-semibold text-gray-600 border-b pb-2">
       Add Order History
     </h4>
 
-    {/* Order Status Dropdown */}
     <div className="mt-4">
       <label className="block text-sm font-medium text-gray-700 mb-1">
         Order Status
@@ -346,7 +345,6 @@ const addHistory = async () => {
 </select>
     </div>
 
-    {/* Comment Box */}
     <div className="mt-4">
       <label className="block text-sm font-medium text-gray-700 mb-1">
         Comment
@@ -360,7 +358,7 @@ const addHistory = async () => {
 ></textarea>
     </div>
 
-    {/* Add History Button */}
+
     <div className="mt-4">
       <button
   onClick={addHistory}
@@ -370,8 +368,9 @@ const addHistory = async () => {
   {isUpdating ? "Adding..." : "+ Add History"}
 </button>
     </div>
-  </div>
-</div>
+  </div> */}
+
+{/* </div> */}
 </div>
 </div>
   );
