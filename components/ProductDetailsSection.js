@@ -918,35 +918,7 @@ const cleanupFlixMedia = () => {
           </div>
         )}
 
-        {/* {activeTab === "recentlyViewed" && (
-          <div>
-            <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Recently Viewed Products</h2>
-            {loadingRecentlyViewed ? (
-              renderLoadingSkeleton()
-            ) : recentlyViewed.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mt-2 sm:mt-4">
-                {recentlyViewed.map(renderProductCard)}
-              </div>
-            ) : (
-              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">No recently viewed products to display.</p>
-            )}
-          </div>
-        )} */}
-
-        {/* {activeTab === "relatedProducts" && (
-          <div>
-            <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Related Products</h2>
-            {loadingRelated ? (
-              renderLoadingSkeleton()
-            ) : relatedProducts.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mt-2 sm:mt-4">
-                {relatedProducts.map(renderProductCard)}
-              </div>
-            ) : (
-              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">No related products found.</p>
-            )}
-          </div>
-        )} */}
+       
       </div>
     </div>
   );
