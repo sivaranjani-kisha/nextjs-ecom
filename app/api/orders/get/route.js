@@ -42,6 +42,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Order from "@/models/ecom_order_info";
+import product from "@/models/product";
 import jwt from "jsonwebtoken";
 
 export async function GET(req) {
@@ -78,17 +79,39 @@ export async function GET(req) {
     if(userId){
       query.user_id = userId;
     }
-    console.log(query);
-    const orders = await Order.find(query).sort({ createdAt: -1 });
+
+    const orders        = await Order.find(query).sort({ createdAt: -1 });
+
+    const updatedOrders = [];
+    for (let order of orders) {
+      const itemsWithSlug = [];
+
+      for (let item of order.order_item) {
+        const productDoc = await product.findOne(
+          { item_code: item.item_code },
+          "slug"
+        );
+
+        itemsWithSlug.push({
+          ...item.toObject?.() || item,
+          slug: productDoc?.slug || null
+        });
+      }
+
+      updatedOrders.push({
+        ...order.toObject(),
+        order_item: itemsWithSlug
+      });
+    }
     
-    if (order_number && orders.length === 0) {
+    if (order_number && updatedOrders.length === 0) {
       return NextResponse.json(
         { success: false, error: "Order not found" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true, orders }, { status: 200 });
+    return NextResponse.json({ success: true, orders:updatedOrders }, { status: 200 });
   } catch (error) {
     console.error("Error fetching orders:", error);
     return NextResponse.json(

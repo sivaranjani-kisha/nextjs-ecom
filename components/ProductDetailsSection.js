@@ -59,6 +59,24 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       }
     }
   }, [activeTab, product.category?._id]);
+
+  const reviewsRef = useRef(null);
+  useEffect(() => {
+    if (window.location.hash === "#reviews") {
+      setActiveTab("reviews");
+      setTimeout(() => {
+        const headerEl = document.querySelector("header"); // get header
+        const headerHeight = headerEl ? headerEl.offsetHeight : 0;
+
+        if (reviewsRef.current) {
+          const y = reviewsRef.current.getBoundingClientRect().top + window.scrollY - headerHeight - 10; 
+          // `-10` gives little gap below header
+          window.scrollTo({ top: y, behavior: "smooth" });
+        }
+      }, 300);
+    }
+  }, []);
+
   useEffect(() => {
 
     // Create target containers dynamically (like jQuery does)
@@ -662,7 +680,7 @@ const cleanupFlixMedia = () => {
           activeTab === tab.id
             ? "border border-black text-black font-semibold"
             : "text-gray-500 hover:text-black"
-        }`}
+        }`} ref={reviewsRef}
       >
         {tab.label}
       </button>
