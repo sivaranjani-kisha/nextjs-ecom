@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SiTicktick } from "react-icons/si";
 import { TbBrandAppgallery } from "react-icons/tb";
 import { FiBox, FiHash } from "react-icons/fi";
@@ -15,17 +16,21 @@ import { ToastContainer, toast } from 'react-toastify';
 export default function ProductDetailsSection({ product, reviews=[], avgRating=0, reviewCount=0}) {
 
   const [brand, setBrand] = useState([]);
-  const [activeTab, setActiveTab] = useState("description");
+  const [activeTab, setActiveTab] = useState("overview");
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [loadingRecentlyViewed, setLoadingRecentlyViewed] = useState(false);
   const { updateHeaderdetails, setIsLoggedIn, setUserData,setIsAdmin } = useHeaderdetails();
-
+  const flixScriptRef = useRef(null);
+  const flixInitializedRef = useRef(false);
+  const [brandName, setBrandName] = useState("");
+ 
   const tabData = {
     overview: product.overview || "No overview available.",
     description: product.description || "No description available.",
     videos: product.videos || [],
+    overview: product.overview || "No overview available.",
     // reviews: {
     //   rating: product.rating || 0,
     //   count: product.reviews || 0,
@@ -54,7 +59,84 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       }
     }
   }, [activeTab, product.category?._id]);
+  useEffect(() => {
 
+    // Create target containers dynamically (like jQuery does)
+
+    const overviewTab = document.querySelector("#overview-tab .col-md-12");
+    console.log("overviewTab", overviewTab);
+    if (overviewTab && !document.querySelector("#flix-inpage")) {
+    console.log("overviewTab1", overviewTab);
+
+      const inpageDiv = document.createElement("div");
+
+      inpageDiv.id = "flix-inpage";
+
+      overviewTab.prepend(inpageDiv);
+
+    }
+ 
+    const keyFea = document.querySelector(".key-fea");
+
+    if (keyFea && !document.querySelector("#flix-minisite")) {
+
+      const miniSiteDiv = document.createElement("div");
+
+      miniSiteDiv.id = "flix-minisite";
+
+      keyFea.insertAdjacentElement("afterend", miniSiteDiv);
+
+    }
+ 
+    // Script setup
+
+    const headID = document.getElementsByTagName("head")[0];
+
+    const flixScript = document.createElement("script");
+
+    flixScript.type = "text/javascript";
+
+    flixScript.async = true;
+
+    flixScript.src = "//media.flixfacts.com/js/loader.js";
+ 
+    // Custom attributes
+
+    flixScript.setAttribute("data-flix-distributor", "17089");
+
+    flixScript.setAttribute("data-flix-language", "in");
+
+    flixScript.setAttribute("data-flix-fallback-language", "");
+
+    flixScript.setAttribute("data-flix-brand", "Samsung");
+
+    flixScript.setAttribute("data-flix-ean", "");
+
+    flixScript.setAttribute("data-flix-mpn", "QA65Q70BAKLXL");
+
+    flixScript.setAttribute("data-flix-button", "flix-minisite");
+
+    flixScript.setAttribute("data-flix-inpage", "flix-inpage");
+
+    flixScript.setAttribute("data-flix-price", "");
+ 
+    headID.appendChild(flixScript);
+ 
+    // Cleanup: remove script if component unmounts
+
+    return () => {
+
+      if (flixScript.parentNode) {
+
+        flixScript.parentNode.removeChild(flixScript);
+
+      }
+
+    };
+
+  }, []);
+
+ 
   const fetchBrand = async () => {
     try {
       const response = await fetch("/api/brand");
@@ -87,6 +169,208 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   useEffect(() => {
     fetchBrand();
   }, []);
+
+    useEffect(() => {
+    if (activeTab === "overview" && brandName) {
+      const timer = setTimeout(() => {
+        initializeFlixMedia();
+      }, 300);
+ 
+      return () => clearTimeout(timer);
+    } else if (activeTab !== "overview") {
+      cleanupFlixMedia();
+    }
+  }, [activeTab, brandName]); // Add brandName as dependency
+ 
+ const initializeFlixMedia = () => {
+  console.log("Initializing FlixMedia with brand:", brandName);
+ 
+  // Clean up existing FlixMedia elements
+  const existingInpage = document.getElementById("flix-inpage");
+  const existingMinisite = document.getElementById("flix-minisite");
+ 
+  if (existingInpage) existingInpage.remove();
+  if (existingMinisite) existingMinisite.remove();
+ 
+  // Create containers for FlixMedia
+  const overviewTab = document.querySelector("#overview-tab .col-md-12");
+  const keyFea = document.querySelector(".key-fea");
+ 
+  if (overviewTab && !document.getElementById("flix-inpage")) {
+    const inpageDiv = document.createElement("div");
+    inpageDiv.id = "flix-inpage";
+    inpageDiv.className = "flix-inpage-container";
+    overviewTab.prepend(inpageDiv);
+    console.log("Created flix-inpage container");
+  }
+ 
+  if (keyFea && !document.getElementById("flix-minisite")) {
+    const miniSiteDiv = document.createElement("div");
+    miniSiteDiv.id = "flix-minisite";
+    miniSiteDiv.className = "flix-minisite-container";
+    keyFea.insertAdjacentElement("afterend", miniSiteDiv);
+    console.log("Created flix-minisite container");
+  }
+ 
+  // Remove existing script
+  if (flixScriptRef.current) {
+    flixScriptRef.current.remove();
+    flixScriptRef.current = null;
+  }
+ 
+  // Set up fallback timeout
+  const fallbackTimeout = setTimeout(() => {
+    if (!flixInitializedRef.current) {
+      console.log("FlixMedia failed to load, showing fallback message");
+      showFallbackMessage();
+    }
+  }, 3000); // Wait 3 seconds for FlixMedia to load
+ 
+  // Load FlixMedia script with dynamic brand name
+  loadFlixScript(fallbackTimeout);
+};
+ 
+const loadFlixScript = (fallbackTimeout) => {
+  const headID = document.getElementsByTagName("head")[0];
+  console.log(brandName, product);
+  const flixScript = document.createElement("script");
+  flixScript.type = "text/javascript";
+  flixScript.async = true;
+  flixScript.src = "//media.flixfacts.com/js/loader.js";
+ 
+  // Use the dynamically fetched brand name
+  flixScript.setAttribute("data-flix-distributor", "17089");
+  flixScript.setAttribute("data-flix-language", "in");
+  flixScript.setAttribute("data-flix-fallback-language", "");
+  flixScript.setAttribute("data-flix-ean", product.ean || "");
+  flixScript.setAttribute("data-flix-mpn", product.mpn || product.sku || product.item_code || "QA65Q70BAKLXL");
+  flixScript.setAttribute("data-flix-button", "flix-minisite");
+  flixScript.setAttribute("data-flix-inpage", "flix-inpage");
+  flixScript.setAttribute("data-flix-price", product.price || "");
+ 
+  flixScript.onload = () => {
+    console.log("FlixMedia script loaded with brand:", brandName);
+    clearTimeout(fallbackTimeout); // Clear the fallback timeout
+   
+    // Check if FlixMedia actually has content for this product
+    checkFlixMediaContent();
+  };
+ 
+  flixScript.onerror = (error) => {
+    console.error("Failed to load FlixMedia script:", error);
+    clearTimeout(fallbackTimeout);
+    showFallbackMessage();
+  };
+ 
+  headID.appendChild(flixScript);
+  flixScriptRef.current = flixScript;
+ 
+  setTimeout(() => {
+    if (window.FlixMedia && typeof window.FlixMedia.load === 'function') {
+      console.log("Manually triggering FlixMedia.load()");
+      window.FlixMedia.load();
+    }
+  }, 500);
+};
+ 
+const checkFlixMediaContent = () => {
+  // Check if FlixMedia containers have content after loading
+  const checkContent = () => {
+    const flixInpage = document.getElementById("flix-inpage");
+    const flixMinisite = document.getElementById("flix-minisite");
+   
+    const hasInpageContent = flixInpage && flixInpage.children.length > 0;
+    const hasMinisiteContent = flixMinisite && flixMinisite.children.length > 0;
+   
+    if (!hasInpageContent && !hasMinisiteContent) {
+      // Wait a bit more and check again
+      setTimeout(() => {
+        const finalCheckInpage = document.getElementById("flix-inpage");
+        const finalCheckMinisite = document.getElementById("flix-minisite");
+       
+        const finalHasInpage = finalCheckInpage && finalCheckInpage.children.length > 0;
+        const finalHasMinisite = finalCheckMinisite && finalCheckMinisite.children.length > 0;
+       
+        if (!finalHasInpage && !finalHasMinisite) {
+          console.log("No FlixMedia content found for this product");
+          showFallbackMessage();
+        } else {
+          flixInitializedRef.current = true;
+          console.log("FlixMedia content loaded successfully");
+        }
+      }, 2000); // Wait 2 more seconds for content to render
+    } else {
+      flixInitializedRef.current = true;
+      console.log("FlixMedia content loaded successfully");
+    }
+  };
+ 
+  // Initial check after a short delay
+  setTimeout(checkContent, 1000);
+};
+ 
+const showFallbackMessage = () => {
+  // Remove FlixMedia containers if they exist but are empty
+  const flixInpage = document.getElementById("flix-inpage");
+  const flixMinisite = document.getElementById("flix-minisite");
+ 
+  if (flixInpage && flixInpage.children.length === 0) {
+    flixInpage.remove();
+  }
+ 
+  if (flixMinisite && flixMinisite.children.length === 0) {
+    flixMinisite.remove();
+  }
+ 
+  // Create and show fallback message
+  const overviewTab = document.querySelector("#overview-tab .col-md-12");
+  if (overviewTab && !document.querySelector(".no-overview-message")) {
+    const fallbackMessage = document.createElement("p");
+    fallbackMessage.className = "no-overview-message text-gray-500 text-center py-4";
+    fallbackMessage.textContent = "There is no product overview available for this item.";
+    overviewTab.appendChild(fallbackMessage);
+  }
+ 
+  flixInitializedRef.current = false;
+};
+ 
+const cleanupFlixMedia = () => {
+  console.log("Cleaning up FlixMedia...");
+ 
+  if (flixScriptRef.current) {
+    flixScriptRef.current.remove();
+    flixScriptRef.current = null;
+  }
+ 
+  const flixInpage = document.getElementById("flix-inpage");
+  const flixMinisite = document.getElementById("flix-minisite");
+ 
+  if (flixInpage) {
+    flixInpage.remove();
+  }
+ 
+  if (flixMinisite) {
+    flixMinisite.remove();
+  }
+ 
+  // Also remove fallback message if it exists
+  const fallbackMessage = document.querySelector(".no-overview-message");
+  if (fallbackMessage) {
+    fallbackMessage.remove();
+  }
+ 
+  const flixFrames = document.querySelectorAll('iframe[src*="flixmedia"]');
+  flixFrames.forEach(frame => frame.remove());
+ 
+  flixInitializedRef.current = false;
+};
+ 
+  useEffect(() => {
+    return () => {
+      cleanupFlixMedia();
+    };
+  }, []);
+
 
   const fetchRelatedProducts = async () => {
     try {
@@ -364,7 +648,7 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       <div className={`flex justify-center  ${poppins.className}`}>
         {/* <div className="flex justify-center gap-8"> */}
     {[
-      // { id: "overview", label: "Overview" },
+      { id: "overview", label: "Overview" },
       { id: "description", label: "Description" },
       { id: "videos", label: "Videos" },
       { id: "reviews", label: "Reviews" },
@@ -386,6 +670,18 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   </div>
 
       {/* Tab Content */}
+      <div className={`mx-auto px-4 py-6 ${activeTab === "overview" ? "block" : "hidden"}`}>
+        {/* Always render overview but control visibility */}
+        <div >
+          <div id="overview-tab">
+            <div className="col-md-12">
+              <div id="flix-inpage"></div>
+            </div>
+          </div>
+          <div className="key-fea"></div>
+        </div>
+      </div>
+ 
       <div className="max-w-2xl mx-auto px-4 py-6 text-center">
         {/* {activeTab === "overview" && (
           <div>
