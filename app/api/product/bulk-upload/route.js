@@ -162,14 +162,27 @@ export async function POST(req) {
       }
       
       let highlights = [];
-      if (row[20] && typeof row[20] === 'string') {
-        highlights = row[20].split(',').map(item => item.trim()).filter(Boolean);
+      if (row[21] && typeof row[21] === 'string') {
+        highlights = row[21].split(',').map(item => item.trim()).filter(Boolean);
       }
       
       let key_specifications = [];
       if(row[12] && typeof row[12] === 'string'){
         key_specifications = row[12].split(',');
       }
+
+      // Extended warranty (expects JSON string in Excel column 21)
+let extend_warranty = [];
+if (row[20] && typeof row[20] === 'string') {
+  try {
+    extend_warranty = JSON.parse(row[20].trim());
+    if (!Array.isArray(extend_warranty)) extend_warranty = [];
+  } catch (error) {
+    console.error(`Error parsing extend_warranty at row ${i + 1}: ${error.message}`);
+    extend_warranty = [];
+  }
+}
+
       
       // Check for existing product
       const existingProduct = await Product.findOne({
@@ -195,6 +208,7 @@ export async function POST(req) {
         hasVariants: variants.length > 0,
         variants: variants,
         status: row[19],
+        extend_warranty: extend_warranty,
         stock_status: row[2] > 0 ? "In Stock" : "Out of Stock",
         product_highlights: highlights,
       };
