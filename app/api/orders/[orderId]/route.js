@@ -4,10 +4,10 @@ import Order from "@/models/ecom_order_info";
 
 export async function PUT(req, { params }) {
   await dbConnect();
-  const { orderId } = params;
+  const { orderId } =await params;
 
   try {
-    const { status } = await req.json(); // ✅ get new status from request
+    const { status, delivery_date } = await req.json();
 
     if (!status) {
       return NextResponse.json(
@@ -25,10 +25,27 @@ export async function PUT(req, { params }) {
       );
     }
 
-    // ✅ Update with new status
+    // Prepare update data
+    const updateData = { order_status: status };
+    
+    // Add delivery date if provided
+    if (delivery_date) {
+      updateData.delivery_date = delivery_date;
+    }
+
+    // Add to order history
+    updateData.$push = {
+      order_history: {
+        status: status.charAt(0).toUpperCase() + status.slice(1),
+        date: new Date(),
+        customer_notified: true
+      }
+    };
+
+    // ✅ Update order
     const updatedOrder = await Order.findByIdAndUpdate(
       orderId,
-      { order_status: status },
+      updateData,
       { new: true }
     );
 

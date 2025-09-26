@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 
 export async function POST(req) {
   try {
-    const { to, subject, text } = await req.json();
+    const { to, subject, text,html,cc } = await req.json();
 
    const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -18,8 +18,10 @@ export async function POST(req) {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to,
+      cc,
       subject,
       text,
+      html,
     });
 
     return new Response(JSON.stringify({ success: true }), {

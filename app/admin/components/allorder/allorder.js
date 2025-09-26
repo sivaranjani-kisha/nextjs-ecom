@@ -22,9 +22,10 @@ const OrdersTable = () => {
     endDate: null,
   });
 
-  // 📌 Email modal states
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  // 📌 Delivery Date Modal states
+  const [showDeliveryDateModal, setShowDeliveryDateModal] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [orderToUpdate, setOrderToUpdate] = useState(null);
   const [oldStatus, setOldStatus] = useState("");
 
   useEffect(() => {
@@ -97,38 +98,177 @@ const OrdersTable = () => {
 
   // 📧 Send cancellation email function
   const sendCancellationEmail = async (order) => {
-    console.log(order,order.order_number);
     try {
       const name = order.order_username || "Customer";
       
-      const emailFormData = new FormData();
-      emailFormData.append("campaign_id", "c7e3fb47-8bb0-4062-ac32-f56d5877536f");
-      emailFormData.append("email", order.email_address || "kbsiva1234@gmail.com"); // Use order email if available
-      emailFormData.append(
-        "params",
-        JSON.stringify([name, order.order_number])
-      );
+      // const emailFormData = new FormData();
+      // emailFormData.append("campaign_id", "c7e3fb47-8bb0-4062-ac32-f56d5877536f");
+      // emailFormData.append("email", order.email_address || "kbsiva1234@gmail.com");
+      // emailFormData.append(
+      //   "params",
+      //   JSON.stringify([name, order.order_number])
+      // );
      
-      const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
-        },
-        body: emailFormData,
-      });
+      // const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
+      //   method: "POST",
+      //   headers: {
+      //     Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
+      //   },
+      //   body: emailFormData,
+      // });
 
-      const data = await response.json();
-      return data;
+      // const data = await response.json();
+      // return data;
+
     } catch (error) {
       console.error("Error sending cancellation email:", error);
       throw error;
     }
   };
 
-  // 📅 Handle date
+  // 📧 Send delivery confirmation email to user
+  const sendDeliveryEmailToUser = async (order, deliveryDate) => {
+    try {
+      const formattedDate = new Date(deliveryDate).toLocaleDateString('en-IN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // const emailFormData = new FormData();
+      // emailFormData.append("campaign_id", "c7e3fb47-8bb0-4062-ac32-f56d5877536f");
+      // emailFormData.append("email", order.email_address);
+      // emailFormData.append(
+      //   "params",
+      //   JSON.stringify([order.order_username, order.order_number, formattedDate])
+      // );
+     
+      // const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
+      //   method: "POST",
+      //   headers: {
+      //     Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
+      //   },
+      //   body: emailFormData,
+      // });
+
+        const res = await fetch("/api/order-send-mail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: order.email_address,
+          
+          subject: `Order ${order.order_number} Status Updated`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+           
+              <p>Your order No: ${order.order_number} has been shipped. The expected delivery date is ${formattedDate}. You will receive a copy of the invoice shortly, or you can download it from Your Orders. If you have any questions, feel free to contact us at +919842344323.</p>
+                 <p>This is an automated notification from the order management system.</p>
+            </div>
+          `
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to send admin notification");
+      return await res.json();
+      // return await response.json();
+    } catch (error) {
+      console.error("Error sending delivery email to user:", error);
+      throw error;
+    }
+  };
+
+  // 📧 Send notification email to admin
+  const sendAdminNotificationEmail = async (order, oldStatus, newStatus) => {
+    try {
+      const res = await fetch("/api/order-send-mail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: "ecom@bharathelectronics",
+          //cc: "siva96852@gmail.com",
+          subject: `Order ${order.order_number} Status Updated`,
+          text: `Order ${order.order_number} for ${order.order_username} has been updated from ${oldStatus} to ${newStatus}.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #333;">Order Status Updated</h2>
+              <p><strong>Order Number:</strong> ${order.order_number}</p>
+              <p><strong>Customer Name:</strong> ${order.order_username}</p>
+              <p><strong>Status Changed:</strong> ${oldStatus} → ${newStatus}</p>
+              <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+              <br>
+              <p>This is an automated notification from the order management system.</p>
+            </div>
+          `
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to send admin notification");
+      return await res.json();
+    } catch (error) {
+      console.error("Error sending admin notification:", error);
+      throw error;
+    }
+  };
+
+  // 📅 Handle date range change
   const handleDateChange = ({ startDate, endDate }) => {
     setDateFilter({ startDate, endDate });
     setCurrentPage(0);
+  };
+
+  // ✅ Update order status with delivery date
+  const updateOrderStatusWithDeliveryDate = async () => {
+    if (!deliveryDate || !orderToUpdate) {
+      toast.error("Please select a delivery date");
+      return;
+    }
+
+    try {
+      // Update order status and delivery date
+      const res = await fetch(`/api/orders/${orderToUpdate._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          status: "shipped",
+          delivery_date: deliveryDate 
+        }),
+      });
+
+      if (!res.ok) throw new Error();
+
+      const updatedOrder = await res.json();
+
+      // Update local state
+      setOrders((prev) =>
+        prev.map((ord) =>
+          ord._id === orderToUpdate._id
+            ? { 
+                ...ord, 
+                order_status: "shipped",
+                delivery_date: deliveryDate 
+              }
+            : ord
+        )
+      );
+
+      // Send delivery email to user
+      await sendDeliveryEmailToUser(orderToUpdate, deliveryDate);
+      
+      // Send notification email to admin
+      await sendAdminNotificationEmail(orderToUpdate, oldStatus, "shipped");
+
+      toast.success("Order shipped! Email sent to user and admin.");
+      
+    } catch (err) {
+      toast.error("Failed to update order status");
+      console.error(err);
+    } finally {
+      setShowDeliveryDateModal(false);
+      setDeliveryDate("");
+      setOrderToUpdate(null);
+      setOldStatus("");
+    }
   };
 
   const paginatedOrders = filtered.slice(
@@ -246,6 +386,7 @@ const OrdersTable = () => {
                   <th className="p-2">Action</th>
                   <th className="p-2">Order Id</th>
                   <th className="p-2">Order Status</th>
+                  <th className="p-2">Delivery Date</th>
                   <th className="p-2">Name</th>
                   <th className="p-2">Amount</th>
                   <th className="p-2">Date</th>
@@ -276,6 +417,18 @@ const OrdersTable = () => {
                             const newStatus = e.target.value;
                             const prevStatus = o.order_status;
 
+                            // If changing from pending to shipped, show delivery date modal
+                            if (prevStatus.toLowerCase() === "pending" && 
+                                newStatus.toLowerCase() === "shipped") {
+                              setOrderToUpdate(o);
+                              setOldStatus(prevStatus);
+                              setShowDeliveryDateModal(true);
+                              e.target.value = prevStatus; // Reset dropdown until confirmed
+                              console.log("hai");
+                              return;
+                            }
+
+                            // For other status changes (like cancelled)
                             try {
                               const res = await fetch(`/api/orders/${o._id}`, {
                                 method: "PUT",
@@ -295,29 +448,19 @@ const OrdersTable = () => {
                                 )
                               );
 
-                              // 📌 If status changed to "cancelled", send email immediately
+                              // Send cancellation email if status changed to cancelled
                               if (newStatus.toLowerCase() === "cancelled") {
                                 try {
-                                  sendCancellationEmail(o);
-                                  alert("Cancellation email sent successfully");
+                                  await sendCancellationEmail(o);
                                   toast.success("Cancellation email sent successfully!");
                                 } catch (error) {
                                   toast.error("Failed to send cancellation email");
                                 }
                               }
 
-                              // 📌 If Pending → Shipped, open modal
-                              if (
-                                prevStatus.toLowerCase() === "pending" &&
-                                newStatus.toLowerCase() === "shipped"
-                              ) {
-                                setSelectedOrder({
-                                  ...o,
-                                  newStatus,
-                                });
-                                setOldStatus(prevStatus);
-                                setShowEmailModal(true);
-                              }
+                              // Send admin notification for any status change
+                              await sendAdminNotificationEmail(o, prevStatus, newStatus);
+
                             } catch (err) {
                               toast.error("Failed to update status");
                               e.target.value = prevStatus;
@@ -331,6 +474,13 @@ const OrdersTable = () => {
                         </select>
                       </td>
 
+                      <td className="p-2 border">
+                        {o.delivery_date 
+                          ? new Date(o.delivery_date).toLocaleDateString()
+                          : "Not set"
+                        }
+                      </td>
+
                       <td className="p-2 border">{o.order_username}</td>
                       <td className="p-2 border">₹{o.order_amount}</td>
                       <td className="p-2 border">
@@ -341,7 +491,7 @@ const OrdersTable = () => {
                 ) : (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="7"
                       className="text-center text-gray-500 p-4"
                     >
                       No orders found.
@@ -400,49 +550,47 @@ const OrdersTable = () => {
         </div>
       )}
 
-      {/* 📧 Email Modal */}
-      {showEmailModal && selectedOrder && (
+      {/* 📅 Delivery Date Modal */}
+      {showDeliveryDateModal && orderToUpdate && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">Send Email?</h3>
+            <h3 className="text-lg font-semibold mb-4">Set Delivery Date</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Order <b>{selectedOrder.order_number}</b> for user{" "}
-              <b>{selectedOrder.order_username}</b> has been updated
-              from <b>{oldStatus}</b> → <b>{selectedOrder.newStatus}</b>.
+              Order <b>{orderToUpdate.order_number}</b> for{" "}
+              <b>{orderToUpdate.order_username}</b>
             </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Expected Delivery Date:
+              </label>
+              <input
+                type="date"
+                value={deliveryDate}
+                onChange={(e) => setDeliveryDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
 
             <div className="flex justify-end gap-3">
               <button
-                onClick={() => setShowEmailModal(false)}
+                onClick={() => {
+                  setShowDeliveryDateModal(false);
+                  setDeliveryDate("");
+                  setOrderToUpdate(null);
+                  setOldStatus("");
+                }}
                 className="px-4 py-2 bg-gray-300 rounded-md"
               >
-                No
+                Cancel
               </button>
               <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch("/api/order-send-mail", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        to: "kbsiva1234@gmail.com",
-                        cc:"siva96852@gmail.com",
-                        subject: `Order ${selectedOrder.order_number} Status Update`,
-                        text: `Hi, Order ${selectedOrder.order_number} for ${selectedOrder.order_username} was updated from ${oldStatus} to ${selectedOrder.newStatus}.`,
-                      }),
-                    });
-
-                    if (!res.ok) throw new Error("Failed to send mail");
-                    toast.success("Email sent successfully!");
-                  } catch (err) {
-                    toast.error("Failed to send email");
-                  } finally {
-                    setShowEmailModal(false);
-                  }
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-md"
+                onClick={updateOrderStatusWithDeliveryDate}
+                disabled={!deliveryDate}
+                className="px-4 py-2 bg-red-600 text-white rounded-md disabled:bg-gray-400"
               >
-                Yes
+                Confirm & Send Emails
               </button>
             </div>
           </div>

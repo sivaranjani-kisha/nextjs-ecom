@@ -68,6 +68,7 @@ const OrderSchema = new mongoose.Schema(
   payment_id:{ type: String},
   order_number:{ type: String, required: true},
   user_adddeliveryid:{ type: String},
+   delivery_date: { type: Date },
   order_status: {
     type: String,
     enum: ["pending", "cancelled", "shipped","Order Placed","Failure"],
