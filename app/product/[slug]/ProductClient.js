@@ -44,6 +44,8 @@ export default function ProductClient() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [selectedWarrantyAmount, setSelectedWarrantyAmount] = useState(0);
   const [showNoWarrantyModal, setShowNoWarrantyModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
 
 
 
@@ -411,13 +413,28 @@ useEffect(() => {
     setSelectedFrequentProducts(matchedProducts);
   }
 }, [featuredProducts]);
+// derived main image
+const mainImage = product?.images?.[selectedImageIndex] || "/no-image.jpg";
+
+// helper to resolve full path
+const resolveImagePath = (image) => {
+  if (!image) return "/no-image.jpg";
+  if (
+    image.startsWith("http") ||
+    image.startsWith("blob:") ||
+    image.startsWith("data:") ||
+    image.startsWith("/")
+  ) return image;
+  return `/uploads/products/${image}`;
+};
 
 
   const [selectedImage, setSelectedImage] = useState(null);
 
       useEffect(() => {
         if (product?.images?.[0]) {
-          setSelectedImage(`/uploads/products/${product.images[0]}`);
+          // setSelectedImage(`/uploads/products/${product.images[0]}`);
+           setSelectedImage(product.images[0]);
         }
       }, [product]);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0, visible: false });
@@ -604,25 +621,31 @@ const fetchBrand = async () => {
   };
 
   const openLightbox = (index = 0) => {
+  if (product?.images && product.images.length > 0) {
     setLightboxIndex(index);
     setLightboxOpen(true);
-    setSelectedImage(images[index]);
-  };
+    setSelectedImage(product.images[index]);
+  }
+};
+
 
   const closeLightbox = () => {
     setLightboxOpen(false);
   };
 
   const navigateLightbox = (direction) => {
-    let newIndex;
-    if (direction === 'prev') {
-      newIndex = (lightboxIndex - 1 + images.length) % images.length;
-    } else {
-      newIndex = (lightboxIndex + 1) % images.length;
-    }
-    setLightboxIndex(newIndex);
-    setSelectedImage(images[newIndex]);
-  };
+  if (!product?.images || product.images.length === 0) return;
+
+  let newIndex;
+  if (direction === "prev") {
+    newIndex =
+      (selectedImageIndex - 1 + product.images.length) % product.images.length;
+  } else {
+    newIndex = (selectedImageIndex + 1) % product.images.length;
+  }
+
+  setSelectedImageIndex(newIndex);
+};
 
   // Handle keyboard events for lightbox
   useEffect(() => {
@@ -706,7 +729,7 @@ const fetchBrand = async () => {
             ref={zoomContainerRef}
               >
                 <img
-                  src={selectedImage || "/no-image.jpg"}
+                  src={resolveImagePath(mainImage) || "/no-image.jpg"}
                   alt={product?.name || "Product"}
                   className="w-full h-full object-contain rounded-xl"
                   ref={imgRef}
@@ -800,16 +823,10 @@ const fetchBrand = async () => {
       .map((image, index) => (
         <div key={index} className="flex-shrink-0">
           <img
-            src={
-              image.startsWith("http") ||
-              image.startsWith("blob:") ||
-              image.startsWith("data:")
-                ? image
-                : `/uploads/products/${image}`
-            }
+            src={resolveImagePath(image)}
             alt={`Thumbnail ${index + 1}`}
             className="w-20 h-20 border border-gray-400 rounded-lg cursor-pointer hover:scale-110 transition-transform duration-300 object-cover"
-            onClick={() => handleThumbnailClick(index)}
+            onClick={() => setSelectedImageIndex(index)}
             onError={(e) => {
               e.currentTarget.style.display = "none"; // hide if broken
             }}
@@ -823,70 +840,87 @@ const fetchBrand = async () => {
 
 {/* Lightbox Modal */}
 {lightboxOpen && (
-  <div className={styles.lightbox}>
-    {/* Close button */}
-    <button 
-      className={styles.closeButton}
-      onClick={closeLightbox}
+  <div
+    className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-2 p-40"
+    onClick={closeLightbox}
+  >
+    <div
+      className="relative bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-auto flex flex-col items-center max-h-[70vh] p-6"
+      onClick={(e) => e.stopPropagation()}
     >
-      &times;
-    </button>
+      {/* Close button */}
+      <button
+        className="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors duration-200 z-50"
+        onClick={closeLightbox}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
 
-    {/* Prev button */}
-    <button 
-      className={`${styles.navButton} ${styles.prev}`}
-      onClick={() => navigateLightbox("prev")}
-    >
-      &#8249;
-    </button>
+      {/* Main Image */}
+      <div className="relative w-full flex items-center justify-center">
+        <button
+          className="absolute left-1 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/60 rounded-full w-8 h-8 flex items-center justify-center text-black text-xl z-50"
+          onClick={(e) => { e.stopPropagation(); navigateLightbox("prev"); }}
+        >
+          &#8249;
+        </button>
 
-    {/* Next button */}
-    <button 
-      className={`${styles.navButton} ${styles.next}`}
-      onClick={() => navigateLightbox("next")}
-    >
-      &#8250;
-    </button>
+        <img
+          src={resolveImagePath(product.images[selectedImageIndex])}
+          alt={product?.name || "Product"}
+          className="object-contain max-h-[50vh] border border-gray-400 rounded-lg w-auto rounded-md"
+        />
 
-    <div className={styles.lightboxContent}>
-      <img
-        src={selectedImage}
-        alt={product?.name || "Product"}
-        className={styles.lightboxImage}
-      />
+        <button
+          className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/60 rounded-full w-8 h-8 flex items-center justify-center text-black text-xl z-50"
+          onClick={(e) => { e.stopPropagation(); navigateLightbox("next"); }}
+        >
+          &#8250;
+        </button>
+      </div>
 
-      {/* Lightbox thumbnails */}
+      {/* Thumbnails */}
       {product.images && product.images.length > 1 && (
-        <div className={styles.lightboxThumbnails}>
-          {product.images.map((image, index) => (
-            <button
-              key={index}
-              className={`${styles.lightboxThumbnail} ${
-                lightboxIndex === index ? styles.active : ""
-              }`}
-              onClick={() => {
-                setLightboxIndex(index);
-                setSelectedImage(image);
-              }}
-            >
-              <img
-                src={
-                  image.startsWith("http") ||
-                  image.startsWith("blob:") ||
-                  image.startsWith("data:")
-                    ? image
-                    : `/uploads/products/${image}`
-                }
-                alt={`Thumbnail ${index + 1}`}
-                className={styles.lightboxThumbnailImage}
-              />
-            </button>
-          ))}
+        <div className="flex justify-center gap-3 mt-3">
+          {product.images.map((image, index) => {
+            const imgPath =
+              image.startsWith("http") || image.startsWith("blob:") || image.startsWith("data:")
+                ? image
+                : `/uploads/products/${image}`;
+
+            return (
+              <button
+                key={index}
+                className={`p-1 border-2 rounded-md transition-all duration-300 ${
+                  selectedImage === image ? "border-blue-500 scale-110" : "border border-gray-400"
+                }`}
+                onClick={() => setSelectedImageIndex(index)}
+              >
+                <img
+                  src={imgPath}
+                  alt={`Thumbnail ${index + 1}`}
+                  className="object-cover w-16 h-16 rounded-sm"
+                />
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   </div>
 )}
+
+
+
+
+
+
+
+
+
+
 
 
           </div>
@@ -1265,7 +1299,7 @@ const fetchBrand = async () => {
     {/* Image Section (Left) */}
     <div className="w-[30%] flex-shrink-0">
       <img
-        src={selectedImage || "/user/placeholder.png"}
+        src={resolveImagePath(mainImage) || "/no-image.jpg"}
         alt={product?.name || "Product"}
         className="w-full h-auto max-w-[150px] max-h-[150px] object-contain rounded-md border border-gray-200 mx-auto"
       />
