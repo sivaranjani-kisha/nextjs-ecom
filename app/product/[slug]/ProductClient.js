@@ -765,20 +765,21 @@ const fetchBrand = async () => {
               {/* Zoom Box */}
               {/* Zoom Box */}
 {/* Zoom result (shown on hover) */}
-            {showZoomLens && (
+           {showZoomLens && (
   <div 
     className="absolute hidden md:block left-full ml-4 top-0 w-full bg-no-repeat bg-white border rounded-lg overflow-hidden"
     style={{
-      backgroundImage: `url(${selectedImage})`,
+      backgroundImage: `url(${resolveImagePath(product.images[selectedImageIndex])})`,
       backgroundSize: '200%',
       backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
       zIndex: 20,
-      height: '400px', // 🔹 increased height slightly
-      width: '525px'   // optional: keep zoom box proportional
+      height: '400px',
+      width: '525px'
     }}
     ref={zoomResultRef}
   />
 )}
+
 
 
 
