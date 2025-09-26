@@ -26,14 +26,30 @@ const AdminHeader = ({ toggleSidebar }) => {
   };
 
   // Sign out function
-  const handleSignOut = async (e) => {
+  const handleSignOut = (e) => {
     e.preventDefault();
+    // try {
+    //   localStorage.removeItem('authToken');
+    //   localStorage.removeItem('userData');
+    //   sessionStorage.removeItem('authToken');
+    //   sessionStorage.removeItem('userData');
+
+    //   document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+    //   router.push('/admin/login');
+    // } catch (error) {
+    //   console.error('Error during sign out:', error);
+    // }
     try {
-      localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
+      // ###### Clear all LocalStorage ###### //
+      localStorage.clear();
+      sessionStorage.clear();
+    
       router.push('/admin/login');
+      
     } catch (error) {
-      console.error('Error during sign out:', error);
+      console.error('Sign out error:', error);
+      window.location.href = '/admin/login';
     }
   };
 
