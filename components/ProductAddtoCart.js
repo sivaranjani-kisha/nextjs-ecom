@@ -215,6 +215,7 @@ if (selectedFrequentProducts?.length > 0) {
     };
   return (
     <>
+    {stockQuantity > 0 && (
 <button
   onClick={handleAddToCart}
   disabled={isLoading || isOutOfStock || isprice}
@@ -275,6 +276,7 @@ if (selectedFrequentProducts?.length > 0) {
     </>
   )}
 </button>
+)}
 
 
 {/* 

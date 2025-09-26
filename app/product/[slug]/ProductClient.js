@@ -1134,8 +1134,9 @@ const fetchBrand = async () => {
 {/* Extended Warranty Section */}
 
 {/* Extended Warranty Section */}
-{product.extend_warranty && product.extend_warranty.length > 0 && (
-  <div className="mt-4 bg-white p-4">
+{Array.isArray(product.extend_warranty) &&
+ product.extend_warranty.some(w => w.year > 0 || w.amount > 0) && (
+  <div className="mt-4 bg-white p-4 border border-gray-300 rounded-md shadow-sm">
     {/* Top heading section */}
     <div className="flex items-center text-lg text-blue-800 font-bold mb-4 gap-2">
       <FaShield className="w-6 h-6 text-blue-800" />
@@ -1251,6 +1252,7 @@ const fetchBrand = async () => {
     </div>
   </div>
 )}
+
 
 
             {/* Product More Info */}
@@ -1785,12 +1787,14 @@ const fetchBrand = async () => {
         .slice(0, 3)
         .map((item) => (
           <div key={item._id} className="flex items-start mb-4">
-            <input
-              type="checkbox"
-              className="mt-2 mr-3"
-              checked={selectedRelatedProducts.some(p => p._id === item._id)}
-              onChange={() => toggleRelatedProduct(item)}
-            />
+             {product?.quantity > 0 && (
+          <input
+            type="checkbox"
+            className="mt-2 mr-3"
+            checked={selectedRelatedProducts.some(p => p._id === item._id)}
+            onChange={() => toggleRelatedProduct(item)}
+          />
+        )}
             <div className="flex items-start gap-3">
               {item.images?.[0] && (
                 <img
