@@ -21,6 +21,8 @@ const OrdersTable = () => {
     startDate: null,
     endDate: null,
   });
+  const [isProcessing, setIsProcessing] = useState(false);
+
 
   // 📌 Delivery Date Modal states
   const [showDeliveryDateModal, setShowDeliveryDateModal] = useState(false);
@@ -216,60 +218,105 @@ const OrdersTable = () => {
     setDateFilter({ startDate, endDate });
     setCurrentPage(0);
   };
+const updateOrderStatusWithDeliveryDate = async () => {
+  if (!deliveryDate || !orderToUpdate) {
+    toast.error("Please select a delivery date");
+    return;
+  }
+
+  setIsProcessing(true); // 🚀 Disable button immediately
+
+  try {
+    const res = await fetch(`/api/orders/${orderToUpdate._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        status: "shipped",
+        delivery_date: deliveryDate 
+      }),
+    });
+
+    if (!res.ok) throw new Error();
+
+    const updatedOrder = await res.json();
+
+    setOrders((prev) =>
+      prev.map((ord) =>
+        ord._id === orderToUpdate._id
+          ? { ...ord, order_status: "shipped", delivery_date: deliveryDate }
+          : ord
+      )
+    );
+
+    await sendDeliveryEmailToUser(orderToUpdate, deliveryDate);
+    await sendAdminNotificationEmail(orderToUpdate, oldStatus, "shipped");
+
+    toast.success("Order shipped! Email sent to user and admin.");
+  } catch (err) {
+    toast.error("Failed to update order status");
+    console.error(err);
+  } finally {
+    setIsProcessing(false); // ✅ Reset button state
+    setShowDeliveryDateModal(false);
+    setDeliveryDate("");
+    setOrderToUpdate(null);
+    setOldStatus("");
+  }
+};
 
   // ✅ Update order status with delivery date
-  const updateOrderStatusWithDeliveryDate = async () => {
-    if (!deliveryDate || !orderToUpdate) {
-      toast.error("Please select a delivery date");
-      return;
-    }
+  // const updateOrderStatusWithDeliveryDate = async () => {
+  //   if (!deliveryDate || !orderToUpdate) {
+  //     toast.error("Please select a delivery date");
+  //     return;
+  //   }
 
-    try {
-      // Update order status and delivery date
-      const res = await fetch(`/api/orders/${orderToUpdate._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          status: "shipped",
-          delivery_date: deliveryDate 
-        }),
-      });
+  //   try {
+  //     // Update order status and delivery date
+  //     const res = await fetch(`/api/orders/${orderToUpdate._id}`, {
+  //       method: "PUT",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ 
+  //         status: "shipped",
+  //         delivery_date: deliveryDate 
+  //       }),
+  //     });
 
-      if (!res.ok) throw new Error();
+  //     if (!res.ok) throw new Error();
 
-      const updatedOrder = await res.json();
+  //     const updatedOrder = await res.json();
 
-      // Update local state
-      setOrders((prev) =>
-        prev.map((ord) =>
-          ord._id === orderToUpdate._id
-            ? { 
-                ...ord, 
-                order_status: "shipped",
-                delivery_date: deliveryDate 
-              }
-            : ord
-        )
-      );
+  //     // Update local state
+  //     setOrders((prev) =>
+  //       prev.map((ord) =>
+  //         ord._id === orderToUpdate._id
+  //           ? { 
+  //               ...ord, 
+  //               order_status: "shipped",
+  //               delivery_date: deliveryDate 
+  //             }
+  //           : ord
+  //       )
+  //     );
 
-      // Send delivery email to user
-      await sendDeliveryEmailToUser(orderToUpdate, deliveryDate);
+  //     // Send delivery email to user
+  //     await sendDeliveryEmailToUser(orderToUpdate, deliveryDate);
       
-      // Send notification email to admin
-      await sendAdminNotificationEmail(orderToUpdate, oldStatus, "shipped");
+  //     // Send notification email to admin
+  //     await sendAdminNotificationEmail(orderToUpdate, oldStatus, "shipped");
 
-      toast.success("Order shipped! Email sent to user and admin.");
+  //     toast.success("Order shipped! Email sent to user and admin.");
       
-    } catch (err) {
-      toast.error("Failed to update order status");
-      console.error(err);
-    } finally {
-      setShowDeliveryDateModal(false);
-      setDeliveryDate("");
-      setOrderToUpdate(null);
-      setOldStatus("");
-    }
-  };
+  //   } catch (err) {
+  //     toast.error("Failed to update order status");
+  //     console.error(err);
+  //   } finally {
+  //     setShowDeliveryDateModal(false);
+  //     setDeliveryDate("");
+  //     setOrderToUpdate(null);
+  //     setOldStatus("");
+  //   }
+  // };
 
   const paginatedOrders = filtered.slice(
     currentPage * itemsPerPage,
@@ -585,13 +632,18 @@ const OrdersTable = () => {
               >
                 Cancel
               </button>
-              <button
-                onClick={updateOrderStatusWithDeliveryDate}
-                disabled={!deliveryDate}
-                className="px-4 py-2 bg-red-600 text-white rounded-md disabled:bg-gray-400"
-              >
-                Confirm & Send Emails
-              </button>
+             <button
+  onClick={updateOrderStatusWithDeliveryDate}
+  disabled={!deliveryDate || isProcessing}
+  className={`px-4 py-2 rounded-md text-white ${
+    isProcessing
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-red-600 hover:bg-red-700"
+  }`}
+>
+  {isProcessing ? "Processing..." : "Confirm & Send Emails"}
+</button>
+
             </div>
           </div>
         </div>
