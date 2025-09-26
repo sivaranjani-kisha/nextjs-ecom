@@ -59,82 +59,25 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       }
     }
   }, [activeTab, product.category?._id]);
+
+  const reviewsRef = useRef(null);
+ 
   useEffect(() => {
-
-    // Create target containers dynamically (like jQuery does)
-
-    const overviewTab = document.querySelector("#overview-tab .col-md-12");
-    console.log("overviewTab", overviewTab);
-    if (overviewTab && !document.querySelector("#flix-inpage")) {
-    console.log("overviewTab1", overviewTab);
-
-      const inpageDiv = document.createElement("div");
-
-      inpageDiv.id = "flix-inpage";
-
-      overviewTab.prepend(inpageDiv);
-
+    if (window.location.hash === "#reviews") {
+      setActiveTab("reviews");
+      setTimeout(() => {
+        const headerEl = document.querySelector("header"); // get header
+        const headerHeight = headerEl ? headerEl.offsetHeight : 0;
+  
+        if (reviewsRef.current) {
+          const y = reviewsRef.current.getBoundingClientRect().top + window.scrollY - headerHeight - 10; 
+          // `-10` gives little gap below header
+          window.scrollTo({ top: y, behavior: "smooth" });
+        }
+      }, 300);
     }
- 
-    const keyFea = document.querySelector(".key-fea");
-
-    if (keyFea && !document.querySelector("#flix-minisite")) {
-
-      const miniSiteDiv = document.createElement("div");
-
-      miniSiteDiv.id = "flix-minisite";
-
-      keyFea.insertAdjacentElement("afterend", miniSiteDiv);
-
-    }
- 
-    // Script setup
-
-    const headID = document.getElementsByTagName("head")[0];
-
-    const flixScript = document.createElement("script");
-
-    flixScript.type = "text/javascript";
-
-    flixScript.async = true;
-
-    flixScript.src = "//media.flixfacts.com/js/loader.js";
- 
-    // Custom attributes
-
-    flixScript.setAttribute("data-flix-distributor", "17089");
-
-    flixScript.setAttribute("data-flix-language", "in");
-
-    flixScript.setAttribute("data-flix-fallback-language", "");
-
-    flixScript.setAttribute("data-flix-brand", "Samsung");
-
-    flixScript.setAttribute("data-flix-ean", "");
-
-    flixScript.setAttribute("data-flix-mpn", "QA65Q70BAKLXL");
-
-    flixScript.setAttribute("data-flix-button", "flix-minisite");
-
-    flixScript.setAttribute("data-flix-inpage", "flix-inpage");
-
-    flixScript.setAttribute("data-flix-price", "");
- 
-    headID.appendChild(flixScript);
- 
-    // Cleanup: remove script if component unmounts
-
-    return () => {
-
-      if (flixScript.parentNode) {
-
-        flixScript.parentNode.removeChild(flixScript);
-
-      }
-
-    };
-
   }, []);
+
 
  
   const fetchBrand = async () => {
@@ -243,7 +186,7 @@ const loadFlixScript = (fallbackTimeout) => {
   flixScript.setAttribute("data-flix-language", "in");
   flixScript.setAttribute("data-flix-fallback-language", "");
   flixScript.setAttribute("data-flix-ean", product.ean || "");
-  flixScript.setAttribute("data-flix-mpn", product.mpn || product.sku || product.item_code || "QA65Q70BAKLXL");
+  flixScript.setAttribute("data-flix-mpn", product.mpn || product.sku || product.item_code);
   flixScript.setAttribute("data-flix-button", "flix-minisite");
   flixScript.setAttribute("data-flix-inpage", "flix-inpage");
   flixScript.setAttribute("data-flix-price", product.price || "");
@@ -662,7 +605,7 @@ const cleanupFlixMedia = () => {
           activeTab === tab.id
             ? "border border-black text-black font-semibold"
             : "text-gray-500 hover:text-black"
-        }`}
+        }`} ref={reviewsRef}
       >
         {tab.label}
       </button>

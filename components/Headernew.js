@@ -778,10 +778,15 @@ const Header = () => {
             }
         });
 
-        const allBrands = Array.from(brandMap.values());
+        const allBrands = Array
+          .from(brandMap.values())
+          // ADDED: alphabetical sort (case-insensitive) for brand listing
+          .sort((a, b) =>
+            (a.brand_name || '').localeCompare(b.brand_name || '', undefined, { sensitivity: 'base' })
+          );
 
         // Add a single brands header at the end
-        if (allBrands.length > 0) {
+        if (allBrands.length > 0) { 
             result.push({
                 _id: 'all-brands-header',
                 type: 'brands-header',
@@ -790,7 +795,6 @@ const Header = () => {
                 uniqueKey: 'all-brands-header'
             });
 
-            // Add all collected brands with unique keys
             result = result.concat(allBrands.map(brand => ({
                 ...brand,
                 level: 1,

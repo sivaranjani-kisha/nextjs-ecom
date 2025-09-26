@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'next/navigation';
-
 import { FiChevronRight, FiClock, FiCheckCircle, FiTruck, FiShoppingBag, FiXCircle } from 'react-icons/fi';
 import { RiAccountCircleFill } from "react-icons/ri";
 import { ToastContainer, toast } from 'react-toastify';
@@ -317,6 +316,14 @@ export default function Order() {
                               >
                                 Cancel Order
                               </button>
+                            )}
+
+                            {order.order_status === "shipped" && (
+                                <a href={`/product/${order.order_item[0].slug}#reviews`} target='_blank'>
+                                <button className="px-3 sm:px-4 py-1 sm:py-2 bg-green-100 text-green-600 rounded-md hover:bg-green-200 transition-colors text-xs sm:text-sm" >
+                                Write Review
+                              </button>
+                              </a>
                             )}
                           </div>
                         </div>
