@@ -114,16 +114,14 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   }, []);
 
     useEffect(() => {
-    if (activeTab === "overview" && brandName) {
+    if (activeTab === "overview") {
       const timer = setTimeout(() => {
         initializeFlixMedia();
       }, 300);
  
       return () => clearTimeout(timer);
-    } else if (activeTab !== "overview") {
-      cleanupFlixMedia();
     }
-  }, [activeTab, brandName]); // Add brandName as dependency
+  }, [activeTab]); // Add brandName as dependency
  
  const initializeFlixMedia = () => {
   console.log("Initializing FlixMedia with brand:", brandName);
@@ -245,6 +243,15 @@ const checkFlixMediaContent = () => {
     } else {
       flixInitializedRef.current = true;
       console.log("FlixMedia content loaded successfully");
+    }
+    if (!hasInpageContent) {
+      const message = document.createElement('div');
+      message.textContent = 'Product overview not available';
+      message.style.fontStyle = 'italic'; // Optional styling
+      message.style.color = '#666';       // Optional styling
+      message.style.marginTop ='10px';
+ 
+      flixInpage?.appendChild(message); // Use optional chaining in case flixInpage is null
     }
   };
  
@@ -613,17 +620,15 @@ const cleanupFlixMedia = () => {
   </div>
 
       {/* Tab Content */}
-      <div className={`mx-auto px-4 py-6 ${activeTab === "overview" ? "block" : "hidden"}`}>
-        {/* Always render overview but control visibility */}
-        <div >
+      {activeTab === "overview" && (
+        <div className={`mx-auto px-4 py-6 text-center ${activeTab === "overview" ? "block" : "hidden"}`}>
           <div id="overview-tab">
             <div className="col-md-12">
-              <div id="flix-inpage"></div>
+              {/* flix-inpage will be inserted here */}
             </div>
           </div>
-          <div className="key-fea"></div>
         </div>
-      </div>
+      )}
  
       <div className="max-w-2xl mx-auto px-4 py-6 text-center">
         {/* {activeTab === "overview" && (
