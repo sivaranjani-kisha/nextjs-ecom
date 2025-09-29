@@ -200,6 +200,9 @@ const [isSubmitting, setIsSubmitting] = useState(false);
   }, []);
 
   const uniqueCities = [...new Set(stores.map(store => store.city))];
+  const extraCities = ["Ariyalur","Chennai","Coimbatore","Cuddalore","Dharmapuri","Dindigul","Erode","Kanchipuram","Kanyakumari","Karur","Krishnagiri","Madurai","Nagapattinam","Namakkal","Nilgiris","Perambalur","Pudukkottai","Ramanathapuram","Salem","Sivaganga","Thanjavur","Theni","Thoothukudi","Tirunelveli","Tiruvallur","Tiruvannamalai","Tiruvarur","Vellore","Viluppuram","Virudhunagar", "Singanallur", "Sivananthapuram", "Vadavalli", "Annur", "Mettupalayam", "Thennur", "Ariyamangalam", "Komarapalayam", "Kattur"];
+
+  const finalCities = [...new Set([...uniqueCities, ...extraCities])];
 
   useEffect(() => {
     const buyNowData = localStorage.getItem("buyNowData");
@@ -888,7 +891,7 @@ const grandTotal = subtotal - totalDiscount;
                   </select>
 
                   <select placeholder="City" onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 disabled focus:border-orange-200" required>
-                    {uniqueCities.map((city, index) => (
+                    {finalCities.map((city, index) => (
                       <option key={index} value={city}>{city}</option>
                     ))}
                   </select>
