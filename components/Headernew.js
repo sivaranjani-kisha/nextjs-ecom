@@ -2013,10 +2013,40 @@ const Header = () => {
                         </div>
                     </div>
                 </div>
+              
                 {/* DROPDOWN OUTSIDE SWIPER (fixed so it won't be clipped) */}
                 {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (() => {
+                  
+                    // let dropdownChunksLocal = chunkFlatList(
+                    //   flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+                    //   11
+                    // );
+                    const sortedSubcategories = [...hoveredCategory.subcategories].sort((a, b) => {
+                      if (hoveredCategory.category_name?.toLowerCase() === "large appliance") {
+                        const priorityOrder = ["Air conditioner", "Refrigerator", "Washing Machine", "Dish Washer"];
+
+                        const indexA = priorityOrder.indexOf(a.category_name);
+                        const indexB = priorityOrder.indexOf(b.category_name);
+
+                        if (indexA !== -1 && indexB !== -1) {
+                          // both are in the priority list -> keep their defined order
+                          return indexA - indexB;
+                        } else if (indexA !== -1) {
+                          // a is in priority, b is not -> a comes first
+                          return -1;
+                        } else if (indexB !== -1) {
+                          // b is in priority, a is not -> b comes first
+                          return 1;
+                        }
+                      }
+
+                      // default alphabetical order for other categories (or remaining ones)
+                      return a.category_name.localeCompare(b.category_name);
+                    });
+
+
                     let dropdownChunksLocal = chunkFlatList(
-                      flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
+                      flattenAllCategories(sortedSubcategories, hoveredCategory.category_slug),
                       11
                     );
 
