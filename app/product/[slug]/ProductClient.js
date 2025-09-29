@@ -1920,7 +1920,7 @@ const fetchBrand = async () => {
     </div>
   )}
   {/* Buy Now */}
- {product.stock_status === "In Stock" && (
+ {product.stock_status === "In Stock" && product.quantity > 0 && (
   <button
     onClick={handleBuyNow}
     className="w-full bg-white hover:bg-customBlue hover:text-white text-customBlue border border-blue-200 font-semibold py-3 rounded-md shadow-md flex items-center justify-center gap-3"
