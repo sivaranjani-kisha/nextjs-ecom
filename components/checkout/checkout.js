@@ -199,6 +199,8 @@ const [isSubmitting, setIsSubmitting] = useState(false);
     fetchStores();
   }, []);
 
+  const uniqueCities = [...new Set(stores.map(store => store.city))];
+
   useEffect(() => {
     const buyNowData = localStorage.getItem("buyNowData");
     const checkoutData = localStorage.getItem("checkoutData");
@@ -879,8 +881,17 @@ const grandTotal = subtotal - totalDiscount;
                 <input type="text" name="landmark" placeholder="landmark, suite, unit, etc. (Optional)" value={formData.landmark} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
 
                 <div className="grid grid-cols-2 gap-4 mt-3">
-                  <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                  <input type="text" name="state" placeholder="State/Province" value={formData.state} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
+                  {/* <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
+                  <input type="text" name="state" placeholder="State/Province" value={formData.state} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/> */}
+                  <select placeholder="State" onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500  focus:border-orange-200" disabled required>
+                    <option value="Tamilnadu">Tamilnadu</option>
+                  </select>
+
+                  <select placeholder="City" onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 disabled focus:border-orange-200" required>
+                    {uniqueCities.map((city, index) => (
+                      <option key={index} value={city}>{city}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <input type="text" name="postCode" placeholder="Post Code" value={formData.postCode} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
