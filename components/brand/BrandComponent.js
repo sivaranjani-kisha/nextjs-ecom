@@ -971,15 +971,9 @@ export default function BrandPage() {
                             )}
                           </div>
       
-                          <h4
-                            className={`text-xs mb-3 ${
-                              product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
-                            }`}
-                          >
-                            {product.stock_status}
-                            {product.stock_status === "In Stock" && product.quantity
-                              ? `, ${product.quantity} units`
-                              : ""}
+                          <h4 className={`text-xs mb-3 ${product.stock_status === "In Stock" && product.quantity ? "text-green-600" : "text-red-600"}`}>
+                            {product.stock_status === "In Stock" && product.quantity ? ` ${product.stock_status}` : "Out Of Stock"}
+                            {product.stock_status === "In Stock" && product.quantity ? `, ${product.quantity} units` : ""}
                           </h4>
        
                           {/* Bottom Buttons */}

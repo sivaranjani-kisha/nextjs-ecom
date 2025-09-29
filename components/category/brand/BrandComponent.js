@@ -256,6 +256,11 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
       min = max;
     }
 
+    // ###### B2125 ###### //
+    // if (min >= max) {
+    //   max = min + 1;
+    // }
+
     setSelectedFilters((prev) => ({
       ...prev,
       price: { min, max }
@@ -851,15 +856,9 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
                             )}
                           </div>
       
-                          <h4
-                            className={`text-xs mb-3 ${
-                              product.stock_status === "In Stock" ? "text-green-600" : "text-red-600"
-                            }`}
-                          >
-                            {product.stock_status}
-                            {product.stock_status === "In Stock" && product.quantity
-                              ? `, ${product.quantity} units`
-                              : ""}
+                          <h4 className={`text-xs mb-3 ${product.stock_status === "In Stock" && product.quantity ? "text-green-600" : "text-red-600"}`}>
+                            {product.stock_status === "In Stock" && product.quantity ? ` ${product.stock_status}` : "Out Of Stock"}
+                            {product.stock_status === "In Stock" && product.quantity ? `, ${product.quantity} units` : ""}
                           </h4>
        
                           {/* Bottom Buttons */}
