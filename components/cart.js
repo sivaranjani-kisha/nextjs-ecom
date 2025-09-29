@@ -866,14 +866,14 @@ const validateCoupon = async () => {
                       <tr className="border-b bg-gray-100">
                         <td className="py-4 px-4 text-center">&emsp;</td>
                         <td className="py-4 px-4 text-center">
-                          <h3 className="text-gray-500 text-sm font-semibold">Warranty</h3>
+                          {/* <h3 className="text-gray-500 text-sm font-semibold">Warranty</h3> */}
                           <h3 className="text-gray-500 text-sm font-semibold">Extended Warranty</h3>
-                          <h3 className="text-gray-500 text-sm font-semibold">Discount</h3>
+                          {/* <h3 className="text-gray-500 text-sm font-semibold">Discount</h3> */}
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <h3 className="text-gray-500 text-sm font-semibold">₹{item.warranty.toFixed(2)}</h3>
+                          {/* <h3 className="text-gray-500 text-sm font-semibold">₹{item.warranty.toFixed(2)}</h3> */}
                           <h3 className="text-gray-500 text-sm font-semibold">₹{item.extendedWarranty.toFixed(2)}</h3>
-                          <h3 className="text-gray-500 text-sm font-semibold">₹{item.discount.toFixed(2)}</h3>
+                          {/* <h3 className="text-gray-500 text-sm font-semibold">₹{item.discount.toFixed(2)}</h3> */}
                         </td>
                         <td className="py-4 px-4 text-center">&emsp;</td>
                       </tr>
@@ -900,7 +900,7 @@ const validateCoupon = async () => {
           <h3 className="text-gray-500 text-sm font-semibold cursor-pointer">Cart Total</h3>
                 
                 {/* Coupon Section */}
-                {/* <div className="mt-4">
+                <div className="mt-4">
                   {appliedCoupon ? (
                     <div className="bg-white-200 p-2 mt-0  rounded-lg flex justify-between text-red-500 text-large  cursor-pointer">
                       <span>YOU SAVED ₹{calculateTotal().toFixed(2)}</span>
@@ -929,7 +929,7 @@ const validateCoupon = async () => {
                   {couponError && (
                     <p className="text-red-500 text-sm mb-2">{couponError}</p>
                   )}
-                </div> */}
+                </div>
                 
                 <div className=" p-4 rounded-lg space-y-3">
                   <div className="flex justify-between text-gray-600 text-gray-500 text-sm font-semibold cursor-pointer ">
@@ -948,6 +948,21 @@ const validateCoupon = async () => {
                       </span>
                     </div>
                   )}
+                 {cartData.items.map((item, index) => (
+                          <Fragment key={index}>
+                            {/* <hr className="my-2 border-gray-300" /> */}
+                            {(item.warranty > 0 || item.extendedWarranty > 0) && (
+                              <div className="flex justify-between text-gray-500 text-sm font-semibold cursor-pointer">
+                                <span>Extended Warranty</span>
+                                <span className="font-semibold text-green-600">
+                                  ₹{(item.extendedWarranty ?? 0).toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+                          </Fragment>
+                        ))}
+
+                  
 
                   <div className="flex justify-between text-gray-600 text-gray-500 text-sm font-semibold cursor-pointer">
                     <span>Estimated Delivery</span>
@@ -976,6 +991,7 @@ const validateCoupon = async () => {
               >
                 Checkout
               </button>
+              
 
         </div>
 
