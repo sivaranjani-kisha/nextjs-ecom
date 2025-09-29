@@ -258,7 +258,7 @@ const addHistory = async () => {
   {item.slug ? (
     <a 
       href={`/product/${item.slug}`} 
-      className="text-blue-600 hover:underline"
+      className="text-[#0069c6] hover:text-[#00badb] hover:underline"
     >
       {item.product_name} - ({item.item_code.replace(/^ITEM/, "")})
     </a>
@@ -271,14 +271,27 @@ const addHistory = async () => {
 
     <td className="p-2">{item.model}</td>
     <td className="p-2 text-center">{item.quantity}</td>
-    <td className="p-2 text-right">₹{item.product_price}</td>
-    <td className="p-2 text-right">₹{item.quantity * item.product_price}</td>
+    <td className="p-2 text-right text-red-600">₹{item.product_price}</td>
+    <td className="p-2 text-right text-red-600">₹{item.quantity * item.product_price}</td>
   </tr>
 ))}
+  {order.order_item.map((item, index) =>
+  item.extendedWarranty > 0 && (
+    <tr key={index} className="font-semibold">
+      <td colSpan="4" className="p-2 text-right text-[#0069c6]">
+        Extended Warranty:
+      </td>
+      <td className="p-2 text-right text-red-600">
+        ₹{item.extendedWarranty}
+      </td>
+    </tr>
+  )
+)}
+
   <tr className="font-semibold">
     <td colSpan="4" className="p-2 text-right">Sub-Total:</td>
-    {/* <td className="p-2 text-right">₹{order.sub_total}</td> */}
-    <td className="p-2 text-right">₹0.00</td>
+    <td className="p-2 text-right">₹{order.order_amount}</td>
+    {/* <td className="p-2 text-right">₹0.00</td> */}
   </tr>
   <tr>
     <td colSpan="4" className="p-2 text-right">Shipping:</td>

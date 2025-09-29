@@ -223,10 +223,24 @@ const OrderDetails = () => {
 
     <td className="p-2">{item.model}</td>
     <td className="p-2 text-center">{item.quantity}</td>
-    <td className="p-2 text-right">₹{item.product_price}</td>
-    <td className="p-2 text-right">₹{item.quantity * item.product_price}</td>
+    <td className="p-2 text-right text-red-600">₹{item.product_price}</td>
+    <td className="p-2 text-right text-red-600">₹{item.quantity * item.product_price}</td>
   </tr>
 ))}
+
+{order.order_item.map((item, index) =>
+  item.extendedWarranty > 0 && (
+    <tr key={index} className="font-semibold">
+      <td colSpan="4" className="p-2 text-right text-[#0069c6]">
+        Extended Warranty:
+      </td>
+      <td className="p-2 text-right text-red-600">
+        ₹{item.extendedWarranty}
+      </td>
+    </tr>
+  )
+)}
+
   <tr className="font-semibold">
     <td colSpan="4" className="p-2 text-right">Sub-Total:</td>
     {/* <td className="p-2 text-right">₹{order.sub_total}</td> */}
