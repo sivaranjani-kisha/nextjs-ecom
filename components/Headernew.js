@@ -2023,7 +2023,7 @@ const Header = () => {
                     // );
                     const sortedSubcategories = [...hoveredCategory.subcategories].sort((a, b) => {
                       if (hoveredCategory.category_name?.toLowerCase() === "large appliance") {
-                        const priorityOrder = ["Air conditioner", "Refrigerator", "Washing Machine", "Dish Washer"];
+                        const priorityOrder = ["Air Conditioner", "Refrigerator", "Washing Machine", "Dishwasher"];
 
                         const indexA = priorityOrder.indexOf(a.category_name);
                         const indexB = priorityOrder.indexOf(b.category_name);
