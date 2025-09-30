@@ -91,7 +91,7 @@ export default function BulkUploadPage() {
               />
             
 
-<Link href="/uploads/files/test_upload.xlsx" passHref legacyBehavior>
+<Link href="/uploads/files/SampleFormat.xlsx" passHref legacyBehavior>
   <a
     download="test.xlsx"
     className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"

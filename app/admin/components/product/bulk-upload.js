@@ -106,7 +106,7 @@ export default function BulkUploadPage() {
                 required
               />
               <Link
-                href="/uploads/files/test_upload.xlsx"
+                href="/uploads/files/SampleFormat.xlsx"
                 className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
