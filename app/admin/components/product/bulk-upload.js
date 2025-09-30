@@ -70,6 +70,24 @@ export default function BulkUploadPage() {
     }
   };
 
+  const handleDownload = () => {
+  const link = document.createElement('a');
+  link.href = `/uploads/files/SampleFormat.xlsx?t=${Date.now()}`;
+  link.download = 'SampleFormat.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+ const handleZipDownload = () => {
+  const link = document.createElement('a');
+  link.href = `/uploads/files/Sample.zip?t=${Date.now()}`;
+  link.download = 'Sample.zip';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -105,15 +123,17 @@ export default function BulkUploadPage() {
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100"
                 required
               />
-              <Link
-                href="/uploads/files/SampleFormat.xlsx"
+              <button
+                type="button"   // <-- Add this
+                onClick={handleDownload}
                 className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
                 Download Sample Format
-              </Link>
+              </button>
+
             </div>
           </div>
 
@@ -136,15 +156,16 @@ export default function BulkUploadPage() {
                 onChange={(e) => setImageZip(e.target.files?.[0] || null)}
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-blue-700 hover:file:bg-red-100"
               />
-              <Link
-                href="/uploads/files/Sample.zip"
-                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download Sample ZIP
-              </Link>
+              <button
+  type="button"   // <-- Add this
+  onClick={handleZipDownload}
+  className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+>
+  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+  </svg>
+  Download Sample ZIP
+</button>
             </div>
           </div>
 

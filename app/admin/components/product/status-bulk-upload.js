@@ -58,6 +58,16 @@ export default function BulkUploadPage() {
     }
   };
 
+   const handleDownload = () => {
+  const link = document.createElement('a');
+  link.href = `/uploads/files/SampleFormat.xlsx?t=${Date.now()}`;
+  link.download = 'SampleFormat.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -91,22 +101,16 @@ export default function BulkUploadPage() {
               />
             
 
-<Link href="/uploads/files/SampleFormat.xlsx" passHref legacyBehavior>
-  <a
-    download="test.xlsx"
-    className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
-  >
-    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-      />
-    </svg>
-    Download Sample Format
-  </a>
-</Link>
+               <button
+                type="button"   // <-- Add this
+                onClick={handleDownload}
+                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Sample Format
+              </button>
 
             </div>
           </div>
