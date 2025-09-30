@@ -307,17 +307,18 @@ const Header = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     // Close mobile menu when clicking outside
 
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+          setDropdownOpen(false);
+      }
+    };
+
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-        
+      document.addEventListener('mousedown', handleClickOutside);
+
+      return () => {
+          document.removeEventListener('mousedown', handleClickOutside);
+      };
     }, []);
 
     const checkAuthStatus = async () => {
@@ -1616,7 +1617,7 @@ const Header = () => {
                         </Link>
 
                         {/* User Account */}
-                        <div className="relative" ref={dropdownRef}>
+                        <div className="relative" >
                             {isLoggedIn ? (
                                 <>
                                     <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center text-black focus:outline-none p-1 sm:p-0">
@@ -1626,7 +1627,7 @@ const Header = () => {
                                         </span>
                                     </button>
                                     {dropdownOpen && (
-                                        <div className="absolute right-0 mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
+                                        <div ref={dropdownRef} className="absolute right-0 mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-xl z-50 transition-all">
                                             <div className="py-2 px-2">
                                                 {isAdmin && (
                                                     <>
