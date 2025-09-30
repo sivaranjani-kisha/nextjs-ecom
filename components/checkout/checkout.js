@@ -758,14 +758,18 @@ const grandTotal = subtotal - totalDiscount;
         // }
      
           const name = addressData.firstName + ' ' + addressData.lastName;
-       
+       const itemsHtml = orderData.order.order_item.map(item => {
+          return `<li>${item.name} - ₹${item.price.toFixed(2)} x ${item.quantity}</li>`;
+        }).join('');
+        const itemHtml = `<ul style="padding-left: 20px; color: #555555;">${itemsHtml}</ul>`;
+        const order_amount = `₹${Number(orderData.order.order_amount).toFixed(2)}`;
         // FIXED: Renamed this variable as well to avoid conflict
         const emailFormData = new FormData();
-        emailFormData.append("campaign_id", "725edb8a-490e-4302-9b1f-3cc9c5af3d33");
+        emailFormData.append("campaign_id", "0800f221-7805-4b76-988c-bbecd66e7500");
         emailFormData.append("email", addressData.email);
         emailFormData.append(
           "params",
-          JSON.stringify([name, orderData.order.order_number])
+          JSON.stringify([name,orderData.order.order_number,order_amount,orderData.order.payment_method, itemHtml])
         );
        
         const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
