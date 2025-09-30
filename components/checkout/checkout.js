@@ -809,8 +809,8 @@ const grandTotal = subtotal - totalDiscount;
       
       {/* Checkout Header Bar */}
       <div className="bg-red-50 py-6 px-8 flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800">Checkout</h2>
-        <div className="flex items-center space-x-2">
+        <h2 className="text-xl font-bold text-gray-800 " style={{marginLeft: "64px"}}>Checkout</h2>
+        <div className="flex items-center space-x-2" style={{marginRight: "100px"}}>
           <span className="text-gray-600">🏠 Home</span>
           <span className="text-gray-500">›</span>
           <span className="text-orange-500 font-semibold">Checkout</span>
