@@ -813,49 +813,50 @@ const grandTotal = subtotal - totalDiscount;
         </div>
       </div>
 
-      <div className="max-w-9xl mx-auto rounded-lg p-8">
-        {useraddress && useraddress.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Saved Addresses</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {useraddress.map((item, index) => (
-                <div 
-                  key={`address-${index}`} 
-                  className={`border p-4 rounded-lg cursor-pointer transition-all ${selectedAddress === index ? 'border-orange-500 bg-orange-50' : 'hover:border-gray-300'}`}
-                  onClick={() => setSelectedAddress(index)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{item.firstName} {item.lastName}</p>
-                      <p className="text-sm text-gray-600">{item.address}</p>
-                      <p className="text-sm text-gray-600">{item.city}, {item.state}, {item.postCode}</p>
-                      <p className="text-sm text-gray-600">{item.country}</p>
-                      <p className="text-sm text-gray-600">Phone: {item.phonenumber}</p>
-                    </div>
-                    {selectedAddress === index && (
-                      <span className="text-orange-500">✓ Selected</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4">
-              <button 
-                onClick={() => setUseSavedAddress(!useSavedAddress)}
-                className="text-orange-500 hover:text-orange-700 text-sm font-medium"
-              >
-                {useSavedAddress ? 'Use new address instead' : 'Use saved address'}
-              </button>
-            </div>
-          </div>
-        )}
+      {/* <div className="max-w-9xl mx-auto rounded-lg p-8 pt-0  container"> */}
+        <div className="w-full  rounded-lg  pt-0">
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row " style={{marginLeft: "100px"}}>
           {/* Left - Checkout Form */}
-          <div className="w-full lg:w-2/3 bg-white border p-6 rounded-lg shadow">
+          <div className="w-full lg:w-2/4 bg-white p-0 pt-6   ">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               {useSavedAddress && selectedAddress !== null ? 'Selected Address' : 'Billing Details'}
             </h2>
+            {useraddress && useraddress.length > 0 && (
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Saved Addresses</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {useraddress.map((item, index) => (
+                    <div 
+                      key={`address-${index}`} 
+                      className={`border p-4 rounded-lg cursor-pointer transition-all ${selectedAddress === index ? 'border-orange-500 bg-orange-50' : 'hover:border-gray-300'}`}
+                      onClick={() => setSelectedAddress(index)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{item.firstName} {item.lastName}</p>
+                          <p className="text-sm text-gray-600">{item.address}</p>
+                          <p className="text-sm text-gray-600">{item.city}, {item.state}, {item.postCode}</p>
+                          <p className="text-sm text-gray-600">{item.country}</p>
+                          <p className="text-sm text-gray-600">Phone: {item.phonenumber}</p>
+                        </div>
+                        {selectedAddress === index && (
+                          <span className="text-orange-500">✓ Selected</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <button 
+                    onClick={() => setUseSavedAddress(!useSavedAddress)}
+                    className="text-orange-500 hover:text-orange-700 text-sm font-medium"
+                  >
+                    {useSavedAddress ? 'Use new address instead' : 'Use saved address'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {error && <p className="text-red-500 text-bold-sm mb-4">{error}</p>}
 
@@ -872,7 +873,7 @@ const grandTotal = subtotal - totalDiscount;
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} className="mr-2">
                 <div className="grid grid-cols-2 gap-4">
                   <input type="text" name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
                   <input type="text" name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
@@ -916,186 +917,204 @@ const grandTotal = subtotal - totalDiscount;
           </div>
 
           {/* Right - Order Summary */}
-          <div className="w-full lg:w-1/3 bg-gray-50 p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Orders</h3>
+          <div className="w-full lg:w-2/4 bg-gray-50 p-6">
+            <div className="mt-1" style={{marginRight: "100px"}}>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Orders</h3>
 
-            {/* <div className="border-b pb-3 mb-3">
-              {cartItems.map((item) => (
-                <div key={`order-item-${item.productId}`} className="flex justify-between text-gray-600 mb-2">
-                  <div>
-                    <span>{item.name}</span>
-                    <p className="text-sm text-gray-400">Qty: {item.quantity}</p>
-                  </div>
-                  <span>₹{(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-            </div> */}
-
-
-            <div className="relative border-b pb-3 mb-3">
-              {/* Scrollable List */}
-              <div
-                className="max-h-64 overflow-y-auto pr-2 scroll-smooth"
-              >
+              {/* <div className="border-b pb-3 mb-3">
                 {cartItems.map((item) => (
-                  <div
-                    key={`order-item-${item.productId}`}
-                    className="flex items-start justify-between gap-3 text-gray-700 mb-4"
-                  >
-
-                    {/* Product Image */}
-                    <div className="relative w-16 h-16 flex-shrink-0 border rounded overflow-hidden p-2">
-                      <img
-                        src={`/uploads/products/${item.image}`}
-                        alt={item.name}
-                        className="w-full h-full object-contain"
-                      />
-
-                      {/* Quantity Badge */}
-                      <div className="absolute top-0 right-0 bg-gray-700 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                        {item.quantity}
-                      </div>
+                  <div key={`order-item-${item.productId}`} className="flex justify-between text-gray-600 mb-2">
+                    <div>
+                      <span>{item.name}</span>
+                      <p className="text-sm text-gray-400">Qty: {item.quantity}</p>
                     </div>
-
-
-                    {/* Product Details */}
-                    <div className="flex-1">
-                      <div title={item.name} className="leading-snug text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-3 min-h-[40px]">
-                        {item.name}
-                      </div>
-
-                      {/* <div className="text-xs mt-1 text-gray-600">
-                        Qty: <span className="text-red-600">{item.quantity}</span>
-                      </div> */}
-                      
-                    </div>
-
-                    {/* Price */}
-                    <div className="text-sm whitespace-nowrap text-base font-semibold text-red-600">
-                      ₹{(item.price * item.quantity).toFixed(2)}
-                    </div>
+                    <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
-              </div>
-
-              {/* Scroll for More Items Overlay */}
-
-              {/* {cartItems.length > 2 && (
-                <div className="flex justify-center mt-2">
-                  <div className="bg-gray-800 text-white text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1 animate-bounce">
-                    <span>Scroll for more items</span>
-                    <span className="text-lg">↓</span>
-                  </div>
-                </div>
-              )} */}
-
-            </div>
+              </div> */}
 
 
-
-            {/* Add Discount row if there's any discount */}
-            {totalDiscount > 0 && (
-              <div className="flex justify-between text-green-600 mb-2">
-                <span>Discount:</span>
-                <span>-₹{totalDiscount.toFixed(2)}</span>
-              </div>
-            )}
-              {cartItems.some(item => item.warranty > 0) && (
-  <div className="flex justify-between text-gray-800 font-semibold">
-    <span className="text-[#0069c6] hover:text-[#00badb] text-xs sm:text-sm font-medium">Warranty:</span>
-    <span className="text-sm whitespace-nowrap text-base font-semibold text-red-600">
-      ₹{cartItems.reduce((sum, item) => sum + (item.warranty || 0), 0).toFixed(2)}
-    </span>
-  </div>
-)}
-{cartItems.some(item => item.extendedWarranty > 0) && (
-  <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
-    <span className="text-[#0069c6] hover:text-[#00badb] text-xs sm:text-sm font-medium">Extended Warranty:</span>
-    <span className="text-sm whitespace-nowrap text-base font-semibold text-red-600">
-      ₹{cartItems.reduce((sum, item) => sum + (item.extendedWarranty || 0), 0).toFixed(2)}
-    </span>
-  </div>
-)}
-
-
-            {/* Discount Row */}
-          {orderSummary.discount > 0 && (
-            <div className="flex justify-between text-green-600 mb-2">
-              <span>Discount:</span>
-              <span>-₹{orderSummary.discount.toFixed(2)}</span>
-            </div>
-          )}
-
-          {/* Subtotal */}
-          <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
-            <span>Subtotal:</span>
-            <span>₹{orderSummary.subtotal.toFixed(2)}</span>
-          </div>
-
-          {/* Total */}
-          <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
-            <span>Total:</span>
-            <span>₹{orderSummary.total.toFixed(2)}</span>
-          </div>
-
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Payment Method</h3>
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <input 
-                    type="radio" 
-                    name="payment" 
-                    value="online" 
-                    checked={paymentMethod === "online"} 
-                    onChange={handlePaymentChange} 
-                    className="w-4 h-4 text-orange-500"
-                  />
-                  <span>Online Payment</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input 
-                    type="radio" 
-                    name="payment" 
-                    value="Cash on Delivery" 
-                    checked={paymentMethod === "Cash on Delivery"} 
-                    onChange={handlePaymentChange} 
-                    className="w-4 h-4 text-orange-500"
-                  />
-                  <span>Cash on Delivery</span>
-                </label>
-              </div>
-            </div>
-                <button 
-                  onClick={handleSubmit} 
-                  disabled={isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved}
-                  className={`mt-6 w-full text-white font-semibold py-3 rounded-lg transition ${
-                    isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-red-500 hover:bg-red-600'
-                  }`}
+              <div className="relative border-b pb-3 mb-3">
+                {/* Scrollable List */}
+                <div
+                  className="max-h-64 overflow-y-auto pr-2 scroll-smooth"
                 >
-                  {isSubmitting ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : 'Place Order'}
-                </button>
+                  {cartItems.map((item) => (
+                    <div
+                      key={`order-item-${item.productId}`}
+                      className="flex items-start justify-between gap-3 text-gray-700 mb-4"
+                    >
 
-            {/* <button 
-              onClick={handleSubmit} 
-              disabled={loading || cartItems.length === 0 || !isDeliverySaved}
-              className={`mt-6 w-full text-white font-semibold py-3 rounded-lg transition ${
-                loading || cartItems.length === 0 || !isDeliverySaved
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-red-500 hover:bg-red-600'
-              }`}
-            >
-              {loading ? 'Processing...' : 'Place Order'}
-            </button> */}
+                      {/* Product Image */}
+                      <div className="relative w-16 h-16 flex-shrink-0 border rounded overflow-hidden p-2">
+                        <img
+                          src={`/uploads/products/${item.image}`}
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                        />
+
+                        {/* Quantity Badge */}
+                        <div className="absolute top-0 right-0 bg-gray-700 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                          {item.quantity}
+                        </div>
+                      </div>
+
+
+                      {/* Product Details */}
+                      <div className="flex-1">
+                        <div title={item.name} className="leading-snug text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-3 min-h-[40px]">
+                          {item.name}
+                        </div>
+
+                        {/* <div className="text-xs mt-1 text-gray-600">
+                          Qty: <span className="text-red-600">{item.quantity}</span>
+                        </div> */}
+                        
+                      </div>
+
+                      {/* Price */}
+                      <div className="text-sm whitespace-nowrap text-base font-semibold text-red-600">
+                        ₹{(item.price * item.quantity).toFixed(2)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Scroll for More Items Overlay */}
+
+                {/* {cartItems.length > 2 && (
+                  <div className="flex justify-center mt-2">
+                    <div className="bg-gray-800 text-white text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1 animate-bounce">
+                      <span>Scroll for more items</span>
+                      <span className="text-lg">↓</span>
+                    </div>
+                  </div>
+                )} */}
+
+              </div>
+
+
+
+              {/* Add Discount row if there's any discount */}
+              {totalDiscount > 0 && (
+                <div className="flex justify-between text-green-600 mb-2">
+                  <span>Discount:</span>
+                  <span>-₹{totalDiscount.toFixed(2)}</span>
+                </div>
+              )}
+              {cartItems.some(item => item.warranty > 0) && (
+                <div className="flex justify-between text-gray-800 font-semibold">
+                  <span className="text-[#0069c6] hover:text-[#00badb] text-xs sm:text-sm font-medium">Warranty:</span>
+                  <span className="text-sm whitespace-nowrap text-base font-semibold text-red-600">
+                    ₹{cartItems.reduce((sum, item) => sum + (item.warranty || 0), 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              {cartItems.some(item => item.extendedWarranty > 0) && (
+                <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
+                  <span className="text-[#0069c6] hover:text-[#00badb] text-xs sm:text-sm font-medium">Extended Warranty:</span>
+                  <span className="text-sm whitespace-nowrap text-base font-semibold text-red-600">
+                    ₹{cartItems.reduce((sum, item) => sum + (item.extendedWarranty || 0), 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
+
+
+              {/* Discount Row */}
+              {orderSummary.discount > 0 && (
+                <div className="flex justify-between text-green-600 mb-2">
+                  <span>Discount:</span>
+                  <span>-₹{orderSummary.discount.toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Subtotal */}
+              <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
+                <span>Subtotal:</span>
+                <span>₹{orderSummary.subtotal.toFixed(2)}</span>
+              </div>
+
+              {/* Total */}
+              <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
+                <span>Total:</span>
+                <span>₹{orderSummary.total.toFixed(2)}</span>
+              </div>
+
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">Payment Method</h3>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input 
+                      type="radio" 
+                      name="payment" 
+                      value="online" 
+                      checked={paymentMethod === "online"} 
+                      onChange={handlePaymentChange} 
+                      className="w-4 h-4 text-orange-500"
+                    />
+                    <span>Online Payment</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input 
+                      type="radio" 
+                      name="payment" 
+                      value="Cash on Delivery" 
+                      checked={paymentMethod === "Cash on Delivery"} 
+                      onChange={handlePaymentChange} 
+                      className="w-4 h-4 text-orange-500"
+                    />
+                    <span>Cash on Delivery</span>
+                  </label>
+                </div>
+              </div>
+             <button 
+  onClick={handleSubmit} 
+  disabled={isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved}
+  className={`mt-6 w-1/2 md:w-1/3 text-white font-semibold py-2 rounded-lg transition ${
+    isSubmitting || loading || cartItems.length === 0 || !isDeliverySaved
+      ? 'bg-gray-400 cursor-not-allowed' 
+      : 'bg-red-500 hover:bg-red-600'
+  }`}
+>
+  {isSubmitting ? (
+    <span className="flex items-center justify-center">
+      <svg
+        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+      Processing...
+    </span>
+  ) : 'Place Order'}
+</button>
+
+              {/* <button 
+                onClick={handleSubmit} 
+                disabled={loading || cartItems.length === 0 || !isDeliverySaved}
+                className={`mt-6 w-full text-white font-semibold py-3 rounded-lg transition ${
+                  loading || cartItems.length === 0 || !isDeliverySaved
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-red-500 hover:bg-red-600'
+                }`}
+              >
+                {loading ? 'Processing...' : 'Place Order'}
+              </button> */}
+            </div>
           </div>
         </div>
       </div>
