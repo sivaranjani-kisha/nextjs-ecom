@@ -903,7 +903,7 @@ const validateCoupon = async () => {
                 <div className="mt-4">
                   {appliedCoupon ? (
                     <div className="bg-white-200 p-2 mt-0  rounded-lg flex justify-between text-red-500 text-large  cursor-pointer">
-                      <span>YOU SAVED ₹{calculateTotal().toFixed(2)}</span>
+                      <span>YOU SAVED -₹{calculateDiscount().toFixed(2)}</span>
                     </div>
                   ) : (
                     <button
