@@ -116,29 +116,76 @@ export default function SearchComponent() {
     const [brandMap, setBrandMap] = useState([]);
 
   useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        setLoading(true);
-        let url = '/api/search?';
-        
-        if (query) {
-          url += `query=${encodeURIComponent(query)}`;
-        }
-        
-        if (category) {
-          if (query) url += '&';
-          url += `category=${encodeURIComponent(category)}`;
-        }
+   const fetchResults = async () => {
+  try {
+    setLoading(true);
+    let url = '/api/search?';
+    
+    if (query) {
+      url += `query=${encodeURIComponent(query)}`;
+    }
+    
+    if (category) {
+      if (query) url += '&';
+      url += `category=${encodeURIComponent(category)}`;
+    }
 
-        const res = await axios.get(url);
-        setProducts(res.data);
-      } catch (err) {
-        toast.error("Failed to load search results");
-        console.error("Search error:", err);
-      } finally {
-        setLoading(false);
+    const res = await axios.get(url);
+    const searchData = res.data;
+    const productsData = searchData.products || searchData;
+    
+    setProducts(productsData);
+    
+    // Calculate price range from search results
+    if (productsData.length > 0) {
+      const prices = productsData.map(p => {
+        const price = p.special_price > 0 && p.special_price < p.price 
+          ? Number(p.special_price) 
+          : Number(p.price);
+        return price;
+      });
+      
+      let minPrice = Math.min(...prices);
+      let maxPrice = Math.max(...prices);
+
+      // If only one product, add a small buffer
+      if (minPrice === maxPrice) {
+        minPrice = Math.max(1, minPrice - 100);
+        maxPrice = maxPrice + 100;
       }
-    };
+
+      setPriceRange([minPrice, maxPrice]);
+      setSelectedFilters(prev => ({
+        ...prev,
+        price: { min: minPrice, max: maxPrice }
+      }));
+      
+      // Also update the slider values
+      setValues([minPrice, maxPrice]);
+    }
+
+    // Extract brands from search results for filtering
+    const brandsFromResults = Array.from(new Set(productsData.map(product => product.brand) || []))
+      .filter(brandId => brandId && brandMap[brandId])
+      .map(brandId => ({
+        _id: brandId,
+        brand_name: brandMap[brandId],
+        count: productsData.filter(product => product.brand === brandId).length || 0
+      }));
+
+    // Update categoryData with brands from search results
+    setCategoryData(prev => ({
+      ...prev,
+      brands: brandsFromResults
+    }));
+
+  } catch (err) {
+    toast.error("Failed to load search results");
+    console.error("Search error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
     if (query || category) {
       fetchResults();
@@ -249,49 +296,148 @@ export default function SearchComponent() {
     // You can add any tracking logic here if needed
   };
 
-  const handleFilterChange = (type, value) => {
-    setSelectedFilters(prev => {
-      const newFilters = { ...prev };
-      
-      if (type === 'brands') {
-        newFilters.brands = prev.brands.includes(value)
-          ? prev.brands.filter(item => item !== value)
-          : [...prev.brands, value];
-      } else if (type === 'price') {
-        newFilters.price = value;
-      } else  if (type === 'categories') {
-        newFilters.categories = prev.categories.includes(value)
-          ? prev.categories.filter(item => item !== value)
-          : [...prev.categories, value];
-      }
-        else {
-        newFilters.filters = prev.filters.includes(value)
-          ? prev.filters.filter(item => item !== item)
-          : [...prev.filters, value];
-      }
-      return newFilters;
-    });
-  };
+ const handleFilterChange = (type, value) => {
+  setSelectedFilters(prev => {
+    const newFilters = { ...prev };
+    
+    if (type === 'brands') {
+      newFilters.brands = prev.brands.includes(value)
+        ? prev.brands.filter(item => item !== value)
+        : [...prev.brands, value];
+    } else if (type === 'price') {
+      newFilters.price = value;
+    } else if (type === 'categories') {
+      newFilters.categories = prev.categories.includes(value)
+        ? prev.categories.filter(item => item !== value)
+        : [...prev.categories, value];
+    } else {
+      newFilters.filters = prev.filters.includes(value)
+        ? prev.filters.filter(item => item !== value) // Fixed: was filtering wrong
+        : [...prev.filters, value];
+    }
+    return newFilters;
+  });
+};
+
+const applyFilters = useCallback(async (pageNum = 1) => {
+  try {
+    setLoading(true);
+    
+    // For search results (query or category search)
+    if (query || category) {
+      const filteredResults = await filterSearchResults(pageNum);
+      setProducts(filteredResults.products);
+      setPagination(filteredResults.pagination);
+    } 
+    // For category pages
+    else if (categoryData.main_category && categoryData.category) {
+      await fetchFilteredProducts(categoryData, pageNum);
+    }
+  } catch (error) {
+    toast.error('Error applying filters: ' + error.message);
+  } finally {
+    setLoading(false);
+  }
+}, [query, category, categoryData, selectedFilters]);
+
+useEffect(() => {
+  if (initialLoadComplete) {
+    applyFilters(1);
+  }
+}, [selectedFilters, initialLoadComplete, applyFilters]);
+
+
+const filterProductsClientSide = (products) => {
+  let filtered = products.filter(product => {
+    // Brand filter
+    if (selectedFilters.brands.length > 0 && !selectedFilters.brands.includes(product.brand)) {
+      return false;
+    }
+    
+    // Price filter - FIXED THIS PART
+    const productPrice = product.special_price > 0 && product.special_price < product.price 
+      ? Number(product.special_price) 
+      : Number(product.price);
+    
+    if (productPrice < selectedFilters.price.min || productPrice > selectedFilters.price.max) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  // Apply sorting to filtered results
+  switch(sortOption) {
+    case 'price-low-high':
+      return filtered.sort((a, b) => {
+        const priceA = a.special_price > 0 && a.special_price < a.price ? Number(a.special_price) : Number(a.price);
+        const priceB = b.special_price > 0 && b.special_price < b.price ? Number(b.special_price) : Number(b.price);
+        return priceA - priceB;
+      });
+    case 'price-high-low':
+      return filtered.sort((a, b) => {
+        const priceA = a.special_price > 0 && a.special_price < a.price ? Number(a.special_price) : Number(a.price);
+        const priceB = b.special_price > 0 && b.special_price < b.price ? Number(b.special_price) : Number(b.price);
+        return priceB - priceA;
+      });
+    case 'name-a-z':
+      return filtered.sort((a, b) => a.name.localeCompare(b.name));
+    case 'name-z-a':
+      return filtered.sort((a, b) => b.name.localeCompare(a.name));
+    default:
+      return filtered;
+  }
+};
+
+
+
+const filterSearchResults = async (pageNum = 1) => {
+  const queryParams = new URLSearchParams();
+  
+  // Add search parameters
+  if (query) queryParams.set('query', query);
+  if (category) queryParams.set('category', category);
+  
+  // Add filter parameters
+  if (selectedFilters.brands.length > 0) {
+    queryParams.set('brands', selectedFilters.brands.join(','));
+  }
+  if (selectedFilters.categories.length > 0) {
+    queryParams.set('categories', selectedFilters.categories.join(','));
+  }
+  queryParams.set('minPrice', selectedFilters.price.min);
+  queryParams.set('maxPrice', selectedFilters.price.max);
+  
+  if (selectedFilters.filters.length > 0) {
+    queryParams.set('filters', selectedFilters.filters.join(','));
+  }
+  
+  // Add pagination
+  queryParams.set('page', pageNum);
+  queryParams.set('limit', itemsPerPage);
+  
+  const res = await fetch(`/api/search/filter?${queryParams}`);
+  return await res.json();
+};
   
   const handlePriceChange = (values) => {
-    let min = Math.max(1, values[0]);     // clamp to >= 1
-    let max = Math.max(1, values[1]);   // clamp to <= 100
+  let min = Math.max(1, Number(values[0]));     // Convert to number
+  let max = Math.max(1, Number(values[1]));   // Convert to number
 
-    // Ensure min never exceeds max
-    if (min > max) {
-      min = max;
-    }
+  // Ensure min never exceeds max
+  if (min > max) {
+    min = max;
+  }
 
-    setSelectedFilters((prev) => ({
-      ...prev,
-      price: { min, max }
-    }));
-  };
+  setSelectedFilters((prev) => ({
+    ...prev,
+    price: { min, max }
+  }));
+};
   
   const STEP = 100;
-  const MIN = priceRange[0];
-  const MAX = priceRange[1];
-  
+const MIN = priceRange[0] || 0;
+const MAX = priceRange[1] || 100000;
   // slider local state
   const [values, setValues] = useState([
     selectedFilters.price.min,
@@ -377,10 +523,16 @@ export default function SearchComponent() {
     });
   };
 
+  // Add this variable right before return
+const filteredProducts = query || category 
+  ? filterProductsClientSide(products)
+  : getSortedProducts();
+
+
   return (
     <div className="container mx-auto px-4 py-2">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">
+        <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">
           Search Results for "{query}"
           {category && ` in ${category}`}
         </h1>
@@ -390,17 +542,22 @@ export default function SearchComponent() {
             {products.length} result{products.length !== 1 ? 's' : ''} found
           </p>
           
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="px-4 py-2 border rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Sort by Featured</option>
-            <option value="price-low-high">Price: Low to High</option>
-            <option value="price-high-low">Price: High to Low</option>
-            <option value="name-a-z">Name: A-Z</option>
-            <option value="name-z-a">Name: Z-A</option>
-          </select>
+          <div className="mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">Sort by:</span>
+                  <select
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value)}
+                    className="px-4 py-2 border rounded-md text-sm bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Featured</option>
+                    <option value="price-low-high">Price: Low to High</option>
+                    <option value="price-high-low">Price: High to Low</option>
+                    <option value="name-a-z">Name: A-Z</option>
+                    <option value="name-z-a">Name: Z-A</option>
+                  </select>
+                </div>
+              </div>
         </div>
 
         {loading ? (
@@ -547,35 +704,32 @@ export default function SearchComponent() {
                 </div>
                 {isBrandsExpanded && (
                   <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
-                    {categoryData.brands.map(brand => (
-                      <li key={brand._id} className="flex items-center">
-                        <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={selectedFilters.brands.includes(brand._id)}
-                            onChange={() => handleFilterChange("brands", brand._id)}
-                            className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                          />
-                          {/*
-                          {brand.image && (
-                            <div className="w-6 h-6 mr-2 relative">
-                              <Image
-                                src={brand.image.startsWith('http') ? brand.image : `/uploads/Brands/${brand.image}`}
-                                alt={brand.brand_name}
-                                fill
-                                className="object-contain"
-                                unoptimized
+                    {/* Get unique brands from search results */}
+                    {Array.from(new Set(products.map(product => product.brand)))
+                      .filter(brandId => brandId && brandMap[brandId]) // Filter out null/undefined brands
+                      .map(brandId => {
+                        const brandName = brandMap[brandId];
+                        const brandCount = products.filter(product => product.brand === brandId).length;
+                        
+                        return (
+                          <li key={brandId} className="flex items-center">
+                            <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={selectedFilters.brands.includes(brandId)}
+                                onChange={() => handleFilterChange("brands", brandId)}
+                                className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded"
                               />
-                            </div>
-                          )}
-                            */}
-                          <span className="text-sm text-gray-600">{brand.brand_name} ({brand.count})</span>
-                        </label>
-                      </li>
-                    ))}
+                              <span className="text-sm text-gray-600">
+                                {brandName} ({brandCount})
+                              </span>
+                            </label>
+                          </li>
+                        );
+                      })}
                   </ul>
                 )}
-              </div>
+              </div>  
 
               {/* Dynamic Filters */}
               <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
@@ -625,7 +779,7 @@ export default function SearchComponent() {
             </div>
             <div className="flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                {getSortedProducts().map(product => (
+                {filteredProducts.map(product => (
                   <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
                     <div className="relative aspect-square bg-white">
                       {product.images?.[0] && (
