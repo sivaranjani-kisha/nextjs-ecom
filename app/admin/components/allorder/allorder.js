@@ -103,24 +103,24 @@ const OrdersTable = () => {
     try {
       const name = order.order_username || "Customer";
       
-      // const emailFormData = new FormData();
-      // emailFormData.append("campaign_id", "c7e3fb47-8bb0-4062-ac32-f56d5877536f");
-      // emailFormData.append("email", order.email_address || "kbsiva1234@gmail.com");
-      // emailFormData.append(
-      //   "params",
-      //   JSON.stringify([name, order.order_number])
-      // );
+      const emailFormData = new FormData();
+      emailFormData.append("campaign_id", "c7e3fb47-8bb0-4062-ac32-f56d5877536f");
+      emailFormData.append("email", order.email_address || "kbsiva1234@gmail.com");
+      emailFormData.append(
+        "params",
+        JSON.stringify([name, order.order_number])
+      );
      
-      // const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
-      //   method: "POST",
-      //   headers: {
-      //     Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
-      //   },
-      //   body: emailFormData,
-      // });
+      const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
+        },
+        body: emailFormData,
+      });
 
-      // const data = await response.json();
-      // return data;
+      const data = await response.json();
+      return data;
 
     } catch (error) {
       console.error("Error sending cancellation email:", error);
