@@ -782,6 +782,37 @@ const grandTotal = subtotal - totalDiscount;
  
         const data = await response.json();
  
+        
+      const adminItemsHtml = orderData.order.order_item.map(item => {
+       return `<li>${item.name} - ₹${item.price.toFixed(2)} x ${item.quantity}</li>`;
+        }).join('');
+
+      const adminItemsTableHtml = `<ul style="padding-left: 20px; color: #555555;">${adminItemsHtml}</ul>`;
+
+        const adminemailFormData = new FormData();
+        adminemailFormData.append("campaign_id", "dd7b5f8d-5bf1-45a5-9116-fcb40f69ede6");
+        adminemailFormData.append(
+          "params",
+          JSON.stringify([name,addressData.email,addressData.phonenumber,deliveryAddress, adminItemsTableHtml])
+        );
+
+        const emailadmin = ["arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in"];
+
+        // const emailadmin = ["siva96852@gmail.com"];
+        emailadmin.forEach(async (adminEmail) => {
+          adminemailFormData.set("email", adminEmail);
+        let adminresponse = await fetch("https://bea.eygr.in/api/email/send-msg", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
+          },
+          body: adminemailFormData, // Use the renamed variable
+        });
+
+        let adminData = await adminresponse.json();
+        });
+
+        
         toast.success("Order placed successfully!");
         router.push('/orders');
       }
@@ -809,8 +840,8 @@ const grandTotal = subtotal - totalDiscount;
       
       {/* Checkout Header Bar */}
       <div className="bg-red-50 py-6 px-8 flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800 " style={{marginLeft: "64px"}}>Checkout</h2>
-        <div className="flex items-center space-x-2" style={{marginRight: "100px"}}>
+        <h2 className="text-xl font-bold text-gray-800">Checkout</h2>
+        <div className="flex items-center space-x-2">
           <span className="text-gray-600">🏠 Home</span>
           <span className="text-gray-500">›</span>
           <span className="text-orange-500 font-semibold">Checkout</span>
