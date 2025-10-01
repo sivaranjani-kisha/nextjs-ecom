@@ -922,11 +922,12 @@ const grandTotal = subtotal - totalDiscount;
                 <div className="grid grid-cols-2 gap-4 mt-3">
                   {/* <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
                   <input type="text" name="state" placeholder="State/Province" value={formData.state} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/> */}
-                  <select placeholder="State" onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500  focus:border-orange-200" disabled required>
+                  <select placeholder="State" name="state" onChange={handleChange} value={formData.state} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500  focus:border-orange-200" required >
+                    <option value="">--Select State--</option>
                     <option value="Tamilnadu">Tamilnadu</option>
                   </select>
 
-                  <select placeholder="City" onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 disabled focus:border-orange-200" required>
+                  <select placeholder="City" name="city" onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 disabled focus:border-orange-200" required>
                     {finalCities.map((city, index) => (
                       <option key={index} value={city}>{city}</option>
                     ))}
