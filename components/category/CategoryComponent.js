@@ -44,7 +44,8 @@ export default function CategoryPage() {
   };
   const [nofound, setNofound] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0);
+  const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0);
+  
   // Pagination state
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -120,32 +121,32 @@ const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0);
       // setLoading(false);
     }
   };
-   const [brandMap, setBrandMap] = useState([]);
+  const [brandMap, setBrandMap] = useState([]);
  
-const fetchBrand = async () => {
-  try {
-    const response = await fetch("/api/brand");
-    const result = await response.json();
-    if (result.error) {
-      console.error(result.error);
-    } else {
-      const data = result.data;
- 
-      // Store as map for quick access
-      const map = {};
-      data.forEach((b) => {
-        map[b._id] = b.brand_name;
-      });
-      setBrandMap(map);
+  const fetchBrand = async () => {
+    try {
+      const response = await fetch("/api/brand");
+      const result = await response.json();
+      if (result.error) {
+        console.error(result.error);
+      } else {
+        const data = result.data;
+  
+        // Store as map for quick access
+        const map = {};
+        data.forEach((b) => {
+          map[b._id] = b.brand_name;
+        });
+        setBrandMap(map);
+      }
+    } catch (error) {
+      console.error(error.message);
     }
-  } catch (error) {
-    console.error(error.message);
-  }
-};
+  };
  
-useEffect(() => {
-  fetchBrand();
-}, []);
+  useEffect(() => {
+    fetchBrand();
+  }, []);
 
   const fetchFilteredProducts = useCallback(async (categoryData, pageNum = 1, initialLoad = false) => {
     try {
@@ -252,22 +253,22 @@ useEffect(() => {
     });
   };
 
-   const handlePriceChange = (values) => {
-  let min = Math.max(1, values[0]);     // clamp to >= 1
-  let max = Math.max(1, values[1]);   // clamp to <= 100
+  const handlePriceChange = (values) => {
+    let min = Math.max(1, values[0]);     // clamp to >= 1
+    let max = Math.max(1, values[1]);   // clamp to <= 100
 
-  // Ensure min never exceeds max
-  if (min > max) {
-    min = max;
-  }
+    // Ensure min never exceeds max
+    if (min > max) {
+      min = max;
+    }
 
-  setSelectedFilters((prev) => ({
-    ...prev,
-    price: { min, max }
-  }));
-};
+    setSelectedFilters((prev) => ({
+      ...prev,
+      price: { min, max }
+    }));
+  };
 
-   const STEP = 100;
+  const STEP = 100;
   const MIN = priceRange[0];
   const MAX = priceRange[1];
 
@@ -855,11 +856,11 @@ useEffect(() => {
               </div>
 
               {/* Dynamic Filters */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
-                <div className="pb-2 mb-2">
-                  <h3 className="text-base font-semibold text-gray-700">Product Filters</h3>
-                </div>
-                {isFiltersExpanded && (
+              {isFiltersExpanded && Object.values(filterGroups).length > 0 &&  (
+                <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
+                  <div className="pb-2 mb-2">
+                    <h3 className="text-base font-semibold text-gray-700">Product Filters</h3>
+                  </div>
                   <div className="space-y-4">
                     {Object.values(filterGroups).map(group => (
                       <div key={group._id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
@@ -898,8 +899,8 @@ useEffect(() => {
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
       {!nofound && products.length > 0 ? (
         <>

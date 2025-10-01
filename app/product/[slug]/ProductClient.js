@@ -1813,23 +1813,22 @@ const fetchBrand = async () => {
 
   {/* Related Products Section - show ONLY if no featured products */}
   
-    <div className="px-4 py-4">
-      <h2 className="text-sm font-bold text-customBlue underline mb-2">
-        Similar Products
-      </h2>
-      {relatedProducts
-        .filter(item => item.stock_status === "In Stock")
-        .slice(0, 3)
-        .map((item) => (
+  {relatedProducts
+
+    .filter(item => item.stock_status === "In Stock").slice(0, 3).map((item) => (
+        <div className="px-4 py-4">
+          <h2 className="text-sm font-bold text-customBlue underline mb-2">
+            Similar Products
+          </h2>
           <div key={item._id} className="flex items-start mb-4">
-             {product?.quantity > 0 && (
-          <input
-            type="checkbox"
-            className="mt-2 mr-3"
-            checked={selectedRelatedProducts.some(p => p._id === item._id)}
-            onChange={() => toggleRelatedProduct(item)}
-          />
-        )}
+            {product?.quantity > 0 && (
+              <input
+                type="checkbox"
+                className="mt-2 mr-3"
+                checked={selectedRelatedProducts.some(p => p._id === item._id)}
+                onChange={() => toggleRelatedProduct(item)}
+              />
+            )}
             <div className="flex items-start gap-3">
               {item.images?.[0] && (
                 <img
@@ -1886,9 +1885,9 @@ const fetchBrand = async () => {
               </div>
             </div>
           </div>
-        ))}
-    </div>
-  
+        </div>
+  ))}
+
 </div>
 
  

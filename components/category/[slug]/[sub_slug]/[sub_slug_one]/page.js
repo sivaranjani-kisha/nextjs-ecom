@@ -812,11 +812,12 @@ export default function CategoryPage() {
 
           {/* Dynamic Filters */}
                       
-          <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
-            <div className="pb-2 mb-2">
-              <h3 className="text-base font-semibold text-gray-700">Product Filters</h3>
-            </div>
-            {isFiltersExpanded && (
+          
+          {isFiltersExpanded && Object.values(filterGroups).length > 0 && (
+            <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
+              <div className="pb-2 mb-2">
+                <h3 className="text-base font-semibold text-gray-700">Product Filters</h3>
+              </div>
               <div className="space-y-4">
                 {Object.values(filterGroups).map(group => (
                   <div key={group._id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
@@ -857,8 +858,8 @@ export default function CategoryPage() {
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       {!nofound && categoryData.products.length > 0 ? (
       <>
