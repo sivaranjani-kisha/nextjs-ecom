@@ -75,8 +75,12 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
 
       if (data.products?.length > 0) {
         const prices = data.products.map(p => p.special_price || p.price);
-        const minPrice = Math.min(...prices);
+        let minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
+        if(minPrice === maxPrice) {
+          minPrice = 0; // Ensure a range
+        }
+        alert(`Price range: ${minPrice} - ${maxPrice}`);
         setPriceRange([minPrice, maxPrice]);
         setSelectedFilters(prev => ({
           ...prev,
