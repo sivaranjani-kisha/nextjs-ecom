@@ -244,7 +244,7 @@ useEffect(() => {
             <div className="text-sm text-gray-600">
               Showing {startEntry} to {endEntry} of {filteredGroups.length} entries
             </div>
-            <ReactPaginate
+                     <ReactPaginate
               previousLabel={"«"}
               nextLabel={"»"}
               breakLabel={"..."}
@@ -252,15 +252,15 @@ useEffect(() => {
               onPageChange={handlePageClick}
               forcePage={currentPage}
               containerClassName={"flex items-center space-x-1"}
-              pageLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md text-black bg-white hover:bg-gray-100`}
+              pageClassName="page-item border border-gray-300 px-3 py-1.5 rounded-md "
+              pageLinkClassName="  rounded-md  "
               previousLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md ${
                 currentPage === 0 ? "text-gray-400 cursor-not-allowed" : "text-black bg-white hover:bg-gray-100"
               }`}
-              nextLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md ${
+              nextLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md border border-gray-300 ${
                 currentPage === pageCount - 1 ? "text-gray-400 cursor-not-allowed" : "text-black bg-white hover:bg-gray-100"
               }`}
-              activeLinkClassName={"bg-red-500 text-black"}
-              breakLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md text-black bg-white hover:bg-gray-100`}
+              activeClassName="px-1 py-1.5 rounded-md bg-red-500 text-white"
             />
           </div>
         </div>

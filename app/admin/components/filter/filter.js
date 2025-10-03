@@ -36,7 +36,7 @@ export default function FilterComponent() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 20;
+  const itemsPerPage = 5;
 
   const fetchFilters = async () => {
     try {
@@ -342,13 +342,17 @@ useEffect(() => {
       ) : (
         <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
           <div className="flex justify-between mb-5">
-            <input
-              type="text"
-              placeholder="Search filter..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border px-3 py-2 rounded-md w-64"
-            />
+          <input
+  type="text"
+  placeholder="Search filter..."
+  value={searchQuery}
+  onChange={(e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(0); // 👈 Reset to first page when searching
+  }}
+  className="border px-3 py-2 rounded-md w-64"
+/>
+
             <button
               onClick={() => Modelopen(true)}
               className="bg-red-500 text-white px-4 py-2 rounded-md"
@@ -384,24 +388,25 @@ useEffect(() => {
             <div className="text-sm text-gray-600">
               Showing {startEntry} to {endEntry} of {filteredFilters.length} entries
             </div>
-            <ReactPaginate
-              previousLabel={"«"}
-              nextLabel={"»"}
-              breakLabel={"..."}
-              pageCount={pageCount}
-              onPageChange={handlePageClick}
-              forcePage={currentPage}
-              containerClassName={"flex items-center space-x-1"}
-              pageLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md text-black bg-white hover:bg-gray-100`}
-              previousLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md ${
-                currentPage === 0 ? "text-gray-400 cursor-not-allowed" : "text-black bg-white hover:bg-gray-100"
-              }`}
-              nextLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md ${
-                currentPage === pageCount - 1 ? "text-gray-400 cursor-not-allowed" : "text-black bg-white hover:bg-gray-100"
-              }`}
-              activeLinkClassName={"bg-red-500 text-black"}
-              breakLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md text-black bg-white hover:bg-gray-100`}
-            />
+           <ReactPaginate
+  previousLabel={"«"}
+  nextLabel={"»"}
+  breakLabel={"..."}
+  pageCount={pageCount}
+  onPageChange={handlePageClick}
+  forcePage={currentPage}
+  containerClassName={"flex items-center space-x-1"}
+  pageClassName="page-item border border-gray-300 px-3 py-1.5 rounded-md "
+  pageLinkClassName="  rounded-md  "
+  previousLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md ${
+    currentPage === 0 ? "text-gray-400 cursor-not-allowed" : "text-black bg-white hover:bg-gray-100"
+  }`}
+  nextLinkClassName={`px-3 py-1.5 border border-gray-300 rounded-md border border-gray-300 ${
+    currentPage === pageCount - 1 ? "text-gray-400 cursor-not-allowed" : "text-black bg-white hover:bg-gray-100"
+  }`}
+  activeClassName="px-1 py-1.5 rounded-md bg-red-500 text-white"
+/>
+
           </div>
         </div>
       )}

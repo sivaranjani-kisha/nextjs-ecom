@@ -138,38 +138,38 @@ const OrdersTable = () => {
         day: 'numeric'
       });
 
-      // const emailFormData = new FormData();
-      // emailFormData.append("campaign_id", "c7e3fb47-8bb0-4062-ac32-f56d5877536f");
-      // emailFormData.append("email", order.email_address);
-      // emailFormData.append(
-      //   "params",
-      //   JSON.stringify([order.order_username, order.order_number, formattedDate])
-      // );
+      const emailFormData = new FormData();
+      emailFormData.append("campaign_id", "e019b2bd-09e9-4369-8b04-1d80a0403bb9	");
+      emailFormData.append("email", order.email_address);
+      emailFormData.append(
+        "params",
+        JSON.stringify([order.order_username, order.order_number, formattedDate])
+      );
      
-      // const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
-      //   method: "POST",
-      //   headers: {
-      //     Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
-      //   },
-      //   body: emailFormData,
-      // });
-
-        const res = await fetch("/api/order-send-mail", {
+      const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: order.email_address,
-          
-          subject: `Order ${order.order_number} Status Updated`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-           
-              <p>Your order No: ${order.order_number} has been shipped. The expected delivery date is ${formattedDate}. You will receive a copy of the invoice shortly, or you can download it from Your Orders. If you have any questions, feel free to contact us at +919842344323.</p>
-                 <p>This is an automated notification from the order management system.</p>
-            </div>
-          `
-        }),
+        headers: {
+          Authorization: "Bearer 2|DC7TldSOIhrILsnzAf0gzgBizJcpYz23GHHs0Y2L",
+        },
+        body: emailFormData,
       });
+
+      //   const res = await fetch("/api/order-send-mail", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({
+      //     to: order.email_address,
+          
+      //     subject: `Order ${order.order_number} Status Updated`,
+      //     html: `
+      //       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+           
+      //         <p>Your order No: ${order.order_number} has been shipped. The expected delivery date is ${formattedDate}. You will receive a copy of the invoice shortly, or you can download it from Your Orders. If you have any questions, feel free to contact us at +919842344323.</p>
+      //            <p>This is an automated notification from the order management system.</p>
+      //       </div>
+      //     `
+      //   }),
+      // });
 
       if (!res.ok) throw new Error("Failed to send admin notification");
       return await res.json();
@@ -249,7 +249,7 @@ const updateOrderStatusWithDeliveryDate = async () => {
     );
 
     await sendDeliveryEmailToUser(orderToUpdate, deliveryDate);
-    await sendAdminNotificationEmail(orderToUpdate, oldStatus, "shipped");
+    // await sendAdminNotificationEmail(orderToUpdate, oldStatus, "shipped");
 
     toast.success("Order shipped! Email sent to user and admin.");
   } catch (err) {
@@ -346,7 +346,7 @@ const updateOrderStatusWithDeliveryDate = async () => {
       {isLoading ? (
         <p>Loading order...</p>
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-5 h-[500px] overflow-x-auto">
+        <div className="bg-white shadow-md rounded-lg p-5 h-auto overflow-x-auto">
           {/* 🔍 Filters */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end mb-4">
             {/* Search */}
