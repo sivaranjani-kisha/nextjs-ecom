@@ -80,7 +80,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
         if(minPrice === maxPrice) {
           minPrice = 0; // Ensure a range
         }
-        alert(`Price range: ${minPrice} - ${maxPrice}`);
+        // alert(`Price range: ${minPrice} - ${maxPrice}`);
         setPriceRange([minPrice, maxPrice]);
         setSelectedFilters(prev => ({
           ...prev,
