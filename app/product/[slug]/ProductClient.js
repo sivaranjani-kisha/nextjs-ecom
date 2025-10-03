@@ -883,9 +883,11 @@ const fetchBrand = async () => {
       </div>
 
       {/* Thumbnails */}
-      {product.images && product.images.length > 1 && (
+      {product.images && product.images.filter(img => img && img.trim() !== "").length > 0 && (
         <div className="flex justify-center gap-3 mt-3">
-          {product.images.map((image, index) => {
+          {product.images 
+          .filter(img => img && img.trim() !== "") // remove empty or invalid entries
+          .map((image, index) => {
             const imgPath =
               image.startsWith("http") || image.startsWith("blob:") || image.startsWith("data:")
                 ? image
@@ -940,15 +942,21 @@ const fetchBrand = async () => {
                 <div className="flex items-center gap-2">
                   {/* Price Section */}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-blue-800">
-                     Rs.{Math.round(product.special_price || product.price)}
-                    </span>
-                    {product.special_price && (
-                      <span className="text-gray-800 line-through text-sm">
-                        Rs.{Math.round(product.price)}
-                      </span>
+                    {(Number(product.special_price) > 0 || Number(product.price) > 0) && (
+                      <>
+                        <span className="text-2xl font-bold text-blue-800">
+                          Rs.{Math.round(Number(product.special_price) || Number(product.price))}
+                        </span>
+
+                        {Number(product.special_price) > 0 && Number(product.price) > 0 && (
+                          <span className="text-gray-800 line-through text-sm">
+                            Rs.{Math.round(Number(product.price))}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
+
 
                   {/* Quantity Selector */}
                   <div className="flex items-center border border-gray-300 rounded-full h-8 w-max">
@@ -1813,15 +1821,16 @@ const fetchBrand = async () => {
 
   {/* Related Products Section - show ONLY if no featured products */}
   
-  {relatedProducts
-
-    .filter(item => item.stock_status === "In Stock").slice(0, 3).map((item) => (
-        <div className="px-4 py-4">
-          <h2 className="text-sm font-bold text-customBlue underline mb-2">
-            Similar Products
-          </h2>
-          <div key={item._id} className="flex items-start mb-4">
-            {product?.quantity > 0 && (
+   <div className="px-4 py-4">
+        <h2 className="text-sm font-bold text-customBlue underline mb-2">
+          Similar Products
+        </h2>
+        {relatedProducts
+          .filter(item => item.stock_status === "In Stock")
+          .slice(0, 3)
+          .map((item) => (
+            <div key={item._id} className="flex items-start mb-4">
+              {product?.quantity > 0 && (
               <input
                 type="checkbox"
                 className="mt-2 mr-3"
@@ -1829,64 +1838,64 @@ const fetchBrand = async () => {
                 onChange={() => toggleRelatedProduct(item)}
               />
             )}
-            <div className="flex items-start gap-3">
-              {item.images?.[0] && (
-                <img
-                  src={'/uploads/products/' + item.images[0]}
-                  alt={item.name}
-                  className="w-16 h-16 object-contain"
-                />
-              )}
-              <div className="text-sm">
-                <Link
-                  href={`/product/${item.slug}`}
-                  className="block mb-1"
-                  onClick={() => handleProductClick(item)}
-                >
-                  <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                    {item.name}
-                  </h3>
-                </Link>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-red-600">
-                    ₹ {(
-                      item.special_price &&
+              <div className="flex items-start gap-3">
+                {item.images?.[0] && (
+                  <img
+                    src={'/uploads/products/' + item.images[0]}
+                    alt={item.name}
+                    className="w-16 h-16 object-contain"
+                  />
+                )}
+                <div className="text-sm">
+                  <Link
+                    href={`/product/${item.slug}`}
+                    className="block mb-1"
+                    onClick={() => handleProductClick(item)}
+                  >
+                    <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                      {item.name}
+                    </h3>
+                  </Link>
+  
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-semibold text-red-600">
+                      ₹ {(
+                        item.special_price &&
+                        item.special_price > 0 &&
+                        item.special_price !== "0" &&
+                        item.special_price < item.price
+                          ? item.special_price
+                          : item.price
+                      ).toLocaleString()}
+                    </span>
+  
+                    {item.special_price &&
                       item.special_price > 0 &&
                       item.special_price !== "0" &&
-                      item.special_price < item.price
-                        ? item.special_price
-                        : item.price
-                    ).toLocaleString()}
-                  </span>
-
-                  {item.special_price &&
-                    item.special_price > 0 &&
-                    item.special_price !== "0" &&
-                    item.special_price < item.price && (
-                      <span className="text-xs text-gray-500 line-through">
-                        ₹ {item.price.toLocaleString()}
-                      </span>
-                    )}
+                      item.special_price < item.price && (
+                        <span className="text-xs text-gray-500 line-through">
+                          ₹ {item.price.toLocaleString()}
+                        </span>
+                      )}
+                  </div>
+  
+                  <h4
+                    className={`text-xs ${
+                      item.stock_status === "In Stock"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {item.stock_status}
+                    {item.stock_status === "In Stock" && item.quantity
+                      ? `, ${item.quantity} units`
+                      : ""}
+                  </h4>
                 </div>
-
-                <h4
-                  className={`text-xs ${
-                    item.stock_status === "In Stock"
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {item.stock_status}
-                  {item.stock_status === "In Stock" && item.quantity
-                    ? `, ${item.quantity} units`
-                    : ""}
-                </h4>
               </div>
             </div>
-          </div>
-        </div>
-  ))}
+          ))}
+      </div>
 
 </div>
 
@@ -1948,7 +1957,7 @@ const fetchBrand = async () => {
   />
 </div>
 
-</div>
+          </div>
         </div>
         
        
