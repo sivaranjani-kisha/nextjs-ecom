@@ -156,7 +156,7 @@ export default function CheckoutPage() {
     address: "",
     landmark: "",
     city: "",
-    state: "",
+    state: "Tamilnadu",
     postCode: "",
     phonenumber: "",
     email: "",
@@ -268,7 +268,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
         country: addr.country || "",
         address: addr.address || "",
         city: addr.city || "",
-        state: addr.state || "",
+        state: addr.state || "Tamilnadu",
         postCode: addr.postCode || "",
         phonenumber: addr.phonenumber || "",
         landmark: addr.landmark || "",
@@ -479,9 +479,17 @@ const grandTotal = subtotal - totalDiscount;
       const userId = decoded.userId;
   
       // Use saved address data if selected, otherwise use form data
-      const addressData = useSavedAddress && selectedAddress !== null 
-        ? useraddress[selectedAddress]
-        : formData;
+        const addressData = useSavedAddress && selectedAddress !== null
+  ? {
+      ...useraddress[selectedAddress],
+      state: useraddress[selectedAddress].state || "Tamilnadu",
+      country: useraddress[selectedAddress].country || "India",
+    }
+  : {
+      ...formData,
+      state: formData.state || "Tamilnadu",
+      country: formData.country || "India",
+    };
   
       // Validation Checks (only if not using saved address)
       if (!useSavedAddress || selectedAddress === null) {
@@ -489,11 +497,18 @@ const grandTotal = subtotal - totalDiscount;
         const phoneRegex = /^[0-9]{10}$/;
         const postCodeRegex = /^[0-9]{4,6}$/;
   
-        if (!addressData.firstName || !addressData.lastName || !addressData.email || 
-            !addressData.phonenumber || !addressData.postCode) {
-          toast.error("Please fill in all required fields.");
-          return;
-        }
+            if (
+        !addressData.firstName ||
+        !addressData.lastName ||
+        !addressData.email ||
+        !addressData.phonenumber ||
+        !addressData.postCode ||
+        !addressData.state
+      ) {
+        toast.error("Please fill in all required fields.");
+        return;
+      }
+
         if (!emailRegex.test(addressData.email)) {
           toast.error("Please enter a valid email address.");
           return;
@@ -548,7 +563,7 @@ const grandTotal = subtotal - totalDiscount;
         formDataToSend.append('address', addressData.address);
         formDataToSend.append('postCode', addressData.postCode);
         formDataToSend.append('city', addressData.city);
-        formDataToSend.append('state', addressData.state);
+        formDataToSend.append('state', addressData.state); 
         formDataToSend.append('landmark', addressData.landmark || '');
         formDataToSend.append('phonenumber', addressData.phonenumber);
         formDataToSend.append('altnumber', addressData.altnumber || '');
@@ -796,9 +811,9 @@ const grandTotal = subtotal - totalDiscount;
           JSON.stringify([name,addressData.email,addressData.phonenumber,deliveryAddress, adminItemsTableHtml])
         );
 
-        // const emailadmin = ["arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"];
+        const emailadmin = ["arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"];
 
-        const emailadmin = ["siva96852@gmail.com"];
+        // const emailadmin = ["siva96852@gmail.com"];
         emailadmin.forEach(async (adminEmail) => {
           adminemailFormData.set("email", adminEmail);
         let adminresponse = await fetch("https://bea.eygr.in/api/email/send-msg", {
@@ -822,6 +837,7 @@ const grandTotal = subtotal - totalDiscount;
       setIsSubmitting(false);
     }
   };
+   
 
   if (loading) {
     return (
@@ -839,13 +855,13 @@ const grandTotal = subtotal - totalDiscount;
       <ToastContainer position="top-right" autoClose={5000} />
       
       {/* Checkout Header Bar */}
-      <div className="bg-white py-6 px-8 flex justify-between items-center">
+      <div className="bg-white py-6 px-8 flex border-b justify-between items-center">
         <h2 className="text-2xl font-bold text-orange-500 " style={{marginLeft: "64px"}}>Checkout</h2>
-        <div className="flex items-center space-x-2" style={{marginRight: "100px"}}>
+        {/* <div className="flex items-center space-x-2" style={{marginRight: "100px"}}>
           <span className="text-2xl text-gray-600">🏠 Home</span>
           <span className="text-gray-500">›</span>
           <span className="text-2xl text-orange-500 font-semibold">Checkout</span>
-        </div>
+        </div> */}
       </div>
 
       {/* <div className="max-w-9xl mx-auto rounded-lg p-8 pt-0  container"> */}
@@ -854,42 +870,6 @@ const grandTotal = subtotal - totalDiscount;
         <div className="flex flex-col lg:flex-row " style={{marginLeft: "100px"}}>
           {/* Left - Checkout Form */}
          <div className="w-full lg:w-2/4 bg-white p-0 pt-6">
-    
-    {/* {useraddress && useraddress.length > 0 && (
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Saved Addresses</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {useraddress.map((item, index) => (
-            <div 
-              key={`address-${index}`} 
-              className={`border p-4 rounded-lg cursor-pointer transition-all ${selectedAddress === index ? 'border-orange-500 bg-orange-50' : 'hover:border-gray-300'}`}
-              onClick={() => setSelectedAddress(index)}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">{item.firstName} {item.lastName}</p>
-                  <p className="text-sm text-gray-600">{item.address}</p>
-                  <p className="text-sm text-gray-600">{item.city}, {item.state}, {item.postCode}</p>
-                  <p className="text-sm text-gray-600">{item.country}</p>
-                  <p className="text-sm text-gray-600">Phone: {item.phonenumber}</p>
-                </div>
-                {selectedAddress === index && (
-                  <span className="text-orange-500">✓ Selected</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4">
-          <button 
-            onClick={() => setUseSavedAddress(!useSavedAddress)}
-            className="text-orange-500 hover:text-orange-700 text-sm font-medium"
-          >
-            {useSavedAddress ? 'Use new address instead' : 'Use saved address'}
-          </button>
-        </div>
-      </div>
-    )} */}
 
     {error && <p className="text-red-500 text-bold-sm mb-4">{error}</p>}
 
@@ -1068,7 +1048,7 @@ const grandTotal = subtotal - totalDiscount;
 </div>
 
     <div className="grid grid-cols-2 gap-4 mt-3">
-     <div className="relative mt-3 w-full">
+     {/* <div className="relative mt-3 w-full">
       <select
         name="state"
         value={formData.state}
@@ -1088,7 +1068,24 @@ const grandTotal = subtotal - totalDiscount;
         >
           State
         </span>
-      </div>
+      </div> */}
+
+    <div className="relative mt-3 w-full">
+  <input
+    type="text"
+    name="state"
+    value={formData.state}
+    readOnly
+    className="border rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1 px-2 text-gray-700 cursor-not-allowed"
+  />
+  <label
+    className="absolute left-2 text-xs text-gray-500 top-1 pointer-events-none transition-all duration-200"
+  >
+    State
+  </label>
+</div>
+
+
 
 
      <div className="relative mt-3 w-full">
@@ -1342,7 +1339,7 @@ const grandTotal = subtotal - totalDiscount;
                 </div>
               )}
               {cartItems.some(item => item.extendedWarranty > 0) && (
-                <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
+                <div className="flex justify-between text-gray-800 font-semibold pt-2 mt-2">
                   <span className="text-[#0069c6] hover:text-[#00badb] text-xs sm:text-sm font-medium">Extended Warranty:</span>
                   <span className="text-sm whitespace-nowrap text-base font-semibold text-red-600">
                     ₹{cartItems.reduce((sum, item) => sum + (item.extendedWarranty || 0), 0).toFixed(2)}
@@ -1360,13 +1357,13 @@ const grandTotal = subtotal - totalDiscount;
               )}
 
               {/* Subtotal */}
-              <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
+              <div className="flex justify-between text-gray-800 font-semibold  pt-2 mt-2">
                 <span>Subtotal:</span>
                 <span>₹{orderSummary.subtotal.toFixed(2)}</span>
               </div>
 
               {/* Total */}
-              <div className="flex justify-between text-gray-800 font-semibold border-t pt-2 mt-2">
+              <div className="flex justify-between text-gray-800 font-semibold pt-2 mt-2">
                 <span>Total:</span>
                 <span>₹{orderSummary.total.toFixed(2)}</span>
               </div>
