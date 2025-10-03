@@ -48,6 +48,63 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       }))
     }
   };
+  // Function to check if a tab has content
+  const hasTabContent = (tabId) => {
+    switch(tabId) {
+      case "overview":
+        return product.overview && product.overview !== "No overview available.";
+      
+      case "description":
+        const descObj = parseJSONSafe(tabData.description);
+        if (descObj && typeof descObj === "object" && Object.keys(descObj).length > 0) {
+          return true;
+        }
+        return tabData.description && tabData.description !== "No description available.";
+      
+      case "videos":
+        return tabData.videos && tabData.videos.length > 0;
+      
+      case "reviews":
+        return true ;
+      
+      default:
+        return true;
+    }
+  };
+
+   // Function to find the next available tab with content
+  const findNextAvailableTab = (currentTab) => {
+    const tabs = ["overview", "description", "videos", "reviews"];
+    const currentIndex = tabs.indexOf(currentTab);
+    
+    // Check remaining tabs starting from current position
+    for (let i = currentIndex; i < tabs.length; i++) {
+      if (hasTabContent(tabs[i])) {
+        return tabs[i];
+      }
+    }
+    
+    // If no content found in remaining tabs, check from beginning
+    for (let i = 0; i < currentIndex; i++) {
+      if (hasTabContent(tabs[i])) {
+        return tabs[i];
+      }
+    }
+    
+    // If no tabs have content, return the first tab
+    return tabs[0];
+  };
+
+   // Effect to handle tab content availability
+    useEffect(() => {
+      if (!hasTabContent(activeTab)) {
+        const nextTab = findNextAvailableTab(activeTab);
+        if (nextTab !== activeTab) {
+          setActiveTab(nextTab);
+          // toast.info(`No content available in ${activeTab}. Showing ${nextTab} instead.`);
+        }
+      }
+    }, [activeTab, product, reviews]);
 
   useEffect(() => {
     if ((activeTab === "relatedProducts" || activeTab === "recentlyViewed") && product.category?._id) {
@@ -677,113 +734,108 @@ const cleanupFlixMedia = () => {
           </div>
         )} */}
 
-        {activeTab === "description" && (
-          <div>
-            <h2 className={`text-sm font-bold transition-all duration-200 text-left ${poppins.className}`}>Product Description</h2>
-             {/* parse once (done in render scope) */}
-           {(() => {
+       {activeTab === "description" && (() => {
   const descObj = parseJSONSafe(tabData.description);
 
-  if (descObj && typeof descObj === "object" && Object.keys(descObj).length > 0) {
-    return (
-     <div className="mt-3 text-xs sm:text-sm text-gray-700 space-y-1">
-  {Object.entries(descObj).map(([key, val]) => {
-    const cleanKey = decodeAndClean(key);
-    const cleanVal = decodeAndClean(val);
-    return (
-      <div
-        key={cleanKey}
-        className="grid grid-cols-[150px,1fr] gap-x-2 items-start"
-      >
-        <div
-          className={`text-xs sm:text-sm font-bold whitespace-nowrap text-left ${poppins.className}`}
-        >
-          {cleanKey}:
-        </div>
-        <div
-          className={`text-xs sm:text-sm ${poppins.className} whitespace-normal text-left`}
-        >
-          {cleanVal}
-        </div>
-      </div>
-    );
-  })}
-</div>
+  const hasValidDescription =
+    descObj && typeof descObj === "object" && Object.keys(descObj).length > 0;
 
+  const hasPlainDescription =
+    tabData.description &&
+    tabData.description.trim().length > 0 &&
+    tabData.description !== "null" && // check against "null" string
+    tabData.description.toLowerCase() !== "null" && // case-insensitive just in case
+    tabData.description !== "No description available.";
 
+  const hasSpecifications =
+    product.brand ||
+    product.item_code ||
+    product.ingredients ||
+    product.weight ||
+    product.dimensions;
 
-    );
+  // If no description and no specs, hide the whole section
+  if (!hasValidDescription && !hasPlainDescription && !hasSpecifications) {
+    return null;
   }
 
   return (
-    <p className="mt-3 text-xs sm:text-sm text-gray-700">
-      {decodeAndClean(String(tabData.description))}
-    </p>
+    <div>
+      {/* Product Description */}
+      {(hasValidDescription || hasPlainDescription) && (
+        <>
+          <h2 className={`text-sm font-bold text-left ${poppins.className}`}>Product Description</h2>
+          {hasValidDescription ? (
+            <div className="mt-3 text-xs sm:text-sm text-gray-700 space-y-1">
+              {Object.entries(descObj).map(([key, val]) => {
+                const cleanKey = decodeAndClean(key);
+                const cleanVal = decodeAndClean(val);
+                return (
+                  <div key={cleanKey} className="grid grid-cols-[150px,1fr] gap-x-2 items-start">
+                    <div className={`text-xs sm:text-sm font-bold ${poppins.className}`}>{cleanKey}:</div>
+                    <div className={`text-xs sm:text-sm ${poppins.className}`}>{cleanVal}</div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-3 text-xs sm:text-sm text-gray-700">
+              {decodeAndClean(String(tabData.description))}
+            </p>
+          )}
+        </>
+      )}
+
+      {/* Product Specifications */}
+      {hasSpecifications && (
+        <>
+          <h2 className={`text-sm font-bold mt-3 text-left ${poppins.className}`}>Product Specifications</h2>
+          <ul className="mt-1 sm:mt-2 text-gray-700 text-xs sm:text-sm space-y-1">
+            {[
+              {
+                icon: <TbBrandAppgallery size={14} className="text-white" />,
+                label: "Brand",
+                value: brand.find((b) => b.value === product.brand)?.label || "N/A",
+              },
+              {
+                icon: <FiHash size={16} className="text-white" />,
+                label: "Item Code",
+                value: product.item_code || "N/A",
+              },
+              product.ingredients && {
+                icon: <FiBox size={14} className="text-white" />,
+                label: "Ingredients",
+                value: product.ingredients,
+              },
+              product.weight && {
+                icon: <FiBox size={14} className="text-white" />,
+                label: "Weight",
+                value: product.weight,
+              },
+              product.dimensions && {
+                icon: <FiBox size={14} className="text-white" />,
+                label: "Dimensions",
+                value: product.dimensions,
+              },
+            ]
+              .filter(Boolean)
+              .map((item, idx) => (
+                <li key={idx} className="flex items-center">
+                  <div className="w-5 h-5 flex items-center justify-center bg-gray-600 rounded-md mr-2">
+                    {item.icon}
+                  </div>
+                  <div className="flex gap-x-1">
+                    <strong className={`text-xs sm:text-sm ${poppins.className}`}>{item.label}:</strong>
+                    <span className={`${poppins.className}`}>{item.value}</span>
+                  </div>
+                </li>
+              ))}
+          </ul>
+        </>
+      )}
+    </div>
   );
 })()}
-            
-
-            <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Product Specifications</h2>
-           <ul className="mt-1 sm:mt-2 text-gray-700 text-xs sm:text-sm space-y-1">
-  {[
-    // {
-    //   icon: <TbBrandAppgallery size={14} className="text-white" />,
-    //   label: "Product Type",
-    //   value: product.category?.category_name || "N/A",
-    // },
-    {
-      icon: <TbBrandAppgallery size={14} className="text-white" />,
-      label: "Brand",
-      value: brand.find((b) => b.value === product.brand)?.label || "N/A",
-    },
-    // {
-    //   icon: <FiBox size={14} className="text-white" />,
-    //   label: "Quantity",
-    //   value: product.quantity || "Out of Stock",
-    // },
-    {
-      icon: <FiHash size={16} className="text-white" />,
-      label: "Item Code",
-      value: product.item_code || "N/A",
-    },
-    product.ingredients && {
-      icon: <FiBox size={14} className="text-white" />,
-      label: "Ingredients",
-      value: product.ingredients,
-    },
-    product.weight && {
-      icon: <FiBox size={14} className="text-white" />,
-      label: "Weight",
-      value: product.weight,
-    },
-    product.dimensions && {
-      icon: <FiBox size={14} className="text-white" />,
-      label: "Dimensions",
-      value: product.dimensions,
-    },
-  ]
-    .filter(Boolean)
-    .map((item, idx) => (
-      <li key={idx} className="flex items-center">
-        {/* Icon container */}
-        <div className="w-5 h-5 flex items-center justify-center bg-gray-600 rounded-md mr-2">
-          {item.icon}
-        </div>
-
-        {/* Label & value */}
-        <div className="flex gap-x-1">
-          <strong className={`text-xs sm:text-sm ${poppins.className}`}>{item.label}:</strong>
-          <span className={`${poppins.className}`}>{item.value}</span>
-        </div>
-      </li>
-    ))}
-</ul>
-
-
-
-
-          </div>
-        )}
 
         {activeTab === "videos" && (
           <div>
