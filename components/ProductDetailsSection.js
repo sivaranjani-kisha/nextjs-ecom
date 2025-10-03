@@ -52,7 +52,7 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   const hasTabContent = (tabId) => {
     switch(tabId) {
       case "overview":
-        return product.overview && product.overview !== "No overview available.";
+        return true;
       
       case "description":
         const descObj = parseJSONSafe(tabData.description);
@@ -62,7 +62,7 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
         return tabData.description && tabData.description !== "No description available.";
       
       case "videos":
-        return tabData.videos && tabData.videos.length > 0;
+        return true;
       
       case "reviews":
         return true ;
