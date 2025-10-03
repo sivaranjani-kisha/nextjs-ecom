@@ -328,14 +328,14 @@ export default function ContactForm() {
                           {store.email}
                         </a>
                       </p>
-                      <a
+                      {/* <a
                         href={`https://wa.me/${store.phone}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded"
                       >
                         Whatsapp
-                      </a>
+                      </a> */}
                     </div>
                   ))}
                 </div>
@@ -373,14 +373,14 @@ export default function ContactForm() {
                           {store.email}
                         </a>
                       </p>
-                      <a
+                      {/* <a
                         href={`https://wa.me/${store.phone}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded"
                       >
                         Whatsapp
-                      </a>
+                      </a> */}
                     </div>
                   ))}
                 </div>
@@ -421,14 +421,14 @@ export default function ContactForm() {
                         {store.email}
                       </a>
                     </p>
-                    <a
+                    {/* <a
                       href={`https://wa.me/${store.phone}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded"
                     >
                       Whatsapp
-                    </a>
+                    </a> */}
                   </div>
                 ))}
             </div>
