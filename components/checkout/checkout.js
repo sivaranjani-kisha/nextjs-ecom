@@ -796,9 +796,9 @@ const grandTotal = subtotal - totalDiscount;
           JSON.stringify([name,addressData.email,addressData.phonenumber,deliveryAddress, adminItemsTableHtml])
         );
 
-        const emailadmin = ["arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"];
+        // const emailadmin = ["arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"];
 
-        // const emailadmin = ["siva96852@gmail.com"];
+        const emailadmin = ["siva96852@gmail.com"];
         emailadmin.forEach(async (adminEmail) => {
           adminemailFormData.set("email", adminEmail);
         let adminresponse = await fetch("https://bea.eygr.in/api/email/send-msg", {
@@ -839,12 +839,12 @@ const grandTotal = subtotal - totalDiscount;
       <ToastContainer position="top-right" autoClose={5000} />
       
       {/* Checkout Header Bar */}
-      <div className="bg-red-50 py-6 px-8 flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800">Checkout</h2>
-        <div className="flex items-center space-x-2">
-          <span className="text-gray-600">🏠 Home</span>
+      <div className="bg-white py-6 px-8 flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-orange-500 " style={{marginLeft: "64px"}}>Checkout</h2>
+        <div className="flex items-center space-x-2" style={{marginRight: "100px"}}>
+          <span className="text-2xl text-gray-600">🏠 Home</span>
           <span className="text-gray-500">›</span>
-          <span className="text-orange-500 font-semibold">Checkout</span>
+          <span className="text-2xl text-orange-500 font-semibold">Checkout</span>
         </div>
       </div>
 
@@ -853,13 +853,312 @@ const grandTotal = subtotal - totalDiscount;
 
         <div className="flex flex-col lg:flex-row " style={{marginLeft: "100px"}}>
           {/* Left - Checkout Form */}
-          <div className="w-full lg:w-2/4 bg-white p-0 pt-6   ">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+         <div className="w-full lg:w-2/4 bg-white p-0 pt-6">
+    
+    {/* {useraddress && useraddress.length > 0 && (
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Saved Addresses</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {useraddress.map((item, index) => (
+            <div 
+              key={`address-${index}`} 
+              className={`border p-4 rounded-lg cursor-pointer transition-all ${selectedAddress === index ? 'border-orange-500 bg-orange-50' : 'hover:border-gray-300'}`}
+              onClick={() => setSelectedAddress(index)}
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-medium">{item.firstName} {item.lastName}</p>
+                  <p className="text-sm text-gray-600">{item.address}</p>
+                  <p className="text-sm text-gray-600">{item.city}, {item.state}, {item.postCode}</p>
+                  <p className="text-sm text-gray-600">{item.country}</p>
+                  <p className="text-sm text-gray-600">Phone: {item.phonenumber}</p>
+                </div>
+                {selectedAddress === index && (
+                  <span className="text-orange-500">✓ Selected</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4">
+          <button 
+            onClick={() => setUseSavedAddress(!useSavedAddress)}
+            className="text-orange-500 hover:text-orange-700 text-sm font-medium"
+          >
+            {useSavedAddress ? 'Use new address instead' : 'Use saved address'}
+          </button>
+        </div>
+      </div>
+    )} */}
+
+    {error && <p className="text-red-500 text-bold-sm mb-4">{error}</p>}
+
+    {useSavedAddress && selectedAddress !== null ? (
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <div className="grid grid-cols-2 gap-4">
+          <p><span className="font-medium">Name:</span> {useraddress[selectedAddress].firstName} {useraddress[selectedAddress].lastName}</p>
+          <p><span className="font-medium">Phone:</span> {useraddress[selectedAddress].phonenumber}</p>
+          <p><span className="font-medium">Address:</span> {useraddress[selectedAddress].address}</p>
+          <p><span className="font-medium">City:</span> {useraddress[selectedAddress].city}</p>
+          <p><span className="font-medium">State:</span> {useraddress[selectedAddress].state}</p>
+          <p><span className="font-medium">Country:</span> {useraddress[selectedAddress].country}</p>
+          <p><span className="font-medium">Postal Code:</span> {useraddress[selectedAddress].postCode}</p>
+        </div>
+      </div>
+    ) : (
+      
+      <form onSubmit={handleSubmit} className="mr-2">
+  {/* Contact Section */}
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold text-black mb-3">
+      Contact
+    </h2>
+   <div className="grid grid-cols-2 gap-4 mt-3">
+      <div className="relative mt-3">
+  <input
+    type="text"
+    name="phonenumber"
+    value={formData.phonenumber}
+    onChange={handleChange}
+    className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1"
+    required
+  />
+  <span className={`absolute left-2 transition-all duration-200 ${
+    formData.phonenumber 
+      ? 'top-1 text-xs text-gray-500' 
+      : 'top-3 text-gray-400'
+  }`}>
+    Phone Number
+  </span>
+</div>
+    <div className="relative mt-3 ">
+  <input
+    type="email"
+    onChange={handleChange}
+    name="email"
+    value={formData.email }
+    className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1"
+    required
+  />
+  <span className={`absolute left-2 transition-all duration-200 ${
+    formData.email 
+      ? 'top-1 text-xs text-gray-500' 
+      : 'top-3 text-gray-400'
+  }`}>
+    Email Address
+  </span>
+</div>
+    </div>
+  </div>
+
+  {/* Delivery Section */}
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold text-black mb-3">
+      Delivery
+    </h2>
+    <div className="relative mt-6">
+  <input
+    type="text"
+    onChange={handleChange}
+    name="country"
+    value={formData.country}
+    className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1"
+    required
+  />
+  <span className={`absolute left-2 transition-all duration-200 ${
+    formData.country
+      ? 'top-1 text-xs text-gray-500' 
+      : 'top-3 text-gray-400'
+  }`}>
+    Country
+  </span>
+</div>
+
+    <div className="grid grid-cols-2 gap-4 mt-3">
+      <div className="relative mt-3">
+  <input
+    type="text"
+    onChange={handleChange}
+    name="firstName"
+    value={formData.firstName}
+    className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1"
+    required
+  />
+  <span className={`absolute left-2 transition-all duration-200 ${
+    formData.firstName
+      ? 'top-1 text-xs text-gray-500' 
+      : 'top-3 text-gray-400'
+  }`}>
+    First Name
+  </span>
+</div>
+     <div className="relative mt-3">
+  <input
+    type="text"
+    onChange={handleChange}
+    name="lastName"
+    value={formData.lastName}
+    className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1"
+    required
+  />
+  <span className={`absolute left-2 transition-all duration-200 ${
+    formData.lastName
+      ? 'top-1 text-xs text-gray-500' 
+      : 'top-3 text-gray-400'
+  }`}>
+    Last Name
+  </span>
+</div>
+    </div>
+
+    <div className="relative mt-6">
+  <input
+    type="text"
+    onChange={handleChange}
+    name="businessName"
+    value={formData.businessName}
+    className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1"
+    required
+  />
+  <span className={`absolute left-2 transition-all duration-200 ${
+    formData.businessName
+      ? 'top-1 text-xs text-gray-500' 
+      : 'top-3 text-gray-400'
+  }`}>
+    Company Name (Optional)
+  </span>
+</div>
+    
+   <div className="relative mt-6 w-full">
+  <input
+    type="text"
+    onChange={handleChange}
+    name="address"
+    value={formData.address}
+    className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1"
+    required
+  />
+  <span
+    className={`absolute left-2 transition-all duration-200 pointer-events-none ${
+      formData.address
+        ? 'top-1 text-xs text-gray-500'
+        : 'top-3 text-gray-400'
+    }`}
+  >House number and street name
+  </span>
+</div>
+
+   
+   <div className="relative mt-6">
+  <input
+    type="text"
+    onChange={handleChange}
+    name="landmark"
+    value={formData.landmark}
+    className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1"
+    required
+  />
+  <span className={`absolute left-2 transition-all duration-200 ${
+    formData.landmark
+      ? 'top-1 text-xs text-gray-500' 
+      : 'top-3 text-gray-400'
+  }`}>
+   Landmark, suite, unit, etc. (Optional)
+  </span>
+</div>
+
+    <div className="grid grid-cols-2 gap-4 mt-3">
+     <div className="relative mt-3 w-full">
+      <select
+        name="state"
+        value={formData.state}
+        onChange={handleChange}
+        className="border rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1 px-2"
+        required
+      >
+        <option value="">--Select State--</option>
+        <option value="Tamilnadu">Tamilnadu</option>
+      </select>
+        <span
+          className={`absolute left-2 transition-all duration-200 pointer-events-none ${
+            formData.state
+              ? 'top-1 text-xs text-gray-500'
+              : 'top-3 text-gray-400'
+          }`}
+        >
+          State
+        </span>
+      </div>
+
+
+     <div className="relative mt-3 w-full">
+      <select
+        name="city"
+        value={formData.city}
+        onChange={handleChange}
+        className="border rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1 px-2"
+        required
+      >
+        <option value="" disabled hidden></option> {/* empty default */}
+        {finalCities.map((city, index) => (
+          <option key={index} value={city}>
+            {city}
+          </option>
+        ))}
+      </select> 
+      <span
+        className={`absolute left-2 transition-all duration-200 pointer-events-none ${
+          formData.city
+            ? 'top-1 text-xs text-gray-500'
+            : 'top-3 text-gray-400'
+        }`}
+      >
+        City
+      </span>
+    </div>
+
+    </div>
+
+   <div className="relative mt-6">
+    <input
+      type="text"
+      name="postCode"
+      value={formData.postCode}
+      onChange={handleChange}
+      className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200 pt-5 pb-1"
+      required
+    />
+    <span className={`absolute left-2 transition-all duration-200 ${
+      formData.postCode
+        ? 'top-1 text-xs text-gray-500' 
+        : 'top-3 text-gray-400'
+    }`}>
+      Post Code
+    </span>
+  </div>
+
+    <h2 className="text-xl font-semibold text-black mb-2 mt-6">
+      Shipping Method
+    </h2>
+
+    <DeliveryOptions
+      formData={formData}
+      handleChange={handleChange}
+      isDeliverySaved={isDeliverySaved}
+      setIsDeliverySaved={setIsDeliverySaved}
+      stores={stores}
+    />
+  </div>
+
+   <h2 className="text-xl font-semibold text-black mb-2 mt-6">
+      Billing Address
+    </h2>
+     {/* <h2 className="text-xl font-semibold text-gray-800 mb-4">
               {useSavedAddress && selectedAddress !== null ? 'Selected Address' : 'Billing Details'}
-            </h2>
+            </h2> */}
             {useraddress && useraddress.length > 0 && (
               <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Saved Addresses</h2>
+                <h2 className="text-sm font-semibold text-gray-800 mb-4">Saved Addresses</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {useraddress.map((item, index) => (
                     <div 
@@ -893,67 +1192,63 @@ const grandTotal = subtotal - totalDiscount;
               </div>
             )}
 
-            {error && <p className="text-red-500 text-bold-sm mb-4">{error}</p>}
+  {/* Additional Info Section */}
+  <div className="mb-6">
+    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+      Additional Information
+    </h3>
+    <textarea
+      name="additionalInfo"
+      placeholder="Notes about your order"
+      value={formData.additionalInfo}
+      onChange={handleChange}
+      className="border p-2 rounded-md w-full h-20 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"
+    ></textarea>
+  </div>
+ <div className="mt-3 mb-4 text-sm">
+  <a
+    href="/privacypolicy"
+    className="text-orange-500 hover:underline mr-4 underline"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Privacy Policy
+  </a>
+  <a
+    href="/terms-and-condition"
+    className="text-orange-500 hover:underline mr-4 underline"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Terms & Conditions
+  </a>
+  <a
+    href="/shipping"
+    className="text-orange-500 hover:underline mr-4 underline"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Shipping Policy
+  </a>
+  <a
+    href="/cancellation-refund-policy"
+    className="text-orange-500 hover:underline underline"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Cancellation & Refund Policy
+  </a>
+</div>
 
-            {useSavedAddress && selectedAddress !== null ? (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
-                  <p><span className="font-medium">Name:</span> {useraddress[selectedAddress].firstName} {useraddress[selectedAddress].lastName}</p>
-                  <p><span className="font-medium">Phone:</span> {useraddress[selectedAddress].phonenumber}</p>
-                  <p><span className="font-medium">Address:</span> {useraddress[selectedAddress].address}</p>
-                  <p><span className="font-medium">City:</span> {useraddress[selectedAddress].city}</p>
-                  <p><span className="font-medium">State:</span> {useraddress[selectedAddress].state}</p>
-                  <p><span className="font-medium">Country:</span> {useraddress[selectedAddress].country}</p>
-                  <p><span className="font-medium">Postal Code:</span> {useraddress[selectedAddress].postCode}</p>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="mr-2">
-                <div className="grid grid-cols-2 gap-4">
-                  <input type="text" name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                  <input type="text" name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                </div>
+</form>
 
-                <input type="text" name="businessName" placeholder="Business Name (Optional)" value={formData.businessName} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
-                <input type="text" name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                <input type="text" name="address" placeholder="House number and street name" value={formData.address} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                <input type="text" name="landmark" placeholder="landmark, suite, unit, etc. (Optional)" value={formData.landmark} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"/>
 
-                <div className="grid grid-cols-2 gap-4 mt-3">
-                  {/* <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                  <input type="text" name="state" placeholder="State/Province" value={formData.state} onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/> */}
-                  <select placeholder="State" name="state" onChange={handleChange} value={formData.state} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500  focus:border-orange-200" required >
-                    <option value="">--Select State--</option>
-                    <option value="Tamilnadu">Tamilnadu</option>
-                  </select>
 
-                  <select placeholder="City" name="city" onChange={handleChange} className="border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-orange-500 disabled focus:border-orange-200" required>
-                    {finalCities.map((city, index) => (
-                      <option key={index} value={city}>{city}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <input type="text" name="postCode" placeholder="Post Code" value={formData.postCode} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required/>
-                <input type="text" name="phonenumber" placeholder="Phone Number" value={formData.phonenumber} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required />
-                <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} className="border p-2 rounded-md w-full mt-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200" required />
-                
-                <DeliveryOptions
-                  formData={formData}
-                  handleChange={handleChange}
-                  isDeliverySaved={isDeliverySaved}
-                  setIsDeliverySaved={setIsDeliverySaved}
-                  stores={stores}
-                />
-                
-                <h3 className="text-lg font-semibold text-gray-700 mt-6 mb-2">Additional Information</h3>
-                <textarea name="additionalInfo" placeholder="Notes about your order" value={formData.additionalInfo} onChange={handleChange} className="border p-2 rounded-md w-full h-20 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-200"></textarea>
-              </form>
-            )}
-          </div>
+    )}
+  </div>
 
           {/* Right - Order Summary */}
-          <div className="w-full lg:w-2/4 bg-gray-50 p-6">
+          <div className="w-full lg:w-2/4 p-6 sticky top-6 self-start" style={{backgroundColor: "#F7F4F2", height: "100vh"}}>
             <div className="mt-1" style={{marginRight: "100px"}}>
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Orders</h3>
 
