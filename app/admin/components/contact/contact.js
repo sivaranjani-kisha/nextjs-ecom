@@ -160,7 +160,7 @@ export default function ContactComponent() {
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-5 mt-5">
-        <h2 className="text-2xl font-bold">Contact List</h2>
+        <h2 className="text-2xl font-bold">Customer Contact Details</h2>
       </div>
 
       {alertMessage && (
