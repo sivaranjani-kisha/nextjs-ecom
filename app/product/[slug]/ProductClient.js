@@ -574,6 +574,7 @@ const fetchBrand = async () => {
     }, []);
 
 
+
   const handleThumbnailClick = (index) => {
   const imagePath = product.images?.[index];
 
@@ -861,12 +862,12 @@ const fetchBrand = async () => {
 
       {/* Main Image */}
       <div className="relative w-full flex items-center justify-center">
-        <button
+        {/* <button
           className="absolute left-1 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/60 rounded-full w-8 h-8 flex items-center justify-center text-black text-xl z-50"
           onClick={(e) => { e.stopPropagation(); navigateLightbox("prev"); }}
         >
           &#8249;
-        </button>
+        </button> */}
 
         <img
           src={resolveImagePath(product.images[selectedImageIndex])}
@@ -874,43 +875,40 @@ const fetchBrand = async () => {
           className="object-contain max-h-[50vh] border border-gray-400 rounded-lg w-auto rounded-md"
         />
 
-        <button
+        {/* <button
           className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/60 rounded-full w-8 h-8 flex items-center justify-center text-black text-xl z-50"
           onClick={(e) => { e.stopPropagation(); navigateLightbox("next"); }}
         >
           &#8250;
-        </button>
+        </button> */}
       </div>
 
       {/* Thumbnails */}
-      {product.images && product.images.filter(img => img && img.trim() !== "").length > 0 && (
-        <div className="flex justify-center gap-3 mt-3">
-          {product.images 
-          .filter(img => img && img.trim() !== "") // remove empty or invalid entries
-          .map((image, index) => {
-            const imgPath =
-              image.startsWith("http") || image.startsWith("blob:") || image.startsWith("data:")
-                ? image
-                : `/uploads/products/${image}`;
+     {product.images && product.images .filter(img => img && img.trim() !== "" && img.trim().toLowerCase() !== "null")
+  .length > 0 && (
+  <div className="flex justify-center gap-3 mt-3">
+    {product.images .filter(img => img && img.trim() !== "" && img.trim().toLowerCase() !== "null")
+      .map((image, index) => {
+        // Validate path (skip broken/empty before rendering)
+        const imgPath =
+          image.startsWith("http") || image.startsWith("blob:") || image.startsWith("data:")
+            ? image
+            : `/uploads/products/${image}`;
 
-            return (
-              <button
-                key={index}
-                className={`p-1 border-2 rounded-md transition-all duration-300 ${
-                  selectedImage === image ? "border-blue-500 scale-110" : "border border-gray-400"
-                }`}
-                onClick={() => setSelectedImageIndex(index)}
-              >
-                <img
-                  src={imgPath}
-                  alt={`Thumbnail ${index + 1}`}
-                  className="object-cover w-16 h-16 rounded-sm"
-                />
-              </button>
-            );
-          })}
-        </div>
-      )}
+        return (
+          <img
+            key={index}
+            src={imgPath}
+            alt={`Thumbnail ${index + 1}`}
+            className="object-cover w-16 h-16 rounded-sm cursor-pointer transition-transform duration-300 hover:scale-110"
+            onClick={() => setSelectedImageIndex(index)}
+            onError={(e) => e.currentTarget.remove()} // remove if broken
+          />
+        );
+      })}
+  </div>
+)}
+
     </div>
   </div>
 )}
