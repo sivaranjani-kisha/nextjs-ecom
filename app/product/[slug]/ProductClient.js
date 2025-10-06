@@ -988,9 +988,12 @@ const fetchBrand = async () => {
                       />
                     </div> */}
 
-                    <div className="flex-grow mt-2">
-                      <ProductCard productId={product._id} />
-                    </div>
+                    {product.quantity > 0 && (
+  <div className="flex-grow mt-2">
+    <ProductCard productId={product._id} />
+  </div>
+)}
+
                   </div>
 
                 

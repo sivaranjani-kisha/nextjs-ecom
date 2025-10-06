@@ -282,7 +282,7 @@ const RecentlyViewedProducts = () => {
 
                         {/* Wishlist (only show on hover) */}
                         <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <ProductCard productId={product._id} />
+                          <ProductCard productId={product._id} isOutOfStock={product.quantity === 0} />
                         </div>
                       </div>
 
