@@ -941,7 +941,7 @@ export default function CategoryPage() {
  
                       {/* Wishlist */}
                       <div className="absolute top-2 right-2">
-                        <ProductCard productId={product._id} />
+                        <ProductCard productId={product._id} isOutOfStock={product.quantity === 0} />
                       </div>
                     </div>
  
