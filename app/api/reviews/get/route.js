@@ -1,10 +1,13 @@
 import dbConnect from "@/lib/db";
 import Review from "@/models/Review";
+import User from "@/models/User";
+import product from "@/models/product";
 
 export async function GET() {
     try {
         await dbConnect();
-        const Reviews = await Review.find({});
+        const Reviews = await Review.find({}).populate('user_id').populate('product_id').lean();
+
         return Response.json(
             { success: true, data: Reviews || [] },
             {status: 200}
