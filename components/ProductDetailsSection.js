@@ -791,9 +791,7 @@ const cleanupFlixMedia = () => {
               })}
             </div>
           ) : (
-            <p className="mt-3 text-xs sm:text-sm text-gray-700">
-              {decodeAndClean(String(tabData.description))}
-            </p>
+            <div className="mt-3 text-xs sm:text-sm text-gray-700 prose prose-gray max-w-none text-left [&_table]:w-full [&_table]:border-collapse [&_table]:border [&_th]:border [&_td]:border [&_th]:p-2 [&_td]:p-2 [&_tr:nth-child(even)]:bg-gray-50 [&_th]:bg-gray-100 [&_th]:font-semibold" dangerouslySetInnerHTML={{ __html: decodeAndClean(String(tabData.description)) }}></div>
           )}
         </>
       )}

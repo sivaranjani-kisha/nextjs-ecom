@@ -2,6 +2,7 @@
 import { React, useState, useEffect } from "react";
 import dynamic from 'next/dynamic';
 import { FaPlus, FaMinus, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import TinyEditor from "./TinyEditor";
 const Select = dynamic(() => import('react-select'), { ssr: false });
 import { combinations } from '@/utils/combinations';
 import { ToastContainer, toast } from 'react-toastify';
@@ -1566,7 +1567,14 @@ const handleupdatefilterchange = (filters) => {
         
               <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea name="description" value={product.description || ''} onChange={handleChange} className="w-full border p-2 rounded" rows="4"></textarea>
+                {/* <textarea name="description" value={product.description || ''} onChange={handleChange} className="w-full border p-2 rounded" rows="4"></textarea> */}
+                <TinyEditor value={product.description} onChange={handleChange} />
+                
+                      {/* <h3 className="mt-4 font-semibold">Preview:</h3>
+                      <div
+                        className="border p-3 rounded bg-gray-50"
+                        dangerouslySetInnerHTML={{ __html: product.description }}
+                      /> */}
               </div>
             <div className="space-y-6">
               {/* Overview Image */}
