@@ -40,6 +40,26 @@ export default function OfferComponent() {
       setSelectedUsers(newSelected);
     }
   };
+  const initialOfferData = {
+  offer_code: "",
+  fest_offer_status: "",
+  notes: "",
+  from_date: "",
+  to_date: "",
+  offer_product_category: "",
+  offer_product: [],
+  offer_category: [],
+  offer_type: "",
+  percentage: "",
+  fixed_price: "",
+  limit_enabled: false,
+  offer_limit: "",
+};
+// const [offerData, setOfferData] = useState(initialOfferData);
+// const [isModalOpen, setIsModalOpen] = useState(false);
+// const [selectedOfferType, setSelectedOfferType] = useState("");
+// const [selectedUsers, setSelectedUsers] = useState([]);
+
 const [isMailModalOpen, setIsMailModalOpen] = useState(false);
 const [currentOffer, setCurrentOffer] = useState(null);
 const [mailContent, setMailContent] = useState({
@@ -624,12 +644,18 @@ const filteredOffers = offers.filter((offer) => {
 
     {/* Add Offer Button */}
     <div className="flex justify-end">
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition"
-      >
-        + Add Offer
-      </button>
+     <button
+  onClick={() => {
+    // Reset all states before opening modal
+    setOfferData(initialOfferData);
+    setSelectedOfferType("");
+    setSelectedUsers([]);
+    setIsModalOpen(true);
+  }}
+  className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition"
+>
+  + Add Offer
+</button>
     </div>
   </div>
 
@@ -948,10 +974,13 @@ const filteredOffers = offers.filter((offer) => {
                       Select Products
                     </label>
                     <Select
-                      options={products.map(product => ({
-                        value: product._id,
-                        label: product.name
-                      }))}
+                      options={products
+                        .filter(product => product.status === "Active") // Only active products
+                        .map(product => ({
+                          value: product._id,
+                          label: product.name
+                        }))
+                      }
                       isMulti
                       placeholder="Search and select products..."
                       value={offerData.offer_product.map(p => ({
@@ -1291,10 +1320,13 @@ const filteredOffers = offers.filter((offer) => {
                       Select Products
                     </label>
                     <Select
-                      options={products.map(product => ({
-                        value: product._id,
-                        label: product.name
-                      }))}
+                      options={products
+                        .filter(product => product.status === "Active") // Only active products
+                        .map(product => ({
+                          value: product._id,
+                          label: product.name
+                        }))
+                      }
                       isMulti
                       placeholder="Search and select products..."
                       value={offerData.offer_product.map(p => ({

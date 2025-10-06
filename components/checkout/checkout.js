@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useCart } from '@/context/CartContext';
 import { ToastContainer, toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'next/navigation';
@@ -146,6 +147,7 @@ const DeliveryOptions = ({ formData, handleChange, isDeliverySaved, setIsDeliver
 };
 
 export default function CheckoutPage() {
+  const { cartCount, updateCartCount } = useCart();
   const router = useRouter();
   const [stores, setStores] = useState([]);
   const [formData, setFormData] = useState({
@@ -830,6 +832,8 @@ const grandTotal = subtotal - totalDiscount;
 
         toast.success("Order placed successfully!");
         router.push('/orders');
+        updateCartCount(0);
+
       }
     } catch (error) {
       console.error("Error submitting order:", error);
