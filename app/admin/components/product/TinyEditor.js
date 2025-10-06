@@ -47,7 +47,7 @@ const TinyEditor = ({ value, onChange }) => {
     inline: false,
   }),
   []
-);
+); 
 
 
   const handleEditorChange = useCallback(
