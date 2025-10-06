@@ -48,29 +48,43 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       }))
     }
   };
-  // Function to check if a tab has content
-  const hasTabContent = (tabId) => {
-    switch(tabId) {
-      case "overview":
-        return true;
-      
-      case "description":
-        const descObj = parseJSONSafe(tabData.description);
-        if (descObj && typeof descObj === "object" && Object.keys(descObj).length > 0) {
-          return true;
-        }
-        return tabData.description && tabData.description !== "No description available.";
-      
-      case "videos":
-        return true;
-      
-      case "reviews":
-        return true ;
-      
-      default:
-        return true;
-    }
-  };
+  const tabs = ["overview", "description", "videos", "reviews"];
+  
+  // Check if a tab has content
+const hasTabContent = (tabId) => {
+  switch (tabId) {
+    case "overview":
+      return product.overview && product.overview.trim() !== "";
+    case "description":
+      return product.description && product.description.trim() !== "";
+    case "videos":
+      return product.videos && product.videos.length > 0;
+    case "reviews":
+      return true;
+    default:
+      return false;
+  }
+};
+
+// ✅ Find the first tab with content
+const getFirstTabWithContent = () => {
+  for (const tab of tabs) {
+    if (hasTabContent(tab)) return tab;
+  }
+  // fallback if all are empty
+  return "overview";
+};
+
+// ✅ Set first available tab on mount
+useEffect(() => {
+  const firstAvailable = getFirstTabWithContent();
+  setActiveTab(firstAvailable);
+}, [product, reviews]);
+
+// ✅ Handle tab switching (no disabling)
+const handleTabClick = (tabId) => {
+  setActiveTab(tabId);
+};
 
    // Function to find the next available tab with content
   const findNextAvailableTab = (currentTab) => {
@@ -652,29 +666,27 @@ const cleanupFlixMedia = () => {
     <div className="mt-4 sm:mt-8 bg-gray-100 w-full py-6">
         <ToastContainer position="top-right" autoClose={5000} />
       {/* Tabs */}
-      <div className={`flex justify-center  ${poppins.className}`}>
-        {/* <div className="flex justify-center gap-8"> */}
-    {[
-      { id: "overview", label: "Overview" },
-      { id: "description", label: "Description" },
-      { id: "videos", label: "Videos" },
-      { id: "reviews", label: "Reviews" },
-      // { id: "recentlyViewed", label: "Recently Viewed" },
-      // { id: "relatedProducts", label: "Related" },
-    ].map((tab) => (
-      <button
-        key={tab.id}
-        onClick={() => setActiveTab(tab.id)}
-        className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-          activeTab === tab.id
-            ? "border border-black text-black font-semibold"
-            : "text-gray-500 hover:text-black"
-        }`} ref={reviewsRef}
-      >
-        {tab.label}
-      </button>
-    ))}
-  </div>
+    <div className={`flex justify-center ${poppins.className}`}>
+  {[
+    { id: "overview", label: "Overview" },
+    { id: "description", label: "Description" },
+    { id: "videos", label: "Videos" },
+    { id: "reviews", label: "Reviews" },
+  ].map((tab) => (
+    <button
+      key={tab.id}
+      onClick={() => handleTabClick(tab.id)}
+      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+        activeTab === tab.id
+          ? "border border-black text-black font-semibold"
+          : "text-gray-500 hover:text-black"
+      }`}
+    >
+      {tab.label}
+    </button>
+  ))}
+</div>
+
 
       {/* Tab Content */}
       {activeTab === "overview" && (
