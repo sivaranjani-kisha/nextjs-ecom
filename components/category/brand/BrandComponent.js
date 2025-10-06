@@ -111,65 +111,120 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
       setLoading(false);
     }
   };
+   const fetchFilteredProducts = useCallback(async (pageNum = 1) => {
+  try {
+    setLoading(true);
+    const query = new URLSearchParams();
 
-  const fetchFilteredProducts = useCallback(async (pageNum = 1) => {
-    try {
-      setLoading(true);
-      const query = new URLSearchParams();
-      
-      // Filter by the current brand
-      if (categoryData.brand?._id) {
-        query.set('brands', categoryData.brand._id);
-      }
-      
-      // Add category filters
-      if (selectedFilters.categories.length > 0) {
-        query.set('categoryIds', selectedFilters.categories.join(','));
-      } else if (categoryData.allCategoryIds?.length > 0) {
-        query.set('categoryIds', categoryData.allCategoryIds.join(','));
-      }
-      
-      // Add subcategory filters if any
-      if (selectedFilters.subcategories.length > 0) {
-        query.set('subcategoryIds', selectedFilters.subcategories.join(','));
-      }
-      
-      query.set('page', pageNum);
-      query.set('limit', itemsPerPage);
-      query.set('minPrice', selectedFilters.price.min);
-      query.set('maxPrice', selectedFilters.price.max);
-      
-      if (selectedFilters.filters.length > 0) {
-        query.set('filters', selectedFilters.filters.join(','));
-      }
-
-      const res = await fetch(`/api/product/filter/category-brand/main?${query}`);
-      const { products, pagination: paginationData } = await res.json();
-
-      setProducts(products || []);
-      
-      // Update pagination state
-      if (paginationData) {
-        setPagination({
-          currentPage: paginationData.currentPage || 1,
-          totalPages: paginationData.totalPages || 1,
-          hasNext: paginationData.hasNext || false,
-          hasPrev: paginationData.hasPrev || false,
-          totalProducts: paginationData.totalProducts || 0
-        });
-      }
-      
-      if ((!products || products.length === 0) && pageNum === 1) {
-        setNofound(true);
-      } else {
-        setNofound(false);
-      }
-    } catch (error) {
-      toast.error('Error fetching products: ' + error.message);
-    } finally {
-      setLoading(false);
+    // ✅ Always restrict by brand
+    if (categoryData.brand?._id) {
+      query.set('brands', categoryData.brand._id);
     }
-  }, [selectedFilters, categoryData]);
+
+    // ✅ Restrict strictly to current category tree
+    if (categoryData.category?._id) {
+      query.set('categoryIds', [categoryData.category._id, ...(categoryData.categories || []).map(c => c._id)].join(','));
+    }
+
+    // ✅ Only add user-selected subcategories if any
+    if (selectedFilters.subcategories.length > 0) {
+      query.set('subcategoryIds', selectedFilters.subcategories.join(','));
+    }
+
+    query.set('page', pageNum);
+    query.set('limit', itemsPerPage);
+    query.set('minPrice', selectedFilters.price.min);
+    query.set('maxPrice', selectedFilters.price.max);
+
+    if (selectedFilters.filters.length > 0) {
+      query.set('filters', selectedFilters.filters.join(','));
+    }
+
+    const res = await fetch(`/api/product/filter/category-brand/main?${query}`);
+    const { products, pagination: paginationData } = await res.json();
+
+    setProducts(products || []);
+
+    if ((!products || products.length === 0) && pageNum === 1) {
+      setNofound(true);
+    } else {
+      setNofound(false);
+    }
+
+    if (paginationData) {
+      setPagination({
+        currentPage: paginationData.currentPage || 1,
+        totalPages: paginationData.totalPages || 1,
+        hasNext: paginationData.hasNext || false,
+        hasPrev: paginationData.hasPrev || false,
+        totalProducts: paginationData.totalProducts || 0
+      });
+    }
+  } catch (error) {
+    toast.error('Error fetching products: ' + error.message);
+  } finally {
+    setLoading(false);
+  }
+}, [selectedFilters, categoryData]);
+
+  // const fetchFilteredProducts = useCallback(async (pageNum = 1) => {
+  //   try {
+  //     setLoading(true);
+  //     const query = new URLSearchParams();
+      
+  //     // Filter by the current brand
+  //     if (categoryData.brand?._id) {
+  //       query.set('brands', categoryData.brand._id);
+  //     }
+      
+  //     // Add category filters
+  //     if (selectedFilters.categories.length > 0) {
+  //       query.set('categoryIds', selectedFilters.categories.join(','));
+  //     } else if (categoryData.allCategoryIds?.length > 0) {
+  //       query.set('categoryIds', categoryData.allCategoryIds.join(','));
+  //     }
+      
+  //     // Add subcategory filters if any
+  //     if (selectedFilters.subcategories.length > 0) {
+  //       query.set('subcategoryIds', selectedFilters.subcategories.join(','));
+  //     }
+      
+  //     query.set('page', pageNum);
+  //     query.set('limit', itemsPerPage);
+  //     query.set('minPrice', selectedFilters.price.min);
+  //     query.set('maxPrice', selectedFilters.price.max);
+      
+  //     if (selectedFilters.filters.length > 0) {
+  //       query.set('filters', selectedFilters.filters.join(','));
+  //     }
+
+  //     const res = await fetch(`/api/product/filter/category-brand/main?${query}`);
+  //     const { products, pagination: paginationData } = await res.json();
+
+  //     setProducts(products || []);
+      
+  //     // Update pagination state
+  //     if (paginationData) {
+  //       setPagination({
+  //         currentPage: paginationData.currentPage || 1,
+  //         totalPages: paginationData.totalPages || 1,
+  //         hasNext: paginationData.hasNext || false,
+  //         hasPrev: paginationData.hasPrev || false,
+  //         totalProducts: paginationData.totalProducts || 0
+  //       });
+  //     }
+      
+  //     if ((!products || products.length === 0) && pageNum === 1) {
+  //       setNofound(true);
+  //     } else {
+  //       setNofound(false);
+  //     }
+  //   } catch (error) {
+  //     toast.error('Error fetching products: ' + error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [selectedFilters, categoryData]);
   
   const handleProductClick = (product) => {
     try {
