@@ -142,23 +142,31 @@ const sendCancellationEmail = async (order) => {
 
 
   // 📧 Send delivery confirmation email to user
-  const sendDeliveryEmailToUser = async (order, deliveryDate) => {
-    try {
-      const formattedDate = new Date(deliveryDate).toLocaleDateString('en-IN', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+ const sendDeliveryEmailToUser = async (order, deliveryDate) => {
+  try {
+    const formattedDate = new Date(deliveryDate).toLocaleDateString('en-IN', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
 
+    // multiple recipients
+    const recipients = [
+      order.email_address, // original order user
+      "arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"
+    ];
+
+    // loop through recipients and send individually
+    for (const email of recipients) {
       const emailFormData = new FormData();
-      emailFormData.append("campaign_id", "e019b2bd-09e9-4369-8b04-1d80a0403bb9	");
-      emailFormData.append("email", order.email_address);
+      emailFormData.append("campaign_id", "e019b2bd-09e9-4369-8b04-1d80a0403bb9");
+      emailFormData.append("email", email);
       emailFormData.append(
         "params",
         JSON.stringify([order.order_username, order.order_number, formattedDate])
       );
-     
+
       const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
         method: "POST",
         headers: {
@@ -167,31 +175,19 @@ const sendCancellationEmail = async (order) => {
         body: emailFormData,
       });
 
-      //   const res = await fetch("/api/order-send-mail", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     to: order.email_address,
-          
-      //     subject: `Order ${order.order_number} Status Updated`,
-      //     html: `
-      //       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-           
-      //         <p>Your order No: ${order.order_number} has been shipped. The expected delivery date is ${formattedDate}. You will receive a copy of the invoice shortly, or you can download it from Your Orders. If you have any questions, feel free to contact us at +919842344323.</p>
-      //            <p>This is an automated notification from the order management system.</p>
-      //       </div>
-      //     `
-      //   }),
-      // });
-
-      if (!res.ok) throw new Error("Failed to send admin notification");
-      return await res.json();
-      // return await response.json();
-    } catch (error) {
-      console.error("Error sending delivery email to user:", error);
-      throw error;
+      if (!response.ok) {
+        console.error(`Failed to send email to ${email}`);
+      } else {
+        console.log(`Email sent successfully to ${email}`);
+      }
     }
-  };
+
+    return { success: true, message: "Emails sent successfully" };
+  } catch (error) {
+    console.error("Error sending delivery emails:", error);
+    throw error;
+  }
+};
 
   // 📧 Send notification email to admin
   const sendAdminNotificationEmail = async (order, oldStatus, newStatus) => {
