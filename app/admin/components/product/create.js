@@ -1574,7 +1574,7 @@ const handleupdatefilterchange = (filters) => {
                       <div
                         className="border p-3 rounded bg-gray-50"
                         dangerouslySetInnerHTML={{ __html: product.description }}
-                      /> */}
+                      /> */} 
               </div>
             <div className="space-y-6">
               {/* Overview Image */}

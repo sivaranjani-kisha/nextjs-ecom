@@ -68,7 +68,7 @@ const TinyEditor = ({ value, onChange }) => {
         apiKey="3jet6jywjkwr70zpahusrbze0lmetr4boh4h6gtvmjhlewcx"
         onInit={(evt, editor) => (editorRef.current = editor)}
         // use controlled value to avoid uncontrolled re-mounts; pass empty string fallback
-        value={value ?? ""}
+        value={value ?? ""} 
         init={init}
         onEditorChange={handleEditorChange}
       />
