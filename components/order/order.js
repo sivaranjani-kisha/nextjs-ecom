@@ -138,13 +138,13 @@ export default function Order() {
     const name = order.order_username || "Customer";
 
     // List of emails: customer + admins
-    // const emailList = [
-    //   order.email_address || "kbsiva1234@gmail.com",
-    //    "arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"
-    // ];
-     const emailList = [
-      order.email_address || "kbsiva1234@gmail.com","siva96852@gmail.com"
+    const emailList = [
+      order.email_address || "kbsiva1234@gmail.com",
+       "arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"
     ];
+    //  const emailList = [
+    //   order.email_address || "kbsiva1234@gmail.com","siva96852@gmail.com"
+    // ];
 
     // Loop through each email and send
     const results = [];
