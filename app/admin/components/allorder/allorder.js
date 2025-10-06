@@ -99,18 +99,27 @@ const OrdersTable = () => {
   ]);
 
   // 📧 Send cancellation email function
-  const sendCancellationEmail = async (order) => {
-    try {
-      const name = order.order_username || "Customer";
-      
+const sendCancellationEmail = async (order) => {
+  try {
+    const name = order.order_username || "Customer";
+
+    // List of emails: customer + admins
+    const emailList = [
+      order.email_address || "kbsiva1234@gmail.com",
+       "arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"
+    ];
+
+    // Loop through each email and send
+    const results = [];
+    for (const email of emailList) {
       const emailFormData = new FormData();
-      emailFormData.append("campaign_id", "c7e3fb47-8bb0-4062-ac32-f56d5877536f");
-      emailFormData.append("email", order.email_address || "kbsiva1234@gmail.com");
+      emailFormData.append("campaign_id", "637cf8a5-db01-453d-9c47-cca3cac44d52");
+      emailFormData.append("email", email);
       emailFormData.append(
         "params",
         JSON.stringify([name, order.order_number])
       );
-     
+
       const response = await fetch("https://bea.eygr.in/api/email/send-msg", {
         method: "POST",
         headers: {
@@ -120,13 +129,17 @@ const OrdersTable = () => {
       });
 
       const data = await response.json();
-      return data;
-
-    } catch (error) {
-      console.error("Error sending cancellation email:", error);
-      throw error;
+      results.push({ email, data });
     }
-  };
+
+    return results; // Return results for all emails
+
+  } catch (error) {
+    console.error("Error sending cancellation email:", error);
+    throw error;
+  }
+};
+
 
   // 📧 Send delivery confirmation email to user
   const sendDeliveryEmailToUser = async (order, deliveryDate) => {
