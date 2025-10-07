@@ -11,13 +11,11 @@ async function getCategoryTree(parentId, productCategoryIds = null) {
  
   let filteredCategories = [];
   for (const category of categories) {
-    // If we have product category IDs, only include categories that have products
     if (productCategoryIds) {
       if (productCategoryIds.includes(category._id.toString())) {
         category.subCategories = await getCategoryTree(category._id, productCategoryIds);
         filteredCategories.push(category);
       } else {
-        // Check if any subcategories have products
         const children = await getCategoryTree(category._id, productCategoryIds);
         if (children.length > 0) {
           category.subCategories = children;
@@ -25,7 +23,6 @@ async function getCategoryTree(parentId, productCategoryIds = null) {
         }
       }
     } else {
-      // If no product filtering, include all categories
       category.subCategories = await getCategoryTree(category._id);
       filteredCategories.push(category);
     }
@@ -33,12 +30,25 @@ async function getCategoryTree(parentId, productCategoryIds = null) {
  
   return filteredCategories;
 }
+
+// Helper function to get all subcategory IDs for a category
+async function getAllSubCategoryIds(categoryId) {
+  const subCategories = await ecom_category_info.find({ parentid: categoryId }).select('_id').lean();
+  let allIds = [categoryId.toString()];
+  
+  for (const subCat of subCategories) {
+    const childIds = await getAllSubCategoryIds(subCat._id);
+    allIds = [...allIds, ...childIds];
+  }
+  
+  return allIds;
+}
  
 export async function GET(request, { params }) {
   try {
     await dbConnect();
  
-    const { categoryslug, brandslug } = await params; // Corrected parameter name
+    const { categoryslug, brandslug } = await params;
     console.log("Fetching data for:", categoryslug, brandslug);
    
     // Fetch category
@@ -48,43 +58,41 @@ export async function GET(request, { params }) {
     }
    
     // Fetch brand
-    const brand = await Brand.findOne({ brand_slug: brandslug }); // Use slug, not brandslug
+    const brand = await Brand.findOne({ brand_slug: brandslug });
     if (!brand) {
       return Response.json({ error: "Brand not found" }, { status: 404 });
     }
+
+    // Get ALL category IDs in the current category tree
+    const allCategoryIdsInTree = await getAllSubCategoryIds(category._id);
+    console.log("Category tree IDs:", allCategoryIdsInTree);
  
-    // First get all products for this brand to determine which categories have products
-    const allBrandProducts = await Product.find({
-      brand: brand._id,
+    // Get products ONLY from the current category tree
+    const products = await Product.find({
+      brand: brand._id.toString(),
+      $or: [
+        { category: { $in: allCategoryIdsInTree } },
+        { sub_category: { $in: allCategoryIdsInTree } }
+      ],
       status: "Active"
-    }).select('sub_category').lean();
+    }).populate('brand', 'brand_name brand_slug');
    
-    if (!allBrandProducts || allBrandProducts.length === 0) {
+    if (!products || products.length === 0) {
       return Response.json({
         category,
         brand,
         products: [],
         categories: [],
-        filters: []
+        filters: [],
+        allCategoryIds: allCategoryIdsInTree // Important for frontend filtering
       });
     }
    
-    // Get all subcategory IDs that have products for this brand
-    const productSubCategoryIds = [...new Set(
-      allBrandProducts.map(p => p.sub_category?.toString()).filter(Boolean)
-    )];
-   
-    // Get products for this brand and category (including subcategories)
-    const products = await Product.find({
-      brand: brand._id.toString(),
-      $or: [
-        { category: category._id.toString() },
-        { sub_category: { $in: productSubCategoryIds } }
-      ],
-      status: "Active"
-    }).populate('brand', 'brand_name brand_slug');
-   
     // Build category tree with only categories that have products
+    const productSubCategoryIds = [...new Set(
+      products.map(p => p.sub_category?.toString()).filter(Boolean)
+    )];
+    
     const categoryTree = await getCategoryTree(
       category._id,
       productSubCategoryIds
@@ -92,11 +100,25 @@ export async function GET(request, { params }) {
    
     // Extract product IDs for filtering
     const productIds = products.map(product => product._id);
-    const productFilters = await ProductFilter.find({ product_id: { $in: productIds } });
+    
+    // Get product filters ONLY for products in current category tree
+    const productFilters = await ProductFilter.find({ 
+      product_id: { $in: productIds } 
+    });
    
     // Extract unique filter IDs
     const filterIds = [...new Set(productFilters.map(pf => pf.filter_id))];
-    const filters = await Filter.find({ _id: { $in: filterIds } }).populate({
+    
+    // Get filters and ensure they're scoped to current category tree
+    const filters = await Filter.find({ 
+      _id: { $in: filterIds },
+      // Add category scoping to filters if your Filter model has category association
+      $or: [
+        { category: { $in: allCategoryIdsInTree } }, // If filters are category-specific
+        { category: { $exists: false } }, // Include global filters
+        { category: null } // Include filters without category association
+      ]
+    }).populate({
       path: 'filter_group',
       select: 'filtergroup_name -_id',
       model: FilterGroup
@@ -108,13 +130,17 @@ export async function GET(request, { params }) {
       filter_group_name: filter.filter_group?.filtergroup_name || 'No Group',
       filter_group: filter.filter_group?._id
     }));
+
+    console.log(`Found ${formattedFilters.length} filters for category tree`);
+    console.log("Filter groups:", [...new Set(formattedFilters.map(f => f.filter_group_name))]);
  
     return Response.json({
       category,
       brand,
       products,
       categories: categoryTree,
-      filters: formattedFilters
+      filters: formattedFilters,
+      allCategoryIds: allCategoryIdsInTree // Crucial for frontend filtering
     });
   } catch (error) {
     console.error("Error in category-brand API:", error);
