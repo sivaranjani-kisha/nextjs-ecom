@@ -1877,7 +1877,7 @@ const handleupdatefilterchange = (filters) => {
 
 
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700">Warranty</label>
               <input
                 type="number"
@@ -1899,7 +1899,7 @@ const handleupdatefilterchange = (filters) => {
                 onChange={handleChange}
                 className="w-full border p-2 rounded mb-2"
               />
-            </div>
+            </div> */}
             <div>
                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
