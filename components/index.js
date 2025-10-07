@@ -4,6 +4,7 @@ import Image from "next/image";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { ToastContainer, toast } from 'react-toastify';
 import "../styles/slick-custom.css";
 import { motion, useAnimation, useInView } from "framer-motion";
 //import { ShoppingCartSimple, CaretDown } from "@phosphor-icons/react";
@@ -2152,7 +2153,7 @@ return (
                   </div>
               
                   
-
+                    <ToastContainer />
                  
                   <RecentlyViewedProducts /> 
             </div>
