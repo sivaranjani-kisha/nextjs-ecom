@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { FaShoppingCart } from "react-icons/fa";
+import { useWishlist } from '@/context/WishlistContext';
 import { CiCircleRemove } from "react-icons/ci";
 import Addtocart from "@/components/AddToCart";
 import Link from "next/link";
@@ -77,10 +78,12 @@ const SuccessModal = ({ show, message, onClose }) => (
 
 const WishlistPage = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const { isInWishlist, updateWishlist } = useWishlist();
 
   const fetchWishlist = async () => {
     try {
@@ -112,21 +115,27 @@ const WishlistPage = () => {
   const handleRemove = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/wishlist/delete", {
+      const res = await fetch("/api/wishlist", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+        // headers: {
+        //   "Content-Type": "application/json",
+        //   Authorization: `Bearer ${token}`,
+        // },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ productId: itemToDelete }),
       });
 
       const data = await res.json();
+      console.log(data);
 
       if (res.ok) {
         setWishlistItems((prev) =>
           prev.filter((item) => item.productId !== itemToDelete)
         );
+        updateWishlist(data.items, data.count);
         setShowConfirmModal(false);
         setItemToDelete(null);
         setShowSuccessModal(true);
