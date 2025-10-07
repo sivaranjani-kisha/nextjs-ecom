@@ -91,6 +91,7 @@ const WishlistPage = () => {
         },
       });
       const data = await res.json();
+      // console.log("wishlist data is :", data);
       setWishlistItems(data.items || []);
     } catch (err) {
       console.error("Error fetching wishlist:", err);
@@ -219,11 +220,17 @@ const WishlistPage = () => {
                 <td className="py-4 px-4 text-center font-semibold text-sm">
                   Rs. {item.price.toFixed(2)}
                 </td>
-                <td className="py-4 px-4 text-center text-green-600 font-semibold text-sm">
-                  {item.stockStatus}
-                </td>
+                {/* {console.log('Quantity:', item.quantity)} */}
+
+              <td className={`py-4 px-4 text-center font-semibold text-sm ${
+                Number(item.quantity) > 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {Number(item.quantity) > 0 ? 'In Stock' : 'Out of Stock'}
+              </td>
+
+
                 <td className="py-4 px-4 text-center">
-                  <Addtocart productId={item.productId} />
+                  <Addtocart stockQuantity={item.quantity}  special_price={item.special_price} productId={item.productId} className="w-full text-xs sm:text-sm py-1.5"/>
                 </td>
               </motion.tr>
             ))}
@@ -266,7 +273,7 @@ const WishlistPage = () => {
               </button>
               <div className="text-green-600 text-sm font-medium">{item.stockStatus}</div>
                   <div className="text-xs">
-                    <Addtocart productId={item.productId} />
+                    <Addtocart stockQuantity={item.quantity}  special_price={item.special_price} productId={item.productId} className="w-full text-xs sm:text-sm py-1.5"/>
                   </div>
                     
             </div>

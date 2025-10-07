@@ -28,6 +28,7 @@ export async function GET(req) {
         reviews: 50, // Same here
         tags: [product.brand, product.category],
         stockStatus: product.stock_status,
+        quantity: product.quantity || 0,
       };
     });
 
