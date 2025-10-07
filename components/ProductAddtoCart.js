@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useModal } from '@/context/ModalContext';
 import { useHeaderdetails } from '@/context/HeaderContext';
+import { ToastContainer, toast } from 'react-toastify';
 import { trackAddToCart } from "@/utils/nextjs-event-tracking.js";
 
 import { FaShoppingCart} from "react-icons/fa";
@@ -12,14 +13,14 @@ import { v4 as uuidv4 } from "uuid";
 
 const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts = [],extendedWarranty, selectedFrequentProducts = [], stockQuantity = 1,special_price }) => {
   const { openAuthModal } = useModal();
-  const { updateHeaderdetails, setIsLoggedIn, setUserData,setIsAdmin } = useHeaderdetails();
+  const { updateHeaderdetails, setIsLoggedIn, setUserData, setIsAdmin } = useHeaderdetails();
   const [isLoading, setIsLoading] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   // const [showAuthModal, setShowAuthModal] = useState(false);
   // const [authError, setAuthError] = useState('');
   const [cartSuccess, setCartSuccess] = useState(false);
   const isOutOfStock = stockQuantity <= 0;
-    const isprice = special_price <= 0;
+  const isprice = special_price <= 0;
   const { cartCount, updateCartCount } = useCart();
   const handleAddToCart = async () => {
      if (isOutOfStock) return;
@@ -70,14 +71,13 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
           */
 
         if (token) {
-      const response = await fetch("/api/auth/check", {
-        method: "GET",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      isLoggedIn = data.loggedIn;
-      userData = data.user;
-
+          const response = await fetch("/api/auth/check", {
+            method: "GET",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          });
+          const data = await response.json();
+          isLoggedIn = data.loggedIn;
+          userData = data.user;
           updateHeaderdetails({ user: data.user });
           setIsLoggedIn(true);
           const role = data.role;
@@ -88,6 +88,7 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
 
         // ✅ If not logged in → use guestCartId
         let guestCartId = null;
+
         if (!isLoggedIn) {
           guestCartId = localStorage.getItem("guestCartId") || uuidv4();
           localStorage.setItem("guestCartId", guestCartId);
@@ -100,6 +101,7 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
         }
         
         const productData = await proresponse.json();
+        const original_prod_quantity = productData.data.quantity;
   
         // Add main product to cart
         /*
@@ -115,25 +117,36 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
         }); */
 
         // ✅ Add main product to cart
-      const cartResponse = await fetch("/api/cart", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(isLoggedIn && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
-          productId,
-          quantity,
-          selectedWarranty: warranty,
-          selectedExtendedWarranty: extendedWarranty,
-          ...(guestCartId && { guestCartId }), // ✅ include only if guest
-        }),
-      });
-  
+        const cartResponse = await fetch("/api/cart", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(isLoggedIn && { Authorization: `Bearer ${token}` }),
+          },
+          body: JSON.stringify({
+            productId,
+            original_prod_quantity,
+            quantity,
+            selectedWarranty: warranty,
+            selectedExtendedWarranty: extendedWarranty,
+            ...(guestCartId && { guestCartId }), // ✅ include only if guest
+          }),
+        });
+
+        if(cartResponse.ok) {
+          toast.success("Product added!");
+        }
+
+        if(cartResponse.status == 409) {
+          toast.error("Stock limit exceeded!");
+          return;
+        }
+    
         if (!cartResponse.ok) {
           throw new Error('Failed to add to cart');
         }
-  
+        
+        // console.log(cartResponse);
         // Add additional products if any
         /*
         if (additionalProducts.length > 0) {
@@ -154,56 +167,55 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
           */
 
         if (additionalProducts.length > 0) {
-      await Promise.all(
-        additionalProducts.map(async (additionalId) => {
-          const res = await fetch("/api/cart", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(isLoggedIn && { Authorization: `Bearer ${token}` }),
-            },
-            body: JSON.stringify({
-              productId: additionalId,
-              quantity: 1,
-              ...(guestCartId && { guestCartId }),
-            }),
-          });
-          if (!res.ok) throw new Error("Failed to add additional product");
-        })
-      );
-    }
+          await Promise.all(
+            additionalProducts.map(async (additionalId) => {
+              const res = await fetch("/api/cart", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...(isLoggedIn && { Authorization: `Bearer ${token}` }),
+                },
+                body: JSON.stringify({
+                  productId: additionalId,
+                  quantity: 1,
+                  ...(guestCartId && { guestCartId }),
+                }),
+              });
+              if (!res.ok) throw new Error("Failed to add additional product");
+            })
+          );
+        }
   
         const responseData = await cartResponse.json();
         updateCartCount(responseData.cart.totalItems + additionalProducts.length);
 
-         // ✅ Track events (skip if guest)
-    if (isLoggedIn) {
-      trackAddToCart({
-        user: {
-          name: userData?.name,
-          phone: userData?.phone,
-          email: userData?.email,
-        },
-        product: {
-          id: productId,
-          name: responseData.cart.items[0].name,
-          price: responseData.cart.items[0].price,
-          link: `${apiUrl}/product/${productData.data.slug}`,
-          image: `${apiUrl}/uploads/products/${responseData.cart.items[0].image}`,
-          qty: responseData.cart.items[0].quantity,
-          currency: "INR",
-        },
-      });
-    }
+        // ✅ Track events (skip if guest)
+        if (isLoggedIn) {
+          trackAddToCart({
+            user: {
+              name: userData?.name,
+              phone: userData?.phone,
+              email: userData?.email,
+            },
+            product: {
+              id: productId,
+              name: responseData.cart.items[0].name,
+              price: responseData.cart.items[0].price,
+              link: `${apiUrl}/product/${productData.data.slug}`,
+              image: `${apiUrl}/uploads/products/${responseData.cart.items[0].image}`,
+              qty: responseData.cart.items[0].quantity,
+              currency: "INR",
+            },
+          });
+        }
         
-
         // ✅ Store selected product IDs for persistence
-if (selectedFrequentProducts?.length > 0) {
-  const ids = selectedFrequentProducts.map(p => p._id);
-  localStorage.setItem("selectedFrequentProductIds", JSON.stringify(ids));
-} else {
-  localStorage.removeItem("selectedFrequentProductIds");
-}
+        if (selectedFrequentProducts?.length > 0) {
+          const ids = selectedFrequentProducts.map(p => p._id);
+          localStorage.setItem("selectedFrequentProductIds", JSON.stringify(ids));
+        } else {
+          localStorage.removeItem("selectedFrequentProductIds");
+        }
   
         setCartSuccess(true);
       } catch (error) {

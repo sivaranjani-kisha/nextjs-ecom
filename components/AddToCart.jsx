@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useModal } from '@/context/ModalContext';
+import { ToastContainer, toast } from 'react-toastify';
 import { useHeaderdetails } from '@/context/HeaderContext';
 import { trackAddToCart } from "@/utils/nextjs-event-tracking.js";
 
@@ -93,9 +94,10 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
           */
 
          // ✅ Get product data
-    const proresponse = await fetch(`/api/product/get/${productId}`);
+    const proresponse             = await fetch(`/api/product/get/${productId}`);
     if (!proresponse.ok) throw new Error(`HTTP error! status: ${proresponse.status}`);
-    const productData = await proresponse.json();
+    const productData             = await proresponse.json();
+    const original_prod_quantity  = productData.data.quantity;
 
     // ✅ Add main product to cart
     const cartResponse = await fetch("/api/cart", {
@@ -106,12 +108,22 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
       },
       body: JSON.stringify({
         productId,
+        original_prod_quantity,
         quantity,
         selectedWarranty: warranty,
         selectedExtendedWarranty: extendedWarranty,
         ...(guestCartId && { guestCartId }), // ✅ include only if guest
       }),
     });
+
+    if(cartResponse.ok) {
+      toast.success("Product added!");
+    }
+    
+    if(cartResponse.status == 409) {
+      toast.error("Stock limit exceeded!");
+      return;
+    }
 
     if (!cartResponse.ok) throw new Error("Failed to add to cart");
 

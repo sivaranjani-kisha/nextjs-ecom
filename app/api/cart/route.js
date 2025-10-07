@@ -60,6 +60,7 @@ export async function POST(req) {
 
     const {
       productId,
+      original_prod_quantity,
       quantity = 1,
       selectedWarranty = 0,
       selectedExtendedWarranty = 0,
@@ -89,8 +90,17 @@ export async function POST(req) {
       (item) => item.productId.toString() === productId
     );
 
+    // const original_prod_quantity = product.data.quantity;
+
     if (existingItemIndex >= 0) {
       cart.items[existingItemIndex].quantity += quantity;
+
+      if(original_prod_quantity && original_prod_quantity < cart.items[existingItemIndex].quantity ) {
+        return NextResponse.json(
+          { error: "Requested quantity exceeds available stock."},
+          { status: 409 }
+        );
+      }
       cart.items[existingItemIndex].warranty = selectedWarranty;
       cart.items[existingItemIndex].extendedWarranty = selectedExtendedWarranty;
     } else {
