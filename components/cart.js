@@ -900,36 +900,38 @@ const validateCoupon = async () => {
           <h3 className="text-gray-500 text-sm font-semibold cursor-pointer">Cart Total</h3>
                 
                 {/* Coupon Section */}
-                 <div className="mt-4">
-                  {appliedCoupon ? (
-                    <div className="bg-white-200 p-2 mt-0  rounded-lg flex justify-between text-red-500 text-large  cursor-pointer">
-                      <span>YOU SAVED ₹{calculateTotal().toFixed(2)}</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowCouponModal(true)}
-                      className="w-full py-2 rounded-lg text-sm font-semibold cursor-pointer transition-colors"
-                      style={{
-                        border: "1px solid #0069c6",
-                        color: "#0069c6",
-                        backgroundColor: "transparent",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#0069c6"; // light blue
-                        e.currentTarget.style.color = "white"; // optional if you want white text on hover
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.color = "#0069c6";
-                      }}
-                    >
-                      Apply Coupon
-                    </button>
-                  )}
-                  {couponError && (
-                    <p className="text-red-500 text-sm mb-2">{couponError}</p>
-                  )}
-                </div> 
+                <div className="mt-4">
+            {appliedCoupon ? (
+              <div className="bg-green-50 p-3 rounded-lg mb-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-green-700">
+                    Coupon: {appliedCoupon.offer_code}
+                  </span>
+                  <button 
+                    onClick={removeCoupon}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ✖
+                  </button>
+                </div>
+                <p className="text-sm text-green-600 mt-1">
+                  {appliedCoupon.offer_type === "percentage" 
+                    ? `${appliedCoupon.percentage}% off` 
+                    : `₹${appliedCoupon.fixed_price} off`}
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowCouponModal(true)}
+                className="w-full py-2 text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-50 mb-4"
+              >
+                Apply Coupon
+              </button>
+            )}
+            {couponError && (
+              <p className="text-red-500 text-sm mb-2">{couponError}</p>
+            )}
+          </div>
                 
                 <div className=" p-4 rounded-lg space-y-3">
                   <div className="flex justify-between text-gray-600 text-gray-500 text-sm font-semibold cursor-pointer ">
