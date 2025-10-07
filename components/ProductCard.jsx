@@ -77,17 +77,10 @@ const AddToWishlistButton = ({ productId, isOutOfStock = false }) => {
   };
 
   // If product is out of stock, show disabled state
-  if (isOutOfStock) {
-    return (
-      <button 
-        className="p-1 rounded-full bg-gray-100 shadow text-gray-400 cursor-not-allowed"
-        title="Cannot add out of stock items to wishlist"
-        disabled
-      >
-        <Ban size={18} />
-      </button>
-    );
+ if (isOutOfStock) {
+    return null;
   }
+
 
   return (
     <>
