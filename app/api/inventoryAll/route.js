@@ -79,7 +79,8 @@ export async function POST(req) {
                   { $set: updateFields }
                   
               );
-        }else{
+        }
+        // else{
           if(item.Status == 'Yes'){
             const existingProductall = await Product_all.findOne({
                 item_code: item.name,
@@ -94,6 +95,7 @@ export async function POST(req) {
                             price: parseFloat(item.MRP),
                             special_price: parseFloat(item.SellingPrice),
                             quantity: parseFloat(item.stock),
+                            brand : item.brand
                             // movement: item.movement,
                         },
                     }
@@ -119,7 +121,7 @@ export async function POST(req) {
             }
           }
 
-        }
+        // }
     }
 
 
