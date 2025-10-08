@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { FaShoppingCart } from "react-icons/fa";
 import { useWishlist } from '@/context/WishlistContext';
+import { ToastContainer, toast } from 'react-toastify';
 import { CiCircleRemove } from "react-icons/ci";
 import Addtocart from "@/components/AddToCart";
 import Link from "next/link";
@@ -77,13 +78,13 @@ const SuccessModal = ({ show, message, onClose }) => (
 );
 
 const WishlistPage = () => {
+  const { wishlistItems: contextWishlist, updateWishlist } = useWishlist();
   const [wishlistItems, setWishlistItems] = useState([]);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const { isInWishlist, updateWishlist } = useWishlist();
 
   const fetchWishlist = async () => {
     try {
@@ -104,8 +105,8 @@ const WishlistPage = () => {
   };
 
   useEffect(() => {
-    fetchWishlist();
-  }, []);
+    fetchWishlist(contextWishlist);
+  }, [contextWishlist]);
 
   const confirmRemove = (productId) => {
     setItemToDelete(productId);
@@ -292,8 +293,9 @@ const WishlistPage = () => {
     </>
   )}
 </div>
-
+<ToastContainer />
     </div>
+    
   );
 };
 

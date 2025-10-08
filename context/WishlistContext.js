@@ -7,23 +7,46 @@ export const WishlistProvider = ({ children }) => {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [wishlistItems, setWishlistItems] = useState([]);
 
+  const fetchWishlist = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const response = await fetch('/api/wishlist', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        setWishlistItems(data.items || []);
+        setWishlistCount(data.count || 0);
+      } catch (error) {
+        console.error('Failed to fetch wishlist:', error);
+      }
+    }
+  };
+
   useEffect(() => {
-    const fetchWishlist = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await fetch('/api/wishlist', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await response.json();
-          setWishlistItems(data.items || []);
-          setWishlistCount(data.count || 0);
-        } catch (error) {
-          console.error('Failed to fetch wishlist:', error);
+    fetchWishlist();
+
+    const handleStorageChange = (event) => {
+      if (event.key === 'wishlist_updated') {
+        const cached = localStorage.getItem('wishlist_data');
+        if (cached) {
+          const { items, count } = JSON.parse(cached);
+          setWishlistItems(items);
+          setWishlistCount(count);
         }
+        fetchWishlist();
       }
     };
-    fetchWishlist();
+
+    const handleFocus = () => fetchWishlist();
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const isInWishlist = (productId) => {
@@ -39,6 +62,9 @@ export const WishlistProvider = ({ children }) => {
   const updateWishlist = (items, count) => {
     setWishlistItems(items);
     setWishlistCount(count);
+    
+    localStorage.setItem('wishlist_data', JSON.stringify({ items, count }));
+    localStorage.setItem('wishlist_updated', Date.now());
   };
 
   return (
