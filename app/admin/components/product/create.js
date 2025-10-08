@@ -101,6 +101,7 @@ export default function AddProductPage({ mode = "add", productData = null, produ
   const [selectedCategory, setSelectedCategory] = useState(""); 
   const [allproducts, setAllProducts] = useState([]);
   const router = useRouter();
+  const [selectedParentCategory, setSelectedParentCategory] = useState("");
 
 
   // Extended warranty 
@@ -747,9 +748,28 @@ setProduct(prev => ({
  
   const handleCategoryChange = (category) => {
   setSelectedCategory(category._id);
+  
+  // Find the parent category
+  const findParentCategory = (categories, childId) => {
+    for (const cat of categories) {
+      if (cat.children && cat.children.some(child => child._id === childId)) {
+        return cat._id;
+      }
+      if (cat.children) {
+        const found = findParentCategory(cat.children, childId);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const parentCategoryId = findParentCategory(categories, category._id);
+  setSelectedParentCategory(parentCategoryId);
+
   setProduct((prev) => ({
     ...prev,
-    sub_category: category._id, // set subcategory here
+    sub_category: category._id,
+    category: parentCategoryId, // Set the parent category
   }));
 };
 

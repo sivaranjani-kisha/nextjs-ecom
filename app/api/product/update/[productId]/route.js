@@ -126,7 +126,8 @@ const updatedProduct = await Product.findByIdAndUpdate(
   productId,
   {
     ...productData,
-    category: productData.category,
+     category: productData.category, // Parent category
+  sub_category: productData.sub_category, // Subcategory
     images: finalImages,
     overview_image: savedOverviewImages.length > 0 
       ? savedOverviewImages 
