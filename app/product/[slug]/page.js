@@ -26,7 +26,7 @@ export async function generateMetadata({ params  }) {
   if (!response.ok) {
     console.error("Metadata fetch failed:", response.status);
     // Redirect to home page if product not found (404 or other error)
-    redirect("/"); // ✅ this immediately redirects to home page
+    redirect("/404"); // ✅ this immediately redirects to home page
   }
 
 
