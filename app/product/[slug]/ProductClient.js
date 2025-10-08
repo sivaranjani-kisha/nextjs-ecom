@@ -441,6 +441,8 @@ const resolveImagePath = (image) => {
   const imgRef = useRef(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const zoomContainerRef = useRef(null);
+  const [errorMessage, setErrorMessage] = useState("");     // <-- declare this
+  const [showGoHome, setShowGoHome] = useState(false);
   const [showZoomLens, setShowZoomLens] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
    const zoomLensRef = useRef(null);
@@ -461,9 +463,16 @@ const resolveImagePath = (image) => {
         setLoading(true);
         const response = await fetch(`/api/product/${slug}`);
         
+        // if (!response.ok) {
+        //   throw new Error(`HTTP error! status: ${response.status}`);
+        // }
+
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+    // Instead of throwing an error, handle it gracefully
+    setErrorMessage("Content not loading. Please try again later.");
+    setShowGoHome(true);
+    return;
+  }
         
         const data = await response.json();
         // console.log(data);
@@ -670,6 +679,8 @@ const fetchBrand = async () => {
     );
   }
 
+  
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -712,6 +723,21 @@ const fetchBrand = async () => {
           <span className="text-blue-600 font-semibold">Shop Details</span>
         </div>
       </div> */}
+
+      {errorMessage && (
+  <div className="text-center mt-10">
+    <p className="text-red-600 text-lg mb-3">{errorMessage}</p>
+    {showGoHome && (
+      <a
+        href="/"
+        className="inline-block px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+      >
+        Go to Home Page
+      </a>
+    )}
+  </div>
+)}
+
 
       <div className="container mx-auto px-4 py-8">
          {/* Breadcrumb - moved outside the grid but inside container */}
@@ -989,10 +1015,10 @@ const fetchBrand = async () => {
                     </div> */}
 
                     {product.quantity > 0 && (
-  <div className="flex-grow mt-2">
-    <ProductCard productId={product._id} />
-  </div>
-)}
+                    <div className="flex-grow mt-2">
+                      <ProductCard productId={product._id} />
+                    </div>
+                  )}
 
                   </div>
 
