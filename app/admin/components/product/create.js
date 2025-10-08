@@ -1073,17 +1073,23 @@ const handleupdatefilterchange = (filters) => {
     ),
   }));
 };
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
   e.preventDefault();
   try {
     const formData = new FormData();
-  const existingImages = product.images.filter(
-    (img) => typeof img === "string" && !img.startsWith("blob:")
-  );
+    const existingImages = product.images.filter(
+      (img) => typeof img === "string" && !img.startsWith("blob:")
+    );
+
+    // Filter out empty warranty entries
+    const validWarranties = warranties.filter(
+      warranty => warranty.year !== "" && warranty.amount !== "" && warranty.year != null && warranty.amount != null
+    );
+
     // clean product (⚠️ do NOT send images)
     const cleanedProduct = {
       ...product,
-      extend_warranty: warranties, // Add this line
+      extend_warranty: validWarranties.length > 0 ? validWarranties : [], // Only send valid warranties
       filters: (product.filters || []).map(f => f.value),
       related_products: product.related_products || [],
       category: product.category || "",
@@ -1093,8 +1099,6 @@ const handleupdatefilterchange = (filters) => {
 
     console.log("Submitting product with warranties:", cleanedProduct.extend_warranty);
 
-    // console.log(product);
-    // return false;
     // ✅ Upload product images
     (product.files || []).forEach(file => {
       if (file) formData.append("images", file);
@@ -1116,11 +1120,12 @@ const handleupdatefilterchange = (filters) => {
       return { ...variant, images: [] }; // backend fills real filenames
     });
 
-   const finalProductData = {
-  ...cleanedProduct,
-  images: existingImages,  // old images
-  extend_warranty: warranties,
-};
+    const finalProductData = {
+      ...cleanedProduct,
+      images: existingImages,  // old images
+      extend_warranty: validWarranties, // Use filtered warranties
+    };
+
     formData.append("product", JSON.stringify(finalProductData));
     formData.append("variant", JSON.stringify(variantsWithImages));
     formData.append("highlights", JSON.stringify(cleanedProduct.product_highlights));
