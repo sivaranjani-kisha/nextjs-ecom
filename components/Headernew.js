@@ -31,6 +31,68 @@ const Header = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { wishlistCount } = useWishlist();
     const { cartCount, updateCartCount } = useCart();
+
+    // ADD: Cross-tab cart sync helpers
+    const CART_COUNT_KEY = 'cartCount';
+
+    // ADD: track latest cartCount for safe comparisons in effects/handlers
+    const cartCountRef = useRef(cartCount);
+    useEffect(() => {
+      cartCountRef.current = cartCount;
+    }, [cartCount]);
+
+    const setCartCountSynced = useCallback((count) => {
+      // Update context + propagate to other tabs
+      updateCartCount(count);
+      try {
+        localStorage.setItem(CART_COUNT_KEY, String(Number.isFinite(count) ? count : 0));
+      } catch { /* ignore quota */ }
+    }, [updateCartCount]);
+
+    // Initialize from localStorage on mount (so tabs align immediately)
+    useEffect(() => {
+      try {
+        const raw = localStorage.getItem(CART_COUNT_KEY);
+        if (raw != null) {
+          const val = parseInt(raw, 10);
+          if (!Number.isNaN(val)) {
+            // only update if changed to avoid loops
+            if (val !== (typeof cartCount === 'number' ? cartCount : 0)) {
+              updateCartCount(val);
+            }
+          }
+        }
+      } catch { /* ignore */ }
+      // run only once
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Persist to localStorage whenever cartCount changes in this tab
+    useEffect(() => {
+      try {
+        const next = String(Number.isFinite(cartCount) ? cartCount : 0);
+        // avoid redundant writes
+        if (localStorage.getItem(CART_COUNT_KEY) !== next) {
+          localStorage.setItem(CART_COUNT_KEY, next);
+        }
+      } catch { /* ignore quota */ }
+    }, [cartCount]);
+
+    // Listen to other tabs' updates
+    useEffect(() => {
+      const onStorage = (e) => {
+        if (e.key === CART_COUNT_KEY) {
+          const next = parseInt(e.newValue || '0', 10);
+          // update only if valid and different to avoid re-render loops
+          if (!Number.isNaN(next) && next !== cartCountRef.current) {
+            updateCartCount(next);
+          }
+        }
+      };
+      window.addEventListener('storage', onStorage);
+      return () => window.removeEventListener('storage', onStorage);
+    }, [updateCartCount]);
+
     const handleCategoryClick = useCallback((categorySlug, categoryName) => {
         const path = `/category/${categorySlug}`;
         setSelectedCategory(categoryName);
@@ -640,7 +702,8 @@ const Header = () => {
             });
             if (cartResponse.ok) {
               const cartData = await cartResponse.json();
-              updateCartCount(cartData.count);
+              // CHANGE: broadcast count to all tabs
+              setCartCountSynced(cartData.count);
             }
 
             // 👇 Optional: clear guestId after merge
@@ -666,8 +729,8 @@ const Header = () => {
         localStorage.removeItem('token');
         setIsLoggedIn(false);
         setUserData(null);
-        updateCartCount(0); // Reset cart count on logout
-
+        // CHANGE: broadcast clear to all tabs
+        setCartCountSynced(0);
         location.reload();
     };
     useEffect(() => {
@@ -869,9 +932,11 @@ const Header = () => {
 
         // Ensure dropdown doesn't go too far left
         if (left < 8) left = 8;
-        if (left !== dropdownLeft) setDropdownLeft(left);
-        // only run when hoveredCategory changes to avoid update loops
-    }, [hoveredCategory, dropdownCenterX]);
+
+        // Only update if it actually changes (prevents render thrash)
+        if (Math.round(left) !== Math.round(dropdownLeft)) setDropdownLeft(left);
+        // include dropdownLeft so we compare against current value
+    }, [hoveredCategory, dropdownCenterX, dropdownLeft]);
     // cleanup hide timeout on unmount
     useEffect(() => {
         return () => {
