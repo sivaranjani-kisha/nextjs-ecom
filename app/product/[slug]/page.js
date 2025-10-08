@@ -1,6 +1,8 @@
 
 
 import ProductClient from "./ProductClient"; 
+import { redirect } from "next/navigation"; // ✅ add this
+
 //import { useParams } from "next/navigation";
 
 export async function generateMetadata({ params  }) {
@@ -14,12 +16,21 @@ export async function generateMetadata({ params  }) {
     cache: "no-store",
   });
 
+  // if (!response.ok) {
+  //   console.error("Metadata fetch failed:", response.status);
+  //   return {
+  //     title: "Product not found",
+  //   };
+  // }
+
   if (!response.ok) {
     console.error("Metadata fetch failed:", response.status);
-    return {
-      title: "Product not found",
-    };
+    // Redirect to home page if product not found (404 or other error)
+    redirect("/"); // ✅ this immediately redirects to home page
   }
+
+
+  
 
   const data = await response.json();
   console.log("Fetched product for metadata:", `${baseUrl}/product/${slug}`);
