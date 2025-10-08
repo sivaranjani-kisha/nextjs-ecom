@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Logout from "@/components/Logout";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from '@/context/CartContext';
+import { sortCategories } from '../utils/categoryUtils';
 
 export default function Header() {
   const scrollRef = useRef(null);
@@ -76,7 +77,8 @@ export default function Header() {
       try {
         const response = await fetch('/api/categories/get');
         const data = await response.json();
-        const parentCategories = data.filter(category => category.parentid === "none" && category.status === "Active");
+        const sortedData = sortCategories(data);
+        const parentCategories = sortedData.filter(category => category.parentid === "none" && category.status === "Active");
         setCategories(parentCategories);
         if (typeof window !== 'undefined') {
           localStorage.setItem('headerCategories', JSON.stringify(parentCategories));

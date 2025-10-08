@@ -34,12 +34,19 @@ const Header = () => {
 
     // ADD: Cross-tab cart sync helpers
     const CART_COUNT_KEY = 'cartCount';
+    // ADD: new key for cart data list
+    const CART_DATA_KEY = 'cartData';
 
     // ADD: track latest cartCount for safe comparisons in effects/handlers
     const cartCountRef = useRef(cartCount);
     useEffect(() => {
       cartCountRef.current = cartCount;
     }, [cartCount]);
+
+    // ADD: local cartData + ref
+    const [cartData, setCartData] = useState(null);
+    const cartDataRef = useRef(null);
+    useEffect(() => { cartDataRef.current = cartData; }, [cartData]);
 
     const setCartCountSynced = useCallback((count) => {
       // Update context + propagate to other tabs
@@ -49,6 +56,64 @@ const Header = () => {
       } catch { /* ignore quota */ }
     }, [updateCartCount]);
 
+    // ADD: helpers for cartData storage + compare
+    const safeParse = (s) => { try { return JSON.parse(s); } catch { return null; } };
+    const isSameCartObj = (a, b) => {
+      try { return JSON.stringify(a) === JSON.stringify(b); } catch { return false; }
+    };
+    const persistCartData = (data) => {
+      try {
+        const nextStr = JSON.stringify(data ?? null);
+        const prevStr = localStorage.getItem(CART_DATA_KEY);
+        if (nextStr !== prevStr) {
+          localStorage.setItem(CART_DATA_KEY, nextStr);
+        }
+      } catch { /* ignore */ }
+    };
+    const ensureGuestCartId = () => {
+      try {
+        let id = localStorage.getItem('guestCartId');
+        if (!id) {
+          id = (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
+          localStorage.setItem('guestCartId', id);
+        }
+        return id;
+      } catch {
+        return 'guest-' + Date.now();
+      }
+    };
+
+    // ADD: fetch latest cart from API (auth or guest), sync cartData and cartCount
+    const fetchCartLatest = useCallback(async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token
+          ? { Authorization: `Bearer ${token}` }
+          : { guestCartId: ensureGuestCartId() };
+
+        const res = await fetch('/api/cart', { method: 'GET', headers });
+        if (!res.ok) {
+          // if token invalid, do not overwrite local cartData here
+          return;
+        }
+        const payload = await res.json();
+        const latestCart = payload?.cart || null;
+
+        // Sync cartCount if server value differs
+        if (typeof latestCart?.totalItems === 'number' && latestCart.totalItems !== (cartCountRef.current ?? 0)) {
+          setCartCountSynced(latestCart.totalItems);
+        }
+
+        // Only update state if changed
+        if (!isSameCartObj(latestCart, cartDataRef.current)) {
+          setCartData(latestCart);
+          persistCartData(latestCart);
+        }
+      } catch (e) {
+        // ignore fetch errors
+      }
+    }, [setCartCountSynced]);
+
     // Initialize from localStorage on mount (so tabs align immediately)
     useEffect(() => {
       try {
@@ -56,7 +121,6 @@ const Header = () => {
         if (raw != null) {
           const val = parseInt(raw, 10);
           if (!Number.isNaN(val)) {
-            // only update if changed to avoid loops
             if (val !== (typeof cartCount === 'number' ? cartCount : 0)) {
               updateCartCount(val);
             }
@@ -67,7 +131,22 @@ const Header = () => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Persist to localStorage whenever cartCount changes in this tab
+    // ADD: init cartData from storage; if missing but count > 0 fetch latest
+    useEffect(() => {
+      try {
+        const raw = localStorage.getItem(CART_DATA_KEY);
+        const cached = safeParse(raw);
+        if (cached && !isSameCartObj(cached, cartDataRef.current)) {
+          setCartData(cached);
+        } else if (!cached && (cartCountRef.current ?? 0) > 0) {
+          // no cached cart but we have items -> fetch once
+          fetchCartLatest();
+        }
+      } catch { /* ignore */ }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Persist to localStorage whenever cartCount changes in this tab (existing)
     useEffect(() => {
       try {
         const next = String(Number.isFinite(cartCount) ? cartCount : 0);
@@ -78,14 +157,31 @@ const Header = () => {
       } catch { /* ignore quota */ }
     }, [cartCount]);
 
+    // ADD: whenever cartCount changes, refresh latest cart (covers add/remove/order)
+    useEffect(() => {
+      fetchCartLatest();
+    }, [cartCount, fetchCartLatest]);
+
+    // ADD: persist cartData on change (avoid redundant writes)
+    useEffect(() => {
+      if (cartData !== undefined) {
+        persistCartData(cartData);
+      }
+    }, [cartData]);
+
     // Listen to other tabs' updates
     useEffect(() => {
       const onStorage = (e) => {
         if (e.key === CART_COUNT_KEY) {
           const next = parseInt(e.newValue || '0', 10);
-          // update only if valid and different to avoid re-render loops
           if (!Number.isNaN(next) && next !== cartCountRef.current) {
             updateCartCount(next);
+          }
+        }
+        if (e.key === CART_DATA_KEY) {
+          const nextCart = e.newValue ? safeParse(e.newValue) : null;
+          if (!isSameCartObj(nextCart, cartDataRef.current)) {
+            setCartData(nextCart);
           }
         }
       };
@@ -701,14 +797,17 @@ const Header = () => {
               headers: { Authorization: `Bearer ${data.token}` },
             });
             if (cartResponse.ok) {
-              const cartData = await cartResponse.json();
+              const cartDataCount = await cartResponse.json();
               // CHANGE: broadcast count to all tabs
-              setCartCountSynced(cartData.count);
+              setCartCountSynced(cartDataCount.count);
             }
 
+            // ADD: fetch and broadcast latest cartData after login/merge
+            try { await fetchCartLatest(); } catch {}
+
             // 👇 Optional: clear guestId after merge
-                localStorage.removeItem("guestCartId");
-                location.reload();
+            localStorage.removeItem("guestCartId");
+            location.reload();
           } else {
             setShowAuthModal(true);
             setActiveTab("login");
@@ -731,6 +830,9 @@ const Header = () => {
         setUserData(null);
         // CHANGE: broadcast clear to all tabs
         setCartCountSynced(0);
+        // ADD: clear cartData everywhere
+        try { localStorage.removeItem(CART_DATA_KEY); } catch {}
+        setCartData(null);
         location.reload();
     };
     useEffect(() => {
