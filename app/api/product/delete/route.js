@@ -12,13 +12,10 @@ export async function POST(req) {
       return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(
-      productId,
-      { status: "Inactive" }, // 👈 Soft delete by updating status
-      { new: true }
-    );
+     // 🔥 Permanently delete the product
+    const deletedProduct = await Product.findByIdAndDelete(productId);
 
-    if (!updatedProduct) {
+    if (!deletedProduct) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
