@@ -14,7 +14,11 @@ export async function GET(request, context) {
   }
 
   try {
-    const product = await Product.findOne({ slug });
+    // const product = await Product.findOne({ slug });
+    const product = await Product.findOne({ 
+      slug, 
+      status: "Active" // ✅ Only return active products
+    })
 
     if (!product) {
       return new Response(JSON.stringify({ message: "Product not found" }), {
