@@ -21,7 +21,7 @@ export async function GET(req) {
     }
 
     // 🔎 Build query: same category + same brand
-    const query = { category: categoryId, brand: brandId };
+    const query = { category: categoryId, brand: brandId, stock_status: "In Stock", };
     if (excludeId) query._id = { $ne: excludeId }; 
 
     const relatedProducts = await Product.find(query)
