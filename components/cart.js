@@ -199,102 +199,97 @@ export default function CartComponent() {
   const [couponError, setCouponError] = useState("");
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
+  // Sync helpers and storage listener
+  const isSameCart = (a, b) => {
+    try { return JSON.stringify(a) === JSON.stringify(b); } catch { return false; }
+  };
+  const saveCartState = (cart) => {
+    try {
+      localStorage.setItem('cartData', JSON.stringify(cart));
+      if (typeof cart?.totalItems === 'number') {
+        localStorage.setItem('cartCount', String(cart.totalItems));
+      }
+    } catch {}
+  };
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'cartData') {
+        const next = e.newValue ? JSON.parse(e.newValue) : null;
+        // Only update state; do not write back to localStorage here to avoid loops
+        if (!isSameCart(next, cartData)) {
+          setCartData(next);
+          updateCartCount(next?.totalItems ?? 0);
+        }
+      }
+      if (e.key === 'appliedCoupon') {
+        const nextCoupon = e.newValue ? JSON.parse(e.newValue) : null;
+        setAppliedCoupon(nextCoupon);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [cartData, updateCartCount]);
+
   useEffect(() => {
     const fetchCartData = async () => {
       try {
         const token = localStorage.getItem('token');
         let response = '';
-        //let isLoggedIn = false;
         
-       
-        /*
-        
-        if (!token) {
-          console.log("🔑 Token from localStorage:");
-          return;
-        }
-
-        const response = await fetch('/api/cart', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          method: "GET"
-        });
-
-        */
-        
-
-        
-
         if(token)
         {
-
-         
-
-        response = await fetch('/api/cart', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          method: "GET"
-        });
-
-         }
-         else
-         {
-          // console.log("🔑 Token from localStorage test:");
-          const guestCartId = localStorage.getItem("guestCartId") || uuidv4();
-          //localStorage.setItem("guestCartId", guestCartId);
-
-          //console.log("🔑 Token from localStorage test:", guestCartId);
-
           response = await fetch('/api/cart', {
-          headers: {
-            'guestCartId': guestCartId
-          },
-          method: "GET"
-           });
-
-         }
-
-        //const datares = await response.json();
-
-        
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            method: "GET"
+          });
+        }
+        else
+        {
+          const guestCartId = localStorage.getItem("guestCartId") || uuidv4();
+          response = await fetch('/api/cart', {
+            headers: {
+              'guestCartId': guestCartId
+            },
+            method: "GET"
+          });
+        }
 
         if (!response.ok) {
-           const datares = await response.json();
+          const datares = await response.json();
           if (
             datares.error === "Token has expired" ||
             datares.error === "Invalid token" ||
             datares.error === "Authorization token required"
           ) {
             localStorage.removeItem("token");
-            window.location.reload(); // refresh page
+            window.location.reload();
             return;
           }
         }
 
         const data = await response.json();
-        // Initialize discount for each item to 0
         const itemsWithDiscount = data.cart.items.map(item => ({
           ...item,
           discount: 0
         }));
-        
-        //console.log("🔑 Token from localStorage testvk:", data);
-        setCartData({
-          ...data.cart,
-          items: itemsWithDiscount
-        });
 
-        // Check if there's a coupon in localStorage
+        // Persist and set state
+        const nextCart = { ...data.cart, items: itemsWithDiscount };
+        setCartData(nextCart);
+        saveCartState(nextCart);
+
+        // Apply saved coupon if present and persist
         const savedCoupon = localStorage.getItem('appliedCoupon');
         if (savedCoupon) {
           const coupon = JSON.parse(savedCoupon);
           setAppliedCoupon(coupon);
-          // Apply discount to items when loading
-          applyDiscountToItems(coupon, itemsWithDiscount);
+          const discountedItems = applyDiscountToItems(coupon, nextCart.items);
+          const discountedCart = { ...nextCart, items: discountedItems };
+          setCartData(discountedCart);
+          saveCartState(discountedCart);
         }
-
       } catch (err) {
         setError(err.message);
       } finally {
@@ -336,81 +331,72 @@ export default function CartComponent() {
     });
   };
 
-const updateQuantity = async (productId, newQuantity, original_quantity = null) => {
-  try {
-    if (original_quantity !== null && newQuantity > original_quantity) {
-      setErrorMessage("Requested quantity exceeds available stock.");
-      setShowErrorModal(true);
-      return;
+  const updateQuantity = async (productId, newQuantity, original_quantity = null) => {
+    try {
+      if (original_quantity !== null && newQuantity > original_quantity) {
+        setErrorMessage("Requested quantity exceeds available stock.");
+        setShowErrorModal(true);
+        return;
+      }
+      let response = '';
+      const token = localStorage.getItem('token');
+      if(token)
+      {
+        response = await fetch('/api/cart', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ productId, quantity: newQuantity })
+        });
+      }
+      else
+      {
+        const guestCartId = localStorage.getItem("guestCartId") || uuidv4();
+        response = await fetch('/api/cart', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'guestCartId': guestCartId
+          },
+          body: JSON.stringify({ productId, quantity: newQuantity })
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to update quantity');
+      }
+
+      const updatedCart = await response.json();
+
+      const itemsMerged = updatedCart.cart.items.map(item => {
+        const existingItem = cartData.items.find(i => i.productId === item.productId);
+        return {
+          ...existingItem,
+          ...item,
+          discount: existingItem ? existingItem.discount : 0,
+          original_quantity: existingItem?.original_quantity ?? item.original_quantity ?? Infinity
+        };
+      });
+
+      let finalItems = itemsMerged;
+      if (appliedCoupon) {
+        finalItems = applyDiscountToItems(appliedCoupon, itemsMerged);
+      }
+
+      const finalCart = { ...updatedCart.cart, items: finalItems };
+      setCartData(finalCart);
+      updateCartCount(finalCart.totalItems);
+      saveCartState(finalCart);
+
+      setSuccessMessage("Quantity updated successfully");
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error('Update quantity error:', err);
+      setError(err.message);
     }
-    let response = '';
-    const token = localStorage.getItem('token');
-    if(token)
-    {
-    response = await fetch('/api/cart', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ productId, quantity: newQuantity })
-    });
-    }
-    else
-    {
-      const guestCartId = localStorage.getItem("guestCartId") || uuidv4();
-      response = await fetch('/api/cart', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'guestCartId': guestCartId
-      },
-      body: JSON.stringify({ productId, quantity: newQuantity })
-    });
-
-    }
-
-    if (!response.ok) {
-      throw new Error('Failed to update quantity');
-    }
-
-    const updatedCart = await response.json();
-
-    // ✅ Merge with existing items so image/name don’t vanish
-    const itemsWithDiscount = updatedCart.cart.items.map(item => {
-      const existingItem = cartData.items.find(i => i.productId === item.productId);
-      return {
-        ...existingItem, // keeps image, name, etc.
-        ...item,         // updates quantity, price
-        discount: existingItem ? existingItem.discount : 0,
-        original_quantity: existingItem?.original_quantity ?? item.original_quantity ?? Infinity // ✅ keep stock info
-      };
-    });
-
-    setCartData({
-      ...updatedCart.cart,
-      items: itemsWithDiscount
-    });
-
-    updateCartCount(updatedCart.cart.totalItems);
-
-    // Reapply coupon if exists
-    if (appliedCoupon) {
-      const itemsWithUpdatedDiscount = applyDiscountToItems(appliedCoupon, itemsWithDiscount);
-      setCartData(prev => ({
-        ...prev,
-        items: itemsWithUpdatedDiscount
-      }));
-    }
-
-    setSuccessMessage("Quantity updated successfully");
-    setShowSuccessModal(true);
-
-  } catch (err) {
-    console.error('Update quantity error:', err);
-    setError(err.message);
-  }
-};
+  };
 
 
   const confirmRemoveItem = (productId) => {
@@ -425,26 +411,25 @@ const updateQuantity = async (productId, newQuantity, original_quantity = null) 
       if(token)
       {
         response = await fetch('/api/cart', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ productId: productToDelete })
-      });
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ productId: productToDelete })
+        });
       }
       else
       {
         const guestCartId = localStorage.getItem("guestCartId") || uuidv4();
         response = await fetch('/api/cart', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'guestCartId': guestCartId
-        },
-        body: JSON.stringify({ productId: productToDelete })
-      });
-
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'guestCartId': guestCartId
+          },
+          body: JSON.stringify({ productId: productToDelete })
+        });
       }
 
       if (!response.ok) {
@@ -452,38 +437,39 @@ const updateQuantity = async (productId, newQuantity, original_quantity = null) 
       }
 
       const updatedCart = await response.json();
-      
-      // Preserve discounts for remaining items
-      const itemsWithDiscount = updatedCart.cart.items.map(item => {
+
+      // Merge existing details
+      const itemsMerged = updatedCart.cart.items.map(item => {
         const existingItem = cartData.items.find(i => i.productId === item.productId);
         return {
           ...item,
           discount: existingItem ? existingItem.discount : 0
         };
       });
-      
-      setCartData({
-        ...updatedCart.cart,
-        items: itemsWithDiscount
-      });
-      
-      updateCartCount(updatedCart.cart.totalItems);
-      
-      // Remove coupon if it was product-specific and the product is removed
+
+      // Reapply coupon if exists
+      let finalItems = itemsMerged;
+      if (appliedCoupon) {
+        finalItems = applyDiscountToItems(appliedCoupon, itemsMerged);
+      }
+
+      let nextCartObj = { ...updatedCart.cart, items: finalItems };
+      setCartData(nextCartObj);
+      updateCartCount(nextCartObj.totalItems);
+      saveCartState(nextCartObj);
+
+      // If product-specific coupon no longer applicable, clear it and discounts
       if (appliedCoupon && appliedCoupon.offer_product && appliedCoupon.offer_product.includes(productToDelete)) {
         setAppliedCoupon(null);
         localStorage.removeItem('appliedCoupon');
-        
-        // Remove discounts from all items
-        setCartData(prev => ({
-          ...prev,
-          items: prev.items.map(item => ({
-            ...item,
-            discount: 0
-          }))
-        }));
+        nextCartObj = {
+          ...nextCartObj,
+          items: nextCartObj.items.map(item => ({ ...item, discount: 0 }))
+        };
+        setCartData(nextCartObj);
+        saveCartState(nextCartObj);
       }
-      
+
       setSuccessMessage("Item removed from cart");
       setShowSuccessModal(true);
     } catch (err) {
@@ -494,126 +480,69 @@ const updateQuantity = async (productId, newQuantity, original_quantity = null) 
       setProductToDelete(null);
     }
   };
-const validateCoupon = async () => {
-  if (!couponCode.trim()) {
-    setCouponError("Please enter a coupon code");
-    return;
-  }
-
-  setIsValidatingCoupon(true);
-  setCouponError("");
-
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('/api/coupons/validate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ 
-        couponCode,
-        cartItems: cartData.items,
-        userId: localStorage.getItem('userId')
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Invalid coupon code');
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Please enter a coupon code");
+      return;
     }
 
-    // Apply discount to eligible items
-    const itemsWithDiscount = applyDiscountToItems(data.coupon, cartData.items);
-    
-    // Update state
-    setAppliedCoupon(data.coupon);
-    localStorage.setItem('appliedCoupon', JSON.stringify(data.coupon));
-    setCartData(prev => ({
-      ...prev,
-      items: itemsWithDiscount
-    }));
-    
-    setCouponCode("");
-    setShowCouponModal(false);
-    setSuccessMessage("Coupon applied successfully!");
-    setShowSuccessModal(true);
-  } catch (err) {
-    setCouponError(err.message);
-    // Auto-close the modal after 2 seconds only for "not found" errors
-    if (err.message.includes("not found") || err.message.includes("Invalid")) {
-      setTimeout(() => {
-        setShowCouponModal(false);
-        setCouponError(""); // Clear error after closing
-      }, 2000);
+    setIsValidatingCoupon(true);
+    setCouponError("");
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          couponCode,
+          cartItems: cartData.items,
+          userId: localStorage.getItem('userId')
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid coupon code');
+      }
+
+      const itemsWithDiscount = applyDiscountToItems(data.coupon, cartData.items);
+      const newCart = { ...cartData, items: itemsWithDiscount };
+
+      setAppliedCoupon(data.coupon);
+      localStorage.setItem('appliedCoupon', JSON.stringify(data.coupon));
+      setCartData(newCart);
+      saveCartState(newCart);
+
+      setCouponCode("");
+      setShowCouponModal(false);
+      setSuccessMessage("Coupon applied successfully!");
+      setShowSuccessModal(true);
+    } catch (err) {
+      setCouponError(err.message);
+      if (err.message.includes("not found") || err.message.includes("Invalid")) {
+        setTimeout(() => {
+          setShowCouponModal(false);
+          setCouponError("");
+        }, 2000);
+      }
+    } finally {
+      setIsValidatingCoupon(false);
     }
-  } finally {
-    setIsValidatingCoupon(false);
-  }
-};
-  // const validateCoupon = async () => {
-  //   if (!couponCode.trim()) {
-  //     setCouponError("Please enter a coupon code");
-  //     return;
-  //   }
-
-  //   setIsValidatingCoupon(true);
-  //   setCouponError("");
-
-  //   try {
-  //     const token = localStorage.getItem('token');
-  //     const response = await fetch('/api/coupons/validate', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': `Bearer ${token}`
-  //       },
-  //       body: JSON.stringify({ 
-  //         couponCode,
-  //         cartItems: cartData.items,
-  //         userId: localStorage.getItem('userId')
-  //       })
-  //     });
-
-  //     const data = await response.json();
-
-  //     if (!response.ok) {
-  //       throw new Error(data.message || 'Failed to validate coupon');
-  //     }
-
-  //     // Apply discount to eligible items
-  //     const itemsWithDiscount = applyDiscountToItems(data.coupon, cartData.items);
-      
-  //     // Update state
-  //     setAppliedCoupon(data.coupon);
-  //     localStorage.setItem('appliedCoupon', JSON.stringify(data.coupon));
-  //     setCartData(prev => ({
-  //       ...prev,
-  //       items: itemsWithDiscount
-  //     }));
-      
-  //     setCouponCode("");
-  //     setShowCouponModal(false);
-  //     setSuccessMessage("Coupon applied successfully!");
-  //     setShowSuccessModal(true);
-  //   } catch (err) {
-  //     setCouponError(err.message);
-  //   } finally {
-  //     setIsValidatingCoupon(false);
-  //   }
-  // };
+  };
 
   const removeCoupon = () => {
-    // Remove discounts from all items
-    setCartData(prev => ({
-      ...prev,
-      items: prev.items.map(item => ({
-        ...item,
-        discount: 0
-      }))
-    }));
-    
+    const newCart = {
+      ...cartData,
+      items: cartData.items.map(item => ({ ...item, discount: 0 }))
+    };
+    setCartData(newCart);
+    saveCartState(newCart);
+
     setAppliedCoupon(null);
     localStorage.removeItem('appliedCoupon');
     setSuccessMessage("Coupon removed successfully");
@@ -807,7 +736,7 @@ const validateCoupon = async () => {
                 </tr>
               </thead>
               <tbody>
-                {cartData.items.map((item) => (
+                {cartData.items.map((item) => ( 
                   <Fragment key={item.productId}>
                     <tr className="border-b">
                       <td className="flex items-center py-4 px-4 gap-3">
