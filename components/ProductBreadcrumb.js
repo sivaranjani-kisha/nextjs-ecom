@@ -8,71 +8,95 @@ export default function ProductBreadcrumb({ product }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  const fetchCategoryHierarchy = async () => {
-    try {
-      if (!product?.category) {
-        console.warn('No category ID found in product');
-        return;
-      }
-
-      console.log('Building hierarchy for category ID:', product.category);
-
-      // Fetch all categories
-      const allCategoriesRes = await fetch('/api/categories/breadcrumb');
-      const allCategories = await allCategoriesRes.json();
-      
-      console.log('All categories from API:', allCategories);
-
-      // Helper function to find category by ID
-      const findCategoryById = (id) => {
-        return allCategories.find(cat => 
-          String(cat._id) === String(id) || 
-          (cat._id && cat._id.toString() === String(id))
-        );
-      };
-
-      // Function to find the deepest category path
-      const findDeepestCategoryPath = (categoryId, allCategories) => {
-        let currentCategory = findCategoryById(categoryId);
-        if (!currentCategory) return [];
-
-        const hierarchy = [currentCategory];
-        
-        // If this category has children, find the deepest path
-        const children = allCategories.filter(cat => 
-          cat.parentid && String(cat.parentid) === String(categoryId)
-        );
-
-        if (children.length > 0) {
-          // For simplicity, just take the first child
-          const childHierarchy = findDeepestCategoryPath(children[0]._id, allCategories);
-          hierarchy.push(...childHierarchy);
+  useEffect(() => {
+    const fetchCategoryHierarchy = async () => {
+      try {
+        if (!product?.category || !product?.sub_category) {
+          console.warn('No category or sub_category found in product');
+          return;
         }
 
-        return hierarchy;
-      };
+        console.log('Building hierarchy for category ID:', product.category);
+        console.log('Sub category ID:', product.sub_category);
 
-      // Build hierarchy using the deepest path function
-      const hierarchy = findDeepestCategoryPath(product.category, allCategories);
+        // Fetch all categories
+        const allCategoriesRes = await fetch('/api/categories/breadcrumb');
+        const allCategories = await allCategoriesRes.json();
+        
+        console.log('All categories from API:', allCategories);
 
-      console.log('Found current category:', hierarchy[0]);
-      console.log('Final hierarchy:', hierarchy);
+        // Helper function to find category by ID
+        const findCategoryById = (id) => {
+          return allCategories.find(cat => 
+            String(cat._id) === String(id) || 
+            (cat._id && cat._id.toString() === String(id))
+          );
+        };
 
-      setCategories(hierarchy);
+        // Function to build the complete hierarchy path
+        const buildCategoryHierarchy = (categoryId, subCategoryId, allCategories) => {
+          const hierarchy = [];
+          
+          // Find the sub-category first
+          const subCategory = findCategoryById(subCategoryId);
+          if (subCategory) {
+            hierarchy.unshift(subCategory); // Add to beginning
+            
+            // Find parent categories recursively
+            let currentParentId = subCategory.parentid;
+            while (currentParentId) {
+              const parentCategory = findCategoryById(currentParentId);
+              if (parentCategory) {
+                hierarchy.unshift(parentCategory); // Add to beginning
+                currentParentId = parentCategory.parentid;
+              } else {
+                break;
+              }
+            }
+          }
+          
+          // If we couldn't build hierarchy from sub-category, try from main category
+          if (hierarchy.length === 0) {
+            const mainCategory = findCategoryById(categoryId);
+            if (mainCategory) {
+              hierarchy.unshift(mainCategory);
+              
+              // Find parent categories recursively
+              let currentParentId = mainCategory.parentid;
+              while (currentParentId) {
+                const parentCategory = findCategoryById(currentParentId);
+                if (parentCategory) {
+                  hierarchy.unshift(parentCategory);
+                  currentParentId = parentCategory.parentid;
+                } else {
+                  break;
+                }
+              }
+            }
+          }
 
-    } catch (error) {
-      console.error('Error fetching category data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+          return hierarchy;
+        };
 
-  fetchCategoryHierarchy();
-}, [product]);
+        // Build hierarchy using both category and sub_category
+        const hierarchy = buildCategoryHierarchy(
+          product.category, 
+          product.sub_category, 
+          allCategories
+        );
 
+        console.log('Final hierarchy:', hierarchy);
+        setCategories(hierarchy);
 
+      } catch (error) {
+        console.error('Error fetching category data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchCategoryHierarchy();
+  }, [product]);
 
   if (loading) {
     return (
@@ -109,8 +133,9 @@ useEffect(() => {
             </Link>
           ) : (
             <Link 
-            href={`/category/${category.category_slug || category._id}`}
-            className="text-gray-500 whitespace-nowrap hover:text-blue-500">
+              href={`/category/${category.category_slug || category._id}`}
+              className="text-gray-500 whitespace-nowrap hover:text-blue-500"
+            >
               {category.category_name}
             </Link>
           )}
