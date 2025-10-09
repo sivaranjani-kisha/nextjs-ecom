@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -153,6 +152,8 @@ useEffect(() => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  // Add: track status updating per offer
+  const [statusUpdating, setStatusUpdating] = useState({});
 
   useEffect(() => {
     setCurrentPage(1);
@@ -335,6 +336,20 @@ useEffect(() => {
     setIsEditModalOpen(true);
   };
 
+  // New: shared Offer update function to reuse by Edit and Active toggle
+  const updateOffer = async (payload) => {
+    const res = await fetch("/api/offers/update", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "");
+      throw new Error(errorText || "Failed to update offer");
+    }
+    return res.json();
+  };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
 
@@ -349,28 +364,14 @@ useEffect(() => {
         id: editingOfferId,
         from_date: new Date(offerData.from_date),
         to_date: new Date(offerData.to_date),
-      selected_users: selectedUsers.includes("all") 
-        ? users.map(user => user._id) 
-        : selectedUsers.filter(id => id !== "all")
-    };
+        selected_users: selectedUsers.includes("all")
+          ? users.map(user => user._id)
+          : selectedUsers.filter(id => id !== "all"),
+      };
 
-      const response = await fetch("/api/offers/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formattedData),
-          offer_user: selectedUsers,
-      });
+      // Change: reuse shared update function
+      await updateOffer(formattedData);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Server error: ${response.status} ${response.statusText} - ${errorText}`
-        );
-      }
-
-      const data = await response.json();
       setAlertMessage("Offer updated successfully!");
       setAlertType("success");
       setTimeout(() => setAlertMessage(""), 3000);
@@ -582,6 +583,63 @@ const filteredOffers = offers.filter((offer) => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // Handle Active toggle in the table with optimistic update
+  const toggleOfferActive = async (offer) => {
+    const offerId = offer._id;
+    if (statusUpdating[offerId]) return;
+
+    const prevStatus = offer.fest_offer_status; // "active" | "inactive"
+    const newStatus = prevStatus === "active" ? "inactive" : "active";
+
+    // Optimistic UI update
+    setOffers((prev) =>
+      prev.map((o) => (o._id === offerId ? { ...o, fest_offer_status: newStatus } : o))
+    );
+    setStatusUpdating((prev) => ({ ...prev, [offerId]: true }));
+
+    try {
+      // Build full payload to satisfy update requirements
+      const payload = {
+        id: offerId,
+        offer_code: offer.offer_code,
+        fest_offer_status: newStatus,
+        notes: offer.notes || "",
+        from_date: new Date(offer.from_date),
+        to_date: new Date(offer.to_date),
+        offer_product_category: offer.offer_product_category,
+        offer_product: offer.offer_product || [],
+        offer_category: offer.offer_category || [],
+        offer_type: offer.offer_type,
+        percentage: offer.percentage || "",
+        fixed_price: offer.fixed_price || "",
+        limit_enabled: offer.limit_enabled || false,
+        offer_limit: offer.limit_enabled ? Number(offer.offer_limit) : null,
+        selected_users: offer.selected_users || [],
+      };
+
+      // Change: reuse shared update function
+      await updateOffer(payload);
+
+      setAlertMessage("Offer status updated");
+      setAlertType("success");
+      setTimeout(() => setAlertMessage(""), 3000);
+    } catch (err) {
+      // Revert UI on failure
+      setOffers((prev) =>
+        prev.map((o) => (o._id === offerId ? { ...o, fest_offer_status: prevStatus } : o))
+      );
+      setAlertMessage(err.message || "Failed to update offer status");
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(""), 3000);
+    } finally {
+      setStatusUpdating((prev) => {
+        const next = { ...prev };
+        delete next[offerId];
+        return next;
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-5 mt-5">
@@ -597,9 +655,7 @@ const filteredOffers = offers.filter((offer) => {
         </div>
       )}
 
-      {isLoading ? (
-        <p>Loading offers...</p>
-      ) : (
+      {!isLoading ? (
         <div className="bg-white shadow-md rounded-lg p-5 mb-5 overflow-x-auto">
           {/* Filters Section */}
   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
@@ -669,6 +725,8 @@ const filteredOffers = offers.filter((offer) => {
                 <th className="p-2">Type</th>
                 <th className="p-2">Value</th>
                 <th className="p-2">Status</th>
+                {/* Add: Active column header */}
+                <th className="p-2">Active</th>
                 <th className="p-2">Action</th>
               </tr>
             </thead>
@@ -692,6 +750,27 @@ const filteredOffers = offers.filter((offer) => {
                         <span className="bg-red-100 text-red-600 px-6 py-1.5 rounded-full font-medium text-sm">Inactive</span>
                       )}
                     </td>
+                    {/* Active switch cell - updated to show Yes/No in the ball */}
+                    <td className="p-2">
+            <label
+              className={`relative inline-flex items-center cursor-pointer ${
+                statusUpdating[offer._id] ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={offer.fest_offer_status === "active"}
+                onChange={() => toggleOfferActive(offer)}
+                disabled={!!statusUpdating[offer._id]}
+                aria-label={`Toggle active for ${offer.offer_code}`}
+              />
+              <div className="w-11 h-6 bg-gray-200 rounded-full transition-colors duration-200 ease-in-out peer-checked:bg-red-600"></div>
+              <span className="absolute top-0.5 left-0.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-gray-700 bg-white rounded-full border border-gray-300 pointer-events-none transition-all duration-200 ease-in-out transform peer-checked:translate-x-5 peer-checked:bg-red-100">
+                {offer.fest_offer_status === "active" ? "Yes" : "No"}
+              </span>
+            </label>
+          </td>
                     <td>
   <div className="flex items-center gap-2 justify-center">
     <button
@@ -708,7 +787,6 @@ const filteredOffers = offers.filter((offer) => {
     >
       <Icon icon="mingcute:delete-2-line" />
     </button>
-    {/* Add this mail button */}
     <button
       onClick={() => handleMailClick(offer)}
       className="w-7 h-7 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center"
@@ -740,7 +818,8 @@ const filteredOffers = offers.filter((offer) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="p-3 text-center">
+                  {/* Update: colSpan to reflect new column count */}
+                  <td colSpan="8" className="p-3 text-center">
                     No offers available
                   </td>
                 </tr>
@@ -802,6 +881,8 @@ const filteredOffers = offers.filter((offer) => {
             </div>
           </div>
         </div>
+      ) : (
+        <p>Loading offers...</p>
       )}
 
       {/* Add Offer Modal */}
@@ -1481,6 +1562,7 @@ const filteredOffers = offers.filter((offer) => {
     </div>
   )}
 </div>
+
                 {/* Submit Button */}
                 <div className="pt-4">
                   <button
