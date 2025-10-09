@@ -1706,15 +1706,13 @@ const fetchBrand = async () => {
           <div className="md:col-span-3 w-full max-w-sm flex flex-col space-y-4">
  
   {/* ================= Box: Featured + Warranty + Related ================= */}
- <div className="border border-gray-300 rounded-lg shadow-md bg-white max-h-[500px] overflow-y-scroll scrollbar-hide">
-   
-  {/* Featured Products */}
-  {featuredProducts?.length > 0 && (
+ {featuredProducts?.filter(item => item.stock_status === "In Stock").length > 0 && (
+  <div className="border border-gray-300 rounded-lg shadow-md bg-white max-h-[500px] overflow-y-scroll scrollbar-hide">
     <div className="px-4 py-4 border-b border-gray-300">
       <h3 className="font-semibold text-sm text-gray-800 underline mb-4">
         Frequently Bought Together:
       </h3>
-  
+
       {featuredProducts.map((item) => (
         <div key={item._id} className="flex items-start mb-4">
           <input
@@ -1781,8 +1779,9 @@ const fetchBrand = async () => {
         </div>
       ))}
     </div>
-  )}
   </div>
+)}
+
   
   {/* Warranty Section
   {(product?.warranty || product?.extended_warranty) && (
