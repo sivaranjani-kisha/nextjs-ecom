@@ -109,16 +109,16 @@ const handleTabClick = (tabId) => {
     return tabs[0];
   };
 
-   // Effect to handle tab content availability
-    useEffect(() => {
-      if (!hasTabContent(activeTab)) {
-        const nextTab = findNextAvailableTab(activeTab);
-        if (nextTab !== activeTab) {
-          setActiveTab(nextTab);
-          // toast.info(`No content available in ${activeTab}. Showing ${nextTab} instead.`);
-        }
-      }
-    }, [activeTab, product, reviews]);
+  //  // Effect to handle tab content availability
+  //   useEffect(() => {
+  //     if (!hasTabContent(activeTab)) {
+  //       const nextTab = findNextAvailableTab(activeTab);
+  //       if (nextTab !== activeTab) {
+  //         setActiveTab(nextTab);
+  //         // toast.info(`No content available in ${activeTab}. Showing ${nextTab} instead.`);
+  //       }
+  //     }
+  //   }, [activeTab, product, reviews]);
 
   useEffect(() => {
     if ((activeTab === "relatedProducts" || activeTab === "recentlyViewed") && product.category?._id) {
