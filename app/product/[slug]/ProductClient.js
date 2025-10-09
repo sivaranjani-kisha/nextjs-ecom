@@ -338,6 +338,7 @@ const toggleFrequentProduct = (product) => {
           `/api/product/relatedpro?category=${categoryId}&brand=${brandId}&exclude=${currentProductId}&limit=5`
         );
         const data = await res.json();
+        console.log("current related products is:", data);
 
         if (res.ok) {
           if (data.success && data.products) {
@@ -475,6 +476,11 @@ const resolveImagePath = (image) => {
   }
         
         const data = await response.json();
+         // ✅ Final client-side check
+        if (data.status !== "Active") {
+          router.push("/404");
+          return;
+        }
         // console.log(data);
         
         // If API returns an array, find the product with matching slug
@@ -1776,6 +1782,7 @@ const fetchBrand = async () => {
       ))}
     </div>
   )}
+  </div>
   
   {/* Warranty Section
   {(product?.warranty || product?.extended_warranty) && (
@@ -1845,10 +1852,90 @@ const fetchBrand = async () => {
       )}
     </div>
   )} */}
+{relatedProducts.filter(item => item.stock_status === "In Stock").length > 0 && (
+  <div className="border border-gray-300 rounded-lg shadow-md bg-white max-h-[500px] overflow-y-scroll scrollbar-hide">
+    <div className="px-4 py-4">
+      <h2 className="text-sm font-bold text-customBlue underline mb-2">
+        Similar Products
+      </h2>
 
-  {/* Related Products Section - show ONLY if no featured products */}
+      {relatedProducts
+        .filter(item => item.stock_status === "In Stock")
+        .slice(0, 3)
+        .map((item) => (
+          <div key={item._id} className="flex items-start mb-4">
+            {item.quantity > 0 && (
+              <input
+                type="checkbox"
+                className="mt-2 mr-3"
+                checked={selectedRelatedProducts.some(p => p._id === item._id)}
+                onChange={() => toggleRelatedProduct(item)}
+              />
+            )}
+            <div className="flex items-start gap-3">
+              {item.images?.[0] && (
+                <img
+                  src={'/uploads/products/' + item.images[0]}
+                  alt={item.name}
+                  className="w-16 h-16 object-contain"
+                />
+              )}
+              <div className="text-sm">
+                <Link
+                  href={`/product/${item.slug}`}
+                  className="block mb-1"
+                  onClick={() => handleProductClick(item)}
+                >
+                  <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                    {item.name}
+                  </h3>
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-semibold text-red-600">
+                    ₹ {(
+                      item.special_price &&
+                      item.special_price > 0 &&
+                      item.special_price !== "0" &&
+                      item.special_price < item.price
+                        ? item.special_price
+                        : item.price
+                    ).toLocaleString()}
+                  </span>
+
+                  {item.special_price &&
+                    item.special_price > 0 &&
+                    item.special_price !== "0" &&
+                    item.special_price < item.price && (
+                      <span className="text-xs text-gray-500 line-through">
+                        ₹ {item.price.toLocaleString()}
+                      </span>
+                    )}
+                </div>
+
+                <h4
+                  className={`text-xs ${
+                    item.stock_status === "In Stock"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {item.stock_status}
+                  {item.stock_status === "In Stock" && item.quantity
+                    ? `, ${item.quantity} units`
+                    : ""}
+                </h4>
+              </div>
+            </div>
+          </div>
+        ))}
+    </div>
+  </div>
+)}
+
+
   
-   <div className="px-4 py-4">
+   {/* <div className="px-4 py-4">
         <h2 className="text-sm font-bold text-customBlue underline mb-2">
           Similar Products
         </h2>
@@ -1922,9 +2009,9 @@ const fetchBrand = async () => {
               </div>
             </div>
           ))}
-      </div>
+      </div> */}
 
-</div>
+{/* </div> */}
 
  
   {/* ================= Buttons Block (Below Box) ================= */}
