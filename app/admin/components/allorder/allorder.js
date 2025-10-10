@@ -106,7 +106,7 @@ const sendCancellationEmail = async (order) => {
     // List of emails: customer + admins
     const emailList = [
       order.email_address || "kbsiva1234@gmail.com",
-       "arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"
+       "arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in"
     ];
 
     // Loop through each email and send
@@ -154,7 +154,7 @@ const sendCancellationEmail = async (order) => {
     // multiple recipients
     const recipients = [
       order.email_address, // original order user
-      "arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in","siva96852@gmail.com"
+      "arunkarthik@bharathelectronics.in","ecom@bharathelectronics.in","itadmin@bharathelectronics.in","telemarketing@bharathelectronics.in","sekarcorp@bharathelectronics.in"
     ];
 
     // loop through recipients and send individually
