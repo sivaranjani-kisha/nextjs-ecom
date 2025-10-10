@@ -385,7 +385,11 @@ export default function CartComponent() {
       offer.offer_code || offer.code || offer.couponCode || offer.offerCode || "";
 
     const status =
-      (offer.status || offer.offer_status || offer.state || "").toLowerCase();
+      (offer.status ||
+       offer.fest_offer_status || // include fest_offer_status
+       offer.offer_status ||
+       offer.state ||
+       "").toLowerCase();
 
     const typeRaw =
       (offer.offer_type || offer.type || offer.discount_type || "").toLowerCase();

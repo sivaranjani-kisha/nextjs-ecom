@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Select from "react-select";
 import { Icon } from '@iconify/react';
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
@@ -9,7 +9,7 @@ export default function OfferComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingOfferId, setEditingOfferId] = useState(null);
-  const [alertMessage, setAlertMessage] = useState("");
+  const [alertMessage, setAlertMessage] = useState(null); // changed: default to null
   const [alertType, setAlertType] = useState("");
   const [selectedOfferType, setSelectedOfferType] = useState("");
   const [products, setProducts] = useState([]);
@@ -40,19 +40,21 @@ export default function OfferComponent() {
     }
   };
   const initialOfferData = {
-  offer_code: "",
-  fest_offer_status: "",
-  notes: "",
-  from_date: "",
-  to_date: "",
-  offer_product_category: "",
-  offer_product: [],
-  offer_category: [],
-  offer_type: "",
-  percentage: "",
-  fixed_price: "",
-  limit_enabled: false,
-  offer_limit: "",
+    offer_code: "",
+    fest_offer_status: "",
+    // NEW: ensure fest_offer_status2 exists in initial state
+    fest_offer_status2: "",
+    notes: "",
+    from_date: "",
+    to_date: "",
+    offer_product_category: "",
+    offer_product: [],
+    offer_category: [],
+    offer_type: "",
+    percentage: "",
+    fixed_price: "",
+    limit_enabled: false,
+    offer_limit: "",
 };
 // const [offerData, setOfferData] = useState(initialOfferData);
 // const [isModalOpen, setIsModalOpen] = useState(false);
@@ -137,6 +139,8 @@ useEffect(() => {
   const [offerData, setOfferData] = useState({
     offer_code: "",
     fest_offer_status: "",
+    // NEW: add fest_offer_status2 to edit/create state
+    fest_offer_status2: "",
     notes: "",
     from_date: "",
     to_date: "",
@@ -264,6 +268,17 @@ useEffect(() => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    // NEW: keep fest_offer_status and fest_offer_status2 in sync on change
+    if (name === "fest_offer_status2") {
+      setOfferData((prev) => ({
+        ...prev,
+        fest_offer_status2: value,
+        // keep legacy field in sync for compatibility
+        fest_offer_status: value,
+      }));
+      return;
+    }
+
     if (type === "checkbox") {
       if (name === "offer_category") {
         const categoryId = value;
@@ -279,6 +294,18 @@ useEffect(() => {
     } else {
       setOfferData({ ...offerData, [name]: value });
     }
+  };
+
+  // New: stable handler for "Apply Offer To" select to avoid double state updates and any re-render side-effects
+  const handleOfferProductCategoryChange = (e) => {
+    const { value } = e.target;
+    setOfferData((prev) => ({
+      ...prev,
+      offer_product_category: value,
+      // Reset dependent selections without affecting interactivity
+      offer_product: [],
+      offer_category: [],
+    }));
   };
 
   const handleDelete = async (offerId) => {
@@ -319,6 +346,8 @@ useEffect(() => {
     setOfferData({
       offer_code: offer.offer_code,
       fest_offer_status: offer.fest_offer_status,
+      // NEW: load fest_offer_status2 (fallback to fest_offer_status)
+      fest_offer_status2: offer.fest_offer_status2 || offer.fest_offer_status || "",
       notes: offer.notes,
       from_date: offer.from_date.split("T")[0],
       to_date: offer.to_date.split("T")[0],
@@ -338,6 +367,7 @@ useEffect(() => {
 
   // New: shared Offer update function to reuse by Edit and Active toggle
   const updateOffer = async (payload) => {
+    //console.log(payload);
     const res = await fetch("/api/offers/update", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -359,9 +389,14 @@ useEffect(() => {
     }
 
     try {
+      const safeFestStatus = (offerData.fest_offer_status2 || offerData.fest_offer_status || "").toLowerCase();
       const formattedData = {
         ...offerData,
         id: editingOfferId,
+        // NEW: send all status keys for safety
+        status: safeFestStatus,
+        fest_offer_status2: safeFestStatus,
+        fest_offer_status: safeFestStatus,
         from_date: new Date(offerData.from_date),
         to_date: new Date(offerData.to_date),
         selected_users: selectedUsers.includes("all")
@@ -371,7 +406,7 @@ useEffect(() => {
 
       // Change: reuse shared update function
       await updateOffer(formattedData);
-
+     
       setAlertMessage("Offer updated successfully!");
       setAlertType("success");
       setTimeout(() => setAlertMessage(""), 3000);
@@ -380,6 +415,8 @@ useEffect(() => {
       setOfferData({
         offer_code: "",
         fest_offer_status: "",
+        // NEW: reset fest_offer_status2
+        fest_offer_status2: "",
         notes: "",
         from_date: "",
         to_date: "",
@@ -419,47 +456,54 @@ useEffect(() => {
 
   const validateForm = () => {
     if (!offerData.offer_product_category) {
+      closeAllModals();
       setAlertMessage("Please select whether to apply to products or categories");
       setAlertType("error");
       return false;
     }
 
     if (offerData.offer_product_category === "product" && offerData.offer_product.length === 0) {
+      closeAllModals();
       setAlertMessage("Please select at least one product");
       setAlertType("error");
       return false;
     }
 
     if (offerData.offer_product_category === "category" && offerData.offer_category.length === 0) {
+      closeAllModals();
       setAlertMessage("Please select at least one category");
       setAlertType("error");
       return false;
     }
 
     if (!offerData.offer_type) {
+      closeAllModals();
       setAlertMessage("Please select an offer type");
       setAlertType("error");
       return false;
     }
 
     if (offerData.offer_type === "percentage" && !offerData.percentage) {
+      closeAllModals();
       setAlertMessage("Please enter a percentage value");
       setAlertType("error");
       return false;
     }
 
     if (offerData.offer_type === "fixed_price" && !offerData.fixed_price) {
+      closeAllModals();
       setAlertMessage("Please enter a fixed price");
       setAlertType("error");
       return false;
     }
- // Validate offer limit if enabled
+
     if (offerData.limit_enabled) {
-        if (!offerData.offer_limit || offerData.offer_limit <= 0) {
-            setAlertMessage("Please enter a valid offer limit (greater than 0)");
-            setAlertType("error");
-            return false;
-        }
+      if (!offerData.offer_limit || offerData.offer_limit <= 0) {
+        closeAllModals();
+        setAlertMessage("Please enter a valid offer limit (greater than 0)");
+        setAlertType("error");
+        return false;
+      }
     }
 
     return true;
@@ -478,14 +522,15 @@ useEffect(() => {
         ...offerData,
         from_date: new Date(offerData.from_date),
         to_date: new Date(offerData.to_date),
-          selected_users: selectedUsers.includes("all") 
-        ? users.map(user => user._id) 
-        : selectedUsers.filter(id => id !== "all"),
-         limit_enabled: offerData.limit_enabled || false,
-        offer_limit: offerData.limit_enabled ? Number(offerData.offer_limit) : null
-        
-        
-    };
+        selected_users: selectedUsers.includes("all") 
+          ? users.map(user => user._id) 
+          : selectedUsers.filter(id => id !== "all"),
+        limit_enabled: offerData.limit_enabled || false,
+        offer_limit: offerData.limit_enabled ? Number(offerData.offer_limit) : null,
+        // NEW: persist fest_offer_status2 on create as well (keep in sync)
+        fest_offer_status2: (offerData.fest_offer_status2 || offerData.fest_offer_status || "").toLowerCase(),
+        fest_offer_status: (offerData.fest_offer_status2 || offerData.fest_offer_status || "").toLowerCase(),
+      };
 
       const response = await fetch("/api/offers/post", {
         method: "POST",
@@ -511,6 +556,8 @@ useEffect(() => {
       setOfferData({
         offer_code: "",
         fest_offer_status: "",
+        // NEW: reset fest_offer_status2
+        fest_offer_status2: "",
         notes: "",
         from_date: "",
         to_date: "",
@@ -535,6 +582,7 @@ useEffect(() => {
       setOffers(offersData.data);
     } catch (error) {
       console.error("Error:", error);
+      closeAllModals(); // close modal on server error
       setAlertMessage(error.message || "Failed to create offer");
       setAlertType("error");
       setTimeout(() => setAlertMessage(""), 3000);
@@ -598,11 +646,11 @@ const filteredOffers = offers.filter((offer) => {
     setStatusUpdating((prev) => ({ ...prev, [offerId]: true }));
 
     try {
-      // Build full payload to satisfy update requirements
       const payload = {
         id: offerId,
         offer_code: offer.offer_code,
         fest_offer_status: newStatus,
+        fest_offer_status2: newStatus, // NEW: send both
         notes: offer.notes || "",
         from_date: new Date(offer.from_date),
         to_date: new Date(offer.to_date),
@@ -615,9 +663,12 @@ const filteredOffers = offers.filter((offer) => {
         limit_enabled: offer.limit_enabled || false,
         offer_limit: offer.limit_enabled ? Number(offer.offer_limit) : null,
         selected_users: offer.selected_users || [],
+        // NEW: send all status keys for safety
+        status: newStatus,
+        fest_offer_status: newStatus,
+        fest_offer_status2: newStatus,
       };
 
-      // Change: reuse shared update function
       await updateOffer(payload);
 
       setAlertMessage("Offer status updated");
@@ -640,6 +691,42 @@ const filteredOffers = offers.filter((offer) => {
     }
   };
 
+  // Auto-close alert after a few seconds (with fade-out)
+  const ALERT_AUTO_CLOSE_MS = 4000;
+  const [showAlert, setShowAlert] = useState(false);
+  const alertHideTimerRef = useRef(null);
+  const alertClearTimerRef = useRef(null);
+
+  useEffect(() => {
+    // cleanup any existing timers when message changes
+    if (alertHideTimerRef.current) {
+      clearTimeout(alertHideTimerRef.current);
+      alertHideTimerRef.current = null;
+    }
+    if (alertClearTimerRef.current) {
+      clearTimeout(alertClearTimerRef.current);
+      alertClearTimerRef.current = null;
+    }
+
+    if (alertMessage) {
+      setShowAlert(true);
+      // fade-out slightly before clearing message
+      alertHideTimerRef.current = setTimeout(() => setShowAlert(false), Math.max(0, ALERT_AUTO_CLOSE_MS - 300));
+      alertClearTimerRef.current = setTimeout(() => setAlertMessage(null), ALERT_AUTO_CLOSE_MS);
+    }
+
+    return () => {
+      if (alertHideTimerRef.current) clearTimeout(alertHideTimerRef.current);
+      if (alertClearTimerRef.current) clearTimeout(alertClearTimerRef.current);
+    };
+  }, [alertMessage]);
+
+  // Helper: close both create and edit modals
+  const closeAllModals = () => {
+    setIsModalOpen(false);
+    setIsEditModalOpen(false);
+  };
+
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-5 mt-5">
@@ -649,7 +736,7 @@ const filteredOffers = offers.filter((offer) => {
         <div
           className={`mb-4 p-3 rounded-md ${
             alertType === "success" ? "bg-green-500" : "bg-red-500"
-          } text-white`}
+          } text-white transition-opacity duration-300 ${showAlert ? "opacity-100" : "opacity-0"}`}
         >
           {alertMessage}
         </div>
@@ -726,7 +813,7 @@ const filteredOffers = offers.filter((offer) => {
                 <th className="p-2">Value</th>
                 <th className="p-2">Status</th>
                 {/* Add: Active column header */}
-                <th className="p-2">Active</th>
+                <th className="p-2">Apply Coupon</th>
                 <th className="p-2">Action</th>
               </tr>
             </thead>
@@ -911,7 +998,7 @@ const filteredOffers = offers.filter((offer) => {
 
             {/* Body */}
             <div className="px-6 py-6 overflow-y-auto flex-grow">
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} noValidate className="space-y-5">
                 {/* Offer Code */}
                 <div>
                   <label htmlFor="offer_code" className="block mb-1 text-sm font-semibold text-gray-700">
@@ -1022,24 +1109,19 @@ const filteredOffers = offers.filter((offer) => {
                 </div>
 
                 {/* Apply Offer To */}
-                <div>
+                <div className="overflow-visible">
                   <label htmlFor="offer_product_category" className="block mb-1 text-sm font-semibold text-gray-700">
                     Apply Offer To
                   </label>
                   <select
+                    key="create-offer-product-category"          // New: force mount for create modal
                     name="offer_product_category"
                     id="offer_product_category"
                     value={offerData.offer_product_category}
-                    onChange={(e) => {
-                      handleChange(e);
-                      setOfferData(prev => ({
-                        ...prev,
-                        offer_product: [],
-                        offer_category: [],
-                        [e.target.name]: e.target.value
-                      }));
-                    }}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
+                    onChange={handleOfferProductCategoryChange}   // New: use dedicated handler
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400 relative z-20"
+                    style={{ pointerEvents: 'auto' }}             // Ensure pointer events always enabled
+                    disabled={false}                              // Explicitly ensure enabled
                     required
                   >
                     <option value="">Select Apply To</option>
@@ -1169,53 +1251,53 @@ const filteredOffers = offers.filter((offer) => {
                     />
                   </div>
                 )}
-{/* Offer Limit Section */}
-<div>
-  <label className="block mb-1 text-sm font-semibold text-gray-700">
-    Enable Limit
-  </label>
-  <div className="flex items-center space-x-3">
-    <input
-      type="checkbox"
-      id="limit_enabled"
-      name="limit_enabled"
-      checked={offerData.limit_enabled || false}
-      onChange={(e) =>
-        setOfferData((prev) => ({
-          ...prev,
-          limit_enabled: e.target.checked,
-          offer_limit: e.target.checked ? prev.offer_limit || "" : "", // Clear if unchecked
-        }))
-      }
-      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-    />
-    <label htmlFor="limit_enabled" className="text-sm text-gray-700">
-      Set Offer Limit
-    </label>
-  </div>
+                {/* Offer Limit Section */}
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">
+                    Enable Limit
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="limit_enabled"
+                      name="limit_enabled"
+                      checked={offerData.limit_enabled || false}
+                      onChange={(e) =>
+                        setOfferData((prev) => ({
+                          ...prev,
+                          limit_enabled: e.target.checked,
+                          offer_limit: e.target.checked ? prev.offer_limit || "" : "", // Clear if unchecked
+                        }))
+                      }
+                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                    />
+                    <label htmlFor="limit_enabled" className="text-sm text-gray-700">
+                      Set Offer Limit
+                    </label>
+                  </div>
 
-  {/* Limit Input Field - Show only if checkbox is checked */}
-  {offerData.limit_enabled && (
-    <div className="mt-3">
-      <label
-        htmlFor="offer_limit"
-        className="block mb-1 text-sm font-semibold text-gray-700"
-      >
-        Offer Limit
-      </label>
-      <input
-        type="number"
-        id="offer_limit"
-        name="offer_limit"
-        value={offerData.offer_limit}
-        onChange={handleChange}
-        className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
-        min="1"
-        required
-      />
-    </div>
-  )}
-</div>
+                  {/* Limit Input Field - Show only if checkbox is checked */}
+                  {offerData.limit_enabled && (
+                    <div className="mt-3">
+                      <label
+                        htmlFor="offer_limit"
+                        className="block mb-1 text-sm font-semibold text-gray-700"
+                      >
+                        Offer Limit
+                      </label>
+                      <input
+                        type="number"
+                        id="offer_limit"
+                        name="offer_limit"
+                        value={offerData.offer_limit}
+                        onChange={handleChange}
+                        className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
+                        min="1"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {/* Submit Button */}
                 <div className="pt-4">
@@ -1259,7 +1341,7 @@ const filteredOffers = offers.filter((offer) => {
 
             {/* Scrollable body */}
             <div className="px-6 py-6 overflow-y-auto flex-grow">
-              <form onSubmit={handleUpdate} className="space-y-5">
+              <form onSubmit={handleUpdate} noValidate className="space-y-5">
                 {/* Offer Code */}
                 <div>
                   <label htmlFor="offer_code" className="block mb-1 text-sm font-semibold text-gray-700">
@@ -1278,13 +1360,15 @@ const filteredOffers = offers.filter((offer) => {
 
                 {/* Offer Status */}
                 <div>
-                  <label htmlFor="fest_offer_status" className="block mb-1 text-sm font-semibold text-gray-700">
+                  <label htmlFor="fest_offer_status2" className="block mb-1 text-sm font-semibold text-gray-700">
                     Offer Status
                   </label>
                   <select
-                    name="fest_offer_status"
-                    id="fest_offer_status"
-                    value={offerData.fest_offer_status}
+                    key={`edit-status-${editingOfferId || 'new'}`}
+                    name="fest_offer_status2"
+                    id="fest_offer_status2"
+                    // NEW: bind to fest_offer_status2 for correct rendering and interactivity
+                    value={offerData.fest_offer_status2}
                     onChange={handleChange}
                     className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
@@ -1367,26 +1451,20 @@ const filteredOffers = offers.filter((offer) => {
                 </div>
 
                 {/* Apply Offer To */}
-                <div>
-                  <label htmlFor="offer_product_category" className="block mb-1 text-sm font-semibold text-gray-700">
+                <div className="overflow-visible">
+                  <label htmlFor="offer_product_category2" className="block mb-1 text-sm font-semibold text-gray-700">
                     Apply Offer To
                   </label>
                   <select
-                    name="offer_product_category"
-                    id="offer_product_category"
+                    key={`edit-offer-cat-${editingOfferId || 'new'}`} // New: force re-mount per offer to clear any stale disabled state
+                    name="offer_product_category2"
+                    id="offer_product_category2"
                     value={offerData.offer_product_category}
-                    onChange={(e) => {
-                      handleChange(e);
-                      setOfferData(prev => ({
-                        ...prev,
-                        offer_product: [],
-                        offer_category: [],
-                        [e.target.name]: e.target.value
-                      }));
-                    }}
-                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
+                    onChange={handleOfferProductCategoryChange}   // New: use dedicated handler
+                    className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400 relative z-20"
+                    style={{ pointerEvents: 'auto' }}             // Ensure pointer events always enabled
+                    disabled={false}                              // Explicitly ensure enabled
                     required
-                    disabled
                   >
                     <option value="">Select Apply To</option>
                     <option value="product">Specific Products</option>
@@ -1515,53 +1593,53 @@ const filteredOffers = offers.filter((offer) => {
                     />
                   </div>
                 )}
-{/* Offer Limit Section */}
-<div>
-  <label className="block mb-1 text-sm font-semibold text-gray-700">
-    Enable Limit
-  </label>
-  <div className="flex items-center space-x-3">
-    <input
-      type="checkbox"
-      id="limit_enabled"
-      name="limit_enabled"
-      checked={offerData.limit_enabled || false}
-      onChange={(e) =>
-        setOfferData((prev) => ({
-          ...prev,
-          limit_enabled: e.target.checked,
-          offer_limit: e.target.checked ? prev.offer_limit || "" : "", // Clear if unchecked
-        }))
-      }
-      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-    />
-    <label htmlFor="limit_enabled" className="text-sm text-gray-700">
-      Set Offer Limit
-    </label>
-  </div>
+                {/* Offer Limit Section */}
+                <div>
+                  <label className="block mb-1 text-sm font-semibold text-gray-700">
+                    Enable Limit
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="limit_enabled"
+                      name="limit_enabled"
+                      checked={offerData.limit_enabled || false}
+                      onChange={(e) =>
+                        setOfferData((prev) => ({
+                          ...prev,
+                          limit_enabled: e.target.checked,
+                          offer_limit: e.target.checked ? prev.offer_limit || "" : "", // Clear if unchecked
+                        }))
+                      }
+                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                    />
+                    <label htmlFor="limit_enabled" className="text-sm text-gray-700">
+                      Set Offer Limit
+                    </label>
+                  </div>
 
-  {/* Limit Input Field - Show only if checkbox is checked */}
-  {offerData.limit_enabled && (
-    <div className="mt-3">
-      <label
-        htmlFor="offer_limit"
-        className="block mb-1 text-sm font-semibold text-gray-700"
-      >
-        Offer Limit
-      </label>
-      <input
-        type="number"
-        id="offer_limit"
-        name="offer_limit"
-        value={offerData.offer_limit}
-        onChange={handleChange}
-        className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
-        min="1"
-        required
-      />
-    </div>
-  )}
-</div>
+                  {/* Limit Input Field - Show only if checkbox is checked */}
+                  {offerData.limit_enabled && (
+                    <div className="mt-3">
+                      <label
+                        htmlFor="offer_limit"
+                        className="block mb-1 text-sm font-semibold text-gray-700"
+                      >
+                        Offer Limit
+                      </label>
+                      <input
+                        type="number"
+                        id="offer_limit"
+                        name="offer_limit"
+                        value={offerData.offer_limit}
+                        onChange={handleChange}
+                        className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
+                        min="1"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {/* Submit Button */}
                 <div className="pt-4">
