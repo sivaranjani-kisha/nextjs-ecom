@@ -835,7 +835,8 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
               {products.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                    {getSortedProducts().map(product => (
+                    {getSortedProducts() .filter(product =>
+    Number(product.special_price) > 0) .map(product => (
                       <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
                         {/* Product Image */}
                         <div className="relative aspect-square bg-white">
@@ -915,9 +916,15 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
                             )}
                           </div>
       
-                          <h4 className={`text-xs mb-3 ${product.stock_status === "In Stock" && product.quantity ? "text-green-600" : "text-red-600"}`}>
+                          {/* <h4 className={`text-xs mb-3 ${product.stock_status === "In Stock" && product.quantity ? "text-green-600" : "text-red-600"}`}>
                             {product.stock_status === "In Stock" && product.quantity ? ` ${product.stock_status}` : "Out Of Stock"}
                             {product.stock_status === "In Stock" && product.quantity ? `, ${product.quantity} units` : ""}
+                          </h4> */}
+
+                          <h4 className={`text-xs mb-3 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
+                            {product.quantity > 0
+                              ? `In Stock, ${product.quantity} units`
+                              : "Out Of Stock"}
                           </h4>
        
                           {/* Bottom Buttons */}
