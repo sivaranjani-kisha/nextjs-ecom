@@ -171,21 +171,58 @@ const removeWarranty = (index) => {
     }
   };
 
+  // const fetchFilter = async () => {
+  //   try {
+  //     const response = await fetch("/api/filter");
+  //     const result = await response.json();
+  //     const data = result.data;
+  //     console.log(data);
+  //     const filterOptions = data.map((cat) => ({
+  //       value: cat._id,
+  //       label: cat.filter_name,
+  //     }));
+  //     setFilter(filterOptions);
+  //   } catch (error) {
+  //     toast.error(error);
+  //   }
+  // };
   const fetchFilter = async () => {
-    try {
-      const response = await fetch("/api/filter");
-      const result = await response.json();
-      const data = result.data;
-      console.log(data);
-      const filterOptions = data.map((cat) => ({
-        value: cat._id,
-        label: cat.filter_name,
-      }));
-      setFilter(filterOptions);
-    } catch (error) {
-      toast.error(error);
+  try {
+    const response = await fetch("/api/filter");
+    const result = await response.json();
+
+    if (result.error) {
+      toast.error(result.error);
+      return;
     }
-  };
+
+    const data = result.data;
+
+    // Group filters by filter_group name
+    const groupedFilters = {};
+
+    data.forEach((filter) => {
+      const groupName = filter.filter_group_name || "Other Filters"; // depends on your API structure
+      if (!groupedFilters[groupName]) groupedFilters[groupName] = [];
+
+      groupedFilters[groupName].push({
+        value: filter._id,
+        label: filter.filter_name,
+      });
+    });
+
+    // Convert grouped data into format React-Select can understand
+    const filterOptions = Object.entries(groupedFilters).map(([group, options]) => ({
+      label: group,
+      options,
+    }));
+
+    setFilter(filterOptions);
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+
 
    useEffect(() => {
     if (mode === "edit" && productData) {
@@ -1712,18 +1749,32 @@ const handleupdatefilterchange = (filters) => {
     <div className="border p-4 rounded">
       <label className="block text-sm font-medium text-gray-700 mb-1">Filter</label>
       <Select
-        options={Filter}
-        isMulti
-        value={
-          Array.isArray(product.filters)
-            ? product.filters.every(f => typeof f === 'string')
-              ? Filter.filter(option => product.filters.includes(option.value))
-              : product.filters
-            : []
-        }
-        onChange={handleFilterChange}
-        placeholder="Select filters..."
-      />
+  options={Filter}
+  isMulti
+  value={
+    Array.isArray(product.filters)
+      ? product.filters.every(f => typeof f === 'string')
+        ? Filter.flatMap(g => g.options).filter(o => product.filters.includes(o.value))
+        : product.filters
+      : []
+  }
+  onChange={handleFilterChange}
+  placeholder="Select filters..."
+  styles={{
+    groupHeading: (base) => ({
+      ...base,
+      backgroundColor: '#f3f4f6',   // light gray bar
+      color: '#1f2937',             // dark text
+      fontWeight: 600,
+      padding: '8px 12px',
+      borderBottom: '1px solid #e5e7eb',
+      borderRadius: '4px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+    }),
+  }}
+/>
+
     </div>
 
     {/* Extended Warranty Section */}
