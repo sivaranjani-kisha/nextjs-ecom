@@ -927,25 +927,35 @@ export default function CategoryPage() {
                               </Link>
          
                               {/* Price Row (same level always) */}
-                              <div className="flex items-center gap-2 mb-3">
+                               <div className="flex items-center gap-2 mb-3">
+                              {/* Display logic */}
+                              {Number(product.special_price) > Number(product.price) ? (
+                                // 🟢 Case 1: Special price > price → show only special price
                                 <span className="text-base font-semibold text-red-600">
-                                  ₹ {(
-                                    product.special_price && product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 && product.special_price < product.price
-                                      ? product.special_price
-                                      : product.price
-                                  ).toLocaleString()}
+                                  ₹ {Math.round(product.special_price).toLocaleString()}
                                 </span>
-         
-         
-                                {product.special_price > 0 && product.special_price != '0'  && product.special_price != 0 &&   product.special_price &&
-                                  product.special_price < product.price &&
-                                  (
-                                    <span className="text-xs text-gray-500 line-through">
-                                      ₹ {product.price.toLocaleString()}
-                                    </span>
-                                )}
-                              </div>
-         
+                              ) : (
+                                // 🔵 Case 2: Normal case → show both if special_price < price
+                                <>
+                                  <span className="text-base font-semibold text-red-600">
+                                    ₹ {(
+                                      product.special_price &&
+                                      product.special_price > 0 &&
+                                      product.special_price < product.price
+                                        ? Math.round(product.special_price)
+                                        : Math.round(product.price)
+                                    ).toLocaleString()}
+                                  </span>
+
+                                  {product.special_price > 0 &&
+                                    product.special_price < product.price && (
+                                      <span className="text-xs text-gray-500 line-through">
+                                        ₹ {Math.round(product.price).toLocaleString()}
+                                      </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
                               {/* <h4 className={`text-xs mb-3 ${product.stock_status === "In Stock" && product.quantity ? "text-green-600" : "text-red-600"}`}>
                                 {product.stock_status === "In Stock" && product.quantity ? ` ${product.stock_status}` : "Out Of Stock"}
                                 {product.stock_status === "In Stock" && product.quantity ? `, ${product.quantity} units` : ""}
