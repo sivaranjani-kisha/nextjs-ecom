@@ -7,6 +7,9 @@ const Select = dynamic(() => import('react-select'), { ssr: false });
 import { combinations } from '@/utils/combinations';
 import { ToastContainer, toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
+import { components } from "react-select";
+import { Check } from "react-feather";
+
 
 const steps = [
   { title: "Basic Information" },
@@ -222,6 +225,16 @@ const removeWarranty = (index) => {
     toast.error(error.message);
   }
 };
+
+// ✅ Custom Option with tick symbol
+const CustomOption = (props) => (
+  <components.Option {...props}>
+    <div className="flex items-center justify-between">
+      <span>{props.label}</span>
+      {props.isSelected && <Check size={16} className="text-green-600" />}
+    </div>
+  </components.Option>
+);
 
 
    useEffect(() => {
@@ -1748,7 +1761,42 @@ const handleupdatefilterchange = (filters) => {
 
     <div className="border p-4 rounded">
       <label className="block text-sm font-medium text-gray-700 mb-1">Filter</label>
-      <Select
+     <Select
+  options={Filter}
+  isMulti
+  hideSelectedOptions={false}  // ✅ keeps selected options visible in dropdown
+  closeMenuOnSelect={false}    // ✅ keeps dropdown open while selecting multiple
+  components={{ Option: CustomOption }}
+  value={
+    Array.isArray(product.filters)
+      ? product.filters.every(f => typeof f === 'string')
+        ? Filter.flatMap(g => g.options).filter(o => product.filters.includes(o.value))
+        : product.filters
+      : []
+  }
+  onChange={handleFilterChange}
+  placeholder="Select filters..."
+  styles={{
+    groupHeading: (base) => ({
+      ...base,
+      backgroundColor: '#f3f4f6',
+      color: '#1f2937',
+      fontWeight: 600,
+      padding: '8px 12px',
+      borderBottom: '1px solid #e5e7eb',
+      borderRadius: '4px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected ? '#e6f4ea' : state.isFocused ? '#f9fafb' : 'white',
+      color: '#111827',
+      fontWeight: state.isSelected ? 600 : 400,
+    }),
+  }}
+/>
+      {/* <Select
   options={Filter}
   isMulti
   value={
@@ -1773,7 +1821,8 @@ const handleupdatefilterchange = (filters) => {
       letterSpacing: '0.5px',
     }),
   }}
-/>
+/> */}
+
 
     </div>
 
