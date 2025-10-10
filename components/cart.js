@@ -607,7 +607,7 @@ export default function CartComponent() {
       // Must have a valid normalized coupon from API
       if (!data.success || data.validOffer !== true || !data.coupon) {
        
-        setCouponError("The coupon code entered is not valid for this course");
+        setCouponError("The coupon code entered is not valid.");
         setCouponSuccess("");
         return;
       }
@@ -617,7 +617,7 @@ export default function CartComponent() {
       // Only Active coupons
       if ((normalized.status || "").toLowerCase() !== "active") {
        
-        setCouponError("The coupon code entered is not valid for this course");
+        setCouponError("The coupon code entered is not valid.");
         setCouponSuccess("");
         return;
       }
@@ -625,7 +625,7 @@ export default function CartComponent() {
       // Reject if both percentage and fixed are zero/invalid
       if ((normalized.percentage ?? 0) <= 0 && (normalized.fixed_price ?? 0) <= 0) {
         
-        setCouponError("The coupon code entered is not valid for this course");
+        setCouponError("The coupon code entered is not valid.");
         setCouponSuccess("");
         return;
       }
@@ -638,7 +638,7 @@ export default function CartComponent() {
         !normalized.offer_product.some((id) => cartProductIds.includes(id))
       ) {
          console.log(normalized);
-        setCouponError("The coupon code entered is not valid for this course");
+        setCouponError("The coupon code entered is not valid.");
         setCouponSuccess("");
         return;
       }
@@ -655,7 +655,7 @@ export default function CartComponent() {
       setCouponSuccess(`${normalized.offer_code} is applied`);
       setCouponError("");
     } catch (_) {
-      setCouponError("The coupon code entered is not valid for this course");
+      setCouponError("The coupon code entered is not valid.");
       setCouponSuccess("");
     } finally {
       setIsValidatingCoupon(false);
