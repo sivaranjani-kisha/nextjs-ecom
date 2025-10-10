@@ -18,7 +18,13 @@ export async function POST(req) {
     try {
         await connectDB();
         const body = await req.json();  // Parse request body
-        
+
+        // Ensure required 'notes' is present; use default if missing/empty
+        const notes =
+            typeof body.notes === "string" && body.notes.trim()
+                ? body.notes.trim()
+                : "No notes provided.";
+
         // Validate offer limit if enabled
         if (body.limit_enabled) {
             if (!body.offer_limit || body.offer_limit <= 0) {
@@ -61,9 +67,10 @@ export async function POST(req) {
             }
         }
 
-        // Create new offer with populated products
+        // Create new offer with populated products and ensured 'notes'
         const newOffer = new Offer({
             ...body,
+            notes, // ensure required field exists
             offer_product: finalOfferProduct, // Use the populated product list
             offer_limit: body.limit_enabled ? body.offer_limit : null
         });
