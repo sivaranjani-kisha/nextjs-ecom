@@ -201,3 +201,132 @@ body::-webkit-scrollbar {
 .pt-32   { padding-top: 8rem;     /* 128px */ }
 .pt-36   { padding-top: 9rem;     /* 144px */ }
 .pt-40   { padding-top: 10rem;    /* 160px */ }
+
+:root {
+  --height: 38px;
+  --radius: 12px;
+  --outline: #e3e3e9;
+  --bg: #ffffff;
+  --accent: #5b46f0;
+  --muted: #6b7280;
+  --shadow: 0 8px 18px rgba(36, 83, 211, 0.04);
+}
+
+/* Search Bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 4px 8px;
+  border: 3px solid var(--outline);
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.25s ease, transform 0.12s ease, border-color 0.18s ease;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.search-bar:focus-within {
+  box-shadow: 0 12px 30px rgba(36, 83, 211, 0.04);
+  border-color: rgba(36, 83, 211, 0.04);
+}
+
+.search-bar-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 2px;
+  border-radius: 8px;
+}
+
+/* Select Dropdown */
+.search-select {
+  height: var(--height);
+  min-width: 140px;
+  max-width: 200px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  padding: 0 36px 0 14px;
+  font-size: 15px;
+  color: #111;
+  background: #fff;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.select-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 35%;
+  flex: 0 0 auto;
+}
+
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  background-image: linear-gradient(135deg, #6b7280, #6b7280);
+  clip-path: polygon(50% 70%, 0 25%, 100% 25%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Input */
+.search-input {
+  flex: 1 1 auto;
+  height: var(--height);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #fff;
+  color: #0f172a;
+  font-size: 15px;
+  width: 100%;
+}
+
+/* Focus & Active States */
+.search-input.has-value,
+.search-input:focus,
+.search-select:focus {
+  border-color: #e3e3e9;
+  box-shadow: 0 6px 20px rgba(36, 83, 211, 0.04);
+}
+
+.search-input:focus,
+.search-select:focus {
+  outline: none;
+}
+
+/* Animation */
+@keyframes shimmer {
+  from {
+    left: -120%;
+  }
+  to {
+    left: 120%;
+  }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  :root {
+    --height: 36px;
+  }
+  .search-btn {
+    width: 48px;
+    color: #2453d3;
+  }
+  .search-select {
+    min-width: 100px;
+  }
+}
+
