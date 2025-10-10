@@ -8,7 +8,7 @@ import ProductFilter from '@/models/ecom_productfilter_info';
 export async function GET() {
   try {
     await dbConnect();
-    const products = await Product.find({}).lean();
+    const products = await Product.find({}) .sort({ createdAt: -1 }) .lean();
     const wishlistedItems = await Wishlist.find({}, 'productId userId').lean(); // adjust projection as needed
 
    const ProductFilteritems = await ProductFilter.find({}).lean();
