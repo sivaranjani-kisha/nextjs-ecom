@@ -852,7 +852,13 @@ const filteredOffers = offers.filter((offer) => {
                 disabled={!!statusUpdating[offer._id]}
                 aria-label={`Toggle active for ${offer.offer_code}`}
               />
-              <div className="w-11 h-6 bg-gray-200 rounded-full transition-colors duration-200 ease-in-out peer-checked:bg-red-600"></div>
+              <div className="w-11 h-6 bg-gray-200 rounded-full transition-colors duration-200 ease-in-out peer-checked:bg-red-600" 
+                style={{
+                  '--tw-bg-opacity': 1,
+                  backgroundColor: '#dc2626'
+                }}>
+                  
+                </div>
               <span className="absolute top-0.5 left-0.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-gray-700 bg-white rounded-full border border-gray-300 pointer-events-none transition-all duration-200 ease-in-out transform peer-checked:translate-x-5 peer-checked:bg-red-100">
                 {offer.fest_offer_status === "active" ? "Yes" : "No"}
               </span>
