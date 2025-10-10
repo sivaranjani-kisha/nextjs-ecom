@@ -308,6 +308,30 @@ useEffect(() => {
     }));
   };
 
+  // NEW: numeric input helpers to stabilize typing/increment/decrement
+  const handleNumberChange = (field) => (e) => {
+    const val = e.target.value;
+    // Keep raw string to avoid flicker/reset during typing or arrow usage
+    setOfferData((prev) => ({ ...prev, [field]: val }));
+  };
+  const handleNumberBlur = (field, min, max) => () => {
+    const raw = offerData[field];
+    if (raw === "" || raw === "-" || raw === ".") {
+      // Keep empty if user cleared input
+      setOfferData((prev) => ({ ...prev, [field]: "" }));
+      return;
+    }
+    let n = Number(raw);
+    if (!Number.isFinite(n)) return; // ignore invalid
+    if (typeof min === "number" && n < min) n = min;
+    if (typeof max === "number" && n > max) n = max;
+    setOfferData((prev) => ({ ...prev, [field]: String(n) }));
+  };
+  const toNumberOrNull = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
   const handleDelete = async (offerId) => {
     try {
       const response = await fetch("/api/offers/delete", {
@@ -355,10 +379,11 @@ useEffect(() => {
       offer_product: offer.offer_product,
       offer_category: offer.offer_category,
       offer_type: offer.offer_type,
-      percentage: offer.percentage || "",
-      fixed_price: offer.fixed_price || "",
-       limit_enabled: offer.limit_enabled || false,
-    offer_limit: offer.offer_limit || "",
+      // Ensure stable controlled rendering by coercing to string
+      percentage: offer.percentage != null && offer.percentage !== "" ? String(offer.percentage) : "",
+      fixed_price: offer.fixed_price != null && offer.fixed_price !== "" ? String(offer.fixed_price) : "",
+      limit_enabled: offer.limit_enabled || false,
+      offer_limit: offer.offer_limit != null && offer.offer_limit !== "" ? String(offer.offer_limit) : "",
     });
     setSelectedUsers(offer.selected_users || []);
     setSelectedOfferType(offer.offer_type);
@@ -393,6 +418,11 @@ useEffect(() => {
       const formattedData = {
         ...offerData,
         id: editingOfferId,
+        // NEW: force numeric types where applicable
+        percentage: offerData.offer_type === "percentage" ? toNumberOrNull(offerData.percentage) : null,
+        fixed_price: offerData.offer_type === "fixed_price" ? toNumberOrNull(offerData.fixed_price) : null,
+        limit_enabled: !!offerData.limit_enabled,
+        offer_limit: offerData.limit_enabled ? toNumberOrNull(offerData.offer_limit) : null,
         // NEW: send all status keys for safety
         status: safeFestStatus,
         fest_offer_status2: safeFestStatus,
@@ -525,8 +555,11 @@ useEffect(() => {
         selected_users: selectedUsers.includes("all") 
           ? users.map(user => user._id) 
           : selectedUsers.filter(id => id !== "all"),
-        limit_enabled: offerData.limit_enabled || false,
-        offer_limit: offerData.limit_enabled ? Number(offerData.offer_limit) : null,
+        limit_enabled: !!offerData.limit_enabled,
+        offer_limit: offerData.limit_enabled ? toNumberOrNull(offerData.offer_limit) : null,
+        // ensure numeric payloads
+        percentage: offerData.offer_type === "percentage" ? toNumberOrNull(offerData.percentage) : null,
+        fixed_price: offerData.offer_type === "fixed_price" ? toNumberOrNull(offerData.fixed_price) : null,
         // NEW: persist fest_offer_status2 on create as well (keep in sync)
         fest_offer_status2: (offerData.fest_offer_status2 || offerData.fest_offer_status || "").toLowerCase(),
         fest_offer_status: (offerData.fest_offer_status2 || offerData.fest_offer_status || "").toLowerCase(),
@@ -650,7 +683,7 @@ const filteredOffers = offers.filter((offer) => {
         id: offerId,
         offer_code: offer.offer_code,
         fest_offer_status: newStatus,
-        fest_offer_status2: newStatus, // NEW: send both
+        fest_offer_status2: newStatus,
         notes: offer.notes || "",
         from_date: new Date(offer.from_date),
         to_date: new Date(offer.to_date),
@@ -658,12 +691,12 @@ const filteredOffers = offers.filter((offer) => {
         offer_product: offer.offer_product || [],
         offer_category: offer.offer_category || [],
         offer_type: offer.offer_type,
-        percentage: offer.percentage || "",
-        fixed_price: offer.fixed_price || "",
-        limit_enabled: offer.limit_enabled || false,
-        offer_limit: offer.limit_enabled ? Number(offer.offer_limit) : null,
+        // ensure numbers in payload
+        percentage: offer.offer_type === "percentage" ? toNumberOrNull(offer.percentage) : null,
+        fixed_price: offer.offer_type === "fixed_price" ? toNumberOrNull(offer.fixed_price) : null,
+        limit_enabled: !!offer.limit_enabled,
+        offer_limit: offer.limit_enabled ? toNumberOrNull(offer.offer_limit) : null,
         selected_users: offer.selected_users || [],
-        // NEW: send all status keys for safety
         status: newStatus,
         fest_offer_status: newStatus,
         fest_offer_status2: newStatus,
@@ -1230,11 +1263,14 @@ const filteredOffers = offers.filter((offer) => {
                       name="percentage"
                       id="percentage"
                       value={offerData.percentage}
-                      onChange={handleChange}
+                      onChange={handleNumberChange("percentage")}
+                      onBlur={handleNumberBlur("percentage", 1, 100)}
                       className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                       min="1"
                       max="100"
+                      step="1"
+                      inputMode="numeric"
                     />
                   </div>
                 )}
@@ -1250,13 +1286,17 @@ const filteredOffers = offers.filter((offer) => {
                       name="fixed_price"
                       id="fixed_price"
                       value={offerData.fixed_price}
-                      onChange={handleChange}
+                      onChange={handleNumberChange("fixed_price")}
+                      onBlur={handleNumberBlur("fixed_price", 1)}
                       className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                       min="1"
+                      step="1"
+                      inputMode="numeric"
                     />
                   </div>
                 )}
+
                 {/* Offer Limit Section */}
                 <div>
                   <label className="block mb-1 text-sm font-semibold text-gray-700">
@@ -1296,10 +1336,13 @@ const filteredOffers = offers.filter((offer) => {
                         id="offer_limit"
                         name="offer_limit"
                         value={offerData.offer_limit}
-                        onChange={handleChange}
+                        onChange={handleNumberChange("offer_limit")}
+                        onBlur={handleNumberBlur("offer_limit", 1)}
                         className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                         min="1"
                         required
+                        step="1"
+                        inputMode="numeric"
                       />
                     </div>
                   )}
@@ -1572,11 +1615,14 @@ const filteredOffers = offers.filter((offer) => {
                       name="percentage"
                       id="percentage"
                       value={offerData.percentage}
-                      onChange={handleChange}
+                      onChange={handleNumberChange("percentage")}
+                      onBlur={handleNumberBlur("percentage", 1, 100)}
                       className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                       min="1"
                       max="100"
+                      step="1"
+                      inputMode="numeric"
                     />
                   </div>
                 )}
@@ -1592,13 +1638,17 @@ const filteredOffers = offers.filter((offer) => {
                       name="fixed_price"
                       id="fixed_price"
                       value={offerData.fixed_price}
-                      onChange={handleChange}
+                      onChange={handleNumberChange("fixed_price")}
+                      onBlur={handleNumberBlur("fixed_price", 1)}
                       className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                       required
                       min="1"
+                      step="1"
+                      inputMode="numeric"
                     />
                   </div>
                 )}
+
                 {/* Offer Limit Section */}
                 <div>
                   <label className="block mb-1 text-sm font-semibold text-gray-700">
@@ -1638,10 +1688,13 @@ const filteredOffers = offers.filter((offer) => {
                         id="offer_limit"
                         name="offer_limit"
                         value={offerData.offer_limit}
-                        onChange={handleChange}
+                        onChange={handleNumberChange("offer_limit")}
+                        onBlur={handleNumberBlur("offer_limit", 1)}
                         className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                         min="1"
                         required
+                        step="1"
+                        inputMode="numeric"
                       />
                     </div>
                   )}
@@ -1653,7 +1706,7 @@ const filteredOffers = offers.filter((offer) => {
                     type="submit"
                     className="inline-block bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition"
                   >
-                    Update Offer
+                    Save Offer
                   </button>
                 </div>
               </form>
@@ -1661,6 +1714,7 @@ const filteredOffers = offers.filter((offer) => {
           </div>
         </div>
       )}
+
       {/* Mail Modal */}
 {isMailModalOpen && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
