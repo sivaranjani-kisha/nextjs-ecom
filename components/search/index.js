@@ -130,10 +130,16 @@ export default function SearchComponent() {
       url += `category=${encodeURIComponent(category)}`;
     }
 
+    // Add cache-busting timestamp and log outgoing request
+    url += (url.endsWith('?') ? '' : '&') + `t=${Date.now()}`;
+    console.log('[SearchComponent] Calling:', url);
+
     const res = await axios.get(url);
     const searchData = res.data;
     const productsData = searchData.products || searchData;
-    
+
+    console.log('[SearchComponent] /api/search responded with products:', Array.isArray(productsData) ? productsData.length : 'unknown');
+
     setProducts(productsData);
     
     // Calculate price range from search results
@@ -181,7 +187,7 @@ export default function SearchComponent() {
 
   } catch (err) {
     toast.error("Failed to load search results");
-    console.error("Search error:", err);
+    console.error("[SearchComponent] /api/search error:", err);
   } finally {
     setLoading(false);
   }
@@ -533,8 +539,8 @@ const filteredProducts = query || category
     <div className="container mx-auto px-4 py-2">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-3 text-gray-600 pl-1">
-          Search Results for "{query}"
-          {category && ` in ${category}`}
+          Search Results for 
+          {category && `  ${category}`}
         </h1>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-1 gap-4">
