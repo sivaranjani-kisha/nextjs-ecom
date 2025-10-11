@@ -19,8 +19,9 @@ export default function SearchComponent() {
     main_category: null
   });
   const searchParams = useSearchParams();
-  const query = searchParams.get("query") || "";
+  const searchQuery = searchParams.get("query") || "";
   const category = searchParams.get("category") || "";
+  const urlQuery = { slug: searchParams.get("slug") || null, category: category || null };
   const [products, setProducts] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState({
     categories: [],
@@ -51,12 +52,33 @@ export default function SearchComponent() {
 
     // Fetch initial data
     useEffect(() => {
-      if (slug) {
-        fetchInitialData();
+        let slug = urlQuery.slug || urlQuery.category;
+        
+        if(slug === "Televisions" ){
+          slug ="Television";
+        }else if(slug === "Computers & Laptops" ){
+          slug ="Laptops";
+        }else if(slug === "Mobiles & Accessories" ){
+          slug ="Mobile Phones";
+        }else if(slug === "Gadgets" ){
+          slug ="Gadget";
+        }else if(slug === "Accessories" ){
+          slug ="Accessory";
+        }else if(slug === "Sound Systems" ){
+          slug = "Sound System";
+        }else if (slug === "Large Appliance" ) {
+          slug = "large-appliance";
+        }else if (slug === "Small Appliances") {
+          slug = "small-appliances";
+        }
+
+      console.log("Slug/category changed:", slug);
+      if (slug ) {
+        fetchInitialData(slug);
       }
-    }, [slug]);
+    }, [urlQuery.slug, urlQuery.category]);
     
-    const fetchInitialData = async () => {
+    const fetchInitialData = async (slug) => {
       try {
         setLoading(true);
         const categoryRes = await fetch(`/api/categories/${slug}`);
@@ -66,7 +88,7 @@ export default function SearchComponent() {
           ...categoryData,
           categoryTree: categoryData.category,
           allCategoryIds: categoryData.allCategoryIds,
-           banners: banners
+          banners: banners
         });
   
         if (categoryData.products?.length > 0) {
@@ -102,12 +124,13 @@ export default function SearchComponent() {
             groups[groupId].filters.push(filter);
           }
         });
+        console.log("Filter groups:", groups);
         setFilterGroups(groups);
         
         // Fetch products after setting up initial data
         await fetchFilteredProducts(categoryData, 1, true);
       } catch (error) {
-        toast.error("Error fetching initial data");
+        ////toast.error("Error fetching initial data");
       } finally {
         setInitialLoadComplete(true);
         // setLoading(false);
@@ -116,90 +139,90 @@ export default function SearchComponent() {
     const [brandMap, setBrandMap] = useState([]);
 
   useEffect(() => {
-   const fetchResults = async () => {
-  try {
-    setLoading(true);
-    let url = '/api/search?';
-    
-    if (query) {
-      url += `query=${encodeURIComponent(query)}`;
-    }
-    
-    if (category) {
-      if (query) url += '&';
-      url += `category=${encodeURIComponent(category)}`;
-    }
+    const fetchResults = async () => {
+      try {
+        setLoading(true);
+        let url = '/api/search?';
+        
+        if (searchQuery) {
+          url += `query=${encodeURIComponent(searchQuery)}`;
+        }
+        
+        if (category) {
+          if (searchQuery) url += '&';
+          url += `category=${encodeURIComponent(category)}`;
+        }
 
-    // Add cache-busting timestamp and log outgoing request
-    url += (url.endsWith('?') ? '' : '&') + `t=${Date.now()}`;
-    console.log('[SearchComponent] Calling:', url);
+        // Add cache-busting timestamp and log outgoing request
+        url += (url.endsWith('?') ? '' : '&') + `t=${Date.now()}`;
+        console.log('[SearchComponent] Calling:', url);
 
-    const res = await axios.get(url);
-    const searchData = res.data;
-    const productsData = searchData.products || searchData;
+        const res = await axios.get(url);
+        const searchData = res.data;
+        const productsData = searchData.products || searchData;
 
-    console.log('[SearchComponent] /api/search responded with products:', Array.isArray(productsData) ? productsData.length : 'unknown');
+        console.log('[SearchComponent] /api/search responded with products:', Array.isArray(productsData) ? productsData.length : 'unknown');
 
-    setProducts(productsData);
-    
-    // Calculate price range from search results
-    if (productsData.length > 0) {
-      const prices = productsData.map(p => {
-        const price = p.special_price > 0 && p.special_price < p.price 
-          ? Number(p.special_price) 
-          : Number(p.price);
-        return price;
-      });
-      
-      let minPrice = Math.min(...prices);
-      let maxPrice = Math.max(...prices);
+        setProducts(productsData);
+        
+        // Calculate price range from search results
+        if (productsData.length > 0) {
+          const prices = productsData.map(p => {
+            const price = p.special_price > 0 && p.special_price < p.price 
+              ? Number(p.special_price) 
+              : Number(p.price);
+            return price;
+          });
+          
+          let minPrice = Math.min(...prices);
+          let maxPrice = Math.max(...prices);
 
-      // If only one product, add a small buffer
-      if (minPrice === maxPrice) {
-        minPrice = Math.max(1, minPrice - 100);
-        maxPrice = maxPrice + 100;
+          // If only one product, add a small buffer
+          if (minPrice === maxPrice) {
+            minPrice = Math.max(1, minPrice - 100);
+            maxPrice = maxPrice + 100;
+          }
+
+          setPriceRange([minPrice, maxPrice]);
+          setSelectedFilters(prev => ({
+            ...prev,
+            price: { min: minPrice, max: maxPrice }
+          }));
+          
+          // Also update the slider values
+          setValues([minPrice, maxPrice]);
+        }
+
+        // Extract brands from search results for filtering
+        const brandsFromResults = Array.from(new Set(productsData.map(product => product.brand) || []))
+          .filter(brandId => brandId && brandMap[brandId])
+          .map(brandId => ({
+            _id: brandId,
+            brand_name: brandMap[brandId],
+            count: productsData.filter(product => product.brand === brandId).length || 0
+          }));
+
+        // Update categoryData with brands from search results
+        setCategoryData(prev => ({
+          ...prev,
+          brands: brandsFromResults
+        }));
+
+      } catch (err) {
+        //toast.error("Failed to load search results");
+        console.error("[SearchComponent] /api/search error:", err);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setPriceRange([minPrice, maxPrice]);
-      setSelectedFilters(prev => ({
-        ...prev,
-        price: { min: minPrice, max: maxPrice }
-      }));
-      
-      // Also update the slider values
-      setValues([minPrice, maxPrice]);
-    }
-
-    // Extract brands from search results for filtering
-    const brandsFromResults = Array.from(new Set(productsData.map(product => product.brand) || []))
-      .filter(brandId => brandId && brandMap[brandId])
-      .map(brandId => ({
-        _id: brandId,
-        brand_name: brandMap[brandId],
-        count: productsData.filter(product => product.brand === brandId).length || 0
-      }));
-
-    // Update categoryData with brands from search results
-    setCategoryData(prev => ({
-      ...prev,
-      brands: brandsFromResults
-    }));
-
-  } catch (err) {
-    toast.error("Failed to load search results");
-    console.error("[SearchComponent] /api/search error:", err);
-  } finally {
-    setLoading(false);
-  }
-};
-
-    if (query || category) {
+    if (searchQuery || category) {
       fetchResults();
     } else {
       setLoading(false);
       setProducts([]);
     }
-  }, [query, category]);
+  }, [searchQuery, category]);
 
   const fetchBrand = async () => {
     try {
@@ -276,7 +299,7 @@ export default function SearchComponent() {
         setNofound(false);
       }
     } catch (error) {
-      toast.error('Error fetching products'+error);
+      //toast.error('Error fetching products'+error);
     } finally {
       if (!initialLoad) setLoading(false);
     }
@@ -330,7 +353,7 @@ const applyFilters = useCallback(async (pageNum = 1) => {
     setLoading(true);
     
     // For search results (query or category search)
-    if (query || category) {
+    if (searchQuery || category) {
       const filteredResults = await filterSearchResults(pageNum);
       setProducts(filteredResults.products);
       setPagination(filteredResults.pagination);
@@ -340,11 +363,11 @@ const applyFilters = useCallback(async (pageNum = 1) => {
       await fetchFilteredProducts(categoryData, pageNum);
     }
   } catch (error) {
-    toast.error('Error applying filters: ' + error.message);
+    //toast.error('Error applying filters: ' + error.message);
   } finally {
     setLoading(false);
   }
-}, [query, category, categoryData, selectedFilters]);
+}, [searchQuery, category, categoryData, selectedFilters]);
 
 useEffect(() => {
   if (initialLoadComplete) {
@@ -401,7 +424,7 @@ const filterSearchResults = async (pageNum = 1) => {
   const queryParams = new URLSearchParams();
   
   // Add search parameters
-  if (query) queryParams.set('query', query);
+  if (searchQuery) queryParams.set('query', searchQuery);
   if (category) queryParams.set('category', category);
   
   // Add filter parameters
@@ -530,9 +553,9 @@ const MAX = priceRange[1] || 100000;
   };
 
   // Add this variable right before return
-const filteredProducts = query || category 
-  ? filterProductsClientSide(products)
-  : getSortedProducts();
+  const filteredProducts = searchQuery || category 
+    ? filterProductsClientSide(products)
+    : getSortedProducts();
 
 
   return (
@@ -737,51 +760,52 @@ const filteredProducts = query || category
                 )}
               </div>  
 
-              {/* Dynamic Filters */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
-                <div className="pb-2 mb-2">
-                  <h3 className="text-base font-semibold text-gray-700">Product Filters</h3>
-                </div>
-                {isFiltersExpanded && (
-                  <div className="space-y-4">
-                    {Object.values(filterGroups).map(group => (
-                      <div key={group._id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
-                        <button onClick={() => toggleFilterGroup(group._id)} className="flex justify-between items-center w-full group">
-                          <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">{group.name}</span>
-                          <ChevronDown
-                            size={18}
-                            className={`text-gray-400 transition-transform duration-200 ${expandedFilters[group._id] ? 'rotate-180' : ''
+               {/* Dynamic Filters */}
+                {isFiltersExpanded && Object.values(filterGroups).length > 0 &&  (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border mb-3 border-gray-100">
+                    <div className="pb-2 mb-2">
+                      <h3 className="text-base font-semibold text-gray-700">Product Filters</h3>
+                    </div>
+                    <div className="space-y-4">
+                      {Object.values(filterGroups).map(group => (
+                        <div key={group._id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
+                          <button onClick={() => toggleFilterGroup(group._id)} className="flex justify-between items-center w-full group">
+                            <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">{group.name}</span>
+                            <ChevronDown 
+                              size={18}
+                              className={`text-gray-400 transition-transform duration-200 ${
+                                expandedFilters[group._id] ? 'rotate-180' : ''
                               }`}
-                          />
-                        </button>
-
-                        {expandedFilters[group._id] && (
-                          <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
-                            {group.filters.map(filter => (
-                              <li key={filter._id} className="flex items-center">
-                                <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedFilters.filters.includes(filter._id)}
-                                    onChange={() => handleFilterChange('filters', filter._id)}
-                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                  />
-                                  <span className="text-sm text-gray-600">{filter.filter_name}</span>
-                                  {filter.count && (
-                                    <span className="text-xs text-gray-400 ml-auto">
-                                      ({filter.count})
-                                    </span>
-                                  )}
-                                </label>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    ))}
+                            />
+                          </button>
+  
+                          {expandedFilters[group._id] && (
+                            <ul className="mt-2 max-h-48 overflow-y-auto pr-2">
+                              {group.filters.map(filter => (
+                                <li key={filter._id} className="flex items-center">
+                                  <label className="flex items-center space-x-2 w-full cursor-pointer hover:bg-gray-50 rounded p-2 transition-colors">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedFilters.filters.includes(filter._id)}
+                                      onChange={() => handleFilterChange('filters', filter._id)}
+                                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <span className="text-sm text-gray-600">{filter.filter_name}</span>
+                                    {filter.count && (
+                                      <span className="text-xs text-gray-400 ml-auto">
+                                        ({filter.count})
+                                      </span>
+                                    )}
+                                  </label>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
             </div>
             <div className="flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
