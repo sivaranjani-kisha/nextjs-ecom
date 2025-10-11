@@ -53,25 +53,6 @@ export default function SearchComponent() {
     // Fetch initial data
     useEffect(() => {
         let slug = urlQuery.slug || urlQuery.category;
-        
-        if(slug === "Televisions" ){
-          slug ="Television";
-        }else if(slug === "Computers & Laptops" ){
-          slug ="Laptops";
-        }else if(slug === "Mobiles & Accessories" ){
-          slug ="Mobile Phones";
-        }else if(slug === "Gadgets" ){
-          slug ="Gadget";
-        }else if(slug === "Accessories" ){
-          slug ="Accessory";
-        }else if(slug === "Sound Systems" ){
-          slug = "Sound System";
-        }else if (slug === "Large Appliance" ) {
-          slug = "large-appliance";
-        }else if (slug === "Small Appliances") {
-          slug = "small-appliances";
-        }
-
       console.log("Slug/category changed:", slug);
       if (slug ) {
         fetchInitialData(slug);
@@ -81,7 +62,11 @@ export default function SearchComponent() {
     const fetchInitialData = async (slug) => {
       try {
         setLoading(true);
-        const categoryRes = await fetch(`/api/categories/${slug}`);
+        let search_slug = slug;  
+        if(slug === "Televisions" ){
+          search_slug ="Televisions";
+        }
+        const categoryRes = await fetch(`/api/categories/${search_slug}`);
         const categoryData = await categoryRes.json();
         const banners = categoryData.main_category?.banners || [];
         setCategoryData({
