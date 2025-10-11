@@ -15,7 +15,7 @@ export default function StoreComponent() {
   const [dateFilter, setDateFilter] = useState({ startDate: null, endDate: null });
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
 
   const [newStore, setNewStore] = useState({
     organisation_name: "",
