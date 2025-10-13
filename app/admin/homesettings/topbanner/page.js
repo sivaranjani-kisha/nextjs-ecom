@@ -212,7 +212,7 @@ export default function TopBannerPage() {
 
               <div>
                 <p className="text-gray-500 text-sm mb-2">
-                Topbanner size: <span className="font-semibold">1278 × 390 px</span>
+                Topbanner size: <span className="font-semibold">2000 × 667 px</span>
                 </p>
                 <input
                   type="file"

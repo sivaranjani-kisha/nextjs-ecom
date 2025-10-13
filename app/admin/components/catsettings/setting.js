@@ -227,6 +227,9 @@ export default function CategoryBannerManager() {
                 onChange={(e) => handleInputChange("bannerName", e.target.value)}
                 className="w-full border px-2 py-1 rounded"
               />
+              <p className="text-gray-500 text-sm mb-2">
+                Category Banner Size: <span className="font-semibold">1248 × 390 px</span>
+                </p>
               <input
                 type="file"
                 accept="image/*"
