@@ -292,6 +292,14 @@ const buildFlixMinifyUrl = (p = {}, opts = {}) => {
   const { mpn, ean, upc, sku, brandCode } = resolveFlixIds(p);
   const distId = "17089";
   const l = "in";
+
+  // NEW: primary identifier selection with logging
+  const primaryCode = (opts && opts.code) || p.brand_code || p.item_code || null;
+  console.log("[Flix] primary identifier selected (brand_code || item_code):", primaryCode, {
+    brand_code: p?.brand_code,
+    item_code: p?.item_code,
+  });
+
   const params = new URLSearchParams({
     url: "/clamps/modularvnew/js/service.js",
     v: "32",
@@ -305,16 +313,16 @@ const buildFlixMinifyUrl = (p = {}, opts = {}) => {
     ext: ".js",
   });
 
-  if (mpn) params.append("mpn", mpn);
+  // Use the chosen code as the primary identifier for mpn
+  const mpnToUse = primaryCode || mpn;
+  if (mpnToUse) params.append("mpn", String(mpnToUse));
+
   if (ean) params.append("ean", ean);
   if (upc) params.append("upc", upc);
   if (sku) params.append("sku", sku);
 
-  // NEW: explicitly pass brand_code, and also use as mpn fallback if mpn missing
-  if (brandCode) {
-    params.append("brand_code", brandCode);
-    if (!mpn) params.append("mpn", brandCode);
-  }
+  // Keep passing brand_code if available
+  if (brandCode) params.append("brand_code", brandCode);
 
   // OPTIONAL: pass brand name if available
   if (opts.brandName) params.append("brand", opts.brandName);
@@ -331,9 +339,15 @@ const loadFlixScript = (fallbackTimeout) => {
   flixScript.type = "text/javascript";
   flixScript.async = true;
 
-  // NEW: use the correct minified service.js URL over HTTPS
-  // UPDATED: pass brandName so it can be included in the URL
-  flixScript.src = buildFlixMinifyUrl(product, { brandName });
+  // NEW: choose identifier code and log it
+  const code = product?.brand_code || product?.item_code || null;
+  console.log("[Flix] using identifier code for request:", code, {
+    brand_code: product?.brand_code,
+    item_code: product?.item_code,
+  });
+
+  // UPDATED: pass code to URL builder
+  flixScript.src = buildFlixMinifyUrl(product, { brandName, code });
 
   flixScript.onload = () => {
     console.log(brandName, product);
