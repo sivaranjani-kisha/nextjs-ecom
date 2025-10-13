@@ -2312,17 +2312,14 @@ const Header = () => {
                                 href={`/category/${hoveredCategory?.category_slug || ""}`}
                                 className="block w-full h-full"
                               >
-                            <Image
-                              src={img}
-                              alt={hoveredCategory.category_name || "Category Image"}
-                              width={220}
-                              height={390}
-                              className="object-cover w-full h-full rounded-t-2xl mt-[-6px] ml-[4px] mr-[4px]"
-                              style={{
-                                boxShadow: "0px -4px 8px rgba(36, 83, 211, 0.25)",
-                              }}
-                            />
-
+                                <Image
+                                  src={img}
+                                  alt={hoveredCategory.category_name || "Category Image"}
+                                  width={220}
+                                  height={390}
+                                  className="object-cover w-full h-full"
+                                  style={{ boxShadow: "0px -10px 0px #2453d3" }}
+                                />
                               </Link>
                             </div>
                           ))}
