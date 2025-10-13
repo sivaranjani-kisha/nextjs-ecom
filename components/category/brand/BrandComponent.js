@@ -136,7 +136,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
           query.set('subcategoryIds', selectedFilters.subcategories.join(','));
         }
     }
-
+ 
 
 
     /* // ✅ Only add user-selected subcategories if any
