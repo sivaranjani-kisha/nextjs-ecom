@@ -11,6 +11,16 @@ export async function POST(req) {
   try {
     const formData = await req.formData();
     const productData = JSON.parse(formData.get("product"));
+    // Normalize brand_code: keep trimmed when provided, drop when empty
+    if (Object.prototype.hasOwnProperty.call(productData, "brand_code")) {
+      const trimmed = (productData.brand_code ?? "").toString().trim();
+      if (trimmed) {
+        productData.brand_code = trimmed;
+      } else {
+        delete productData.brand_code;
+      }
+    }
+
     const imageFiles = formData.getAll("images");
     // const category   = formData.get("category");
     let variants = JSON.parse(formData.get("variant"));

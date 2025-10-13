@@ -120,17 +120,28 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
     if (categoryData.brand?._id) {
       query.set('brands', categoryData.brand._id);
     }
-
-    // ✅ Restrict strictly to current category tree
+    /* // ✅ Restrict strictly to current category tree
     if (categoryData.category?._id) {
       query.set('categoryIds', [categoryData.category._id, ...(categoryData.categories || []).map(c => c._id)].join(','));
-    }
+    } */
 
-    // ✅ Only add user-selected subcategories if any
+      // ✅ If user selected a specific category
+      if (categoryData.category?._id) {
+        if (selectedFilters.subcategories.length === 0) {
+          // Show products only from the selected category
+          query.set('categoryIds', [categoryData.category._id, ...(categoryData.categories || []).map(c => c._id)].join(','));
+        } else {
+          // Show products from selected subcategories
+          query.set('subcategoryIds', selectedFilters.subcategories.join(','));
+        }
+      }
+
+
+    /* // ✅ Only add user-selected subcategories if any
     if (selectedFilters.subcategories.length > 0) {
       query.set('subcategoryIds', selectedFilters.subcategories.join(','));
-    }
-
+    } */
+   
     query.set('page', pageNum);
     query.set('limit', itemsPerPage);
     query.set('minPrice', selectedFilters.price.min);
@@ -835,8 +846,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
               {products.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                    {getSortedProducts() .filter(product =>
-    Number(product.special_price) > 0) .map(product => (
+                    {getSortedProducts().map(product => (
                       <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
                         {/* Product Image */}
                         <div className="relative aspect-square bg-white">
@@ -892,45 +902,33 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
                           </Link>
        
                           {/* Price Row (same level always) */}
-                           <div className="flex items-center gap-2 mb-3">
-                              {/* Display logic */}
-                              {Number(product.special_price) > Number(product.price) ? (
-                                // 🟢 Case 1: Special price > price → show only special price
-                                <span className="text-base font-semibold text-red-600">
-                                  ₹ {Math.round(product.special_price).toLocaleString()}
-                                </span>
-                              ) : (
-                                // 🔵 Case 2: Normal case → show both if special_price < price
-                                <>
-                                  <span className="text-base font-semibold text-red-600">
-                                    ₹ {(
-                                      product.special_price &&
-                                      product.special_price > 0 &&
-                                      product.special_price < product.price
-                                        ? Math.round(product.special_price)
-                                        : Math.round(product.price)
-                                    ).toLocaleString()}
-                                  </span>
-
-                                  {product.special_price > 0 &&
-                                    product.special_price < product.price && (
-                                      <span className="text-xs text-gray-500 line-through">
-                                        ₹ {Math.round(product.price).toLocaleString()}
-                                      </span>
-                                  )}
-                                </>
-                              )}
-                            </div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-base font-semibold text-red-600">
+                              ₹ {(
+                                product.special_price &&
+                                product.special_price > 0 &&
+                                product.special_price != '0' &&
+                                product.special_price != 0 &&
+                                product.special_price < product.price
+                                  ? Math.round(product.special_price)
+                                  : Math.round(product.price)
+                              ).toLocaleString()}
+                            </span>
       
-                          {/* <h4 className={`text-xs mb-3 ${product.stock_status === "In Stock" && product.quantity ? "text-green-600" : "text-red-600"}`}>
+                            {product.special_price > 0 &&
+                              product.special_price != '0' &&
+                              product.special_price != 0 &&
+                              product.special_price &&
+                              product.special_price < product.price && (
+                                <span className="text-xs text-gray-500 line-through">
+                                  ₹ {Math.round(product.price).toLocaleString()}
+                                </span>
+                            )}
+                          </div>
+      
+                          <h4 className={`text-xs mb-3 ${product.stock_status === "In Stock" && product.quantity ? "text-green-600" : "text-red-600"}`}>
                             {product.stock_status === "In Stock" && product.quantity ? ` ${product.stock_status}` : "Out Of Stock"}
                             {product.stock_status === "In Stock" && product.quantity ? `, ${product.quantity} units` : ""}
-                          </h4> */}
-
-                          <h4 className={`text-xs mb-3 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
-                            {product.quantity > 0
-                              ? `In Stock, ${product.quantity} units`
-                              : "Out Of Stock"}
                           </h4>
        
                           {/* Bottom Buttons */}

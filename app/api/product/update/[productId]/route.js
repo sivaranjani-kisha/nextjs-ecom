@@ -122,6 +122,14 @@ const filterIds = (productData.filters ?? []).map(f =>
   typeof f === "object" ? f.value : f
 ).filter(Boolean);
 
+// Normalize/trim brand_code; omit if empty to avoid overwriting with empty string
+const normalizedBrandCode = typeof productData.brand_code === "string" ? productData.brand_code.trim() : undefined;
+if (normalizedBrandCode) {
+  productData.brand_code = normalizedBrandCode;
+} else {
+  delete productData.brand_code;
+}
+console.log("Normalized brand_code:", productData);
 const updatedProduct = await Product.findByIdAndUpdate(
   productId,
   {
