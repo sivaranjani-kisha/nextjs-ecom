@@ -2184,140 +2184,148 @@ const Header = () => {
               
                 {/* DROPDOWN OUTSIDE SWIPER (fixed so it won't be clipped) */}
                 {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (() => {
-                  
-                    // let dropdownChunksLocal = chunkFlatList(
-                    //   flattenAllCategories(hoveredCategory.subcategories, hoveredCategory.category_slug),
-                    //   11
-                    // );
-                    const sortedSubcategories = [...hoveredCategory.subcategories].sort((a, b) => {
-                      if (hoveredCategory.category_name?.toLowerCase() === "large appliance") {
-                        const priorityOrder = ["Air Conditioner", "Refrigerator", "Washing Machine", "Dishwasher"];
+                  // sort subcategories with priority for certain categories
+                  const sortedSubcategories = [...hoveredCategory.subcategories].sort((a, b) => {
+                    if (hoveredCategory.category_name?.toLowerCase() === "large appliance") {
+                      const priorityOrder = ["Air Conditioner", "Refrigerator", "Washing Machine", "Dishwasher"];
 
-                        const indexA = priorityOrder.indexOf(a.category_name);
-                        const indexB = priorityOrder.indexOf(b.category_name);
+                      const indexA = priorityOrder.indexOf(a.category_name);
+                      const indexB = priorityOrder.indexOf(b.category_name);
 
-                        if (indexA !== -1 && indexB !== -1) {
-                          // both are in the priority list -> keep their defined order
-                          return indexA - indexB;
-                        } else if (indexA !== -1) {
-                          // a is in priority, b is not -> a comes first
-                          return -1;
-                        } else if (indexB !== -1) {
-                          // b is in priority, a is not -> b comes first
-                          return 1;
-                        }
-                      }
-
-                      // default alphabetical order for other categories (or remaining ones)
-                      return a.category_name.localeCompare(b.category_name);
-                    });
-
-
-                    let dropdownChunksLocal = chunkFlatList(
-                      flattenAllCategories(sortedSubcategories, hoveredCategory.category_slug),
-                      11
-                    );
-
-                    // balance chunks if possible (avoid empty last row)
-                    if (dropdownChunksLocal.length > 1) {
-                      const lastChunk = dropdownChunksLocal[dropdownChunksLocal.length - 1];
-                      const secondLastChunk = dropdownChunksLocal[dropdownChunksLocal.length - 2];
-                      if (Array.isArray(lastChunk) && Array.isArray(secondLastChunk) && lastChunk.length < 11 && secondLastChunk.length > lastChunk.length) {
-                        const diff = 11 - lastChunk.length;
-                        const itemsToMove = secondLastChunk.splice(-diff);
-                        lastChunk.unshift(...itemsToMove);
+                      if (indexA !== -1 && indexB !== -1) {
+                        // both are in the priority list -> keep their defined order
+                        return indexA - indexB;
+                      } else if (indexA !== -1) {
+                        // a is in priority, b is not -> a comes first
+                        return -1;
+                      } else if (indexB !== -1) {
+                        // b is in priority, a is not -> b comes first
+                        return 1;
                       }
                     }
-                    //console.log(hoveredCategory.navImage);
-                    // --- Begin navImage columns logic ---
-                    let navImages = [];
-                    if (hoveredCategory?.navImage) {
-                      if (typeof hoveredCategory.navImage === "string") {
-                        // Handle comma-separated string or single URL
-                        navImages = hoveredCategory.navImage
-                          .split(',')
-                          .map(s => s.trim())
-                          .filter(Boolean);
-                      } else if (Array.isArray(hoveredCategory.navImage)) {
-                        navImages = hoveredCategory.navImage.filter(Boolean);
-                      }
+
+                    // default alphabetical order for other categories (or remaining ones)
+                    return a.category_name.localeCompare(b.category_name);
+                  });
+
+
+                  // Build flat list and chunk it
+                  let dropdownChunksLocal = chunkFlatList(
+                    flattenAllCategories(sortedSubcategories, hoveredCategory.category_slug),
+                    11
+                  );
+
+                  // CHANGED: drop any empty chunks so we never render empty columns
+                  const filteredChunks = dropdownChunksLocal.filter(
+                    (chunk) => Array.isArray(chunk) && chunk.length > 0 && chunk.some(Boolean)
+                  );
+
+                  // --- Begin navImage columns logic (unchanged) ---
+                  let navImages = [];
+                  if (hoveredCategory?.navImage) {
+                    if (typeof hoveredCategory.navImage === "string") {
+                      navImages = hoveredCategory.navImage
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                    } else if (Array.isArray(hoveredCategory.navImage)) {
+                      navImages = hoveredCategory.navImage.filter(Boolean);
                     }
-                    // If navImages is array and has at least 1, use image columns
-                    const hasNavImage = navImages.length > 0;
-                    const maxCols = 6;
-                    const dataCols = dropdownChunksLocal;
-                    // If images, always reserve image columns at the right
-                    const maxDataCols = hasNavImage ? maxCols - navImages.length : maxCols;
-                    const columns = dataCols.slice(0, maxDataCols);
+                  }
+                  const imageCols = navImages.length;
 
-                    const columnWidth = 220;
-                    const imageWidth = hasNavImage ? navImages.length * columnWidth : 0;
-                    const gutter = 0;
-                    let computedWidth = columns.length * columnWidth + imageWidth + gutter;
-                    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-                    const maxAllowedWidth = Math.max(300, screenWidth - 20);
-                    if (computedWidth > maxAllowedWidth) computedWidth = maxAllowedWidth;
+                  // Layout constraints
+                  const maxCols = 6;                // total slots (data + images)
+                  const columnWidth = 220;
+                  const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1200;
+                  const maxAllowedWidth = Math.max(300, screenWidth - 20);
 
-                    const styleLeft = dropdownUseTranslate && dropdownCenterX ? `${dropdownCenterX}px` : `${dropdownLeft}px`;
-                    const styleTransform = dropdownUseTranslate && dropdownCenterX ? 'translateX(-50%)' : 'none';
+                  // CHANGED: compute how many data columns can actually fit along with image columns
+                  const maxDataBySlots = Math.max(0, maxCols - imageCols);
+                  const maxDataByViewport = Math.max(
+                    0,
+                    Math.floor(maxAllowedWidth / columnWidth) - imageCols
+                  );
+                  const allowedDataCols = Math.max(
+                    0,
+                    Math.min(filteredChunks.length, maxDataBySlots, maxDataByViewport)
+                  );
 
-                    return (
-                      <div
-                        ref={dropdownRef}
-                        className="fixed z-50 border-t border-gray-200 shadow-xl"
-                        style={{
-                          top: `${dropdownTop}px`,
-                          left: styleLeft,
-                          transform: styleTransform,
-                          width: `${computedWidth}px`,
-                          maxWidth: 'calc(100% - 20px)'
-                        }}
-                        onMouseEnter={cancelHide}
-                        onMouseLeave={() => startHide(120)}
-                      >
-                        <div className="flex flex-wrap bg-white h-[390px]" style={{ width: '100%' }}>
-                          {/* --- CONTENT COLUMNS FIRST (so first column is always content) --- */}
-                          {columns.map((chunk, index) => {
-                            const scrollableClass = (Array.isArray(chunk) && chunk.length > 10) ? 'pr-2' : '';
-                            const isEmpty = !Array.isArray(chunk) || chunk.length === 0;
-                            const bgClass = isEmpty ? 'bg-white' : ((index % 2 === 0) ? 'bg-[#f2f2f2]' : 'bg-white');
-                            const colClass = isEmpty
-                              ? `min-w-[220px] max-w-[250px] p-3 ${bgClass}`
-                              : `min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start self-start ${scrollableClass} ${bgClass}`;
+                  // CHANGED: only take the columns we will render (no placeholders)
+                  const columns = filteredChunks.slice(0, allowedDataCols);
 
-                            return (
-                              <div key={`col-${index}`} className={colClass} style={{ height: '100%' }}>
-                                {Array.isArray(chunk) && chunk.length > 0
-                                  ? chunk.map(item => renderFlatItem(item, hoveredCategory))
-                                  : <div className="w-full">&nbsp;</div>}
-                              </div>
-                            );
-                          })}
+                  // CHANGED: compute width from actually rendered columns + image columns
+                  let computedWidth = (columns.length + imageCols) * columnWidth;
+                  if (computedWidth > maxAllowedWidth) computedWidth = maxAllowedWidth;
 
-                          {/* --- IMAGE COLUMNS LAST (maintain original parity logic) --- */}
-                          {Array.isArray(navImages) && navImages.length > 0 && navImages.map((img, idx) => (
+                  const styleLeft =
+                    dropdownUseTranslate && dropdownCenterX
+                      ? `${dropdownCenterX + 15}px`
+                      : `${dropdownLeft + 15}px`;
+                  const styleTransform =
+                    dropdownUseTranslate && dropdownCenterX ? "translateX(-50%)" : "none";
+
+                  // If nothing to render (edge), skip dropdown entirely
+                  if (columns.length === 0 && imageCols === 0) return null;
+
+                  return (
+                    <div
+                      ref={dropdownRef}
+                      className="fixed z-50 border-t border-gray-200 shadow-xl"
+                      style={{ 
+                        top: `${dropdownTop}px`,
+                        left: styleLeft,
+                        transform: styleTransform,
+                        width: `${computedWidth}px`,
+                        maxWidth: "calc(100% - 20px)",
+                      }}
+                      onMouseEnter={cancelHide}
+                      onMouseLeave={() => startHide(120)}
+                    >
+                      <div className="flex flex-wrap bg-white h-[390px]" style={{ width: "100%" }}>
+                        {/* CHANGED: render only real columns; no empty placeholders */}
+                        {columns.map((chunk, index) => {
+                          const scrollableClass = chunk.length > 10 ? "pr-2" : "";
+                          const bgClass = index % 2 === 0 ? "bg-[#f2f2f2]" : "bg-white";
+                          return (
+                            <div
+                              key={`col-${index}`}
+                              className={`min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start self-start ${scrollableClass} ${bgClass}`}
+                              style={{ height: "100%" }}
+                            >
+                              {chunk.map((item) => renderFlatItem(item, hoveredCategory))}
+                            </div>
+                          );
+                        })}
+
+                        {/* IMAGE COLUMNS LAST */}
+                        {Array.isArray(navImages) &&
+                          navImages.length > 0 &&
+                          navImages.map((img, idx) => (
                             <div
                               key={`nav-image-panel-${idx}`}
-                              className={`w-[220px] h-[390px] flex items-center justify-center ${((columns.length + idx) % 2 === 0) ? 'bg-gray-50' : 'bg-white'}`}
+                              className={`w-[220px] h-[390px] flex items-center justify-center ${
+                                ((columns.length + idx) % 2 === 0) ? "bg-gray-50" : "bg-white"
+                              }`}
                             >
                               <Link
-                                href={`/category/${hoveredCategory?.category_slug || ''}`}
+                                href={`/category/${hoveredCategory?.category_slug || ""}`}
                                 className="block w-full h-full"
                               >
                                 <Image
                                   src={img}
-                                  alt={hoveredCategory.category_name || 'Category Image'}
+                                  alt={hoveredCategory.category_name || "Category Image"}
                                   width={220}
                                   height={390}
                                   className="object-cover w-full h-full"
-                                  style={{ boxShadow: '0px -13px 0px #2453d3' }}
+                                  style={{ boxShadow: "0px -13px 0px #2453d3" }}
                                 />
                               </Link>
                             </div>
                           ))}
-                        </div>
                       </div>
-                    );
+                    </div>
+                  );
                 })()}
             </div>
         </header>
