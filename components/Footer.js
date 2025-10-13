@@ -391,7 +391,7 @@ const capitalizeFirstLetter = (str) =>
                 </span>
               )}
 
-              {i < subCats.length - 1 && <span className="block mb-4"></span>}
+              {i < subCats.length - 1 && <span className="block mb-1"></span>}
             </span>
           ))}
 
