@@ -1859,7 +1859,7 @@ const fetchBrand = async () => {
       </h2>
 
       {relatedProducts
-        .filter(item => item.stock_status === "In Stock")
+        .filter(item => item.stock_status === "In Stock" && item.status === "Active")
         .slice(0, 3)
         .map((item) => (
           <div key={item._id} className="flex items-start mb-4">
