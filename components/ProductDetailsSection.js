@@ -287,8 +287,9 @@ const handleTabClick = (tabId) => {
 const safeBtoa = (str) => {
   try { return btoa(str); } catch { return ""; }
 };
-const buildFlixMinifyUrl = (p = {}) => {
-  const { mpn } = resolveFlixIds(p);
+// UPDATED: accept opts (to pass brandName), include brand_code + ean/upc/sku
+const buildFlixMinifyUrl = (p = {}, opts = {}) => {
+  const { mpn, ean, upc, sku, brandCode } = resolveFlixIds(p);
   const distId = "17089";
   const l = "in";
   const params = new URLSearchParams({
@@ -303,7 +304,21 @@ const buildFlixMinifyUrl = (p = {}) => {
     dmn: typeof window !== "undefined" ? safeBtoa(window.location.hostname) : "",
     ext: ".js",
   });
+
   if (mpn) params.append("mpn", mpn);
+  if (ean) params.append("ean", ean);
+  if (upc) params.append("upc", upc);
+  if (sku) params.append("sku", sku);
+
+  // NEW: explicitly pass brand_code, and also use as mpn fallback if mpn missing
+  if (brandCode) {
+    params.append("brand_code", brandCode);
+    if (!mpn) params.append("mpn", brandCode);
+  }
+
+  // OPTIONAL: pass brand name if available
+  if (opts.brandName) params.append("brand", opts.brandName);
+
   const finalUrl = `https://media.flixcar.com/modular/js/minify/${distId}/?${params.toString()}`;
   console.log("[Flix] minify url:", finalUrl);
   return finalUrl;
@@ -316,21 +331,9 @@ const loadFlixScript = (fallbackTimeout) => {
   flixScript.type = "text/javascript";
   flixScript.async = true;
 
-  // OLD: loader.js + data-* attributes (removed to avoid wrong endpoint/params)
-  // flixScript.src = "//media.flixfacts.com/js/loader.js";
-  // flixScript.setAttribute("data-flix-distributor", flixParams.distId);
-  // flixScript.setAttribute("data-flix-language", flixParams.iso);
-  // flixScript.setAttribute("data-flix-fallback-language", flixParams.flIso);
-  // flixScript.setAttribute("data-flix-button", flixParams.dom);
-  // flixScript.setAttribute("data-flix-inpage", "flix-inpage");
-  // flixScript.setAttribute("data-flix-ssl", flixParams.ssl);
-  // flixScript.setAttribute("data-flix-p", flixParams.p);
-  // if (flixParams.mpn) flixScript.setAttribute("data-flix-mpn", flixParams.mpn);
-  // if (flixParams.ean) flixScript.setAttribute("data-flix-ean", flixParams.ean);
-  // if (product.price) flixScript.setAttribute("data-flix-price", String(product.price));
-
   // NEW: use the correct minified service.js URL over HTTPS
-  flixScript.src = buildFlixMinifyUrl(product);
+  // UPDATED: pass brandName so it can be included in the URL
+  flixScript.src = buildFlixMinifyUrl(product, { brandName });
 
   flixScript.onload = () => {
     console.log(brandName, product);
@@ -1117,5 +1120,6 @@ const resolveFlixIds = (p = {}) => {
   const mpn = p.mpn || p.MPN || p.model_number || p.modelNumber || p.model || p.sku || p.item_code || p.itemCode || p.brand_code || null;
   const upc = p.upc || p.UPC || null;
   const sku = p.sku || p.SKU || null;
-  return { ean, mpn, upc, sku };
+  const brandCode = p.brand_code || p.brandCode || null; // NEW: expose brand_code explicitly
+  return { ean, mpn, upc, sku, brandCode };
 };
