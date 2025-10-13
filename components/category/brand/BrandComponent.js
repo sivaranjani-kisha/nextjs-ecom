@@ -123,18 +123,20 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
     /* // ✅ Restrict strictly to current category tree
     if (categoryData.category?._id) {
       query.set('categoryIds', [categoryData.category._id, ...(categoryData.categories || []).map(c => c._id)].join(','));
-    } */
+    } */ 
 
-      // ✅ If user selected a specific category
-      if (categoryData.category?._id) {
-        if (selectedFilters.subcategories.length === 0) {
-          // Show products only from the selected category
-          query.set('categoryIds', [categoryData.category._id, ...(categoryData.categories || []).map(c => c._id)].join(','));
-        } else {
-          // Show products from selected subcategories
+    // ✅ Only add category filter if user actually clicked on one
+    if (categoryData.category?._id && categoryData.isCategorySelected) {
+      query.set(
+        'categoryIds',
+        [categoryData.category._id, ...(categoryData.categories || []).map(c => c._id)].join(',')
+      );
+    } else{
+      if (selectedFilters.subcategories.length > 0) {
           query.set('subcategoryIds', selectedFilters.subcategories.join(','));
         }
-      }
+    }
+
 
 
     /* // ✅ Only add user-selected subcategories if any
