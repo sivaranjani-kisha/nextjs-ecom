@@ -2318,7 +2318,7 @@ const Header = () => {
                                   width={220}
                                   height={390}
                                   className="object-cover w-full h-full"
-                                  style={{ boxShadow: "0px -13px 0px #2453d3" }}
+                                  style={{ boxShadow: "0px -0px 0px #2453d3" }}
                                 />
                               </Link>
                             </div>
