@@ -356,67 +356,94 @@ const capitalizeFirstLetter = (str) =>
         </div>
       </div>
 
-      <div className="space-y-4 mt-4 ml-1 mb-1">
-        {groupedCategories.main.map((mainCat) => (
-          <div key={mainCat._id}>
-            <span className="text-gray-400">
-              {groupedCategories.subs[mainCat._id]?.map((subcat, i) => (
-                <span key={subcat._id}>
-                  <Link
-                    href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
-                    className="text-white hover:underline"
-                  >
-                    {capitalizeFirstLetter(subcat.category_name)} :
-                  </Link>
+     <div className="space-y-4 mt-4 ml-1 mb-1">
+  {groupedCategories.main.map((mainCat) => {
+    const subCats = groupedCategories.subs[mainCat._id] || [];
+    const isLargeAppliances = mainCat.category_name?.toLowerCase() === "large appliances";
 
-                  {/* Sub-Sub Categories */}
-                  {groupedCategories.subs[subcat._id]?.length > 0 && (
-                    <span className="ml-2 text-gray-500">
-                      {groupedCategories.subs[subcat._id].map((child, j) => (
-                        <span key={child._id}>
-                          <Link
-                            href={`/category/${mainCat.category_slug}/${subcat.category_slug}/${child.category_slug}`}
-                            className="hover:text-white hover:underline"
-                          >
-                            {capitalizeFirstLetter(child.category_name)}
-                          </Link>
-                          {j < groupedCategories.subs[subcat._id].length - 1 && " / "}
-                        </span>
-                      ))}
+    return (
+      <div key={mainCat._id}>
+        <span className="text-gray-400">
+          {subCats.map((subcat, i) => (
+            <span key={subcat._id}>
+              {/* 🔗 Subcategory Link */}
+              <Link
+                href={`/category/${mainCat.category_slug}/${subcat.category_slug}`}
+                className="text-white hover:underline"
+              >
+                {capitalizeFirstLetter(subcat.category_name)} :
+              </Link>
+
+              {/* Sub-Sub Categories */}
+              {groupedCategories.subs[subcat._id]?.length > 0 && (
+                <span className="ml-2 text-gray-500">
+                  {groupedCategories.subs[subcat._id].map((child, j) => (
+                    <span key={child._id}>
+                      <Link
+                        href={`/category/${mainCat.category_slug}/${subcat.category_slug}/${child.category_slug}`}
+                        className="hover:text-white hover:underline"
+                      >
+                        {capitalizeFirstLetter(child.category_name)}
+                      </Link>
+                      {j < groupedCategories.subs[subcat._id].length - 1 && " / "}
                     </span>
-                  )}
-
-                  {/* Brands */}
-                  {mainCat.brands.length > 0 && (
-                    <>
-                      <br />
-                      <span className="font-semibold text-white">Brands :</span>
-                      <span className="ml-2 text-gray-500">
-                        {mainCat.brands.map((brand, i) => (
-                          <span key={brand._id}>
-                            <Link
-                              href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
-                              className="hover:text-white hover:underline"
-                            >
-                              {brand.brand_name.charAt(0).toUpperCase() +
-                                brand.brand_name.slice(1).toLowerCase()}
-                            </Link>
-                            {i < mainCat.brands.length - 1 && " / "}
-                          </span>
-                        ))}
-                      </span>
-                    </>
-                  )}
-
-                  {i < groupedCategories.subs[mainCat._id].length - 1 && (
-                    <span className="block mb-4"></span>
-                  )}
+                  ))}
                 </span>
-              ))}
+              )}
+
+              {i < subCats.length - 1 && <span className="block mb-4"></span>}
             </span>
-          </div>
-        ))}
+          ))}
+
+          {/* ✅ Common Brands for Large Appliances */}
+          {isLargeAppliances && mainCat.brands.length > 0 && (
+            <>
+              <br />
+              <span className="font-semibold text-white">Brands :</span>
+              <span className="ml-2 text-gray-500">
+                {mainCat.brands.map((brand, i) => (
+                  <span key={brand._id}>
+                    <Link
+                      href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
+                      className="hover:text-white hover:underline"
+                    >
+                      {brand.brand_name.charAt(0).toUpperCase() +
+                        brand.brand_name.slice(1).toLowerCase()}
+                    </Link>
+                    {i < mainCat.brands.length - 1 && " / "}
+                  </span>
+                ))}
+              </span>
+            </>
+          )}
+
+          {/* ✅ Regular Brands for other main categories */}
+          {!isLargeAppliances && mainCat.brands.length > 0 && (
+            <>
+              <br />
+              <span className="font-semibold text-white">Brands :</span>
+              <span className="ml-2 text-gray-500">
+                {mainCat.brands.map((brand, i) => (
+                  <span key={brand._id}>
+                    <Link
+                      href={`/category/brand/${mainCat.category_slug}/${brand.brand_slug}`}
+                      className="hover:text-white hover:underline"
+                    >
+                      {brand.brand_name.charAt(0).toUpperCase() +
+                        brand.brand_name.slice(1).toLowerCase()}
+                    </Link>
+                    {i < mainCat.brands.length - 1 && " / "}
+                  </span>
+                ))}
+              </span>
+            </>
+          )}
+        </span>
       </div>
+    );
+  })}
+</div>
+
     </div>
 
     {/* RIGHT SECTION (Our Location) */}
