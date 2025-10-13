@@ -211,6 +211,9 @@ export default function TopBannerPage() {
               <h3 className="font-medium text-lg">Add New Banner</h3>
 
               <div>
+                <p className="text-gray-500 text-sm mb-2">
+                Topbanner size: <span className="font-semibold">1278 × 390 px</span>
+                </p>
                 <input
                   type="file"
                   onChange={(e) =>

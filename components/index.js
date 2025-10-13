@@ -1717,6 +1717,7 @@ export default function HomeComponent() {
                           className="relative w-full aspect-[2000/667] max-h-auto"
                           variants={itemVariants}
                         >
+                          <a href={item.buttonLink} target="_self" className="block">
                           <div className="absolute inset-0 overflow-hidden">
                             <Image
                               src={item.bgImageUrl}
@@ -1728,6 +1729,7 @@ export default function HomeComponent() {
                               priority
                             />
                           </div>
+                          </a>
                         </motion.div>
                       ))}
                     </Slider>
@@ -1736,6 +1738,7 @@ export default function HomeComponent() {
                       className="p-4 md:p-6 relative aspect-[2000/667] max-h-auto"
                       variants={itemVariants}
                     >
+                      <a href={bannerData.banner.items[0].buttonLink} target="_self" className="block">
                       <div className="absolute inset-0 flex justify-center items-center bg-white">
                         <Image
                           src={bannerData.banner.items[0].bgImageUrl}
@@ -1745,6 +1748,7 @@ export default function HomeComponent() {
                           priority
                         />
                       </div>
+                      </a>
                     </motion.div>
                   )
                 ) : (
