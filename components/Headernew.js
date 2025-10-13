@@ -2302,12 +2302,13 @@ const Header = () => {
                         {Array.isArray(navImages) &&
                           navImages.length > 0 &&
                           navImages.map((img, idx) => (
-                            <div
-                              key={`nav-image-panel-${idx}`}
-                              className={`w-[220px] h-[390px] flex items-center justify-center ${
-                                ((columns.length + idx) % 2 === 0) ? "bg-gray-50" : "bg-white"
-                              }`}
-                            >
+                           <div
+  key={`nav-image-panel-${idx}`}
+  className={`w-[220px] h-[390px] flex items-center justify-center relative ${
+    (columns.length + idx) % 2 === 0 ? "bg-gray-50" : "bg-white"
+  } mt-[-6px] ml-[4px] mr-[4px] rounded-t-2xl shadow-[0_-4px_8px_-2px_rgba(255,255,255,0.7)]`}
+>
+
                               <Link
                                 href={`/category/${hoveredCategory?.category_slug || ""}`}
                                 className="block w-full h-full"
