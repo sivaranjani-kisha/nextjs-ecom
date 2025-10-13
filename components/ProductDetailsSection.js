@@ -940,6 +940,7 @@ const cleanupFlixMedia = () => {
     product.item_code ||
     product.ingredients ||
     product.weight ||
+    product.brand_code ||
     product.dimensions;
 
   // If no description and no specs, hide the whole section
@@ -1113,7 +1114,7 @@ const cleanupFlixMedia = () => {
 // Derive identifiers for Flix from product safely
 const resolveFlixIds = (p = {}) => {
   const ean = p.ean || p.EAN || p.barcode || p.bar_code || p.gtin || p.GTIN || null;
-  const mpn = p.mpn || p.MPN || p.model_number || p.modelNumber || p.model || p.sku || p.item_code || p.itemCode || null;
+  const mpn = p.mpn || p.MPN || p.model_number || p.modelNumber || p.model || p.sku || p.item_code || p.itemCode || p.brand_code || null;
   const upc = p.upc || p.UPC || null;
   const sku = p.sku || p.SKU || null;
   return { ean, mpn, upc, sku };

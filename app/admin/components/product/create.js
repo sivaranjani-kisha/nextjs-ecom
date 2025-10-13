@@ -30,6 +30,7 @@ export default function AddProductPage({ mode = "add", productData = null, produ
     special_price: "",
     quantity: "",
     brand: "",
+    brand_code: "", // added to keep input controlled and consistent
     category: "",
     stock_status: "In Stock",
     description: "",
@@ -251,7 +252,7 @@ const CustomOption = (props) => (
         // This code sets the state for the 'product' object
         setProduct(prevProduct => ({
             ...productData,
-            // Ensure product_highlights is an array when setting productData
+            brand_code: productData.brand_code || "", // ensure brand_code defaults to empty string
             product_highlights: Array.isArray(productData.product_highlights) 
                 ? productData.product_highlights 
                 : [],
@@ -290,6 +291,7 @@ useEffect(() => {
     if (initialProductData) {
       setProduct({
         ...initialProductData,
+        brand_code: initialProductData.brand_code || "", // ensure brand_code defaults to empty string
         // Ensure product_highlights is an array, even if it's null/undefined from backend
         product_highlights: initialProductData.product_highlights || [],
         // Ensure featured_products is an array or object, depending on your schema
@@ -778,7 +780,6 @@ setProduct(prev => ({
   //           quantity: "",
   //           images: [],
   //         }))
-  //       };
   //     });
 
   //     setProduct(prev => ({
@@ -1111,7 +1112,7 @@ const handleupdatefilterchange = (filters) => {
  
   const handleFilterChange = (selectedOptions) => {
     console.log(selectedOptions);
-    setProduct((prev) => ({
+    setProduct(prev => ({
       ...prev,
       filters: selectedOptions,
     }));
@@ -1156,10 +1157,14 @@ const handleupdatefilterchange = (filters) => {
       warranty => warranty.year !== "" && warranty.amount !== "" && warranty.year != null && warranty.amount != null
     );
 
-    // clean product (⚠️ do NOT send images)
+    // clean product (do NOT send blob images) and include brand_code only if provided
+    const { brand_code, ...restProduct } = product;
+    const trimmedBrandCode = (brand_code ?? '').toString().trim();
+
     const cleanedProduct = {
-      ...product,
-      extend_warranty: validWarranties.length > 0 ? validWarranties : [], // Only send valid warranties
+      ...restProduct,
+      ...(trimmedBrandCode ? { brand_code: trimmedBrandCode } : {}), // include only when non-empty
+      extend_warranty: validWarranties.length > 0 ? validWarranties : [],
       filters: (product.filters || []).map(f => f.value),
       related_products: product.related_products || [],
       category: product.category || "",
@@ -1478,6 +1483,7 @@ const handleupdatefilterchange = (filters) => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Item Code</label>
                 <input type="text" name="item_code" value={product.item_code} onChange={handleChange} className="w-full border p-2 rounded" required />
               </div>
+              
             </div>
             <div className="grid grid-cols-2 gap-4">
             <div className="rounded-md mb-2">
@@ -1527,6 +1533,16 @@ const handleupdatefilterchange = (filters) => {
                 <option value="In Stock">In Stock</option>
                 <option value="Out of Stock">Out of Stock</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Brand Code</label>
+              <input
+                type="text"
+                name="brand_code"
+                value={product.brand_code || ""} // optional and controlled
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+              />
             </div>
             </div>
 
@@ -1943,8 +1959,8 @@ const handleupdatefilterchange = (filters) => {
             onClick={addHighlight}
             className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
           >
-            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" />
+            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
             </svg>
           </button>
         </div>
@@ -2007,17 +2023,9 @@ const handleupdatefilterchange = (filters) => {
               <input
                 type="number"
                 name= "warranty"
+               
                 placeholder="Warranty"
                 value={product.warranty || ''}
-                onChange={handleChange}
-                className="w-full border p-2 rounded mb-2"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Extended Warranty</label>
-              <input
-                type="number"
                 name="extended_warranty"
                 placeholder="Extended Warranty"
                 value={product.extended_warranty || ''}
