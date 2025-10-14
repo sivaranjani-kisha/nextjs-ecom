@@ -20,6 +20,7 @@ export async function PUT(req, { params }) {
     let variants = JSON.parse(formData.get("variant") || "[]");
     const Filters    = productData.filters;
 
+
 console.log(productData);
 console.log("..............................................................");
 
@@ -27,6 +28,35 @@ console.log("..............................................................");
     const md5_cat_name = md5(slug);
 
     await connectDB();
+// ✅ Duplicate check for item_code
+if (productData.item_code) {
+  const existingProduct = await Product.findOne({
+    item_code: productData.item_code,
+    _id: { $ne: productId } // exclude current product
+  });
+
+  if (existingProduct) {
+    return NextResponse.json(
+      { error: "Product with this item code already exists" },
+      { status: 400 }
+    );
+  }
+}
+
+// ✅ Duplicate check for slug (product name)
+if (productData.slug) {
+  const existingProductname = await Product.findOne({
+    slug: productData.slug,
+    _id: { $ne: productId } // exclude current product
+  });
+
+  if (existingProductname) {
+    return NextResponse.json(
+      { error: "Product name (slug) already exists" },
+      { status: 400 }
+    );
+  }
+}
  // ✅ Get extend_warranty from productData instead of separate formData
     const extend_warranty = (productData.extend_warranty || []).map(item => ({
       year: Number(item.year) || 0,
