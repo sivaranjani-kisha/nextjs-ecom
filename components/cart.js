@@ -678,12 +678,13 @@ export default function CartComponent() {
   };
 
   const calculateSubtotal = () => {
-    if (!cartData) return 0;
-    
-    return cartData.items.reduce((sum, item) => {
-      return sum + (item.price * item.quantity) + (item.warranty || 0) + (item.extendedWarranty || 0);
-    }, 0);
-  };
+  if (!cartData) return 0;
+  
+  return cartData.items.reduce((sum, item) => {
+    const itemPrice = item.price > 0 ? item.price : item.actual_price;
+    return sum + (itemPrice * item.quantity) + (item.warranty || 0) + (item.extendedWarranty || 0);
+  }, 0);
+};
 
   const calculateDiscount = () => {
     if (!appliedCoupon || !cartData) return 0;
@@ -873,9 +874,15 @@ export default function CartComponent() {
                             </p>
                           </Link>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-base font-semibold text-red-600">₹{(item.price ?? 0).toFixed(2)}</h3>
-                            <h3 className="text-xs text-gray-500 line-through">₹{(item.actual_price ?? item.price ?? 0).toFixed(2)}</h3>
-                          </div>
+  {item.price > 0 ? (
+    <>
+      <h3 className="text-base font-semibold text-red-600">₹{(item.price ?? 0).toFixed(2)}</h3>
+      <h3 className="text-xs text-gray-500 line-through">₹{(item.actual_price ?? item.price ?? 0).toFixed(2)}</h3>
+    </>
+  ) : (
+    <h3 className="text-base font-semibold text-red-600">₹{(item.actual_price ?? 0).toFixed(2)}</h3>
+  )}
+</div>
                         </div>
                       </td>
                       <td className="py-4 px-4 text-center">
@@ -903,8 +910,8 @@ export default function CartComponent() {
                         </button>
                       </td>
                       <td className="py-4 px-4 text-center font-semibold text-gray-900">
-                        ₹{((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-                      </td>
+  ₹{(((item.price > 0 ? item.price : item.actual_price) ?? 0) * (item.quantity ?? 1)).toFixed(2)}
+</td>
                       <td className="py-4 px-4 text-center">&emsp;</td>
                     </tr>
                     {(item.warranty > 0 || item.extendedWarranty > 0) && (

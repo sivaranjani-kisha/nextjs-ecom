@@ -113,7 +113,7 @@ export async function POST(req) {
         image: product.images[0],
         warranty: selectedWarranty,
         extendedWarranty: selectedExtendedWarranty,
-        actual_price: product.special_price,
+        actual_price: product.special_price ?? product.price,
       });
     }
 
