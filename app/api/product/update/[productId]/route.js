@@ -101,7 +101,8 @@ for (const file of imageFiles) {
       const filePath = path.join(uploadDir, filename);
       const buffer = Buffer.from(await file.arrayBuffer());
       await writeFile(filePath, buffer);
-      savedOverviewImages.push(file.name.replace(/\s+/g, "-")); // Correct: Save only the original name
+//       savedOverviewImages.push(file.name.replace(/\s+/g, "-")); // Correct: Save only the original name
+savedOverviewImages.push(filename);
     }
 
     if (productData.hasVariants) {

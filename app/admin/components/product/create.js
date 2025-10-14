@@ -238,47 +238,91 @@ const CustomOption = (props) => (
 );
 
 
-   useEffect(() => {
-    if (mode === "edit" && productData) {
-        console.log(productData);
+//    useEffect(() => {
+//     if (mode === "edit" && productData) {
+//         console.log(productData);
 
-        // Initialize warranties from productData
+//         // Initialize warranties from productData
+//     if (productData.extend_warranty && productData.extend_warranty.length > 0) {
+//       setWarranties(productData.extend_warranty);
+//     } else {
+//       setWarranties([{ year: "", amount: "" }]);
+//     }
+
+//         // This code sets the state for the 'product' object
+//         setProduct(prevProduct => ({
+//             ...productData,
+//             brand_code: productData.brand_code || "", // ensure brand_code defaults to empty string
+//             product_highlights: Array.isArray(productData.product_highlights) 
+//                 ? productData.product_highlights 
+//                 : [],
+//             // Ensure filters are in the correct format for react-select if they are just IDs
+//             filters: productData.filterDetails && productData.filterDetails.length > 0
+//                 ? productData.filterDetails.map(item => ({ value: item._id, label: item.filter_name }))
+//                 : [],
+//             hasVariants: productData.hasVariants || false, // Ensure hasVariants is a boolean
+//             variants: productData.variants || [], // Ensure variants is an array
+//             images: productData.images || ['', '', '', ''], // Ensure images is an array with placeholders
+//             files: productData.files || [],
+//             overviewImage: productData.overview_image || [null],
+//             overviewImageFile: productData.overviewImageFile || [null],
+//             featured_products: productData.featured_products || [],
+//         }));
+
+//         // This code now correctly runs after the setProduct call, setting the JSON input field
+//         if (!Array.isArray(productData.product_highlights) && typeof productData.product_highlights === 'object') {
+//             setJsonHighlightsInput(JSON.stringify(productData.product_highlights, null, 2));
+//         }
+
+//         if(productData.sub_category){
+//           setSelectedCategory(productData.sub_category);
+//         }
+//     }
+// }, [mode, productData, setJsonHighlightsInput,setSelectedCategory]);
+useEffect(() => {
+  if (mode === "edit" && productData) {
+    console.log(productData);
+
+    // Initialize warranties from productData
     if (productData.extend_warranty && productData.extend_warranty.length > 0) {
       setWarranties(productData.extend_warranty);
     } else {
       setWarranties([{ year: "", amount: "" }]);
     }
 
-        // This code sets the state for the 'product' object
-        setProduct(prevProduct => ({
-            ...productData,
-            brand_code: productData.brand_code || "", // ensure brand_code defaults to empty string
-            product_highlights: Array.isArray(productData.product_highlights) 
-                ? productData.product_highlights 
-                : [],
-            // Ensure filters are in the correct format for react-select if they are just IDs
-            filters: productData.filterDetails && productData.filterDetails.length > 0
-                ? productData.filterDetails.map(item => ({ value: item._id, label: item.filter_name }))
-                : [],
-            hasVariants: productData.hasVariants || false, // Ensure hasVariants is a boolean
-            variants: productData.variants || [], // Ensure variants is an array
-            images: productData.images || ['', '', '', ''], // Ensure images is an array with placeholders
-            files: productData.files || [],
-            overviewImage: productData.overviewImage || [null],
-            overviewImageFile: productData.overviewImageFile || [null],
-            featured_products: productData.featured_products || [],
-        }));
+    // This code sets the state for the 'product' object
+    setProduct(prevProduct => ({
+      ...productData,
+      brand_code: productData.brand_code || "",
+      product_highlights: Array.isArray(productData.product_highlights) 
+        ? productData.product_highlights 
+        : [],
+      filters: productData.filterDetails && productData.filterDetails.length > 0
+        ? productData.filterDetails.map(item => ({ value: item._id, label: item.filter_name }))
+        : [],
+      hasVariants: productData.hasVariants || false,
+      variants: productData.variants || [],
+      images: productData.images || ['', '', '', ''],
+      files: productData.files || [],
+      // FIX: Properly handle overview_image array
+      overviewImage: Array.isArray(productData.overview_image) && productData.overview_image.length > 0 
+        ? productData.overview_image 
+        : [null],
+      overviewImageFile: productData.overviewImageFile || [null],
+      featured_products: productData.featured_products || [],
+    }));
 
-        // This code now correctly runs after the setProduct call, setting the JSON input field
-        if (!Array.isArray(productData.product_highlights) && typeof productData.product_highlights === 'object') {
-            setJsonHighlightsInput(JSON.stringify(productData.product_highlights, null, 2));
-        }
-
-        if(productData.sub_category){
-          setSelectedCategory(productData.sub_category);
-        }
+    // This code now correctly runs after the setProduct call, setting the JSON input field
+    if (!Array.isArray(productData.product_highlights) && typeof productData.product_highlights === 'object') {
+      setJsonHighlightsInput(JSON.stringify(productData.product_highlights, null, 2));
     }
+
+    if(productData.sub_category){
+      setSelectedCategory(productData.sub_category);
+    }
+  }
 }, [mode, productData, setJsonHighlightsInput,setSelectedCategory]);
+
 useEffect(() => {
     fetchCategories();
     fetchFilter();
@@ -1681,78 +1725,103 @@ const handleupdatefilterchange = (filters) => {
                     <table className="min-w-full border rounded-lg overflow-hidden">
                       <thead className="bg-gray-100">
                         <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Image upload</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Image</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase w-32">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {product.overviewImage.map((image, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col space-y-2">
-                                <input
-                                  type="file"
-                                  // name="overview_image[]"
-                                  className="block w-full text-sm text-gray-500
-                                    file:mr-4 file:py-2 file:px-4
-                                    file:rounded file:border-0
-                                    file:text-sm file:font-medium
-                                    file:bg-blue-50 file:text-blue-700
-                                    hover:file:bg-blue-100"
-                                  accept="image/*"
-                                  onChange={(e) => handleOverviewImageChange(index, e.target.files)}
-                                  required={index === 0}
-                                  key={`overviewimagefile-${index}-${product.overviewImage[index] ? 'filled' : 'empty'}`}
-                                 
-                                />
-                                {image && (
-                                  <div className="mt-2 flex items-center space-x-4">
-                                    <img
-                                      src={image}
-                                      alt={`Preview ${index}`}
-                                      className="w-20 h-20 object-cover border rounded"
-                                    />
-                                    <span className="text-xs text-gray-500">Preview</span>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 space-x-2">
+                    <tbody className="divide-y divide-gray-200">
+  {product.overviewImage.map((image, index) => (
+    <tr key={index} className="border-b">
+      <td className="px-4 py-3">
+        <input
+          type="file"
+          className="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded file:border-0
+            file:text-sm file:font-medium
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100"
+          accept="image/*"
+          onChange={(e) => handleOverviewImageChange(index, e.target.files)}
+          required={index === 0}
+        />
+        {image && (
+          <div className="mt-2 flex items-center space-x-4">
+            <img
+              src={
+                typeof image === 'string' && 
+                (image.startsWith('http') ||
+                 image.startsWith('blob:') ||
+                 image.startsWith('data:'))
+                  ? image
+                  : `/uploads/products/${image}`
+              }
+              alt={`Preview ${index}`}
+              className="w-20 h-20 object-cover border rounded"
+            />
+            <span className="text-xs text-gray-500">Preview</span>
+          </div>
+        )}
+      </td>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <button type="button" onClick={handleAddOverviewImage} className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM5 5h14v14H5V5zm9 9h-3v3h-2v-3H6v-2h3V9h2v3h3v2z"/>
-                                      </svg>
-                                    </button>
-                                  </div>
-                                  <div>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveOverviewImage(index)}
-                                      className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                    >
-                                      <svg
-                                        className="h-5 w-5"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                      >
-                                        <path
-                                          fillRule="evenodd"
-                                          d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                          clipRule="evenodd"
-                                        />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                
-                                </div>
-                         
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
+      <td className="px-4 py-3">
+        <img
+          className="w-20 h-20 object-cover rounded border border-gray-200"
+          alt={`Preview ${index + 1}`}
+          src={
+            image && typeof image === 'string'
+              ? (image.startsWith('http') ||
+                 image.startsWith('blob:') ||
+                 image.startsWith('data:'))
+                  ? image
+                  : `/uploads/products/${image}`
+              : '/uploads/products/no-image.jpg'
+          }
+        />
+      </td>
+
+      <td className="px-4 py-3">
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={handleAddOverviewImage}
+            className="inline-flex items-center p-2 rounded-full text-white bg-green-600 hover:bg-green-700"
+          >
+            <svg
+              className="h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM5 5h14v14H5V5zm9 9h-3v3h-2v-3H6v-2h3V9h2v3h3v2z" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleRemoveOverviewImage(index)}
+            className="inline-flex items-center p-2 rounded-full text-white bg-red-600 hover:bg-red-700"
+          >
+            <svg
+              className="h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
                     </table>
                   </div>
                 </div>
