@@ -1037,11 +1037,11 @@ export default function CartComponent() {
     )}
     {appliedCoupon && <hr className="border-gray-300" />}
 
-    <div className="flex justify-between items-center">
+     {/* <div className="flex justify-between items-center">
       <span>Estimated Delivery</span>
       <span className="font-semibold text-gray-900">Free</span>
-    </div>
-    <hr className="border-gray-300" />
+    </div> */}
+    {/* <hr className="border-gray-300" />  */}
 
     <div className="flex justify-between items-center">
       <span>Estimated Taxes</span>
