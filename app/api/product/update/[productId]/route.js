@@ -95,15 +95,25 @@ for (const file of imageFiles) {
 
 // ...
     const savedOverviewImages = [];
-    for (const file of overviewImageFiles) {
-      if (!file || typeof file.name !== "string") continue;
-      const filename = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
-      const filePath = path.join(uploadDir, filename);
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await writeFile(filePath, buffer);
-//       savedOverviewImages.push(file.name.replace(/\s+/g, "-")); // Correct: Save only the original name
-savedOverviewImages.push(filename);
-    }
+for (const file of overviewImageFiles) {
+  if (!file || typeof file.name !== "string") continue;
+  const filename = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+  const filePath = path.join(uploadDir, filename);
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await writeFile(filePath, buffer);
+  savedOverviewImages.push(filename);
+}
+
+// / Get existing overview images from productData
+const existingOverviewImages = Array.isArray(productData.overview_image) 
+  ? productData.overview_image.filter(img => typeof img === "string" && !img.startsWith("blob:"))
+  : [];
+
+  // Combine existing overview images with newly uploaded ones
+const finalOverviewImages = [
+  ...existingOverviewImages,
+  ...savedOverviewImages
+];
 
     if (productData.hasVariants) {
       for (let i = 0; i < variants.length; i++) {
@@ -168,9 +178,10 @@ const updatedProduct = await Product.findByIdAndUpdate(
      category: productData.category, // Parent category
   sub_category: productData.sub_category, // Subcategory
     images: finalImages,
-    overview_image: savedOverviewImages.length > 0 
-      ? savedOverviewImages 
-      : productData.overview_image,
+    // overview_image: savedOverviewImages.length > 0 
+    //   ? savedOverviewImages 
+    //   : productData.overview_image,
+    overview_image: finalOverviewImages.length > 0 ? finalOverviewImages : [],
     filters: filterIds,  // ✅ Save filters directly to product
     extend_warranty: extend_warranty,
   },

@@ -583,24 +583,46 @@ setProduct(prev => ({
     // };
   
 
-    const handleOverviewImageChange = (index, files) => {
-      const file = files[0];
-      if (!file) return;
+    // const handleOverviewImageChange = (index, files) => {
+    //   const file = files[0];
+    //   if (!file) return;
   
-      setProduct(prev => {
-        const newImages = [...prev.overviewImage];
-        const newFiles = [...prev.overviewImageFile];
+    //   setProduct(prev => {
+    //     const newImages = [...prev.overviewImage];
+    //     const newFiles = [...prev.overviewImageFile];
         
-        newImages[index] = URL.createObjectURL(file);
-        newFiles[index] = file;
+    //     newImages[index] = URL.createObjectURL(file);
+    //     newFiles[index] = file;
   
-        return {
-          ...prev,
-          overviewImage: newImages,
-          overviewImageFile: newFiles
-        };
-      });
+    //     return {
+    //       ...prev,
+    //       overviewImage: newImages,
+    //       overviewImageFile: newFiles
+    //     };
+    //   });
+    // };
+    const handleOverviewImageChange = (index, files) => {
+  const file = files[0];
+  if (!file) return;
+
+  setProduct(prev => {
+    const newImages = [...prev.overviewImage];
+    const newFiles = [...prev.overviewImageFile];
+    
+    // Ensure arrays are long enough
+    while (newImages.length <= index) newImages.push(null);
+    while (newFiles.length <= index) newFiles.push(null);
+    
+    newImages[index] = URL.createObjectURL(file);
+    newFiles[index] = file;
+
+    return {
+      ...prev,
+      overviewImage: newImages,
+      overviewImageFile: newFiles
     };
+  });
+};
 
   const AddproductImage = () => {
   setProduct(prev => ({
@@ -614,44 +636,28 @@ setProduct(prev => ({
 
   
     const handleAddOverviewImage = () => {
-      setProduct(prev => ({
-        ...prev,
-        overviewImage: [...prev.overviewImage, null],
-        overviewImageFile: [...prev.overviewImageFile, null]
-      }));
-    };
+  setProduct(prev => ({
+    ...prev,
+    overviewImage: [...prev.overviewImage, null],
+    overviewImageFile: [...prev.overviewImageFile, null]
+  }));
+};
   
     const handleRemoveOverviewImage = (index) => {
-      // Don't remove if it's the last one
-      if (product.overviewImage.length <= 1){
-        const newImages = [...product.overviewImage];
-        const newFiles = [...product.overviewImageFile];
-      
-        newImages[index] = null;
-        newFiles[index] = null;
-      
-        setProduct(prev => ({
-          ...prev,
-          overviewImage: newImages,
-          overviewImageFile: newFiles
-        }));
-        return;
-      }
-      
-      setProduct(prev => {
-        const newImages = [...prev.overviewImage];
-        const newFiles = [...prev.overviewImageFile];
-        
-        newImages.splice(index, 1);
-        newFiles.splice(index, 1);
-  
-        return {
-          ...prev,
-          overviewImage: newImages,
-          overviewImageFile: newFiles
-        };
-      });
+  setProduct(prev => {
+    const newImages = [...prev.overviewImage];
+    const newFiles = [...prev.overviewImageFile];
+    
+    newImages.splice(index, 1);
+    newFiles.splice(index, 1);
+
+    return {
+      ...prev,
+      overviewImage: newImages,
+      overviewImageFile: newFiles
     };
+  });
+};
     const handleRemoveImage = (variantIndex, imgIndex) => {
       const updatedVariants = [...variant];
       updatedVariants[variantIndex].images.splice(imgIndex, 1);
@@ -1730,7 +1736,7 @@ const handleupdatefilterchange = (filters) => {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase w-32">Actions</th>
                         </tr>
                       </thead>
-                    <tbody className="divide-y divide-gray-200">
+                   <tbody className="divide-y divide-gray-200">
   {product.overviewImage.map((image, index) => (
     <tr key={index} className="border-b">
       <td className="px-4 py-3">
@@ -1744,7 +1750,6 @@ const handleupdatefilterchange = (filters) => {
             hover:file:bg-blue-100"
           accept="image/*"
           onChange={(e) => handleOverviewImageChange(index, e.target.files)}
-          required={index === 0}
         />
         {image && (
           <div className="mt-2 flex items-center space-x-4">
@@ -1788,12 +1793,7 @@ const handleupdatefilterchange = (filters) => {
             onClick={handleAddOverviewImage}
             className="inline-flex items-center p-2 rounded-full text-white bg-green-600 hover:bg-green-700"
           >
-            <svg
-              className="h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
+            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
               <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM5 5h14v14H5V5zm9 9h-3v3h-2v-3H6v-2h3V9h2v3h3v2z" />
             </svg>
           </button>
@@ -1803,17 +1803,8 @@ const handleupdatefilterchange = (filters) => {
             onClick={() => handleRemoveOverviewImage(index)}
             className="inline-flex items-center p-2 rounded-full text-white bg-red-600 hover:bg-red-700"
           >
-            <svg
-              className="h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
+            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
           </button>
         </div>
