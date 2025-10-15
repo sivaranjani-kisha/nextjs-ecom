@@ -1,32 +1,95 @@
-// components/Header.jsx
-'use client';
-import { motion } from 'framer-motion';
+// 'use client';
 import Link from "next/link";
 import Image from 'next/image';
-import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX, FiPhoneCall, FiMessageSquare } from "react-icons/fi";
-import { FaBars, FaShoppingBag, FaUserShield } from "react-icons/fa";
-import { FaHeart, FaShoppingCart, FaSearch } from 'react-icons/fa';
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX, FiPhoneCall, FiMessageSquare, FiChevronRight } from "react-icons/fi";
+import { FaBars, FaShoppingBag, FaUserShield, FaSearch } from "react-icons/fa";
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { IoLogOut } from "react-icons/io5";
-import { FaCircleChevronLeft, FaCircleChevronRight, FaLocationDot, FaPhone } from "react-icons/fa6";
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from "@/context/WishlistContext";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Play } from "lucide-react";
 import { Navigation } from 'swiper/modules';
-import SideNavbar from '@/components/sideNavbar';
 import { useHeaderdetails } from "@/context/HeaderContext"; 
-import ProductCard from '@/components/ProductCard';
-import Addtocart from '@/components/AddToCart';
 import { getProducts } from '@/lib/productApi';
+
+// ADD: alphaSortString - case-insensitive, null-safe string comparator
+const alphaSortString = (a, b) => {
+  const sa = (a ?? '').toString().trim();
+  const sb = (b ?? '').toString().trim();
+  if (sa === sb) return 0;
+  return sa.localeCompare(sb, undefined, { sensitivity: 'base' });
+};
+
+// ADD: prepareFlatListAlpha - level-aware alphabetical ordering
+const prepareFlatListAlpha = (flatList = []) => {
+  const list = Array.isArray(flatList) ? flatList.filter(Boolean) : [];
+
+  // Split into categories vs brands
+  const brandsHeader = list.find((i) => i.type === 'brands-header');
+  const brands = list.filter((i) => i.type === 'brand');
+  const categories = list.filter((i) => i.type !== 'brand' && i.type !== 'brands-header');
+
+  // Headers are top-level categories (level 0)
+  const headers = categories.filter((i) => Number(i.level) === 0);
+
+  // Group by rootCategory (slug of the top-level)
+  const byRoot = new Map();
+  categories.forEach((item) => {
+    const root = item.rootCategory || item.category_slug || '';
+    if (!byRoot.has(root)) byRoot.set(root, []);
+    byRoot.get(root).push(item);
+  });
+
+  const result = [];
+
+  // Sort headers A-Z and then their children by (level asc, name A-Z)
+  headers
+    .sort((a, b) => alphaSortString(a.category_name, b.category_name))
+    .forEach((header) => {
+      const root = header.rootCategory || header.category_slug || '';
+      const group = (byRoot.get(root) || []).filter((i) => i !== header);
+
+      group.sort((a, b) => {
+        const la = Number(a.level) || 0;
+        const lb = Number(b.level) || 0;
+        if (la !== lb) return la - lb;
+        return alphaSortString(a.category_name, b.category_name);
+      });
+
+      result.push(header, ...group);
+    });
+
+  // Append any leftover categories (edge cases)
+  const used = new Set(result.map((i) => i.uniqueKey || i._id));
+  const leftovers = categories.filter((i) => !used.has(i.uniqueKey || i._id));
+  if (leftovers.length) {
+    leftovers.sort((a, b) => {
+      const la = Number(a.level) || 0;
+      const lb = Number(b.level) || 0;
+      if (la !== lb) return la - lb;
+      return alphaSortString(a.category_name, b.category_name);
+    });
+    result.push(...leftovers);
+  }
+
+  // Brands section at the end
+  if (brandsHeader) result.push(brandsHeader);
+  if (brands.length) {
+    brands.sort((a, b) => alphaSortString(a.brand_name, b.brand_name));
+    result.push(...brands);
+  }
+
+  return result;
+};
 
 const Header = () => {
     const router = useRouter();
-    const pathname = usePathname();
+    // REMOVED: unused pathname
+    // const pathname = usePathname();
     const [category, setCategory] = useState('All Category');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { wishlistCount } = useWishlist();
@@ -509,10 +572,6 @@ const Header = () => {
             console.error("Error checking auth status:", error);
         }
     };
-
-    // ...existing state declarations...
-
-    // Add this search handler function
     const handleSearch = () => {
 
       if (!searchQuery.trim() && selectedCategory === "All Category") return;
@@ -1465,7 +1524,6 @@ const Header = () => {
         </div>
       );
     }
-    // Prefetch subcategories for a few top categories when the mobile menu opens
     useEffect(() => {
       if (!isMobileMenuOpen) return;
       const ids = (Array.isArray(categories) ? categories : []).slice(0, 5).map(c => c._id);
@@ -1481,7 +1539,7 @@ const Header = () => {
               .search-bar-inner{position:relative;display:flex;align-items:center;gap:10px;width:100%;padding:2px;border-radius:8px}
                /* select */
                /* default: no visible border, show only when focused or has value */
-               .search-select{height:var(--height);min-width:140px;max-width:200px;border-radius:10px;border:1px solid transparent;padding:0 36px 0 14px;font-size:15px;color:#111;background:#fff;-webkit-appearance:none;appearance:none;cursor:pointer}
+               .search-select{height:var(--height);min-width:140px;max-width:234px;border-radius:10px;border:1px solid transparent;padding:0 36px 0 14px;font-size:15px;color:#111;background:#fff;-webkit-appearance:none;appearance:none;cursor:pointer}
                .select-wrap{position:relative;display:inline-block;max-width:35%;flex:0 0 auto;}
                .select-wrap::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:10px;height:10px;background-image:linear-gradient(135deg,#6b7280,#6b7280);clip-path:polygon(50% 70%,0 25%,100% 25%);opacity:.85;pointer-events:none}
                /* input */
@@ -1556,7 +1614,6 @@ const Header = () => {
                         </button>
                     </div>
                 </div>
-
                 {/* NEW MOBILE SEARCH BAR */}
                 <div className="sm:hidden mt-2 -mx-4 px-0">
                   <div className="bg-[#2453D3] w-full px-3 py-3">
@@ -1612,7 +1669,6 @@ const Header = () => {
                     </div>
                   </div>
                 </div>
-
                 {/* MOBILE TOP SUGGESTIONS (outside menu) */}
                 {searchDropdownVisible && searchContext === 'mobileTop' && !isMobileMenuOpen && (
                   <div ref={searchDropdownRef} className="sm:hidden absolute z-[70] left-0 right-0 px-3 mt-1">
@@ -1652,7 +1708,6 @@ const Header = () => {
                     </div>
                   </div>
                 )}
-
                 {/* DESKTOP ROW (unchanged original content) */}
                 <div className="hidden sm:flex justify-between items-center gap-4">
                     {/* Logo (Hidden on mobile) */}
@@ -1738,7 +1793,7 @@ const Header = () => {
                         <div className="shimmer" aria-hidden="true"></div>
                         {/* DROPDOWN MOVED OUTSIDE TO SUPPORT MOBILE */ }
                         {/* (was here previously) */}
-                      </div>
+                      </div>                    
                     </div>
                     {/* Icons Group */}
                     <div className="flex items-center gap-[2rem] sm:gap-4">
@@ -1829,7 +1884,6 @@ const Header = () => {
                         </div>
                     </div>
                 </div>
-
                 {/* Mobile Menu (Hidden on desktop) */}
                 {isMobileMenuOpen && (
                   <div className="sm:hidden bg-white fixed inset-0 z-50 p-4 pt-3 rounded-lg shadow-lg overflow-y-auto transition-all duration-300"
@@ -2184,43 +2238,37 @@ const Header = () => {
               
                 {/* DROPDOWN OUTSIDE SWIPER (fixed so it won't be clipped) */}
                 {hoveredCategory && hoveredCategory.subcategories?.length > 0 && (() => {
-                  // sort subcategories with priority for certain categories
-                  const sortedSubcategories = [...hoveredCategory.subcategories].sort((a, b) => {
-                    if (hoveredCategory.category_name?.toLowerCase() === "large appliance") {
-                      const priorityOrder = ["Air Conditioner", "Refrigerator", "Washing Machine", "Dishwasher"];
+                  // 1) Strict alphabetical sort for hovered subcategories
+                  const sortedSubcategories = [...hoveredCategory.subcategories]
+                    .filter(Boolean)
+                    .sort((a, b) => alphaSortString(a?.category_name, b?.category_name));
 
-                      const indexA = priorityOrder.indexOf(a.category_name);
-                      const indexB = priorityOrder.indexOf(b.category_name);
-
-                      if (indexA !== -1 && indexB !== -1) {
-                        // both are in the priority list -> keep their defined order
-                        return indexA - indexB;
-                      } else if (indexA !== -1) {
-                        // a is in priority, b is not -> a comes first
-                        return -1;
-                      } else if (indexB !== -1) {
-                        // b is in priority, a is not -> b comes first
-                        return 1;
-                      }
-                    }
-
-                    // default alphabetical order for other categories (or remaining ones)
-                    return a.category_name.localeCompare(b.category_name);
-                  });
-
-
-                  // Build flat list and chunk it
-                  let dropdownChunksLocal = chunkFlatList(
-                    flattenAllCategories(sortedSubcategories, hoveredCategory.category_slug),
-                    11
+                  // 2) Flatten (existing logic) then alphabetize the final list
+                  const flatAll = flattenAllCategories(
+                    sortedSubcategories,
+                    hoveredCategory.category_slug
                   );
 
-                  // CHANGED: drop any empty chunks so we never render empty columns
+                  // Remove items missing display names
+                  const sanitizedFlat = (flatAll || []).filter((item) =>
+                    item?.type === "brand"
+                      ? !!item?.brand_name
+                      : !!item?.category_name
+                  );
+
+                  // New: level-aware alphabetical output
+                  const flatAlpha = prepareFlatListAlpha(sanitizedFlat);
+
+                  // 3) Chunk and drop empty chunks to avoid gaps
+                  let dropdownChunksLocal = chunkFlatList(flatAlpha, 11);
                   const filteredChunks = dropdownChunksLocal.filter(
-                    (chunk) => Array.isArray(chunk) && chunk.length > 0 && chunk.some(Boolean)
+                    (chunk) =>
+                      Array.isArray(chunk) &&
+                      chunk.length > 0 &&
+                      chunk.some(Boolean)
                   );
 
-                  // --- Begin navImage columns logic (unchanged) ---
+                  // --- Image columns logic (unchanged) ---
                   let navImages = [];
                   if (hoveredCategory?.navImage) {
                     if (typeof hoveredCategory.navImage === "string") {
@@ -2235,12 +2283,13 @@ const Header = () => {
                   const imageCols = navImages.length;
 
                   // Layout constraints
-                  const maxCols = 6;                // total slots (data + images)
+                  const maxCols = 6;
                   const columnWidth = 220;
-                  const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1200;
+                  const screenWidth =
+                    typeof window !== "undefined" ? window.innerWidth : 1200;
                   const maxAllowedWidth = Math.max(300, screenWidth - 20);
 
-                  // CHANGED: compute how many data columns can actually fit along with image columns
+                  // Fit non-empty columns without gaps
                   const maxDataBySlots = Math.max(0, maxCols - imageCols);
                   const maxDataByViewport = Math.max(
                     0,
@@ -2251,10 +2300,8 @@ const Header = () => {
                     Math.min(filteredChunks.length, maxDataBySlots, maxDataByViewport)
                   );
 
-                  // CHANGED: only take the columns we will render (no placeholders)
                   const columns = filteredChunks.slice(0, allowedDataCols);
 
-                  // CHANGED: compute width from actually rendered columns + image columns
                   let computedWidth = (columns.length + imageCols) * columnWidth;
                   if (computedWidth > maxAllowedWidth) computedWidth = maxAllowedWidth;
 
@@ -2265,14 +2312,13 @@ const Header = () => {
                   const styleTransform =
                     dropdownUseTranslate && dropdownCenterX ? "translateX(-50%)" : "none";
 
-                  // If nothing to render (edge), skip dropdown entirely
                   if (columns.length === 0 && imageCols === 0) return null;
 
                   return (
                     <div
                       ref={dropdownRef}
                       className="fixed z-50 border-t border-gray-200 shadow-xl"
-                      style={{ 
+                      style={{
                         top: `${dropdownTop}px`,
                         left: styleLeft,
                         transform: styleTransform,
@@ -2283,14 +2329,13 @@ const Header = () => {
                       onMouseLeave={() => startHide(120)}
                     >
                       <div className="flex flex-wrap bg-white h-[390px]" style={{ width: "100%" }}>
-                        {/* CHANGED: render only real columns; no empty placeholders */}
+                        {/* Render only non-empty columns in order (gap-free) */}
                         {columns.map((chunk, index) => {
-                          const scrollableClass = chunk.length > 10 ? "pr-2" : "";
                           const bgClass = index % 2 === 0 ? "bg-[#f2f2f2]" : "bg-white";
                           return (
                             <div
                               key={`col-${index}`}
-                              className={`min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start self-start ${scrollableClass} ${bgClass}`}
+                              className={`min-w-[220px] max-w-[250px] p-3 flex flex-col justify-start self-start ${bgClass}`}
                               style={{ height: "100%" }}
                             >
                               {chunk.map((item) => renderFlatItem(item, hoveredCategory))}
@@ -2298,7 +2343,7 @@ const Header = () => {
                           );
                         })}
 
-                        {/* IMAGE COLUMNS LAST */}
+                        {/* Image columns (unchanged) */}
                         {Array.isArray(navImages) &&
                           navImages.length > 0 &&
                           navImages.map((img, idx) => (
@@ -2318,7 +2363,7 @@ const Header = () => {
                                   width={220}
                                   height={390}
                                   className="object-cover w-full h-full"
-                                  style={{ boxShadow: "0px -10px 0px #2453d3" }}
+                                  style={{ boxShadow: "0px -1px 0px #2453d3" }}
                                 />
                               </Link>
                             </div>
