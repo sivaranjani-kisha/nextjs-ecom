@@ -1434,93 +1434,102 @@ const Header = () => {
       if (!Array.isArray(nodes) || nodes.length === 0) return null;
       return (
         <div className="divide-y divide-gray-100">
-          {nodes.map((node) => {
-            const hasChildren =
-              Array.isArray(node.subcategories) && node.subcategories.length > 0;
-            const isOpen = !!openCategories[node._id];
-            const nodeSlug = getCategorySlug(node);
-            const slugs = [...ancestorSlugs, nodeSlug];
-            const href = getNodeHref(ancestorSlugs, nodeSlug, level);
-            const rowJustify = hasChildren ? "justify-between" : "justify-start";
+         {nodes
+  .slice() // make a shallow copy to avoid mutating original
+  .sort((a, b) => {
+    const nameA = (a.category_name || "").toLowerCase();
+    const nameB = (b.category_name || "").toLowerCase();
+    return nameA.localeCompare(nameB);
+  })
+  .map((node) => {
+    const hasChildren =
+      Array.isArray(node.subcategories) && node.subcategories.length > 0;
+    const isOpen = !!openCategories[node._id];
+    const nodeSlug = getCategorySlug(node);
+    const slugs = [...ancestorSlugs, nodeSlug];
+    const href = getNodeHref(ancestorSlugs, nodeSlug, level);
+    const rowJustify = hasChildren ? "justify-between" : "justify-start";
 
-            return (
-              <div key={node._id} className={`${isOpen ? "bg-blue-50/40" : "bg-white"} hover:bg-[#f2f2f2]`}>
-                <div
-                  className={`w-full flex items-center ${rowJustify} ${
-                    level === 0 ? "px-3 py-3 text-sm" : "pl-5 pr-3 py-2 text-[13px]"
-                  } ${isOpen ? "text-blue-700 bg-[#f2f2f2]" : "text-gray-800 hover:bg-[#f2f2f2]"}`}
-                >
-                  <Link
-                    href={href}
-                    onClick={async (e) => {
-                      if (level === 0 || hasChildren) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        await ensureSubcategories(node._id);
-                        setOpenCategories((prev) => {
-                          const next = { ...prev };
-                          const willOpen = !prev[node._id];
-                          if (level === 0) {
-                            Object.keys(next).forEach((k) => delete next[k]);
-                            if (willOpen) next[node._id] = true;
-                            return next;
-                          }
-                          next[node._id] = willOpen;
-                          return next;
-                        });
-                        // Keep the mobile overlay open while drilling into categories
-                        setIsMobileMenuOpen(true);
-                        return;
-                      }
-                      // Leaf: navigate and close explicitly (desired behavior)
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex-1 text-left truncate"
-                    style={{ paddingLeft: level > 0 ? Math.min(level * 8, 24) : 0 }}
-                  >
-                    {node.category_name || "Category"}
-                  </Link>
+    return (
+      <div
+        key={node._id}
+        className={`${isOpen ? "bg-blue-50/40" : "bg-white"} hover:bg-[#f2f2f2]`}
+      >
+        <div
+          className={`w-full flex items-center ${rowJustify} ${
+            level === 0 ? "px-3 py-3 text-sm" : "pl-5 pr-3 py-2 text-[13px]"
+          } ${isOpen ? "text-blue-700 bg-[#f2f2f2]" : "text-gray-800 hover:bg-[#f2f2f2]"}`}
+        >
+          <Link
+            href={href}
+            onClick={async (e) => {
+              if (level === 0 || hasChildren) {
+                e.preventDefault();
+                e.stopPropagation();
+                await ensureSubcategories(node._id);
+                setOpenCategories((prev) => {
+                  const next = { ...prev };
+                  const willOpen = !prev[node._id];
+                  if (level === 0) {
+                    Object.keys(next).forEach((k) => delete next[k]);
+                    if (willOpen) next[node._id] = true;
+                    return next;
+                  }
+                  next[node._id] = willOpen;
+                  return next;
+                });
+                setIsMobileMenuOpen(true);
+                return;
+              }
+              setIsMobileMenuOpen(false);
+            }}
+            className="flex-1 text-left truncate"
+            style={{ paddingLeft: level > 0 ? Math.min(level * 8, 24) : 0 }}
+          >
+            {node.category_name || "Category"}
+          </Link>
 
-                  {hasChildren && (
-                    <button
-                      type="button"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        await ensureSubcategories(node._id);
-                        setOpenCategories((prev) => {
-                          const next = { ...prev };
-                          const willOpen = !prev[node._id];
-                          if (level === 0) {
-                            Object.keys(next).forEach((k) => delete next[k]);
-                            if (willOpen) next[node._id] = true;
-                            return next;
-                          }
-                          next[node._id] = willOpen;
-                          return next;
-                        });
-                      }}
-                      aria-label="Toggle"
-                      className="ml-2"
-                    >
-                      <FiChevronRight
-                        className={`text-white rounded-full p-1 transition-transform duration-200 bg-[#2453D3] ${
-                          isOpen ? "rotate-90" : "rotate-0"
-                        }`}
-                        size={18}
-                      />
-                    </button>
-                  )}
-                </div>
+          {hasChildren && (
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await ensureSubcategories(node._id);
+                setOpenCategories((prev) => {
+                  const next = { ...prev };
+                  const willOpen = !prev[node._id];
+                  if (level === 0) {
+                    Object.keys(next).forEach((k) => delete next[k]);
+                    if (willOpen) next[node._id] = true;
+                    return next;
+                  }
+                  next[node._id] = willOpen;
+                  return next;
+                });
+              }}
+              aria-label="Toggle"
+              className="ml-2"
+            >
+              <FiChevronRight
+                className={`text-white rounded-full p-1 transition-transform duration-200 bg-[#2453D3] ${
+                  isOpen ? "rotate-90" : "rotate-0"
+                }`}
+                size={18}
+              />
+            </button>
+          )}
+        </div>
 
-                {isOpen && hasChildren && (
-                  <div className="pb-2">
-                    {renderCategoryLevel(node.subcategories, slugs, level + 1)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        {isOpen && hasChildren && (
+          <div className="pb-2">
+            {renderCategoryLevel(node.subcategories, slugs, level + 1)}
+          </div>
+        )}
+      </div>
+    );
+  })}
+
         </div>
       );
     }
@@ -1617,17 +1626,20 @@ const Header = () => {
                 {/* NEW MOBILE SEARCH BAR */}
                 <div className="sm:hidden mt-2 -mx-4 px-0">
                   <div className="bg-[#2453D3] w-full px-3 py-3">
-                    <div className="flex items-center bg-white h-12 rounded-xl border border-gray-300 shadow-sm overflow-hidden w-full transition-all duration-150 focus-within:border-[#2453d3] focus-within:shadow-[0_0_0_2px_rgba(36,83,211,0.15)]">
-                      {/* ADDED category dropdown for mobile */}
+                    <div className="flex items-center bg-white h-12 rounded-xl border border-gray-300 shadow-sm overflow-hidden w-full transition-all duration-150 focus-within:border-[#2453d3] focus-within:shadow-[0_0_0_2px_rgba(36,83,211,0.15)] flex-nowrap">
+                      
+                      {/* Category select */}
                       <select
                         value={selectedCategory}
-                        onChange={(e)=>setSelectedCategory(e.target.value)}
-                        className="h-full text-[11px] xs:text-xs bg-white px-2 pr-3 border-r border-gray-300 outline-none shrink-0 max-w-[110px]"
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="h-full text-[11px] xs:text-xs bg-white  border-r border-gray-300 outline-none flex-shrink-0 min-w-[120px] w-auto"
                         aria-label="Category"
                       >
                         <option value="All Category">All Category</option>
-                        {categories.map(cat => (
-                          <option key={cat._id} value={cat.category_name}>{cat.category_name}</option>
+                        {categories.map((cat) => (
+                          <option key={cat._id} value={cat.category_name} title={cat.category_name}>
+                            {cat.category_name}
+                          </option>
                         ))}
                       </select>
                       <div className="flex-1 relative h-full flex items-center">
