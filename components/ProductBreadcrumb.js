@@ -117,10 +117,10 @@ export default function ProductBreadcrumb({ product }) {
         className="text-gray-500 hover:text-blue-500 transition-colors flex items-center whitespace-nowrap"
       >
         <HiHome className="h-4 w-4 mr-2" />
-        Home
+        Home 
       </Link>
       
-      {/* Category Hierarchy */}
+      {/* Category Hierarchy
       {categories.map((category, index) => (
         <div key={category._id} className="flex items-center">
           <span className="mx-2 text-gray-300"><FaGreaterThan /></span>
@@ -140,7 +140,35 @@ export default function ProductBreadcrumb({ product }) {
             </Link>
           )}
         </div>
-      ))}
+      ))} */}
+
+      {categories.map((category, index) => {
+  // Build the path up to this breadcrumb level
+  const path = `/category/${categories
+    .slice(0, index + 1)
+    .map(cat => cat.category_slug || cat._id)
+    .join("/")}`;
+
+  return (
+    <div key={category._id} className="flex items-center">
+      <span className="mx-2 text-gray-300"><FaGreaterThan /></span>
+      {/* {index > 0 && (
+        <span className="mx-2 text-gray-300">
+          <FaGreaterThan />
+        </span>
+      )} */}
+      <Link
+        href={path}
+        className={`text-gray-500 hover:text-blue-500 whitespace-nowrap ${
+          index === categories.length - 1 ? "font-medium" : ""
+        }`}
+      >
+        {category.category_name}
+      </Link>
+    </div>
+  );
+})}
+
 
       {/* Product Name */}
       <span className="mx-2 text-gray-300"><FaGreaterThan /></span>
