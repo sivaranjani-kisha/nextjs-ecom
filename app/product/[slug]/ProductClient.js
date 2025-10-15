@@ -1851,7 +1851,7 @@ const fetchBrand = async () => {
       )}
     </div>
   )} */}
-{relatedProducts.filter(item => item.stock_status === "In Stock" && item.status === "Active").length > 0 && (
+{relatedProducts.filter((item) => item.quantity > 0 && item.status === "Active").length > 0 && (
   <div className="border border-gray-300 rounded-lg shadow-md bg-white max-h-[500px] overflow-y-scroll scrollbar-hide">
     <div className="px-4 py-4">
       <h2 className="text-sm font-bold text-customBlue underline mb-2">
@@ -1859,7 +1859,7 @@ const fetchBrand = async () => {
       </h2>
 
       {relatedProducts
-        .filter(item => item.stock_status === "In Stock" && item.status === "Active")
+        .filter((item) => item.quantity > 0 && item.status === "Active")
         .slice(0, 3)
         .map((item) => (
           <div key={item._id} className="flex items-start mb-4">
