@@ -49,21 +49,41 @@ export async function GET(request, { params }) {
     }
     
      // ✅ Collect product category + subcategory IDs
-    const categoryIds = [...new Set(products.map(p => p.category))];
-    const subCategoryIds = [...new Set(products.map(p => p.sub_category))];
+    // const categoryIds = [...new Set(products.map(p => p.category))];
+    // const subCategoryIds = [...new Set(products.map(p => p.sub_category))];
+
+    const categoryIds = [
+  ...new Set(
+    products
+      .map(p => p.category)
+      .filter(id => id && id.toString().trim() !== "")
+  ),
+];
+
+const subCategoryIds = [
+  ...new Set(
+    products
+      .map(p => p.sub_category)
+      .filter(id => id && id.toString().trim() !== "")
+  ),
+];
+
 
     // Build tree starting from main categories (Air Conditioner in your case)
     let categoryTree = [];
     for (const catId of categoryIds) {
-      const mainCategory = await ecom_category_info.findById(catId).lean();
-      if (!mainCategory) continue;
+  if (!catId || catId.toString().trim() === "") continue; // skip invalid IDs
+  
+  const mainCategory = await ecom_category_info.findById(catId).lean();
+  if (!mainCategory) continue;
 
-      const subTree = await getCategoryTree(mainCategory._id, subCategoryIds);
-      categoryTree.push({
-        ...mainCategory,
-        subCategories: subTree
-      });
-    }
+  const subTree = await getCategoryTree(mainCategory._id, subCategoryIds);
+  categoryTree.push({
+    ...mainCategory,
+    subCategories: subTree
+  });
+}
+
 
     
     // Extract product IDs for filtering
@@ -93,6 +113,6 @@ export async function GET(request, { params }) {
     });
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Error fetching brand details" }, { status: 500 });
+    return Response.json({ error: error.message, stack: error.stack }, { status: 500 });
   }
 }
