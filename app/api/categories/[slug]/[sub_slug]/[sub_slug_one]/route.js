@@ -72,6 +72,6 @@ export async function GET(req, { params }) {
     return Response.json({ category, products, brands, brands: brandsWithCount,  filters: formattedFilters });
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Error fetching category details" }, { status: 500 });
+    return Response.json({ error: error.message, stack: error.stack }, { status: 500 });
   }
 }
