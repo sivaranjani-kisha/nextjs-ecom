@@ -63,7 +63,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
   }, [categorySlug, brandSlug]);
   
   const fetchInitialData = async () => {
-    alert('sjjsdjs');
+ 
     try {
       setLoading(true);
       const res = await fetch(`/api/brand/categories/${categorySlug}/brand/${brandSlug}`);
