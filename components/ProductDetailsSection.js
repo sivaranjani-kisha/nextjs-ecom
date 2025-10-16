@@ -466,8 +466,8 @@ const appendFlixInpageContent = () => {
     }
 
     // create/ensure a dedicated dynamic wrapper to avoid mixing with provider DOM
-    /* let dynWrap = container.querySelector('[data-flix-dyn-wrap]');
-    if (!dynWrap) {
+    let dynWrap = container.querySelector('[data-flix-dyn-wrap]');
+    /* if (!dynWrap) {
       dynWrap = document.createElement('div');
       dynWrap.setAttribute('data-flix-dyn-wrap', '');
       dynWrap.className = 'mt-3 space-y-2 text-left';
@@ -475,7 +475,7 @@ const appendFlixInpageContent = () => {
     } */
 
     // prevent duplicate appends on repeated success triggers
-    if (dynWrap.getAttribute('data-flix-appended') === '1') return;
+    /* if (dynWrap.getAttribute('data-flix-appended') === '1') return;
 
     const items = getFlixMediaArray();
 
@@ -487,7 +487,7 @@ const appendFlixInpageContent = () => {
       dynWrap.appendChild(empty);
       dynWrap.setAttribute('data-flix-appended', '1');
       return;
-    }
+    } */
 
     const frag = document.createDocumentFragment();
     items.forEach((it) => {
