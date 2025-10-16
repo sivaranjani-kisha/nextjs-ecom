@@ -943,15 +943,66 @@ const cleanupFlixMedia = () => {
 
 
       {/* Tab Content */}
-      {activeTab === "overview" && (
-        <div className={`mx-auto px-4 py-6 text-center ${activeTab === "overview" ? "block" : "hidden"}`}>
-          <div id="overview-tab">
-            <div className="col-md-12">
-              {/* flix-inpage will be inserted here */}
-            </div>
-          </div>
-        </div>
-      )}
+{activeTab === "overview" && (
+  <div
+    className={`mx-auto px-4 py-6 text-center ${
+      activeTab === "overview" ? "block" : "hidden"
+    }`}
+  >
+    <div id="overview-tab">
+      <div className="col-md-12">
+        {/* ✅ Flix InPage content - show only once */}
+        {product.flix_inpage_image ? (
+          <div
+            id="flix-inpage"
+            dangerouslySetInnerHTML={{ __html: product.flix_inpage_image }}
+          />
+        ) : product.flix_data?.inpage ? (
+          <div
+            id="flix-inpage"
+            dangerouslySetInnerHTML={{ __html: product.flix_data.inpage }}
+          />
+        ) : (
+          <>
+            {/* ✅ Fallback Overview content if Flix not available */}
+            {product.overview_image && (
+              <>
+                {Array.isArray(product.overview_image)
+                  ? product.overview_image.map((img, index) => (
+                      <img
+                        key={index}
+                        src={`/uploads/products/${img}`}
+                        alt={`Overview ${index + 1}`}
+                        className="mx-auto rounded-lg shadow-md my-4 w-full max-w-[500px]"
+                      />
+                    ))
+                  : product.overview_image
+                      .split(",")
+                      .filter(Boolean)
+                      .map((img, index) => (
+                        <img
+                          key={index}
+                          src={`/uploads/products/${img}`}
+                          alt={`Overview ${index + 1}`}
+                          className="mx-auto rounded-lg shadow-md my-4 w-full max-w-[500px]"
+                        />
+                      ))}
+              </>
+            )}
+
+            {product.overview && (
+              <div
+                className="mt-4 text-gray-700 text-left max-w-3xl mx-auto"
+                dangerouslySetInnerHTML={{ __html: product.overview }}
+              />
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
  
       <div className="max-w-2xl mx-auto px-4 py-6 text-center">
         {/* {activeTab === "overview" && (
