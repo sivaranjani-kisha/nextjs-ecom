@@ -288,10 +288,16 @@ if (row[20] && typeof row[20] === 'string') {
       }
     }
 
+    const count =
+      validProducts.length > 1
+        ? validProducts.length - 1
+        : validProducts.length;
+
     return NextResponse.json({
-      message: `Successfully processed ${validProducts.length } products.`,
-      productCount: validProducts.length ,
+      message: `Successfully processed ${count} products.`,
+      productCount: count,
     });
+
   } catch (error) {
     console.error('Bulk upload error:', error);
     return NextResponse.json(
