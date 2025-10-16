@@ -79,11 +79,14 @@ const getFirstTabWithContent = () => {
 
 useEffect(() => {
   if (product) {
+      // Create containers for FlixMedia
+  const overviewTab = document.querySelector("#overview-tab .col-md-12");
+  (overviewTab !== "")
     // ✅ Check for Flix in-page content (image or embed)
-    const hasFlixInPage =
+    /* const hasFlixInPage =
       product.flix_inpage_image ||
       (product.flix_data &&
-        (product.flix_data.inpage || product.flix_data.widget));
+        (product.flix_data.inpage || product.flix_data.widget)); */
 
     // ✅ Check if overview has content or images
     const hasOverview =
@@ -93,7 +96,7 @@ useEffect(() => {
           ? product.overview_image.length > 0
           : product.overview_image.split(",").filter(Boolean).length > 0));
 
-    if (hasFlixInPage || hasOverview) {
+    if (overviewTab || hasOverview) {
       setActiveTab("overview");
     } else if (product.description && product.description.trim() !== "") {
       setActiveTab("description");
@@ -943,66 +946,15 @@ const cleanupFlixMedia = () => {
 
 
       {/* Tab Content */}
-{activeTab === "overview" && (
-  <div
-    className={`mx-auto px-4 py-6 text-center ${
-      activeTab === "overview" ? "block" : "hidden"
-    }`}
-  >
-    <div id="overview-tab">
-      <div className="col-md-12">
-        {/* ✅ Flix InPage content - show only once */}
-        {product.flix_inpage_image ? (
-          <div
-            id="flix-inpage"
-            dangerouslySetInnerHTML={{ __html: product.flix_inpage_image }}
-          />
-        ) : product.flix_data?.inpage ? (
-          <div
-            id="flix-inpage"
-            dangerouslySetInnerHTML={{ __html: product.flix_data.inpage }}
-          />
-        ) : (
-          <>
-            {/* ✅ Fallback Overview content if Flix not available */}
-            {product.overview_image && (
-              <>
-                {Array.isArray(product.overview_image)
-                  ? product.overview_image.map((img, index) => (
-                      <img
-                        key={index}
-                        src={`/uploads/products/${img}`}
-                        alt={`Overview ${index + 1}`}
-                        className="mx-auto rounded-lg shadow-md my-4 w-full max-w-[500px]"
-                      />
-                    ))
-                  : product.overview_image
-                      .split(",")
-                      .filter(Boolean)
-                      .map((img, index) => (
-                        <img
-                          key={index}
-                          src={`/uploads/products/${img}`}
-                          alt={`Overview ${index + 1}`}
-                          className="mx-auto rounded-lg shadow-md my-4 w-full max-w-[500px]"
-                        />
-                      ))}
-              </>
-            )}
-
-            {product.overview && (
-              <div
-                className="mt-4 text-gray-700 text-left max-w-3xl mx-auto"
-                dangerouslySetInnerHTML={{ __html: product.overview }}
-              />
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  </div>
-)}
-
+      {activeTab === "overview" && (
+        <div className={`mx-auto px-4 py-6 text-center ${activeTab === "overview" ? "block" : "hidden"}`}>
+          <div id="overview-tab">
+            <div className="col-md-12">
+              {/* flix-inpage will be inserted here */}
+            </div>
+          </div>
+        </div>
+      )}
  
       <div className="max-w-2xl mx-auto px-4 py-6 text-center">
         {/* {activeTab === "overview" && (
