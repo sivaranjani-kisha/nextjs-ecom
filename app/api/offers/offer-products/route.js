@@ -83,18 +83,63 @@ const normalizeOfferForResponse = (offer) => {
 export async function GET(req) {
   try {
     const token = extractToken(req);
-    const decoded = verifyToken(token);
-    // Replace deprecated constructor with createFromHexString
-    const userId = mongoose.Types.ObjectId.createFromHexString(String(decoded.userId));
+    // Make token optional for read-only code listing; keep for other flows
+    let decoded = null;
+    let userId = null;
+    try {
+      if (token) {
+        decoded = verifyToken(token);
+        // Replace deprecated constructor with createFromHexString
+        userId = mongoose.Types.ObjectId.createFromHexString(String(decoded.userId));
+      }
+    } catch {
+      // guest / invalid token: proceed for code listing, restrict where needed later
+      decoded = null;
+      userId = null;
+    }
+
     await connectDB();
 
     // Parse optional query params
     const { searchParams } = new URL(req.url);
     const enteredCode = (searchParams.get("code") || "").trim().toLowerCase();
     const offerId = (searchParams.get("offerId") || "").trim();
+    const listActiveCodes = ["1", "true", "yes"].includes(
+      (searchParams.get("listActiveCodes") || "").toLowerCase()
+    );
 
     // Fetch ALL offers (we'll filter per use-case below)
     const allOffers = await Offer.find({});
+
+    // New: return all offer_code where both fest_offer_status2 and fest_offer_status are active
+    if (listActiveCodes) {
+      const active = allOffers.filter(
+        (o) =>
+          String(o.fest_offer_status2 || "").toLowerCase() === "active" &&
+          String(o.fest_offer_status || "").toLowerCase() === "active"
+      );
+
+      const codes = [
+        ...new Set(
+          active
+            .map((o) => String(o.offer_code || "").trim())
+            .filter(Boolean)
+        ),
+      ];
+
+      // Also return offer details for UI cards
+      const offers = active.map((o) => {
+        const pct = Number(o.percentage ?? o.percent ?? o.discountValue ?? 0) || 0;
+        const fixed = Number(o.fixed_price ?? o.fixed ?? o.amount ?? 0) || 0;
+        return {
+          code: String(o.offer_code || "").trim(),
+          percentage: pct > 0 ? pct : 0,
+          fixed_price: fixed > 0 ? fixed : 0,
+        };
+      }).filter(x => x.code);
+
+      return NextResponse.json({ success: true, codes, offers });
+    }
 
     if (!allOffers.length) {
       return NextResponse.json({
@@ -104,11 +149,14 @@ export async function GET(req) {
       });
     }
 
-    // Active users (current user)
-    const activeUsers = await User.find({ "_id": userId, status: "Active" }).select('_id');
+    // Active users (current user) - only if we have a decoded user
+    const activeUsers = userId
+      ? await User.find({ "_id": userId, status: "Active" }).select('_id')
+      : [];
 
     const allowedForUser = (offer) => {
       if (!offer.selected_users || offer.selected_users.length === 0) return true;
+      if (!activeUsers.length) return false; // no logged-in user -> not allowed for selected lists
       return offer.selected_users.some(selUserId =>
         activeUsers.some(activeUser => activeUser._id.equals(selUserId))
       );
