@@ -77,11 +77,10 @@ const getFirstTabWithContent = () => {
   return "overview";
 };
 
-/* useEffect(() => {
+useEffect(() => {
   if (product) {
     // ✅ Check for Flix in-page content (image or embed)
     const hasFlixInPage = (product.flix_data && (product.flix_data.inpage || product.flix_data.widget));
-    console.log("FlixImage:",product.flix_data);
     // ✅ Check if overview has content or images
     const hasOverview =
       (product.overview && product.overview.trim() !== "") ||
@@ -102,38 +101,8 @@ const getFirstTabWithContent = () => {
       setActiveTab("overview"); // fallback default
     }
   }
-}, [product]); */
-
-useEffect(() => {
-  if (product) {
-    const hasFlixInPage =
-      product.flix_data && (product.flix_data.inpage || product.flix_data.widget);
-
-    const hasOverview =
-      (product.overview && product.overview.trim() !== "") ||
-      (product.overview_image &&
-        (Array.isArray(product.overview_image)
-          ? product.overview_image.length > 0
-          : product.overview_image.split(",").filter(Boolean).length > 0));
-
-    const hasDescription =
-      product.description && product.description.trim() !== "";
-
-    const hasReviews =
-      product.reviews && product.reviews.length > 0;
-
-    // ✅ Always show "overview" first if it exists — even if other tabs also have data
-    if (hasOverview || hasFlixInPage) {
-      setActiveTab("overview");
-    } else if (hasDescription) {
-      setActiveTab("description");
-    } else if (hasReviews) {
-      setActiveTab("reviews");
-    } else {
-      setActiveTab("overview"); // fallback
-    }
-  }
 }, [product]);
+
 
 
 // ✅ Set first available tab on mount
@@ -467,15 +436,15 @@ const appendFlixInpageContent = () => {
 
     // create/ensure a dedicated dynamic wrapper to avoid mixing with provider DOM
     let dynWrap = container.querySelector('[data-flix-dyn-wrap]');
-    /* if (!dynWrap) {
+    if (!dynWrap) {
       dynWrap = document.createElement('div');
       dynWrap.setAttribute('data-flix-dyn-wrap', '');
       dynWrap.className = 'mt-3 space-y-2 text-left';
       container.appendChild(dynWrap);
-    } */
+    }
 
     // prevent duplicate appends on repeated success triggers
-    /* if (dynWrap.getAttribute('data-flix-appended') === '1') return;
+    if (dynWrap.getAttribute('data-flix-appended') === '1') return;
 
     const items = getFlixMediaArray();
 
@@ -487,10 +456,9 @@ const appendFlixInpageContent = () => {
       dynWrap.appendChild(empty);
       dynWrap.setAttribute('data-flix-appended', '1');
       return;
-    } */
+    }
 
     const frag = document.createDocumentFragment();
-    const items = getFlixMediaArray();
     items.forEach((it) => {
       const block = document.createElement('div');
       block.className = 'p-3 bg-white rounded-md shadow-sm';
