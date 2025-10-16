@@ -79,14 +79,10 @@ const getFirstTabWithContent = () => {
 
 useEffect(() => {
   if (product) {
-      // Create containers for FlixMedia
-  const overviewTab = document.querySelector("#overview-tab .col-md-12");
-  (overviewTab !== "")
     // ✅ Check for Flix in-page content (image or embed)
-    /* const hasFlixInPage =
-      product.flix_inpage_image ||
+    const hasFlixInPage =
       (product.flix_data &&
-        (product.flix_data.inpage || product.flix_data.widget)); */
+        (product.flix_data.inpage || product.flix_data.widget));
 
     // ✅ Check if overview has content or images
     const hasOverview =
@@ -96,7 +92,7 @@ useEffect(() => {
           ? product.overview_image.length > 0
           : product.overview_image.split(",").filter(Boolean).length > 0));
 
-    if (overviewTab || hasOverview) {
+    if (hasFlixInPage || hasOverview) {
       setActiveTab("overview");
     } else if (product.description && product.description.trim() !== "") {
       setActiveTab("description");
