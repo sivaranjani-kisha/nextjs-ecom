@@ -490,6 +490,7 @@ const appendFlixInpageContent = () => {
     } */
 
     const frag = document.createDocumentFragment();
+    const items = getFlixMediaArray();
     items.forEach((it) => {
       const block = document.createElement('div');
       block.className = 'p-3 bg-white rounded-md shadow-sm';
