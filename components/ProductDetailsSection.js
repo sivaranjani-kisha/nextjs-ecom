@@ -492,10 +492,10 @@ const appendFlixInpageContent = () => {
           block.appendChild(pre);
         }
       } else {
-        const p = document.createElement('p');
+        /* const p = document.createElement('p');
         p.className = 'text-xs text-gray-700';
         p.textContent = String(it);
-        block.appendChild(p);
+        block.appendChild(p); */
       }
 
       frag.appendChild(block);
@@ -554,7 +554,7 @@ const checkFlixMediaContent = () => {
   setTimeout(checkContent, 1000);
 };
  
-const showFallbackMessage = () => {
+/* const showFallbackMessage = () => {
   // Remove FlixMedia containers if they exist but are empty
   const flixInpage = document.getElementById("flix-inpage");
   const flixMinisite = document.getElementById("flix-minisite");
@@ -569,12 +569,12 @@ const showFallbackMessage = () => {
  
   // Create and show fallback message
   const overviewTab = document.querySelector("#overview-tab .col-md-12");
-  /* if (overviewTab && !document.querySelector(".no-overview-message")) {
-    const fallbackMessage = document.createElement("p");
-    fallbackMessage.className = "no-overview-message text-gray-500 text-center py-4";
-    fallbackMessage.textContent = "There is no product overview available for this item.";
-    overviewTab.appendChild(fallbackMessage);
-  } */
+  // if (overviewTab && !document.querySelector(".no-overview-message")) {
+  //   const fallbackMessage = document.createElement("p");
+  //   fallbackMessage.className = "no-overview-message text-gray-500 text-center py-4";
+  //   fallbackMessage.textContent = "There is no product overview available for this item.";
+  //   overviewTab.appendChild(fallbackMessage);
+  // }
 
     if (overviewTab) {
   // 🧹 Clear existing images/messages first to avoid duplication
@@ -605,6 +605,44 @@ const showFallbackMessage = () => {
 
 
  
+  flixInitializedRef.current = false;
+}; */
+
+
+const showFallbackMessage = () => {
+  const overviewTab = document.querySelector("#overview-tab .col-md-12");
+  if (!overviewTab) return;
+
+  // 🧹 Prevent duplicate content (only create once)
+  if (overviewTab.getAttribute("data-fallback-shown") === "1") return;
+
+  // 🧹 Clear old content to avoid duplication
+  overviewTab.innerHTML = "";
+
+  if (product.overview_image && product.overview_image.length > 0) {
+    const images = Array.isArray(product.overview_image)
+      ? product.overview_image
+      : product.overview_image.split(",");
+
+    images.forEach((imgName) => {
+      const img = document.createElement("img");
+      img.src = `/uploads/products/${imgName.trim()}`;
+      img.alt = "Product Overview";
+      img.className =
+        "w-full h-auto object-contain rounded-lg shadow-lg my-4";
+      overviewTab.appendChild(img);
+    });
+  } else {
+    const fallbackMessage = document.createElement("p");
+    fallbackMessage.className =
+      "no-overview-message text-gray-500 text-center py-4";
+    fallbackMessage.textContent =
+      "There is no product overview available for this item.";
+    overviewTab.appendChild(fallbackMessage);
+  }
+
+  // ✅ Mark as shown so it won’t repeat
+  overviewTab.setAttribute("data-fallback-shown", "1");
   flixInitializedRef.current = false;
 };
  
