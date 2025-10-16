@@ -55,16 +55,12 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   // Check if a tab has content
 const hasTabContent = (tabId) => {
   switch (tabId) {
-    case "overview": 
-    if (!product.overview_image) return false;
-    const images = Array.isArray(product.overview_image)
-      ? product.overview_image
-      : product.overview_image.split(",");
-    return images.length > 0;      
+    case "overview":
+      return product.overview && product.overview.trim() !== "";
     case "description":
       return product.description && product.description.trim() !== "";
-    /* case "videos":
-      return product.videos && product.videos.length > 0; */
+    case "videos":
+      return product.videos && product.videos.length > 0;
     case "reviews":
       return true;
     default:
@@ -81,11 +77,43 @@ const getFirstTabWithContent = () => {
   return "overview";
 };
 
-// ✅ Set first available tab on mount
 useEffect(() => {
+  if (product) {
+    // ✅ Check for Flix in-page content (image or embed)
+    const hasFlixInPage =
+      product.flix_inpage_image ||
+      (product.flix_data &&
+        (product.flix_data.inpage || product.flix_data.widget));
+
+    // ✅ Check if overview has content or images
+    const hasOverview =
+      (product.overview && product.overview.trim() !== "") ||
+      (product.overview_image &&
+        (Array.isArray(product.overview_image)
+          ? product.overview_image.length > 0
+          : product.overview_image.split(",").filter(Boolean).length > 0));
+
+    if (hasFlixInPage || hasOverview) {
+      setActiveTab("overview");
+    } else if (product.description && product.description.trim() !== "") {
+      setActiveTab("description");
+    } else if (product.video_url && product.video_url.trim() !== "") {
+      setActiveTab("videos");
+    } else if (product.reviews && product.reviews.length > 0) {
+      setActiveTab("reviews");
+    } else {
+      setActiveTab("overview"); // fallback default
+    }
+  }
+}, [product]);
+
+
+
+// ✅ Set first available tab on mount
+/* useEffect(() => {
   const firstAvailable = getFirstTabWithContent();
   setActiveTab(firstAvailable);
-}, [product, reviews]);
+}, [product, reviews]); */
 
 // ✅ Handle tab switching (no disabling)
 const handleTabClick = (tabId) => {
