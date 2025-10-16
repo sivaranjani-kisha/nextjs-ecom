@@ -63,11 +63,12 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
   }, [categorySlug, brandSlug]);
   
   const fetchInitialData = async () => {
+    //alert('sjjsdjs');
     try {
       setLoading(true);
       const res = await fetch(`/api/brand/categories/${categorySlug}/brand/${brandSlug}`);
       const data = await res.json();
-      
+      console.log("Initial data fetched:", data);
       setCategoryData({
         ...data,
         allCategoryIds: data.allCategoryIds || []
@@ -871,12 +872,22 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
                           )}
        
                           {/* Discount Badge */}
-                          {Number(product.special_price) > 0 &&
-                            Number(product.special_price) < Number(product.price) && (
-                              <span className="absolute top-3 left-2 bg-orange-500 tracking-wider text-white text-xs font-bold px-2 py-0.5 rounded z-10">
-                                -{Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}%
-                              </span>
-                          )}
+                          {(() => {
+                            const discount = Math.round(
+                              100-(Number(product.special_price) / Number(product.price)) * 100
+                            );
+
+                            return (
+                              Number(product.special_price) > 0 &&
+                              Number(product.special_price) < Number(product.price) &&
+                              discount > 0 && (
+                                <span className="absolute top-3 left-2 bg-orange-500 tracking-wider text-white text-xs font-bold px-2 py-0.5 rounded z-10">
+                                  -{discount}%
+                                </span>
+                              )
+                            );
+                          })()}
+
        
                           {/* Wishlist */}
                           <div className="absolute top-2 right-2">
