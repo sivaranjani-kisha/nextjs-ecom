@@ -1046,7 +1046,7 @@ export default function CartComponent() {
      
         <div className="bg-[#f2f2f2] shadow-lg rounded-xl p-3 mb-5 max-w-md mx-auto border border-gray-200">
           <h3 className="text-gray-700 font-semibold text-sm mb-1">
-            Display Coupon
+            Apply Coupon
           </h3>
           <p className="text-gray-500 text-sm mb-1" style={{ fontSize: "12px", color: "red" }}>
             Enter your coupon code below to get discounts on eligible products.
