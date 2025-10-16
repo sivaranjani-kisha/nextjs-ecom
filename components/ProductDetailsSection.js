@@ -63,8 +63,8 @@ const hasTabContent = (tabId) => {
     return images.length > 0;      
     case "description":
       return product.description && product.description.trim() !== "";
-    case "videos":
-      return product.videos && product.videos.length > 0;
+    /* case "videos":
+      return product.videos && product.videos.length > 0; */
     case "reviews":
       return true;
     default:
@@ -84,7 +84,6 @@ const getFirstTabWithContent = () => {
 // ✅ Set first available tab on mount
 useEffect(() => {
   const firstAvailable = getFirstTabWithContent();
-  alert(firstAvailable);
   setActiveTab(firstAvailable);
 }, [product, reviews]);
 
