@@ -63,12 +63,12 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
   }, [categorySlug, brandSlug]);
   
   const fetchInitialData = async () => {
-    //alert('sjjsdjs');
+    alert('sjjsdjs');
     try {
       setLoading(true);
       const res = await fetch(`/api/brand/categories/${categorySlug}/brand/${brandSlug}`);
       const data = await res.json();
-      console.log("Initial data fetched:", data);
+      ////////console.("Initial data fetched:", data);
       setCategoryData({
         ...data,
         allCategoryIds: data.allCategoryIds || []
@@ -155,6 +155,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
     }
 
     const res = await fetch(`/api/product/filter/category-brand/main?${query}`);
+   
     const { products, pagination: paginationData } = await res.json();
 
     setProducts(products || []);
@@ -846,13 +847,14 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
 
             {/* Products Section */}
             <div className="flex-1">
+             
               {products.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                     {getSortedProducts().filter(product =>
-    Number(product.special_price) > 0
-    
-  ).map(product => (
+                      Number(product.special_price) > 0 || Number(product.price) > 0
+                      
+                    ).map(product => (
                       <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
                         {/* Product Image */}
                         <div className="relative aspect-square bg-white">
