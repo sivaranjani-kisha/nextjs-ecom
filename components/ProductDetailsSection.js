@@ -55,12 +55,16 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   // Check if a tab has content
 const hasTabContent = (tabId) => {
   switch (tabId) {
-    case "overview":
-      return product.overview && product.overview.trim() !== "";
+    case "overview": 
+    if (!product.overview_image) return false;
+    const images = Array.isArray(product.overview_image)
+      ? product.overview_image
+      : product.overview_image.split(",");
+    return images.length > 0;      
     case "description":
       return product.description && product.description.trim() !== "";
-    case "videos":
-      return product.videos && product.videos.length > 0;
+    /* case "videos":
+      return product.videos && product.videos.length > 0; */
     case "reviews":
       return true;
     default:
@@ -538,12 +542,41 @@ const showFallbackMessage = () => {
  
   // Create and show fallback message
   const overviewTab = document.querySelector("#overview-tab .col-md-12");
-  if (overviewTab && !document.querySelector(".no-overview-message")) {
+  /* if (overviewTab && !document.querySelector(".no-overview-message")) {
     const fallbackMessage = document.createElement("p");
     fallbackMessage.className = "no-overview-message text-gray-500 text-center py-4";
     fallbackMessage.textContent = "There is no product overview available for this item.";
     overviewTab.appendChild(fallbackMessage);
+  } */
+
+    if (overviewTab) {
+  // 🧹 Clear existing images/messages first to avoid duplication
+  overviewTab.innerHTML = "";
+
+  if (product.overview_image && product.overview_image.length > 0) {
+    const images = Array.isArray(product.overview_image)
+      ? product.overview_image
+      : product.overview_image.split(",");
+
+    images.forEach((imgName) => {
+      const img = document.createElement("img");
+      img.src = `/uploads/products/${imgName.trim()}`;
+      img.alt = "Product Overview";
+      img.className =
+        "w-full h-auto object-contain rounded-lg shadow-lg my-4";
+      overviewTab.appendChild(img);
+    });
+  } else {
+    const fallbackMessage = document.createElement("p");
+    fallbackMessage.className =
+      "no-overview-message text-gray-500 text-center py-4";
+    fallbackMessage.textContent =
+      "There is no product overview available for this item.";
+    overviewTab.appendChild(fallbackMessage);
   }
+}
+
+
  
   flixInitializedRef.current = false;
 };
@@ -863,7 +896,7 @@ const cleanupFlixMedia = () => {
   {[
     { id: "overview", label: "Overview" },
     { id: "description", label: "Description" },
-    { id: "videos", label: "Videos" },
+    // { id: "videos", label: "Videos" },
     { id: "reviews", label: "Reviews" },
   ].map((tab) => (
     <button
@@ -1041,7 +1074,7 @@ const cleanupFlixMedia = () => {
   );
 })()}
 
-        {activeTab === "videos" && (
+      {/*   {activeTab === "videos" && (
           <div>
             <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Product Videos</h2>
             {tabData.videos.length > 0 ? (
@@ -1065,7 +1098,7 @@ const cleanupFlixMedia = () => {
               <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">No videos available for this product.</p>
             )}
           </div>
-        )}
+        )} */}
 
         {activeTab === "reviews" && (
           <div>
