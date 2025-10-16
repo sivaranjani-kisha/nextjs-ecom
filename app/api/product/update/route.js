@@ -14,6 +14,12 @@ export async function PUT(req) {
     const status = formData.get("status");
     const image = formData.get("image");
     const existingImage = formData.get("existingImage");
+    const item_code = formData.get("item_code");
+
+    let existingProduct = await Product.findOne({ item_code });
+    if (existingProduct) {
+      return NextResponse.json({ error: "Product already exists" }, { status: 400 });
+    }
 
     // Validate required fields
     if (!id || !brand_name) {
