@@ -11,6 +11,45 @@ export async function PUT(req) {
 
     const requestData = await req.json();
 
+    // Quick path: only toggle fest_offer_status2 without touching other fields
+    const bodyKeys = Object.keys(requestData || {});
+    const statusOnly =
+      requestData?.id &&
+      typeof requestData?.fest_offer_status2 === "string" &&
+      bodyKeys.every((k) => ["id", "fest_offer_status2"].includes(k));
+
+    if (statusOnly) {
+      const s = requestData.fest_offer_status2.trim().toLowerCase();
+      if (s !== "active" && s !== "inactive") {
+        return NextResponse.json(
+          { success: false, error: "Invalid fest_offer_status2 value" },
+          { status: 400 }
+        );
+      }
+
+      const updated = await Offer.findByIdAndUpdate(
+        requestData.id,
+        { fest_offer_status2: s, updated_at: new Date() },
+        { new: true }
+      );
+
+      if (!updated) {
+        return NextResponse.json(
+          { success: false, error: "Offer not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Offer display status updated",
+          data: updated,
+        },
+        { status: 200 }
+      );
+    }
+
     const {
       id,
       offer_code,
@@ -111,7 +150,8 @@ export async function PUT(req) {
     const normalizedStatus =
       pickStatus(fest_offer_status2, fest_offer_status, status) ??
       pickStatus(existingOffer.fest_offer_status) ?? "inactive";
-console.log("Normalized Status:", normalizedStatus);
+    console.log("Normalized Status:", normalizedStatus);
+
     // Ensure ObjectIds and de-dup for product/user arrays without deprecated constructor
     const toObjectIds = (arr = []) =>
       Array.from(new Set(arr.map(v => v?.toString()).filter(v => mongoose.Types.ObjectId.isValid(v))))
@@ -124,8 +164,8 @@ console.log("Normalized Status:", normalizedStatus);
       id,
       {
         offer_code,
-        // NEW: persist both fields in sync
-        fest_offer_status: normalizedStatus,
+        // NEW: persist both fields in sync (full update path; toggle path handled above)
+        fest_offer_status: fest_offer_status,
         fest_offer_status2: normalizedStatus,
         notes,
         from_date: new Date(from_date),
@@ -143,7 +183,8 @@ console.log("Normalized Status:", normalizedStatus);
       },
       { new: true }
     );
-console.log("Updated Offer:", updatedOffer.fest_offer_status);
+    console.log("Updated Offer:", updatedOffer.fest_offer_status);
+
     if (!updatedOffer) {
       return NextResponse.json(
         { success: false, error: "Failed to update offer" },

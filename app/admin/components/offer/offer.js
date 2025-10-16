@@ -669,48 +669,28 @@ const filteredOffers = offers.filter((offer) => {
     const offerId = offer._id;
     if (statusUpdating[offerId]) return;
 
-    const prevStatus = offer.fest_offer_status; // "active" | "inactive"
+    // Use fest_offer_status2 for Display Coupon toggle
+    const prevStatus = (offer.fest_offer_status2 || "inactive").toLowerCase();
     const newStatus = prevStatus === "active" ? "inactive" : "active";
 
-    // Optimistic UI update
+    // Optimistic UI update for fest_offer_status2 only
     setOffers((prev) =>
-      prev.map((o) => (o._id === offerId ? { ...o, fest_offer_status: newStatus } : o))
+      prev.map((o) => (o._id === offerId ? { ...o, fest_offer_status2: newStatus } : o))
     );
     setStatusUpdating((prev) => ({ ...prev, [offerId]: true }));
 
     try {
-      const payload = {
-        id: offerId,
-        offer_code: offer.offer_code,
-        fest_offer_status: newStatus,
-        fest_offer_status2: newStatus,
-        notes: offer.notes || "",
-        from_date: new Date(offer.from_date),
-        to_date: new Date(offer.to_date),
-        offer_product_category: offer.offer_product_category,
-        offer_product: offer.offer_product || [],
-        offer_category: offer.offer_category || [],
-        offer_type: offer.offer_type,
-        // ensure numbers in payload
-        percentage: offer.offer_type === "percentage" ? toNumberOrNull(offer.percentage) : null,
-        fixed_price: offer.offer_type === "fixed_price" ? toNumberOrNull(offer.fixed_price) : null,
-        limit_enabled: !!offer.limit_enabled,
-        offer_limit: offer.limit_enabled ? toNumberOrNull(offer.offer_limit) : null,
-        selected_users: offer.selected_users || [],
-        status: newStatus,
-        fest_offer_status: newStatus,
-        fest_offer_status2: newStatus,
-      };
-
+      // Minimal payload: only update fest_offer_status2
+      const payload = { id: offerId, fest_offer_status2: newStatus };
       await updateOffer(payload);
 
-      setAlertMessage("Offer status updated");
+      setAlertMessage("Display Coupon Status Was Updated!..");
       setAlertType("success");
       setTimeout(() => setAlertMessage(""), 3000);
     } catch (err) {
       // Revert UI on failure
       setOffers((prev) =>
-        prev.map((o) => (o._id === offerId ? { ...o, fest_offer_status: prevStatus } : o))
+        prev.map((o) => (o._id === offerId ? { ...o, fest_offer_status2: prevStatus } : o))
       );
       setAlertMessage(err.message || "Failed to update offer status");
       setAlertType("error");
@@ -846,7 +826,7 @@ const filteredOffers = offers.filter((offer) => {
                 <th className="p-2">Value</th>
                 <th className="p-2">Status</th>
                 {/* Add: Active column header */}
-                <th className="p-2">Apply Coupon</th>
+                <th className="p-2">Display Coupon</th>
                 <th className="p-2">Action</th>
               </tr>
             </thead>
@@ -870,33 +850,30 @@ const filteredOffers = offers.filter((offer) => {
                         <span className="bg-red-100 text-red-600 px-6 py-1.5 rounded-full font-medium text-sm">Inactive</span>
                       )}
                     </td>
-                    {/* Active switch cell - updated to show Yes/No in the ball */}
+                    {/* Active switch cell - bound to fest_offer_status2 */}
                     <td className="p-2">
-            <label
-              className={`relative inline-flex items-center cursor-pointer ${
-                statusUpdating[offer._id] ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-            >
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={offer.fest_offer_status === "active"}
-                onChange={() => toggleOfferActive(offer)}
-                disabled={!!statusUpdating[offer._id]}
-                aria-label={`Toggle active for ${offer.offer_code}`}
-              />
-              <div className="w-11 h-6 bg-gray-200 rounded-full transition-colors duration-200 ease-in-out peer-checked:bg-red-600" 
-                style={{
-                  '--tw-bg-opacity': 1,
-                  backgroundColor: '#dc2626'
-                }}>
-                  
-                </div>
-              <span className="absolute top-0.5 left-0.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-gray-700 bg-white rounded-full border border-gray-300 pointer-events-none transition-all duration-200 ease-in-out transform peer-checked:translate-x-5 peer-checked:bg-red-100">
-                {offer.fest_offer_status === "active" ? "Yes" : "No"}
-              </span>
-            </label>
-          </td>
+                      <label
+                        className={`relative inline-flex items-center cursor-pointer ${
+                          statusUpdating[offer._id] ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={(offer.fest_offer_status2 || "inactive") === "active"}
+                          onChange={() => toggleOfferActive(offer)}
+                          disabled={!!statusUpdating[offer._id]}
+                          aria-label={`Toggle display for ${offer.offer_code}`}
+                        />
+                        <div
+                          className="w-11 h-6 bg-gray-200 rounded-full transition-colors duration-200 ease-in-out peer-checked:bg-red-600" 
+                          style={{ '--tw-bg-opacity': 1, backgroundColor: '#5e8bd4' }}
+                        ></div>
+                        <span className="absolute top-0.5 left-0.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-gray-700 bg-white rounded-full border border-gray-300 pointer-events-none transition-all duration-200 ease-in-out transform peer-checked:translate-x-5 peer-checked:bg-red-100">
+                          {(offer.fest_offer_status2 || "inactive") === "active" ? "Yes" : "No"}
+                        </span>
+                      </label>
+                    </td>
                     <td>
   <div className="flex items-center gap-2 justify-center">
     <button
@@ -1300,7 +1277,7 @@ const filteredOffers = offers.filter((offer) => {
                 {/* Offer Limit Section */}
                 <div>
                   <label className="block mb-1 text-sm font-semibold text-gray-700">
-                    Enable Limit
+                    Total Number of Count this coupon can be used
                   </label>
                   <div className="flex items-center space-x-3">
                     <input
@@ -1417,7 +1394,7 @@ const filteredOffers = offers.filter((offer) => {
                     name="fest_offer_status2"
                     id="fest_offer_status2"
                     // NEW: bind to fest_offer_status2 for correct rendering and interactivity
-                    value={offerData.fest_offer_status2}
+                    value={offerData.fest_offer_status}
                     onChange={handleChange}
                     className="w-full rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-red-400"
                     required
@@ -1650,27 +1627,39 @@ const filteredOffers = offers.filter((offer) => {
                 )}
 
                 {/* Offer Limit Section */}
-                <div>
-                  <label className="block mb-1 text-sm font-semibold text-gray-700">
-                    Enable Limit
+               <div>
+                <label className="block mb-1 text-sm font-semibold text-gray-700">
+                  Total Usage Limit
+                </label>
+
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="limit_enabled"
+                    name="limit_enabled"
+                    checked={offerData.limit_enabled || false}
+                    onChange={(e) =>
+                      setOfferData((prev) => ({
+                        ...prev,
+                        limit_enabled: e.target.checked,
+                        offer_limit: e.target.checked ? prev.offer_limit || "" : "", // Clear if unchecked
+                      }))
+                    }
+                    className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                  />
+
+                  <label htmlFor="limit_enabled" className="text-sm text-gray-700">
+                    Set Offer Limit
                   </label>
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="limit_enabled"
-                      name="limit_enabled"
-                      checked={offerData.limit_enabled || false}
-                      onChange={(e) =>
-                        setOfferData((prev) => ({
-                          ...prev,
-                          limit_enabled: e.target.checked,
-                          offer_limit: e.target.checked ? prev.offer_limit || "" : "", // Clear if unchecked
-                        }))
-                      }
-                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                    />
-                    <label htmlFor="limit_enabled" className="text-sm text-gray-700">
-                      Set Offer Limit
+                </div>
+
+                  {/* ✅ Notes line — now in a separate row */}
+                  <div className="mt-1">
+                    <label
+                      htmlFor="notes"
+                      className="block text-xs text-gray-500"
+                    >
+                      Notes: (Total number of times this coupon can be used)
                     </label>
                   </div>
 
@@ -1699,6 +1688,7 @@ const filteredOffers = offers.filter((offer) => {
                     </div>
                   )}
                 </div>
+
 
                 {/* Submit Button */}
                 <div className="pt-4">

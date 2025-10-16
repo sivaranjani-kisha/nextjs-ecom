@@ -145,6 +145,46 @@ export default function CartComponent() {
   const [couponFeatureEnabled, setCouponFeatureEnabled] = useState(true);
   const [hasActiveOfferProduct, setHasActiveOfferProduct] = useState(false);
 
+  // New: active offer codes now store objects: { code, percentage, fixed_price }
+  const [activeOfferCodes, setActiveOfferCodes] = useState([]);
+
+  // NEW: track which coupon was just copied to show ✅ temporarily
+  const [copiedCode, setCopiedCode] = useState(null);
+
+  // NEW: copy coupon to clipboard, paste into input, show ✅ for 1.5s
+  const handleCopyCoupon = async (code) => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = code;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+    } catch (_) {
+      // no-op
+    }
+    // paste into the coupon input (controlled) and focus
+    setCouponCode(code);
+    setCouponError("");
+    setCouponSuccess("");
+    const inputEl = document.getElementById("coupon_input");
+    if (inputEl) {
+      inputEl.focus();
+      try {
+        const end = code.length;
+        inputEl.setSelectionRange(end, end);
+      } catch {}
+    }
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 1500);
+  };
+
   // Sync helpers and storage listener
   const isSameCart = (a, b) => {
     try { return JSON.stringify(a) === JSON.stringify(b); } catch { return false; }
@@ -759,6 +799,38 @@ export default function CartComponent() {
 };
  
 
+  useEffect(() => {
+    // Fetch active offer codes from DB (fest_offer_status2 and fest_offer_status are "active")
+    const fetchActiveCodes = async () => {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const resp = await fetch("/api/offers/offer-products?listActiveCodes=1", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const json = await resp.json().catch(() => null);
+        // Prefer detailed offers; fallback to codes-only
+        const offers = Array.isArray(json?.offers)
+          ? json.offers.map(o => ({
+              code: o.code || o.offer_code || o.offerCode || "",
+              percentage: Number(o.percentage || 0) || 0,
+              fixed_price: Number(o.fixed_price || 0) || 0,
+            })).filter(o => o.code)
+          : Array.isArray(json?.codes)
+            ? json.codes.map(c => ({ code: c, percentage: 0, fixed_price: 0 }))
+            : [];
+            console.log(offers);
+        setActiveOfferCodes(offers);
+      } catch {
+        setActiveOfferCodes([]);
+      }
+    };
+    fetchActiveCodes();
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -971,16 +1043,72 @@ export default function CartComponent() {
       </div>
     ) : (
       // Apply Coupon Card - only show if an active offer exists
-      hasActiveOfferProduct && (
+     
         <div className="bg-[#f2f2f2] shadow-lg rounded-xl p-3 mb-5 max-w-md mx-auto border border-gray-200">
           <h3 className="text-gray-700 font-semibold text-sm mb-1">
-            Apply Coupon
+            Display Coupon
           </h3>
           <p className="text-gray-500 text-sm mb-1" style={{ fontSize: "12px", color: "red" }}>
             Enter your coupon code below to get discounts on eligible products.
           </p>
+
+          {/* Promotional-style offers */}
+         {activeOfferCodes.length > 0 && (
+          <div className="mt-2 mb-3">
+            <div className="text-sm font-semibold text-gray-800 mb-2">
+              🎉 Limited Time Offers!
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              {activeOfferCodes.map((display_coupon) => (
+                <div
+                  key={display_coupon.code}
+                  className="p-1.5 rounded-md shadow-sm border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50"
+                >
+                  <div className="flex flex-wrap items-center gap-2 text-gray-800 text-xs sm:text-sm leading-tight">
+
+                    {/* Apply Icon */}
+                    <span className="whitespace-nowrap">🔖 Apply</span>
+
+                    {/* Coupon Button */}
+                    <button
+  type="button"
+  onClick={() => handleCopyCoupon(display_coupon.code)}
+  className={`inline-flex items-center gap-2 px-4 py-1 rounded-md text-white font-semibold text-xs sm:text-sm shadow-sm hover:shadow cursor-pointer active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300
+    ${copiedCode === display_coupon.code ? "bg-green-400 hover:bg-green-500 border-green-500" : ""}
+    ${display_coupon.isHot ? "bg-orange-500 hover:bg-orange-600 border-orange-600" : ""}
+    ${display_coupon.isExpired ? "bg-red-400 hover:bg-red-500 border-red-500" : ""}
+    ${display_coupon.isSecondary ? "bg-olive-600 hover:bg-olive-700 border-olive-700" : ""}
+    ${!display_coupon.isHot && !display_coupon.isExpired && !display_coupon.isSecondary && copiedCode !== display_coupon.code ? "bg-[#999999c4] hover:bg-[#808080] border-[#999999c4]" : ""}
+  `}
+>
+                      <span className="truncate">{display_coupon.code}</span>
+                    </button>
+
+                    {/* Copied Indicator */}
+                    {copiedCode === display_coupon.code && (
+                      <span className="text-green-600 font-semibold ml-1">✅ Copied</span>
+                    )}
+
+                    {/* Discount Text */}
+                    <span className="whitespace-nowrap">
+                      and get{" "}
+                      {Number(display_coupon.fixed_price) > 0
+                        ? `₹${Number(display_coupon.fixed_price).toFixed(0)} Off`
+                        : `${Number(display_coupon.percentage).toFixed(0)}% Discount`}
+                    </span>
+
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+
+
           <div className="flex items-center space-x-0">
             <input
+              id="coupon_input"
               type="text"
               value={couponCode}
               onChange={(e) => {
@@ -1012,7 +1140,7 @@ export default function CartComponent() {
             </p>
           )}
         </div>
-      )
+      
     )}
   </div>
 
