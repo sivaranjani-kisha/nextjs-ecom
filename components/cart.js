@@ -1216,7 +1216,7 @@ export default function CartComponent() {
                   <h3 className="text-gray-700 font-semibold text-sm mb-1">
                     Apply Coupon
                   </h3>
-                  <p className="text-gray-500 text-sm mb-1" style={{ fontSize: "12px", color: "red" }}>
+                  <p className="text-gray-900 text-sm mb-1" style={{ fontSize: "10.96px", color: "red", fontWeight: "bold" }}>
                     Enter your coupon code below to get discounts on eligible products.
                   </p>
 
