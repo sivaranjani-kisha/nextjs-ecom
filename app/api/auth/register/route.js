@@ -1,5 +1,6 @@
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import Offer from "@/models/ecom_offer_info";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
@@ -49,17 +50,24 @@ export async function POST(req) {
 
     await newUser.save();
 
+    await Offer.updateMany(
+      { selected_user_type: "all" },
+      {
+        $addToSet: { selected_users: newUser._id }, // avoids duplicates
+        $set: { updated_at: new Date() }
+      }
+    );
+
     return NextResponse.json(
-      {data: newUser, message: "User registered successfully" },
-      // { message: "User registered successfully" },
+      { data: newUser, message: "User registered successfully and offers updated" },
       { status: 201 }
     );
 
   } catch (error) {
     console.error("Registration API Error:", error.message);
-    let errmsg=error.message || "Server Error";
+    const errmsg = error.message || "Server Error";
     return NextResponse.json(
-      { message: errmsg.replace("ecom_users_info","")  || "Server Error" },
+      { message: errmsg.replace("ecom_users_info", "") || "Server Error" },
       { status: 500 }
     );
   }

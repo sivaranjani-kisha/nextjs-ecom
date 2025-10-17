@@ -440,6 +440,8 @@ useEffect(() => {
         selected_users: selectedUsers.includes("all")
           ? users.map(user => user._id)
           : selectedUsers.filter(id => id !== "all"),
+        // NEW: include user type for update
+        selected_user_type: selectedUsers.includes("all") ? "all" : "custom",
       };
 
       // Change: reuse shared update function
@@ -563,11 +565,13 @@ useEffect(() => {
         selected_users: selectedUsers.includes("all") 
           ? users.map(user => user._id) 
           : selectedUsers.filter(id => id !== "all"),
-        limit_enabled: !!offerData.limit_enabled,
-        offer_limit: offerData.limit_enabled ? toNumberOrNull(offerData.offer_limit) : null,
+        // NEW: include user type for create
+        selected_user_type: selectedUsers.includes("all") ? "all" : "custom",
         // ensure numeric payloads
         percentage: offerData.offer_type === "percentage" ? toNumberOrNull(offerData.percentage) : null,
         fixed_price: offerData.offer_type === "fixed_price" ? toNumberOrNull(offerData.fixed_price) : null,
+        limit_enabled: !!offerData.limit_enabled,
+        offer_limit: offerData.limit_enabled ? toNumberOrNull(offerData.offer_limit) : null,
         // NEW: persist fest_offer_status2 on create as well (keep in sync)
         fest_offer_status2: (offerData.fest_offer_status2 || offerData.fest_offer_status || "").toLowerCase(),
         fest_offer_status: (offerData.fest_offer_status2 || offerData.fest_offer_status || "").toLowerCase(),

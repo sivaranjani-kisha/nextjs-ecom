@@ -69,6 +69,8 @@ export async function PUT(req) {
       selected_users,
       limit_enabled,
       offer_limit,
+      // NEW: accept selected_user_type
+      selected_user_type,
     } = requestData;
 
     // Validate required fields
@@ -160,6 +162,10 @@ export async function PUT(req) {
     const finalOfferProductIds = toObjectIds(finalOfferProduct);
     const selectedUserIds = toObjectIds(selected_users || []);
 
+    // NEW: normalize selected_user_type
+    const normalizedUserType =
+      (selected_user_type || "").toLowerCase() === "all" ? "all" : "custom";
+
     const updatedOffer = await Offer.findByIdAndUpdate(
       id,
       {
@@ -174,6 +180,8 @@ export async function PUT(req) {
         offer_product: finalOfferProductIds,
         offer_category: offer_category || [],
         selected_users: selectedUserIds,
+        // NEW: persist selected_user_type
+        selected_user_type: normalizedUserType,
         limit_enabled: !!limit_enabled,
         offer_limit: limit_enabled ? Number(offer_limit) : null, 
         offer_type,
