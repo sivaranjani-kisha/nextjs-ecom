@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -119,6 +119,27 @@ const ErrorModal = ({ show, message, onClose }) => (
   </AnimatePresence>
 );
 
+// NEW: deep-compare helpers (avoid re-renders/flicker)
+const normalizeOffersList = (offers = []) =>
+  offers
+    .filter(o => o && o.code)
+    .map(o => ({
+      code: String(o.code),
+      percentage: Number(o.percentage || 0) || 0,
+      fixed_price: Number(o.fixed_price || 0) || 0,
+    }))
+    .sort((a, b) => a.code.localeCompare(b.code));
+
+const isSameOffers = (a, b) => {
+  try {
+    const na = normalizeOffersList(a);
+    const nb = normalizeOffersList(b);
+    return JSON.stringify(na) === JSON.stringify(nb);
+  } catch {
+    return false;
+  }
+};
+
 export default function CartComponent() {
   const router = useRouter();
   const [cartData, setCartData] = useState(null);
@@ -147,11 +168,16 @@ export default function CartComponent() {
 
   // New: active offer codes now store objects: { code, percentage, fixed_price }
   const [activeOfferCodes, setActiveOfferCodes] = useState([]);
-
+  // NEW: loading state for initial render (no flicker on background refresh)
+  const [isOffersLoading, setIsOffersLoading] = useState(true);
   // NEW: track which coupon was just copied to show ✅ temporarily
   const [copiedCode, setCopiedCode] = useState(null);
+  // NEW: refs for live updates and cleanup
+  const offersAbortRef = useRef(null);
+  const offersIntervalRef = useRef(null);
+  const offersSSERef = useRef(null);
 
-  // NEW: copy coupon to clipboard, paste into input, show ✅ for 1.5s
+  // Copy coupon to clipboard and reflect UI
   const handleCopyCoupon = async (code) => {
     try {
       if (navigator?.clipboard?.writeText) {
@@ -169,7 +195,7 @@ export default function CartComponent() {
     } catch (_) {
       // no-op
     }
-    // paste into the coupon input (controlled) and focus
+    // Update input and focus
     setCouponCode(code);
     setCouponError("");
     setCouponSuccess("");
@@ -181,9 +207,54 @@ export default function CartComponent() {
         inputEl.setSelectionRange(end, end);
       } catch {}
     }
+    // Show copied indicator briefly
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 1500);
   };
+
+  // NEW: shared fetcher for active offer codes (used by SSE triggers, polling, focus/visibility)
+  const fetchActiveCodes = useCallback(async (opts = { silent: false }) => {
+    try {
+      if (!opts.silent) setIsOffersLoading(true);
+      // Abort previous in-flight fetch
+      if (offersAbortRef.current) {
+        try { offersAbortRef.current.abort(); } catch {}
+      }
+      const ac = new AbortController();
+      offersAbortRef.current = ac;
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const resp = await fetch("/api/offers/offer-products?listActiveCodes=1", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        signal: ac.signal,
+        cache: "no-store",
+      });
+
+      const json = await resp.json().catch(() => null);
+      const offers = Array.isArray(json?.offers)
+        ? json.offers.map(o => ({
+            code: o.code || o.offer_code || o.offerCode || "",
+            percentage: Number(o.percentage || 0) || 0,
+            fixed_price: Number(o.fixed_price || 0) || 0,
+          })).filter(o => o.code)
+        : Array.isArray(json?.codes)
+          ? json.codes.map(c => ({ code: c, percentage: 0, fixed_price: 0 }))
+          : [];
+
+      // Update state only if changed to avoid flicker
+      if (!isSameOffers(activeOfferCodes, offers)) {
+        setActiveOfferCodes(offers);
+      }
+    } catch {
+      // keep current offers on error to avoid flicker
+    } finally {
+      setIsOffersLoading(false);
+    }
+  }, [activeOfferCodes]);
 
   // Sync helpers and storage listener
   const isSameCart = (a, b) => {
@@ -831,6 +902,110 @@ export default function CartComponent() {
     fetchActiveCodes();
   }, []);
 
+  // REPLACE old "fetch active codes" effect with live updates (SSE + polling + focus/visibility + BroadcastChannel)
+  useEffect(() => {
+    // initial fetch
+    fetchActiveCodes({ silent: false });
+
+    // SSE subscription (if backend supports SSE at this path)
+    if (typeof window !== "undefined" && "EventSource" in window) {
+      try {
+        const es = new EventSource("/api/offers/offer-products/stream", { withCredentials: false });
+        offersSSERef.current = es;
+
+        es.onmessage = (ev) => {
+          // Try to parse payload; if it contains offers/codes, use them; else trigger a re-fetch
+          try {
+            const data = JSON.parse(ev.data);
+            if (Array.isArray(data?.offers) || Array.isArray(data?.codes)) {
+              const offers = Array.isArray(data?.offers)
+                ? data.offers.map(o => ({
+                    code: o.code || o.offer_code || o.offerCode || "",
+                    percentage: Number(o.percentage || 0) || 0,
+                    fixed_price: Number(o.fixed_price || 0) || 0,
+                  })).filter(o => o.code)
+                : data.codes.map(c => ({ code: c, percentage: 0, fixed_price: 0 }));
+              if (!isSameOffers(activeOfferCodes, offers)) {
+                setActiveOfferCodes(offers);
+              }
+            } else if (data?.type === "offersUpdated") {
+              // generic update signal
+              fetchActiveCodes({ silent: true });
+            } else {
+              // unknown payload -> refresh
+              fetchActiveCodes({ silent: true });
+            }
+          } catch {
+            // non-JSON payload -> refresh
+            fetchActiveCodes({ silent: true });
+          }
+        };
+
+        es.onerror = () => {
+          // On SSE error, close and rely on polling
+          try { es.close(); } catch {}
+          if (offersSSERef.current === es) offersSSERef.current = null;
+        };
+      } catch {
+        // ignore SSE failures
+      }
+    }
+
+    // Polling (paused when tab hidden)
+    const startPolling = () => {
+      if (offersIntervalRef.current) return;
+      offersIntervalRef.current = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          fetchActiveCodes({ silent: true });
+        }
+      }, 15000); // 15s
+    };
+    const stopPolling = () => {
+      if (offersIntervalRef.current) {
+        clearInterval(offersIntervalRef.current);
+        offersIntervalRef.current = null;
+      }
+    };
+    startPolling();
+
+    // Refetch on visibility/focus
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchActiveCodes({ silent: true });
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+    const onFocus = () => fetchActiveCodes({ silent: true });
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onFocus);
+
+    // BroadcastChannel fallback (if admin notifies via channel)
+    let bc;
+    if ("BroadcastChannel" in window) {
+      bc = new BroadcastChannel("offersUpdates");
+      bc.onmessage = () => fetchActiveCodes({ silent: true });
+    }
+
+    return () => {
+      // cleanup
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onFocus);
+      stopPolling();
+      if (offersSSERef.current) {
+        try { offersSSERef.current.close(); } catch {}
+        offersSSERef.current = null;
+      }
+      if (offersAbortRef.current) {
+        try { offersAbortRef.current.abort(); } catch {}
+        offersAbortRef.current = null;
+      }
+      if (bc) bc.close();
+    };
+  }, [fetchActiveCodes]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -841,7 +1016,6 @@ export default function CartComponent() {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -857,7 +1031,6 @@ export default function CartComponent() {
       </div>
     );
   }
-
   if (!cartData || cartData.items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
@@ -875,7 +1048,6 @@ export default function CartComponent() {
       </div>
     );
   }
-
   return (
     <div className="bg-white min-h-screen">
       {/* Modals */}
@@ -905,12 +1077,8 @@ export default function CartComponent() {
         </div>
         
       </div>
-
-       {/* Main Content */}
-
-        
+      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 my-[35px] px-4 sm:pl-[3rem] sm:pr-[2rem] py-0">
-        
         {/* Left Side - Cart Table (big width) */}
         <div className="lg:col-span-2">
           {/* Updated table for responsiveness */}
@@ -946,15 +1114,15 @@ export default function CartComponent() {
                             </p>
                           </Link>
                           <div className="flex items-center gap-2">
-  {item.price > 0 ? (
-    <>
-      <h3 className="text-base font-semibold text-red-600">₹{(item.price ?? 0).toFixed(2)}</h3>
-      <h3 className="text-xs text-gray-500 line-through">₹{(item.actual_price ?? item.price ?? 0).toFixed(2)}</h3>
-    </>
-  ) : (
-    <h3 className="text-base font-semibold text-red-600">₹{(item.actual_price ?? 0).toFixed(2)}</h3>
-  )}
-</div>
+                            {item.price > 0 ? (
+                              <>
+                                <h3 className="text-base font-semibold text-red-600">₹{(item.price ?? 0).toFixed(2)}</h3>
+                                <h3 className="text-xs text-gray-500 line-through">₹{(item.actual_price ?? item.price ?? 0).toFixed(2)}</h3>
+                              </>
+                            ) : (
+                              <h3 className="text-base font-semibold text-red-600">₹{(item.actual_price ?? 0).toFixed(2)}</h3>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="py-4 px-4 text-center">
@@ -982,8 +1150,8 @@ export default function CartComponent() {
                         </button>
                       </td>
                       <td className="py-4 px-4 text-center font-semibold text-gray-900">
-  ₹{(((item.price > 0 ? item.price : item.actual_price) ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-</td>
+                        ₹{(((item.price > 0 ? item.price : item.actual_price) ?? 0) * (item.quantity ?? 1)).toFixed(2)}
+                      </td>
                       <td className="py-4 px-4 text-center">&emsp;</td>
                     </tr>
                     {(item.warranty > 0 || item.extendedWarranty > 0) && (
@@ -1019,184 +1187,187 @@ export default function CartComponent() {
         </div>
 
         {/* Right Side - Cart Totals (small width) */}
-<div className="lg:col-span-1 bg-white p-3 rounded-lg border shadow-sm space-y-4">
-  {/* Coupon Section */}
-  <div className="mt-0">
-    {appliedCoupon ? (
-      <div className="bg-green-50 p-3 rounded-lg mb-1">
-        <div className="flex justify-between items-center">
-          <span className="font-medium text-green-700">
-            Coupon: {appliedCoupon.offer_code}
-          </span>
+        <div className="lg:col-span-1 bg-white p-3 rounded-lg border shadow-sm space-y-4">
+          {/* Coupon Section */}
+          <div className="mt-0">
+            {appliedCoupon ? (
+              <div className="bg-green-50 p-3 rounded-lg mb-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-green-700">
+                    Coupon: {appliedCoupon.offer_code}
+                  </span>
+                  <button
+                    onClick={removeCoupon}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ✖
+                  </button>
+                </div>
+                <p className="text-sm text-green-600 mt-1">
+                  {appliedCoupon.offer_type === "percentage"
+                    ? `${appliedCoupon.percentage}% off`
+                    : `₹${appliedCoupon.fixed_price} off`}
+                </p>
+              </div>
+            ) : (
+              // Apply Coupon Card - only show if an active offer exists
+            
+                <div className="bg-[#f2f2f2] shadow-lg rounded-xl p-3 mb-5 max-w-md mx-auto border border-gray-200">
+                  <h3 className="text-gray-700 font-semibold text-sm mb-1">
+                    Apply Coupon
+                  </h3>
+                  <p className="text-gray-500 text-sm mb-1" style={{ fontSize: "12px", color: "red" }}>
+                    Enter your coupon code below to get discounts on eligible products.
+                  </p>
+
+                  {/* Promotional-style offers */}
+                {isOffersLoading && activeOfferCodes.length === 0 ? (
+                  // NEW: lightweight skeleton to avoid flicker
+                  <div className="mt-2 mb-3">
+                    <div className="text-sm font-semibold text-gray-800 mb-2">
+                      🎉 Limited Time Offers!
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="p-1.5 rounded-md border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 animate-pulse h-10" />
+                      <div className="p-1.5 rounded-md border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 animate-pulse h-10" />
+                    </div>
+                  </div>
+                ) : activeOfferCodes.length > 0 && (
+                  <div className="mt-2 mb-3">
+                    <div className="text-sm font-semibold text-gray-800 mb-2">
+                      🎉 Limited Time Offers!
+                    </div>
+                    <div className="flex flex-col space-y-1.5">
+                      {activeOfferCodes.map((display_coupon) => (
+                        <div
+                          key={display_coupon.code}
+                          className="p-1.5 rounded-md shadow-sm border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50"
+                        >
+                          <div className="flex flex-wrap items-center gap-2 text-gray-800 text-xs sm:text-sm leading-tight">
+                            <span className="whitespace-nowrap">🔖 Apply</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyCoupon(display_coupon.code)}
+                              className={`inline-flex items-center gap-2 px-4 py-1 rounded-md text-white font-semibold text-xs sm:text-sm shadow-sm hover:shadow cursor-pointer active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300
+                                ${copiedCode === display_coupon.code ? "bg-green-400 hover:bg-green-500 border-green-500" : ""}
+                                ${display_coupon.isHot ? "bg-orange-500 hover:bg-orange-600 border-orange-600" : ""}
+                                ${display_coupon.isExpired ? "bg-red-400 hover:bg-red-500 border-red-500" : ""}
+                                ${display_coupon.isSecondary ? "bg-olive-600 hover:bg-olive-700 border-olive-700" : ""}
+                                ${!display_coupon.isHot && !display_coupon.isExpired && !display_coupon.isSecondary && copiedCode !== display_coupon.code ? "bg-[#999999c4] hover:bg-[#808080] border-[#999999c4]" : ""}
+                              `}
+                            >
+                              <span className="truncate">{display_coupon.code}</span>
+                            </button>
+
+                            {/* Copied Indicator */}
+                            {copiedCode === display_coupon.code && (
+                              <span className="text-green-600 font-semibold ml-1">✅ Copied</span>
+                            )}
+
+                            {/* Discount Text */}
+                            <span className="whitespace-nowrap">
+                              and get{" "}
+                              {Number(display_coupon.fixed_price) > 0
+                                ? `₹${Number(display_coupon.fixed_price).toFixed(0)} Off`
+                                : `${Number(display_coupon.percentage).toFixed(0)}% Discount`}
+                            </span>
+
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+
+
+                  <div className="flex items-center space-x-0">
+                    <input
+                      id="coupon_input"
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value);
+                        setCouponError("");
+                        setCouponSuccess("");
+                      }}
+                      placeholder="Enter coupon code"
+                      disabled={!couponFeatureEnabled}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                    />
+                    <button
+                      onClick={validateCoupon}
+                      disabled={isValidatingCoupon || !couponFeatureEnabled}
+                      className="px-5 py-3 bg-blue-600 text-white text-sm rounded-r-lg font-medium hover:bg-blue-700 transition-all"
+                    >
+                      {isValidatingCoupon ? "Applying..." : "Apply"}
+                    </button>
+                  </div>
+                  {couponError && (
+                    <p className="text-red-500 text-sm mt-2">{couponError}</p>
+                  )}
+                  {couponSuccess && (
+                    <p className="text-green-600 text-sm mt-2">{couponSuccess}</p>
+                  )}
+                  {!couponFeatureEnabled && (
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      Coupons are currently disabled
+                    </p>
+                  )}
+                </div>
+              
+            )}
+          </div>
+
+          {/* Cart Totals */}
+          <h3 className="text-gray-700 text-sm font-semibold">Cart Total</h3>
+          <div className="p-1 rounded-lg space-y-3 text-sm text-gray-700">
+            <div className="flex justify-between items-center">
+              <span>Subtotal</span>
+              <span className="font-semibold text-gray-900">
+                ₹{calculateSubtotal().toFixed(2)}
+              </span>
+            </div>
+            <hr className="border-gray-300" />
+
+            {appliedCoupon && (
+              <div className="flex justify-between items-center">
+                <span>Discount</span>
+                <span className="font-semibold text-green-600">
+                  -₹{calculateDiscount().toFixed(2)}
+                </span>
+              </div>
+            )}
+            {appliedCoupon && <hr className="border-gray-300" />}
+
+            <div className="flex justify-between items-center">
+              <span>Delivery</span>
+              <span className="font-semibold text-gray-900">Free</span>
+            </div>
+            <hr className="border-gray-300" /> 
+
+            {/* <div className="flex justify-between items-center">
+              <span>Estimated Taxes</span>
+              <span className="font-semibold text-gray-900">₹0.00</span>
+            </div> */}
+          </div>
+
+          {/* Total Price */}
+          <div className="bg-gray-200 p-4 mt-4 rounded-lg flex justify-between font-bold text-gray-900">
+            <span>Total</span>
+            <span>₹{calculateTotal().toFixed(2)}</span>
+          </div>
+
+          {/* Checkout Button */}
           <button
-            onClick={removeCoupon}
-            className="text-red-500 hover:text-red-700"
+            onClick={proceedToCheckout}
+            className="w-full py-3 rounded-md text-white font-semibold text-sm hover:brightness-110 transition-all"
+            style={{ backgroundColor: "#2453D3" }}
           >
-            ✖
+            Checkout
           </button>
         </div>
-        <p className="text-sm text-green-600 mt-1">
-          {appliedCoupon.offer_type === "percentage"
-            ? `${appliedCoupon.percentage}% off`
-            : `₹${appliedCoupon.fixed_price} off`}
-        </p>
       </div>
-    ) : (
-      // Apply Coupon Card - only show if an active offer exists
-     
-        <div className="bg-[#f2f2f2] shadow-lg rounded-xl p-3 mb-5 max-w-md mx-auto border border-gray-200">
-          <h3 className="text-gray-700 font-semibold text-sm mb-1">
-            Apply Coupon
-          </h3>
-          <p className="text-gray-500 text-sm mb-1" style={{ fontSize: "12px", color: "red" }}>
-            Enter your coupon code below to get discounts on eligible products.
-          </p>
-
-          {/* Promotional-style offers */}
-         {activeOfferCodes.length > 0 && (
-          <div className="mt-2 mb-3">
-            <div className="text-sm font-semibold text-gray-800 mb-2">
-              🎉 Limited Time Offers!
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              {activeOfferCodes.map((display_coupon) => (
-                <div
-                  key={display_coupon.code}
-                  className="p-1.5 rounded-md shadow-sm border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50"
-                >
-                  <div className="flex flex-wrap items-center gap-2 text-gray-800 text-xs sm:text-sm leading-tight">
-
-                    {/* Apply Icon */}
-                    <span className="whitespace-nowrap">🔖 Apply</span>
-
-                    {/* Coupon Button */}
-                    <button
-  type="button"
-  onClick={() => handleCopyCoupon(display_coupon.code)}
-  className={`inline-flex items-center gap-2 px-4 py-1 rounded-md text-white font-semibold text-xs sm:text-sm shadow-sm hover:shadow cursor-pointer active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300
-    ${copiedCode === display_coupon.code ? "bg-green-400 hover:bg-green-500 border-green-500" : ""}
-    ${display_coupon.isHot ? "bg-orange-500 hover:bg-orange-600 border-orange-600" : ""}
-    ${display_coupon.isExpired ? "bg-red-400 hover:bg-red-500 border-red-500" : ""}
-    ${display_coupon.isSecondary ? "bg-olive-600 hover:bg-olive-700 border-olive-700" : ""}
-    ${!display_coupon.isHot && !display_coupon.isExpired && !display_coupon.isSecondary && copiedCode !== display_coupon.code ? "bg-[#999999c4] hover:bg-[#808080] border-[#999999c4]" : ""}
-  `}
->
-                      <span className="truncate">{display_coupon.code}</span>
-                    </button>
-
-                    {/* Copied Indicator */}
-                    {copiedCode === display_coupon.code && (
-                      <span className="text-green-600 font-semibold ml-1">✅ Copied</span>
-                    )}
-
-                    {/* Discount Text */}
-                    <span className="whitespace-nowrap">
-                      and get{" "}
-                      {Number(display_coupon.fixed_price) > 0
-                        ? `₹${Number(display_coupon.fixed_price).toFixed(0)} Off`
-                        : `${Number(display_coupon.percentage).toFixed(0)}% Discount`}
-                    </span>
-
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-
-
-          <div className="flex items-center space-x-0">
-            <input
-              id="coupon_input"
-              type="text"
-              value={couponCode}
-              onChange={(e) => {
-                setCouponCode(e.target.value);
-                setCouponError("");
-                setCouponSuccess("");
-              }}
-              placeholder="Enter coupon code"
-              disabled={!couponFeatureEnabled}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-            />
-            <button
-              onClick={validateCoupon}
-              disabled={isValidatingCoupon || !couponFeatureEnabled}
-              className="px-5 py-3 bg-blue-600 text-white text-sm rounded-r-lg font-medium hover:bg-blue-700 transition-all"
-            >
-              {isValidatingCoupon ? "Applying..." : "Apply"}
-            </button>
-          </div>
-          {couponError && (
-            <p className="text-red-500 text-sm mt-2">{couponError}</p>
-          )}
-          {couponSuccess && (
-            <p className="text-green-600 text-sm mt-2">{couponSuccess}</p>
-          )}
-          {!couponFeatureEnabled && (
-            <p className="text-xs text-gray-500 text-center mt-2">
-              Coupons are currently disabled
-            </p>
-          )}
-        </div>
-      
-    )}
   </div>
-
-  {/* Cart Totals */}
-  <h3 className="text-gray-700 text-sm font-semibold">Cart Total</h3>
-  <div className="p-1 rounded-lg space-y-3 text-sm text-gray-700">
-    <div className="flex justify-between items-center">
-      <span>Subtotal</span>
-      <span className="font-semibold text-gray-900">
-        ₹{calculateSubtotal().toFixed(2)}
-      </span>
-    </div>
-    <hr className="border-gray-300" />
-
-    {appliedCoupon && (
-      <div className="flex justify-between items-center">
-        <span>Discount</span>
-        <span className="font-semibold text-green-600">
-          -₹{calculateDiscount().toFixed(2)}
-        </span>
-      </div>
-    )}
-    {appliedCoupon && <hr className="border-gray-300" />}
-
-     <div className="flex justify-between items-center">
-      <span>Delivery</span>
-      <span className="font-semibold text-gray-900">Free</span>
-    </div>
-    <hr className="border-gray-300" /> 
-
-    {/* <div className="flex justify-between items-center">
-      <span>Estimated Taxes</span>
-      <span className="font-semibold text-gray-900">₹0.00</span>
-    </div> */}
-  </div>
-
-  {/* Total Price */}
-  <div className="bg-gray-200 p-4 mt-4 rounded-lg flex justify-between font-bold text-gray-900">
-    <span>Total</span>
-    <span>₹{calculateTotal().toFixed(2)}</span>
-  </div>
-
-  {/* Checkout Button */}
-  <button
-    onClick={proceedToCheckout}
-    className="w-full py-3 rounded-md text-white font-semibold text-sm hover:brightness-110 transition-all"
-    style={{ backgroundColor: "#2453D3" }}
-  >
-    Checkout
-  </button>
-</div>
-
-
-      </div>
-
-  </div>
-  
   );
 }

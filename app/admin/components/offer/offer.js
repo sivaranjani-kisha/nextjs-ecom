@@ -22,7 +22,7 @@ export default function OfferComponent() {
       endDate: null
     });
   const [users, setUsers] = useState([]);
-   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
 
   const toggleUser = (userId) => {
     if (userId === "all") {
@@ -115,7 +115,15 @@ const handleSendMail = async () => {
     setTimeout(() => setAlertMessage(""), 3000);
   }
 };
-  const isSelected = (userId) => selectedUsers.includes(userId);
+  // REPLACED: selection helper to make "All" reflect when all users are selected individually
+  const isAllUsersSelected = users.length > 0 && users.every((u) => selectedUsers.includes(u._id));
+  const isSelected = (userId) => {
+    if (userId === "all") {
+      return selectedUsers.includes("all") || isAllUsersSelected;
+    }
+    // Also reflect checked for individuals when "all" sentinel is selected
+    return selectedUsers.includes("all") || selectedUsers.includes(userId);
+  };
 
   // Filter visible users based on "all" selection
   const visibleUsers = selectedUsers.includes("all")
