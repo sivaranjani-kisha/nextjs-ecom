@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"; // + dnd import
+
 export default function TopBannerPage() {
   const [banners, setBanners] = useState([]);
   const [newBanner, setNewBanner] = useState({
@@ -182,6 +184,41 @@ export default function TopBannerPage() {
     setBannerToDelete(null);
   };
 
+  // + drag end handler to reorder, update 1-based order locally, and persist
+  const onDragEnd = async (result) => {
+    const { destination, source } = result;
+    if (!destination) return;
+    if (destination.index === source.index) return;
+
+    const prev = banners;
+    const reordered = Array.from(banners);
+    const [moved] = reordered.splice(source.index, 1);
+    reordered.splice(destination.index, 0, moved);
+
+    // Optimistic UI: also set 1-based order locally
+    const reorderedWithOrder = reordered.map((b, i) => ({ ...b, order: i + 1 }));
+    setBanners(reorderedWithOrder);
+
+    const orderedIds = reordered.map((b) => b._id);
+    try {
+      const res = await fetch("/api/topbanner", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+      if (!res.ok) {
+        setError("Failed to update order");
+        setBanners(prev);
+        // restore from server
+        fetchBanners();
+      }
+    } catch {
+      setError("Failed to update order");
+      setBanners(prev);
+      fetchBanners();
+    }
+  };
+
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-5 mt-5">
@@ -269,115 +306,148 @@ export default function TopBannerPage() {
           )}
         </div>
 
-        {/* Existing Banners */}
-        <div className="space-y-4">
-          {banners.map((banner) => (
-            <div
-              key={banner._id}
-              className="flex flex-col md:flex-row items-center gap-4 border p-4 rounded-lg"
-            >
-              <img
-                src={banner.banner_image}
-                alt="banner"
-                className="w-48 h-20 object-cover rounded"
-              />
-
-              {/* URL */}
-              <div className="flex flex-col md:flex-row gap-2 items-center flex-grow">
-                <input
-                  type="text"
-                  value={editingStates[banner._id]?.redirect_url || ""}
-                  onChange={(e) =>
-                    handleInputChange(banner._id, "redirect_url", e.target.value)
-                  }
-                  className="border px-2 py-1 rounded flex-grow"
-                />
-                <button
-                  onClick={() =>
-                    handleUpdate(banner._id, "redirect_url", editingStates[banner._id]?.redirect_url)
-                  }
-                  disabled={!editingStates[banner._id]?.hasChanges}
-                  className={`p-2 rounded ${
-                    editingStates[banner._id]?.hasChanges
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-300 text-gray-500"
-                  }`}
-                >
-                  ✔
-                </button>
-              </div>
-
-              {/* Status */}
-              <div className="flex flex-col md:flex-row gap-2 items-center">
-                <select
-                  value={editingStates[banner._id]?.status || "Active"}
-                  onChange={(e) =>
-                    handleInputChange(banner._id, "status", e.target.value)
-                  }
-                  className="border px-2 py-1 rounded"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-                <button
-                  onClick={() =>
-                    handleUpdate(banner._id, "status", editingStates[banner._id]?.status)
-                  }
-                  disabled={!editingStates[banner._id]?.hasChanges}
-                  className={`p-2 rounded ${
-                    editingStates[banner._id]?.hasChanges
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-300 text-gray-500"
-                  }`}
-                >
-                  ✔
-                </button>
-              </div>
-
-              {/* Update Image */}
-              <div className="flex flex-col md:flex-row gap-2 items-center">
-                <div className="flex flex-col">
-                  <input
-                    type="file"
-                    onChange={(e) => {
-                      if (e.target.files[0]) {
-                        handleInputChange(banner._id, "banner_image", e.target.files[0]);
-                      }
-                    }}
-                    className="border rounded w-40 text-sm px-2 py-1"
-                  />
-                  {editingStates[banner._id]?.error && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {editingStates[banner._id].error}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  onClick={() =>
-                    handleUpdate(banner._id, "banner_image", editingStates[banner._id]?.banner_image)
-                  }
-                  disabled={!editingStates[banner._id]?.banner_image}
-                  className={`p-2 rounded ${
-                    editingStates[banner._id]?.banner_image
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-300 text-gray-500"
-                  }`}
-                >
-                  ✔
-                </button>
-              </div>
-
-              {/* Delete */}
-              <button
-                onClick={() => openDeleteModal(banner)}
-                className="bg-red-500 text-white p-2 rounded"
+        {/* Existing Banners (now draggable) */}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="banners">
+            {(dropProvided) => (
+              <div
+                className="space-y-4"
+                ref={dropProvided.innerRef}
+                {...dropProvided.droppableProps}
               >
-                🗑
-              </button>
-            </div>
-          ))}
-        </div>
+                {banners.map((banner, index) => (
+                  <Draggable key={banner._id} draggableId={banner._id} index={index}>
+                    {(dragProvided) => (
+                      <div
+                        ref={dragProvided.innerRef}
+                        {...dragProvided.draggableProps}
+                        {...dragProvided.dragHandleProps}
+                        className="flex flex-col md:flex-row items-center gap-4 border p-4 rounded-lg"
+                      >
+                        <img
+                          src={banner.banner_image}
+                          alt="banner"
+                          className="w-48 h-20 object-cover rounded"
+                        />
+
+                        {/* URL */}
+                        <div className="flex flex-col md:flex-row gap-2 items-center flex-grow">
+                          <input
+                            type="text"
+                            value={editingStates[banner._id]?.redirect_url || ""}
+                            onChange={(e) =>
+                              handleInputChange(banner._id, "redirect_url", e.target.value)
+                            }
+                            className="border px-2 py-1 rounded flex-grow"
+                          />
+                          <button
+                            onClick={() =>
+                              handleUpdate(
+                                banner._id,
+                                "redirect_url",
+                                editingStates[banner._id]?.redirect_url
+                              )
+                            }
+                            disabled={!editingStates[banner._id]?.hasChanges}
+                            className={`p-2 rounded ${
+                              editingStates[banner._id]?.hasChanges
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-300 text-gray-500"
+                            }`}
+                          >
+                            ✔
+                          </button>
+                        </div>
+
+                        {/* Status */}
+                        <div className="flex flex-col md:flex-row gap-2 items-center">
+                          <select
+                            value={editingStates[banner._id]?.status || "Active"}
+                            onChange={(e) =>
+                              handleInputChange(banner._id, "status", e.target.value)
+                            }
+                            className="border px-2 py-1 rounded"
+                          >
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                          </select>
+                          <button
+                            onClick={() =>
+                              handleUpdate(
+                                banner._id,
+                                "status",
+                                editingStates[banner._id]?.status
+                              )
+                            }
+                            disabled={!editingStates[banner._id]?.hasChanges}
+                            className={`p-2 rounded ${
+                              editingStates[banner._id]?.hasChanges
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-300 text-gray-500"
+                            }`}
+                          >
+                            ✔
+                          </button>
+                        </div>
+
+                        {/* Update Image */}
+                        <div className="flex flex-col md:flex-row gap-2 items-center">
+                          <div className="flex flex-col">
+                            <input
+                              type="file"
+                              onChange={(e) => {
+                                if (e.target.files[0]) {
+                                  handleInputChange(
+                                    banner._id,
+                                    "banner_image",
+                                    e.target.files[0]
+                                  );
+                                }
+                              }}
+                              className="border rounded w-40 text-sm px-2 py-1"
+                            />
+                            {editingStates[banner._id]?.error && (
+                              <p className="text-red-500 text-sm mt-1">
+                                {editingStates[banner._id].error}
+                              </p>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              handleUpdate(
+                                banner._id,
+                                "banner_image",
+                                editingStates[banner._id]?.banner_image
+                              )
+                            }
+                            disabled={!editingStates[banner._id]?.banner_image}
+                            className={`p-2 rounded ${
+                              editingStates[banner._id]?.banner_image
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-300 text-gray-500"
+                            }`}
+                          >
+                            ✔
+                          </button>
+                        </div>
+
+                        {/* Delete */}
+                        <button
+                          onClick={() => openDeleteModal(banner)}
+                          className="bg-red-500 text-white p-2 rounded"
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {dropProvided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       </div>
 
       {/* Delete Modal */}

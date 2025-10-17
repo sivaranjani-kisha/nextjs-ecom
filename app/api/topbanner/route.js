@@ -89,9 +89,10 @@ export async function POST(req) {
       );
     }
 
-    // 👇 find max order
+    // 👇 find max order (1-based)
     const lastBanner = await TopBanner.findOne().sort({ order: -1 });
-    const newOrder = lastBanner ? lastBanner.order + 1 : 0;
+    const newOrder =
+      lastBanner && typeof lastBanner.order === "number" ? lastBanner.order + 1 : 1;
 
     const newBanner = new TopBanner({
       banner_image: filePath,
@@ -180,7 +181,7 @@ export async function PUT(req) {
   }
 }
 
-// ✅ PATCH reorder banners
+// ✅ PATCH reorder banners (bulk update, 1-based)
 export async function PATCH(req) {
   try {
     await dbConnect();
@@ -193,9 +194,14 @@ export async function PATCH(req) {
       );
     }
 
-    for (let i = 0; i < orderedIds.length; i++) {
-      await TopBanner.findByIdAndUpdate(orderedIds[i], { order: i });
-    }
+    await TopBanner.bulkWrite(
+      orderedIds.map((id, i) => ({
+        updateOne: {
+          filter: { _id: id },
+          update: { $set: { order: i + 1 } },
+        },
+      }))
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {
