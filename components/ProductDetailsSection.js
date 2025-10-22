@@ -210,8 +210,10 @@ const handleTabClick = (tabId) => {
       console.error(error.message);
     }
   };
-  const initialActiveName =
-  tabsForUI.find((tab) => tab.content && tab.content !== "")?.name || null;
+  // Removed premature initialActiveName calculation; it will be defined after tabsForUI.
+  // const initialActiveName =
+  //   tabsForUI.find((tab) => tab.content && tab.content !== "")?.name || null;
+
   useEffect(() => {
     fetchBrand();
   }, []);
@@ -847,12 +849,14 @@ const cleanupFlixMedia = () => {
 
       const data1 = await reslt.json();
       if (!data1.loggedIn) {
+        // Guard to avoid ReferenceError if openAuthModal is not defined
+        if (typeof openAuthModal === 'function') {
           openAuthModal({
-          error: 'Please login to continue.',
-          onSuccess: () => handleReviewSubmit(),
-        });
-        // alert("Please login to continue!..");
-         toast.error("Please login to continue!..");
+            error: 'Please login to continue.',
+            onSuccess: () => handleReviewSubmit(),
+          });
+        }
+        toast.error("Please login to continue!..");
         return;
       }
 
@@ -1128,11 +1132,24 @@ const cleanupFlixMedia = () => {
     </div>
   );
 
+  // Build tabsForUI (name + content)
   const tabsForUI = [
     { name: "overview", content: overviewContent },
     { name: "description", content: descriptionContent },
     { name: "reviews", content: reviewsContent },
   ];
+
+  // Compute initialActiveName AFTER tabsForUI is initialized
+  const initialActiveName = (() => {
+    const hasContent = (c) => {
+      if (c === null || c === undefined || c === false) return false;
+      if (typeof c === "string") return c.trim().length > 0;
+      if (Array.isArray(c)) return c.length > 0;
+      return true; // JSX or any other truthy content
+    };
+    const firstWithContent = tabsForUI.find(t => hasContent(t.content));
+    return firstWithContent ? firstWithContent.name : (tabsForUI[0]?.name || "");
+  })();
 
   function StarRating({ value, onChange }) {
     return (
@@ -1159,7 +1176,6 @@ const cleanupFlixMedia = () => {
   return (
     <div className="mt-4 sm:mt-8 bg-gray-100 w-full py-6">
       <ToastContainer position="top-right" autoClose={5000} />
-      {/* New tabbed interface */}
       <DynamicTabs
         tabs={tabsForUI}
         initialActiveName={initialActiveName}
