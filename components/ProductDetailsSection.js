@@ -972,7 +972,10 @@ const cleanupFlixMedia = () => {
     const descObj = parseJSONSafe(product?.description);
     const hasValidDescription =
       descObj && typeof descObj === "object" && Object.keys(descObj).length > 0;
-
+const hasPlainDescription =
+  product?.description &&
+  typeof product.description === "string" &&
+  !descObj; // descObj is the parsed JSON
     if (!hasValidDescription && !hasPlainDescription && !hasSpecifications) return null;
 
     return (
