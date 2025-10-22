@@ -209,6 +209,37 @@ if (product_id){
       },
     }));
 
+// In your product update API endpoint
+if (productData.removedOverviewImages && productData.removedOverviewImages.length > 0) {
+  // Remove the deleted images from the overview_image array
+  productData.overview_image = productData.overview_image.filter(
+    img => !productData.removedOverviewImages.includes(img)
+  );
+  
+  // Also delete the actual image files from server
+  productData.removedOverviewImages.forEach(imagePath => {
+    if (imagePath && typeof imagePath === 'string') {
+      const fullPath = path.join(process.cwd(), 'public', 'uploads', 'products', imagePath);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+        console.log('Deleted overview image:', imagePath);
+      }
+    }
+  });
+}
+
+// Handle new overview image uploads
+if (req.files && req.files.overviewImages) {
+  const overviewImageFiles = Array.isArray(req.files.overviewImages) 
+    ? req.files.overviewImages 
+    : [req.files.overviewImages];
+  
+  const overviewImagePaths = overviewImageFiles.map(file => file.filename);
+  
+  // Add new images to the existing overview_image array
+  productData.overview_image = [...productData.overview_image, ...overviewImagePaths];
+}
+
     await Product_filter.bulkWrite(bulkOps);
 
   }else{

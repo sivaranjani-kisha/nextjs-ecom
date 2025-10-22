@@ -279,9 +279,54 @@ const CustomOption = (props) => (
 //         }
 //     }
 // }, [mode, productData, setJsonHighlightsInput,setSelectedCategory]);
+// useEffect(() => {
+//   if (mode === "edit" && productData) {
+//     console.log(productData);
+
+//     // Initialize warranties from productData
+//     if (productData.extend_warranty && productData.extend_warranty.length > 0) {
+//       setWarranties(productData.extend_warranty);
+//     } else {
+//       setWarranties([{ year: "", amount: "" }]);
+//     }
+
+//     // This code sets the state for the 'product' object
+//     setProduct(prevProduct => ({
+//       ...productData,
+//       brand_code: productData.brand_code || "",
+//       product_highlights: Array.isArray(productData.product_highlights) 
+//         ? productData.product_highlights 
+//         : [],
+//       filters: productData.filterDetails && productData.filterDetails.length > 0
+//         ? productData.filterDetails.map(item => ({ value: item._id, label: item.filter_name }))
+//         : [],
+//       hasVariants: productData.hasVariants || false,
+//       variants: productData.variants || [],
+//       images: productData.images || ['', '', '', ''],
+//       files: productData.files || [],
+//       // FIX: Properly handle overview_image array
+//       overviewImage: Array.isArray(productData.overview_image) && productData.overview_image.length > 0 
+//         ? productData.overview_image 
+//         : [null],
+//       overviewImageFile: productData.overviewImageFile || [null],
+//       featured_products: productData.featured_products || [],
+//     }));
+
+//     // This code now correctly runs after the setProduct call, setting the JSON input field
+//     if (!Array.isArray(productData.product_highlights) && typeof productData.product_highlights === 'object') {
+//       setJsonHighlightsInput(JSON.stringify(productData.product_highlights, null, 2));
+//     }
+
+//     if(productData.sub_category){
+//       setSelectedCategory(productData.sub_category);
+//     }
+//   }
+// }, [mode, productData, setJsonHighlightsInput,setSelectedCategory]);
+
 useEffect(() => {
   if (mode === "edit" && productData) {
-    console.log(productData);
+    console.log("Edit mode - Product data:", productData);
+    console.log("Overview images from DB:", productData.overview_image);
 
     // Initialize warranties from productData
     if (productData.extend_warranty && productData.extend_warranty.length > 0) {
@@ -304,18 +349,14 @@ useEffect(() => {
       variants: productData.variants || [],
       images: productData.images || ['', '', '', ''],
       files: productData.files || [],
-      // FIX: Properly handle overview_image array
+      // FIX: Use overview_image from database
       overviewImage: Array.isArray(productData.overview_image) && productData.overview_image.length > 0 
         ? productData.overview_image 
         : [null],
       overviewImageFile: productData.overviewImageFile || [null],
       featured_products: productData.featured_products || [],
+      removedOverviewImages: [] // Reset removed images
     }));
-
-    // This code now correctly runs after the setProduct call, setting the JSON input field
-    if (!Array.isArray(productData.product_highlights) && typeof productData.product_highlights === 'object') {
-      setJsonHighlightsInput(JSON.stringify(productData.product_highlights, null, 2));
-    }
 
     if(productData.sub_category){
       setSelectedCategory(productData.sub_category);
@@ -643,18 +684,30 @@ setProduct(prev => ({
   }));
 };
   
-    const handleRemoveOverviewImage = (index) => {
+   const handleRemoveOverviewImage = (index) => {
   setProduct(prev => {
     const newImages = [...prev.overviewImage];
     const newFiles = [...prev.overviewImageFile];
     
+    // Store the removed overview image filename for backend cleanup
+    const removedImage = newImages[index];
+    
     newImages.splice(index, 1);
     newFiles.splice(index, 1);
+
+    console.log('Removing overview image:', {
+      index,
+      removedImage,
+      currentImages: prev.overviewImage,
+      newImages: newImages
+    });
 
     return {
       ...prev,
       overviewImage: newImages,
-      overviewImageFile: newFiles
+      overviewImageFile: newFiles,
+      // Keep track of removed OVERVIEW images only
+      removedOverviewImages: [...(prev.removedOverviewImages || []), removedImage]
     };
   });
 };
@@ -1194,12 +1247,19 @@ const handleupdatefilterchange = (filters) => {
     ),
   }));
 };
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   try {
     const formData = new FormData();
-    const existingImages = product.images.filter(
+    
+    // Get existing product images (filter out blob URLs and nulls)
+    const existingProductImages = product.images.filter(
       (img) => typeof img === "string" && !img.startsWith("blob:")
+    );
+
+    // Get existing overview images (filter out blob URLs and nulls)
+    const existingOverviewImages = product.overviewImage.filter(
+      (img) => img && typeof img === "string" && !img.startsWith("blob:")
     );
 
     // Filter out empty warranty entries
@@ -1207,34 +1267,40 @@ const handleupdatefilterchange = (filters) => {
       warranty => warranty.year !== "" && warranty.amount !== "" && warranty.year != null && warranty.amount != null
     );
 
-    // clean product (do NOT send blob images) and include brand_code only if provided
-    const { brand_code, ...restProduct } = product;
+    // Clean product data
+    const { brand_code, removedOverviewImages, ...restProduct } = product;
     const trimmedBrandCode = (brand_code ?? '').toString().trim();
 
     const cleanedProduct = {
       ...restProduct,
-      ...(trimmedBrandCode ? { brand_code: trimmedBrandCode } : {}), // include only when non-empty
+      ...(trimmedBrandCode ? { brand_code: trimmedBrandCode } : {}),
       extend_warranty: validWarranties.length > 0 ? validWarranties : [],
       filters: (product.filters || []).map(f => f.value),
       related_products: product.related_products || [],
       category: product.category || "",
       product_highlights: product.product_highlights || [],
-      images: product.images.filter(img => typeof img === "string") // clear images so no blob goes to DB
+      // Product images
+      images: existingProductImages,
+      // FIX: Send as overview_image (database field name) not overviewImage
+      overview_image: existingOverviewImages,
+      // Send removed overview images to backend
+      removedOverviewImages: removedOverviewImages || []
     };
 
-    console.log("Submitting product with warranties:", cleanedProduct.extend_warranty);
+    console.log("Overview images to save:", existingOverviewImages);
+    console.log("Overview images to remove:", removedOverviewImages);
 
-    // ✅ Upload product images
+    // Upload product images
     (product.files || []).forEach(file => {
       if (file) formData.append("images", file);
     });
 
-    // ✅ Upload overview images
+    // Upload NEW overview images
     (product.overviewImageFile || []).forEach(file => {
       if (file) formData.append("overviewImages", file);
     });
 
-    // ✅ Variants with images
+    // Variants with images
     const variantsWithImages = (product.variants || []).map((variant, i) => {
       const files = variantImages[i]?.images || [];
       files.forEach((file, j) => {
@@ -1242,13 +1308,12 @@ const handleupdatefilterchange = (filters) => {
           formData.append(`variant_${i}_image_${j}`, file);
         }
       });
-      return { ...variant, images: [] }; // backend fills real filenames
+      return { ...variant, images: [] };
     });
 
     const finalProductData = {
       ...cleanedProduct,
-      images: existingImages,  // old images
-      extend_warranty: validWarranties, // Use filtered warranties
+      extend_warranty: validWarranties,
     };
 
     formData.append("product", JSON.stringify(finalProductData));
