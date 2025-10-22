@@ -1306,7 +1306,7 @@ const grandTotal = subtotal - totalDiscount;
 
                       {/* Price */}
                       <div className="text-sm whitespace-nowrap text-base font-semibold text-red-600">
-                        ₹{(item.price * item.quantity).toFixed(2)}
+                        ₹{(item.price > 0 ? item.price : item.actual_price) * item.quantity.toFixed(2)}
                       </div>
                     </div>
                   ))}
