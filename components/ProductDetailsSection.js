@@ -25,8 +25,9 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   const flixScriptRef = useRef(null);
   const flixInitializedRef = useRef(false);
   const [brandName, setBrandName] = useState("");
-  // Add: track first init attempt to guarantee one call even if Overview isn't active
   const flixLoadAttemptedRef = useRef(false);
+  // NEW: track if flix content has loaded before (persisted per product)
+  const [flixLoaded, setFlixLoaded] = useState(false);
  
   const tabData = {
     overview: product.overview || "No overview available.",
@@ -272,55 +273,90 @@ const handleTabClick = (tabId) => {
     }
   }, [product?._id]);
  
- const initializeFlixMedia = () => {
-  console.log("Initializing FlixMedia with brand:", brandName);
- 
-  // Clean up existing FlixMedia elements
-  const existingInpage = document.getElementById("flix-inpage");
-  const existingMinisite = document.getElementById("flix-minisite");
- 
-  if (existingInpage) existingInpage.remove();
-  if (existingMinisite) existingMinisite.remove();
- 
-  // Create containers for FlixMedia
-  const overviewTab = document.querySelector("#overview-tab .col-md-12");
-  const keyFea = document.querySelector(".key-fea");
- 
-  if (overviewTab && !document.getElementById("flix-inpage")) {
-    const inpageDiv = document.createElement("div");
-    inpageDiv.id = "flix-inpage";
-    inpageDiv.className = "flix-inpage-container";
-    overviewTab.prepend(inpageDiv);
-    console.log("Created flix-inpage container");
-  }
- 
-  if (keyFea && !document.getElementById("flix-minisite")) {
-    const miniSiteDiv = document.createElement("div");
-    miniSiteDiv.id = "flix-minisite";
-    miniSiteDiv.className = "flix-minisite-container";
-    keyFea.insertAdjacentElement("afterend", miniSiteDiv);
-    console.log("Created flix-minisite container");
-  }
- 
-  // Remove existing script
-  if (flixScriptRef.current) {
-    flixScriptRef.current.remove();
-    flixScriptRef.current = null;
-  }
- 
-  // Set up fallback timeout
-  const fallbackTimeout = setTimeout(() => {
-    if (!flixInitializedRef.current) {
-      console.log("FlixMedia failed to load, showing fallback message");
-      showFallbackMessage();
+  // Mount: restore cached flixLoaded from sessionStorage for this product
+  useEffect(() => {
+    if (!product?._id) return;
+    const key = `flixLoaded:${product._id}`;
+    const cached = typeof window !== 'undefined' && sessionStorage.getItem(key) === '1';
+    setFlixLoaded(cached);
+    if (cached) flixInitializedRef.current = true; // allow skipping init
+  }, [product?._id]);
+
+  // Set default active tab once per product based on cached flix or actual overview content
+  useEffect(() => {
+    if (!product) return;
+    const hasTextOrImages =
+      (product.overview && product.overview.trim() !== "") ||
+      (product.overview_image &&
+        (Array.isArray(product.overview_image)
+          ? product.overview_image.length > 0
+          : String(product.overview_image).split(",").filter(Boolean).length > 0));
+
+    if (flixLoaded || hasTextOrImages) {
+      setActiveTab("overview");
+    } else if (product.description && product.description.trim() !== "") {
+      setActiveTab("description");
+    } else {
+      const next = findNextAvailableTab("overview");
+      setActiveTab(next);
     }
-  }, 3000); // Wait 3 seconds for FlixMedia to load
+    // run when product changes or cache becomes available
+  }, [product?._id, flixLoaded]);
+
+  // Avoid re-initializing Flix if already loaded once for this product
+  const initializeFlixMedia = () => {
+    if (flixInitializedRef.current) {
+      console.log("[Flix] already initialized for this product. Skipping.");
+      return;
+    }
+    console.log("Initializing FlixMedia with brand:", brandName);
  
-  // Add: debug before invoking loader
-  console.log("[Flix] initialize -> calling loadFlixScript(fallbackTimeout)");
-  // Load FlixMedia script with dynamic brand name
-  loadFlixScript(fallbackTimeout);
-};
+    // Clean up existing FlixMedia elements
+    const existingInpage = document.getElementById("flix-inpage");
+    const existingMinisite = document.getElementById("flix-minisite");
+ 
+    if (existingInpage) existingInpage.remove();
+    if (existingMinisite) existingMinisite.remove();
+ 
+    // Create containers for FlixMedia
+    const overviewTab = document.querySelector("#overview-tab .col-md-12");
+    const keyFea = document.querySelector(".key-fea");
+ 
+    if (overviewTab && !document.getElementById("flix-inpage")) {
+      const inpageDiv = document.createElement("div");
+      inpageDiv.id = "flix-inpage";
+      inpageDiv.className = "flix-inpage-container";
+      overviewTab.prepend(inpageDiv);
+      console.log("Created flix-inpage container");
+    }
+ 
+    if (keyFea && !document.getElementById("flix-minisite")) {
+      const miniSiteDiv = document.createElement("div");
+      miniSiteDiv.id = "flix-minisite";
+      miniSiteDiv.className = "flix-minisite-container";
+      keyFea.insertAdjacentElement("afterend", miniSiteDiv);
+      console.log("Created flix-minisite container");
+    }
+ 
+    // Remove existing script
+    if (flixScriptRef.current) {
+      flixScriptRef.current.remove();
+      flixScriptRef.current = null;
+    }
+ 
+    // Set up fallback timeout
+    const fallbackTimeout = setTimeout(() => {
+      if (!flixInitializedRef.current) {
+        console.log("FlixMedia failed to load, showing fallback message");
+        showFallbackMessage();
+      }
+    }, 3000); // Wait 3 seconds for FlixMedia to load
+ 
+    // Add: debug before invoking loader
+    console.log("[Flix] initialize -> calling loadFlixScript(fallbackTimeout)");
+    // Load FlixMedia script with dynamic brand name
+    loadFlixScript(fallbackTimeout);
+  };
  
 // helper to build Flix minify service URL (matches original working format)
 const safeBtoa = (str) => {
@@ -902,10 +938,9 @@ const cleanupFlixMedia = () => {
     }
   };
 
-  // Small, controlled tab component: single render of active tab content, Tailwind layout per tab
+  // Small, controlled tab component: keep Overview mounted to preserve injected DOM
   function DynamicTabs({ tabs, activeName, onTabChange }) {
     const titleize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
-    const activeTabObj = tabs.find((t) => t.name === activeName) || tabs[0];
 
     return (
       <div>
@@ -925,15 +960,21 @@ const cleanupFlixMedia = () => {
           ))}
         </div>
 
-        <div
-          className={
-            activeName === "overview"
-              ? "min-h-screen w-full flex items-center justify-center px-4 py-6 text-center bg-gray-50"
-              : "max-w-2xl mx-auto px-4 py-6 text-center"
-          }
-        >
-          {activeTabObj?.content}
-        </div>
+        {/* Keep all tabs mounted; only the active one is visible.
+           This preserves Flix DOM so it doesn't need to reload. */}
+        {tabs.map((tab) => (
+          <div
+            key={tab.name}
+            style={{ display: activeName === tab.name ? "block" : "none" }}
+            className={
+              tab.name === "overview"
+                ? "min-h-screen w-full flex items-center justify-center px-4 py-6 text-center bg-gray-50"
+                : "max-w-2xl mx-auto px-4 py-6 text-center"
+            }
+          >
+            {tab.content}
+          </div>
+        ))}
       </div>
     );
   }
