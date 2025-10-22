@@ -940,10 +940,7 @@ export default function CategoryPage() {
               {products.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                    {getSortedProducts() .filter(product =>
-    Number(product.special_price) > 0
-    
-  ) .map(product => (
+                    {getSortedProducts().map(product => (
                       <div
                         key={product._id}
                         className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
