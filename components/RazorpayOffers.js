@@ -41,7 +41,7 @@ const RazorpayOffers = ({ amount }) => {
 
   return (
     <div>
-     <h4 className="py-3"> EMI OPTIONS AVAILABLE</h4>
+     <h4 className="py-3"> AVAILABLE OFFERS</h4>
       <div id="razorpay-affordability-widget"></div>
     </div>
   );
