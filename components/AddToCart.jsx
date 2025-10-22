@@ -19,15 +19,15 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
   // const [authError, setAuthError] = useState('');
   const [cartSuccess, setCartSuccess] = useState(false);
   const isOutOfStock = stockQuantity <= 0;
-    const isprice = special_price <= 0;
+    // const isprice = special_price <= 0;
   const { cartCount, updateCartCount } = useCart();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const handleAddToCart = async () => {
      if (isOutOfStock) return;
 
-     if(isprice){
-      return;
-     }
+    //  if(isprice){
+    //   return;
+    //  }
       setIsLoading(true);
       // setAuthError('');
       setCartSuccess(false);
@@ -190,7 +190,7 @@ const AddToCartButton = ({ productId, quantity = 1, warranty, additionalProducts
     <>
   <button
   onClick={handleAddToCart}
-  disabled={isLoading || isOutOfStock || isprice}
+  disabled={isLoading || isOutOfStock}
   className={`px-2 py-2 md:px-2 md:py-2 mr-1 rounded-md shadow-md transition duration-300 text-md flex items-center justify-center gap-x-1
     ${isOutOfStock
       ? 'bg-gray-400 cursor-not-allowed text-white'
