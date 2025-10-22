@@ -1871,15 +1871,15 @@ const fetchBrand = async () => {
                 onChange={() => toggleRelatedProduct(item)}
               />
             )}
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
               {item.images?.[0] && (
                 <img
                   src={'/uploads/products/' + item.images[0]}
                   alt={item.name}
-                  className="w-16 h-16 object-contain"
+                  className="w-16 h-16 object-contain flex-shrink-0"
                 />
               )}
-              <div className="text-sm">
+              <div className="text-sm flex-1 min-w-0">
                 <Link
                   href={`/product/${item.slug}`}
                   className="block mb-1"
