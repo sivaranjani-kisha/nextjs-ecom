@@ -970,12 +970,20 @@ const cleanupFlixMedia = () => {
   const descriptionContent = (() => {
     // reuse existing helpers already declared in this file
     const descObj = parseJSONSafe(product?.description);
+
     const hasValidDescription =
       descObj && typeof descObj === "object" && Object.keys(descObj).length > 0;
-const hasPlainDescription =
-  product?.description &&
-  typeof product.description === "string" &&
-  !descObj; // descObj is the parsed JSON
+
+    const hasPlainDescription =
+      product?.description &&
+      typeof product.description === "string" &&
+      !descObj;
+
+    const hasSpecifications = [
+      product.ingredients,
+      product.weight,
+      product.dimensions,
+    ].some(Boolean);
     if (!hasValidDescription && !hasPlainDescription && !hasSpecifications) return null;
 
     return (
