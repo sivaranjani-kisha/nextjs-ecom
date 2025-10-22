@@ -888,6 +888,240 @@ const cleanupFlixMedia = () => {
     }
   };
 
+  // Small, self-contained tab component
+  function DynamicTabs({ tabs, initialActiveName: initName, onTabChange }) {
+    const hasContent = (c) => {
+      if (c === null || c === undefined || c === false) return false;
+      if (typeof c === "string") return c.trim().length > 0;
+      if (Array.isArray(c)) return c.length > 0;
+      return true; // JSX or any truthy content
+    };
+
+    const computeDefaultActive = () => {
+      const overview = tabs.find(t => typeof t.name === "string" && t.name.toLowerCase() === "overview");
+      if (overview && hasContent(overview.content)) return overview.name;
+      const firstWithContent = tabs.find(t => hasContent(t.content));
+      return firstWithContent ? firstWithContent.name : (tabs[0]?.name || "");
+    };
+
+    const defaultActive = initName || computeDefaultActive();
+    const [active, setActive] = useState(() => defaultActive);
+    const [mounted, setMounted] = useState(() => new Set(defaultActive ? [defaultActive] : []));
+
+    const onClickTab = (name) => {
+      setActive(name);
+      setMounted(prev => {
+        const next = new Set(prev);
+        next.add(name);
+        return next;
+      });
+      if (onTabChange) onTabChange(name);
+    };
+
+    const titleize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+    return (
+      <div>
+        <div className={`flex justify-center ${poppins.className}`}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.name}
+              onClick={() => onClickTab(tab.name)}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                active === tab.name
+                  ? "border border-black text-black font-semibold"
+                  : "text-gray-500 hover:text-black"
+              }`}
+            >
+              {titleize(tab.name)}
+            </button>
+          ))}
+        </div>
+
+        <div className="max-w-2xl mx-auto px-4 py-6 text-center">
+          {tabs.map((tab) => {
+            const isMounted = mounted.has(tab.name);
+            // Only append content once; keep node in DOM and toggle visibility
+            return (
+              <div
+                key={tab.name}
+                style={{ display: active === tab.name ? "block" : "none" }}
+              >
+                {isMounted ? tab.content : null}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Prepare tab contents (JSX) once; passed into DynamicTabs
+  const overviewContent = hasTabContent("overview") ? (
+    <div className="mx-auto px-4 py-6 text-center">
+      <div id="overview-tab">
+        <div className="col-md-12">
+          {/* flix-inpage will be inserted here */}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  const descriptionContent = (() => {
+    // reuse existing helpers already declared in this file
+    const descObj = parseJSONSafe(product?.description);
+    const hasValidDescription =
+      descObj && typeof descObj === "object" && Object.keys(descObj).length > 0;
+
+    if (!hasValidDescription && !hasPlainDescription && !hasSpecifications) return null;
+
+    return (
+      <div>
+        {/* Product Description */}
+        {(hasValidDescription || hasPlainDescription) && (
+          <>
+            <h2 className={`text-sm font-bold text-left ${poppins.className}`}>
+              Product Description
+            </h2>
+
+            {hasValidDescription ? (
+              <div className="mt-3 text-xs sm:text-sm text-gray-700 space-y-1">
+                {Object.entries(descObj).map(([key, val]) => {
+                  const cleanKey = decodeAndClean(key);
+                  const cleanVal = decodeAndClean(val);
+                  return (
+                    <div
+                      key={cleanKey}
+                      className="grid grid-cols-[150px,1fr] gap-x-2 items-start"
+                    >
+                      <div className={`text-xs sm:text-sm font-bold ${poppins.className}`}>
+                        {cleanKey}:
+                      </div>
+                      <div className={`text-xs sm:text-sm ${poppins.className}`}>
+                        {cleanVal}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div
+                className="mt-3 text-xs sm:text-sm text-gray-700 prose prose-gray max-w-none text-left [&_table]:w-full [&_table]:border-collapse [&_table]:border [&_th]:border [&_td]:border [&_th]:p-2 [&_td]:p-2 [&_tr:nth-child(even)]:bg-gray-50 [&_th]:bg-gray-100 [&_th]:font-semibold"
+                dangerouslySetInnerHTML={{
+                  __html: decodeAndClean(String(product?.description || "")),
+                }}
+              />
+            )}
+          </>
+        )}
+
+        {/* Product Specifications */}
+        {hasSpecifications && (
+          <>
+            <h2 className={`text-sm font-bold mt-3 text-left ${poppins.className}`}>
+              Product Specifications
+            </h2>
+
+            <ul className="mt-1 sm:mt-2 text-gray-700 text-xs sm:text-sm space-y-1">
+              {[
+                {
+                  icon: <TbBrandAppgallery size={14} className="text-white" />,
+                  label: "Brand",
+                  value:
+                    (Array.isArray(brand)
+                      ? brand.find((b) => b.value === product.brand)?.label
+                      : null) || "N/A",
+                },
+                {
+                  icon: <FiHash size={16} className="text-white" />,
+                  label: "Item Code",
+                  value: product.item_code || "N/A",
+                },
+                product.ingredients && {
+                  icon: <FiBox size={14} className="text-white" />,
+                  label: "Ingredients",
+                  value: product.ingredients,
+                },
+                product.weight && {
+                  icon: <FiBox size={14} className="text-white" />,
+                  label: "Weight",
+                  value: product.weight,
+                },
+                product.dimensions && {
+                  icon: <FiBox size={14} className="text-white" />,
+                  label: "Dimensions",
+                  value: product.dimensions,
+                },
+              ]
+                .filter(Boolean)
+                .map((item, idx) => (
+                  <li key={idx} className="flex items-center">
+                    <div className="w-5 h-5 flex items-center justify-center bg-gray-600 rounded-md mr-2">
+                      {item.icon}
+                    </div>
+                    <div className="flex gap-x-1">
+                      <strong className={`text-xs sm:text-sm ${poppins.className}`}>
+                        {item.label}:
+                      </strong>
+                      <span className={`${poppins.className}`}>{item.value}</span>
+                    </div>
+                  </li>
+                ))}
+            </ul>
+          </>
+        )}
+      </div>
+    );
+  })();
+
+
+  const reviewsContent = (
+    <div>
+      <form onSubmit={handleReviewSubmit} className="bg-white p-4 rounded-md shadow mt-3">
+        <h3 className="font-semibold text-left mb-2">Write a Review</h3>
+        <input type="text" placeholder="Review Title" value={reviewForm.title} onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })} required className="w-full border rounded p-2 mb-2" />
+        <StarRating value={reviewForm.rating} onChange={(rating) => setReviewForm({ ...reviewForm, rating })} />
+        <textarea placeholder="Write your comments..." value={reviewForm.comment} onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })} className="w-full border rounded p-2 mb-2" rows="3" ></textarea>
+        <button type="submit" disabled={submitting} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          {submitting ? "Submitting..." : "Submit Review"}
+        </button>
+      </form>
+      <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Customer Reviews</h2>
+      <div className="flex items-center mt-1 sm:mt-2">
+        {[...Array(5)].map((_, i) => (
+          <span key={i} className={`text-lg sm:text-2xl ${i < Math.floor(tabData.reviews.rating) ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
+        ))}
+        <span className="text-gray-700 ml-1 sm:ml-2 text-sm sm:text-base">
+          {tabData.reviews.rating.toFixed(1)} ({tabData.reviews.count} Reviews)
+        </span>
+      </div>
+      {tabData.reviews.items.length > 0 ? (
+        <div className="mt-2 sm:mt-4 space-y-2 sm:space-y-3">
+          {tabData.reviews.items.map((review, index) => (
+            <div key={index} className={`border-b border-gray-300  pb-2 sm:pb-3 ${index === 0 ? "border-t" : ""} `}>
+              <div className="flex text-lg items-baseline sm:text-lg mt-1">
+                {[...Array(5)].map((_, i) => (
+                  <span className="text-yellow-400" key={i}>{i < review.rating ? '★' : '☆'}</span>
+                ))}
+                <p className="text-gray-700 font-medium text-sm sm:text-base">&nbsp;{review.title}</p>
+              </div>
+              <p className="text-gray-700 text-left mt-1 sm:mt-2 text-sm sm:text-base">{review.comment}</p>
+              <p className="text-gray-400 text-left text-xs sm:text-sm mt-1">Reviewed By {review.userName} on {formatReviewDate(review.date)}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-600 mt-2 sm:mt-4 text-sm sm:text-base">No reviews yet. Be the first to review this product!</p>
+      )}
+    </div>
+  );
+
+  const tabsForUI = [
+    { name: "overview", content: overviewContent },
+    { name: "description", content: descriptionContent },
+    { name: "reviews", content: reviewsContent },
+  ];
+
   function StarRating({ value, onChange }) {
     return (
       <div className="flex space-x-1 mb-2">
@@ -910,287 +1144,24 @@ const cleanupFlixMedia = () => {
       </div>
     );
   }
-
   return (
-    
     <div className="mt-4 sm:mt-8 bg-gray-100 w-full py-6">
-        <ToastContainer position="top-right" autoClose={5000} />
-      {/* Tabs */}
-    <div className={`flex justify-center ${poppins.className}`}>
-  {[
-    { id: "overview", label: "Overview" },
-    { id: "description", label: "Description" },
-    // { id: "videos", label: "Videos" },
-    { id: "reviews", label: "Reviews" },
-  ].map((tab) => (
-    <button
-      key={tab.id}
-      onClick={() => handleTabClick(tab.id)}
-      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-        activeTab === tab.id
-          ? "border border-black text-black font-semibold"
-          : "text-gray-500 hover:text-black"
-      }`}
-    >
-      {tab.label}
-    </button>
-  ))}
-</div>
-
-
-      {/* Tab Content */}
-      {activeTab === "overview" && (
-        <div className={`mx-auto px-4 py-6 text-center ${activeTab === "overview" ? "block" : "hidden"}`}>
-          <div id="overview-tab">
-            <div className="col-md-12">
-              {/* flix-inpage will be inserted here */}
-            </div>
-          </div>
-        </div>
-      )}
- 
-      <div className="max-w-2xl mx-auto px-4 py-6 text-center">
-        {/* {activeTab === "overview" && (
-          <div>
-            <h2 className={`text-sm font-bold transition-all duration-200 text-left ${poppins.className}`}>Product Overview</h2>
-            <p className="text-gray-700 mt-1 sm:mt-2 text-sm sm:text-base">{tabData.overview}</p>
-            
-            {product.product_highlights?.length > 0 && (
-              <>
-                <h2 className={`text-lg sm:text-xl font-semibold text-gray-900 mt-3 sm:mt-6 ${poppins.className}`}>Highlights</h2>
-                <ul className={`list-disc pl-4 sm:pl-5 mt-1 sm:mt-3 text-gray-700 text-sm sm:text-base ${poppins.className}`}>
-                  {product.product_highlights.slice(0, 3).map((feature, index) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-
-            {product.key_specifications?.length > 0 && (
-  <>
-    <h2
-      className={`text-sm font-bold transition-all duration-200 text-left ${poppins.className}`}
-    >
-      Key Features
-    </h2>
-    <ul className="list-disc pl-5 mt-1 sm:mt-3 text-gray-700 text-sm sm:text-base space-y-1">
-  {product.key_specifications.flatMap((spec, i) =>
-    spec
-      .split(",")
-      .map((item) => item.trim().replace(/&amp;/g, "&")) // replace &amp; with &
-      .filter((item) => item.length > 0)
-      .map((item, j) => (
-        <li
-          key={`${i}-${j}`}
-          className={`text-left text-xs sm:text-sm ${poppins.className}`}
-        >
-          {item}
-        </li>
-      ))
-  )}
-</ul>
-
-  </>
-)}
-
-          </div>
-        )} */}
-
-       {activeTab === "description" && (() => {
-  const descObj = parseJSONSafe(tabData.description);
-
-  const hasValidDescription =
-    descObj && typeof descObj === "object" && Object.keys(descObj).length > 0;
-
-  const hasPlainDescription =
-    tabData.description &&
-    tabData.description.trim().length > 0 &&
-    tabData.description !== "null" && // check against "null" string
-    tabData.description.toLowerCase() !== "null" && // case-insensitive just in case
-    tabData.description !== "No description available.";
-
-  const hasSpecifications =
-    product.brand ||
-    product.item_code ||
-    product.ingredients ||
-    product.weight ||
-    product.brand_code ||
-    product.dimensions;
-
-  // If no description and no specs, hide the whole section
-  if (!hasValidDescription && !hasPlainDescription && !hasSpecifications) {
-    return null;
-  }
-
-  return (
-    <div>
-      {/* Product Description */}
-      {(hasValidDescription || hasPlainDescription) && (
-        <>
-          <h2 className={`text-sm font-bold text-left ${poppins.className}`}>Product Description</h2>
-          {hasValidDescription ? (
-            <div className="mt-3 text-xs sm:text-sm text-gray-700 space-y-1">
-              {Object.entries(descObj).map(([key, val]) => {
-                const cleanKey = decodeAndClean(key);
-                const cleanVal = decodeAndClean(val);
-                return (
-                  <div key={cleanKey} className="grid grid-cols-[150px,1fr] gap-x-2 items-start">
-                    <div className={`text-xs sm:text-sm font-bold ${poppins.className}`}>{cleanKey}:</div>
-                    <div className={`text-xs sm:text-sm ${poppins.className}`}>{cleanVal}</div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="mt-3 text-xs sm:text-sm text-gray-700 prose prose-gray max-w-none text-left [&_table]:w-full [&_table]:border-collapse [&_table]:border [&_th]:border [&_td]:border [&_th]:p-2 [&_td]:p-2 [&_tr:nth-child(even)]:bg-gray-50 [&_th]:bg-gray-100 [&_th]:font-semibold" dangerouslySetInnerHTML={{ __html: decodeAndClean(String(tabData.description)) }}></div> 
-          )}
-        </>
-      )}
-
-      {/* Product Specifications */}
-      {hasSpecifications && (
-        <>
-          <h2 className={`text-sm font-bold mt-3 text-left ${poppins.className}`}>Product Specifications</h2>
-          <ul className="mt-1 sm:mt-2 text-gray-700 text-xs sm:text-sm space-y-1">
-            {[
-              {
-                icon: <TbBrandAppgallery size={14} className="text-white" />,
-                label: "Brand",
-                value: brand.find((b) => b.value === product.brand)?.label || "N/A",
-              },
-              {
-                icon: <FiHash size={16} className="text-white" />,
-                label: "Item Code",
-                value: product.item_code || "N/A",
-              },
-              product.ingredients && {
-                icon: <FiBox size={14} className="text-white" />,
-                label: "Ingredients",
-                value: product.ingredients,
-              },
-              product.weight && {
-                icon: <FiBox size={14} className="text-white" />,
-                label: "Weight",
-                value: product.weight,
-              },
-              product.dimensions && {
-                icon: <FiBox size={14} className="text-white" />,
-                label: "Dimensions",
-                value: product.dimensions,
-              },
-            ]
-              .filter(Boolean)
-              .map((item, idx) => (
-                <li key={idx} className="flex items-center">
-                  <div className="w-5 h-5 flex items-center justify-center bg-gray-600 rounded-md mr-2">
-                    {item.icon}
-                  </div>
-                  <div className="flex gap-x-1">
-                    <strong className={`text-xs sm:text-sm ${poppins.className}`}>{item.label}:</strong>
-                    <span className={`${poppins.className}`}>{item.value}</span>
-                  </div>
-                </li>
-              ))}
-          </ul>
-        </>
-      )}
-    </div>
-  );
-})()}
-
-      {/*   {activeTab === "videos" && (
-          <div>
-            <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Product Videos</h2>
-            {tabData.videos.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3 sm:gap-4 mt-2 sm:mt-4">
-                {tabData.videos.map((video, index) => (
-                  <div key={index} className="aspect-w-16 aspect-h-9">
-                    <iframe
-                      className="w-full h-48 sm:h-64 rounded-lg"
-                      src={video.url}
-                      title={video.title || `Product Video ${index + 1}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                    {video.title && (
-                      <p className="mt-1 sm:mt-2 font-medium text-gray-800 text-sm sm:text-base">{video.title}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">No videos available for this product.</p>
-            )}
-          </div>
-        )} */}
-
-        {activeTab === "reviews" && (
-          <div>
-            
-            <form onSubmit={handleReviewSubmit} className="bg-white p-4 rounded-md shadow mt-3">
-              <h3 className="font-semibold text-left mb-2">Write a Review</h3>
-
-              <input type="text" placeholder="Review Title" value={reviewForm.title} onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })} required className="w-full border rounded p-2 mb-2" />
-
-              {/* <select value={reviewForm.rating} onChange={(e) => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })} required className="w-full border rounded p-2 mb-2" >
-                <option value="">Select Rating</option>
-                {[1,2,3,4,5].map(n => (
-                  <option key={n} value={n}>{n} Star{n>1 && "s"}</option>
-                ))}
-              </select> */}
-
-              <StarRating value={reviewForm.rating} onChange={(rating) => setReviewForm({ ...reviewForm, rating })} />
-
-              <textarea placeholder="Write your comments..." value={reviewForm.comment} onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })} className="w-full border rounded p-2 mb-2" rows="3" ></textarea>
-
-              <button type="submit" disabled={submitting} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                {submitting ? "Submitting..." : "Submit Review"}
-              </button>
-            </form>
-
-            <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Customer Reviews</h2>
-            <div className="flex items-center mt-1 sm:mt-2">
-              {[...Array(5)].map((_, i) => (
-                <span key={i} className={`text-lg sm:text-2xl ${i < Math.floor(tabData.reviews.rating) ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
-              ))}
-              <span className="text-gray-700 ml-1 sm:ml-2 text-sm sm:text-base">
-                {tabData.reviews.rating.toFixed(1)} ({tabData.reviews.count} Reviews)
-              </span>
-            </div>
-            
-            {tabData.reviews.items.length > 0 ? (
-              <div className="mt-2 sm:mt-4 space-y-2 sm:space-y-3">
-                {tabData.reviews.items.map((review, index) => (
-                  <div key={index} className={`border-b border-gray-300  pb-2 sm:pb-3 ${index === 0 ? "border-t" : ""} `}>
-                    <div className="flex text-lg items-baseline sm:text-lg mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <span className="text-yellow-400" key={i}>{i < review.rating ? '★' : '☆'}</span>
-                      ))}
-                      <p className="text-gray-700 font-medium text-sm sm:text-base">&nbsp;{review.title}</p>
-                    </div>
-                    <p className="text-gray-700 text-left mt-1 sm:mt-2 text-sm sm:text-base">{review.comment}</p>
-                    <p className="text-gray-400 text-left text-xs sm:text-sm mt-1">Reviewed By {review.userName} on {formatReviewDate(review.date)}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600 mt-2 sm:mt-4 text-sm sm:text-base">No reviews yet. Be the first to review this product!</p>
-            )}
-          </div>
-        )}
-
-       
-      </div>
+      <ToastContainer position="top-right" autoClose={5000} />
+      {/* New tabbed interface */}
+      <DynamicTabs
+        tabs={tabsForUI}
+        initialActiveName={initialActiveName}
+        onTabChange={setActiveTab}
+      />
     </div>
   );
 }
 
-// Derive identifiers for Flix from product safely
 const resolveFlixIds = (p = {}) => {
   const ean = p.ean || p.EAN || p.barcode || p.bar_code || p.gtin || p.GTIN || null;
   const mpn = p.mpn || p.MPN || p.model_number || p.modelNumber || p.model || p.sku || p.item_code || p.itemCode || p.brand_code || null;
   const upc = p.upc || p.UPC || null;
   const sku = p.sku || p.SKU || null;
-  const brandCode = p.brand_code || p.brandCode || null; // NEW: expose brand_code explicitly
+  const brandCode = p.brand_code || p.brandCode || null;
   return { ean, mpn, upc, sku, brandCode };
 };
