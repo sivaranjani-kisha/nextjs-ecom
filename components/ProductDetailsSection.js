@@ -894,48 +894,41 @@ const cleanupFlixMedia = () => {
     }
   };
 
-  // Small, self-contained tab component
-  function DynamicTabs({ tabs, initialActiveName: initName, onTabChange, activeName }) {
-    const hasContent = (c) => {
+  // Small, self-contained tab component (no useEffect)
+  function DynamicTabs({ tabs, initialActiveName: initName, onTabChange }) {
+    const PLACEHOLDER = "There is no product overview available for this item.";
+
+    const hasValidContent = (c) => {
       if (c === null || c === undefined || c === false) return false;
-      if (typeof c === "string") return c.trim().length > 0;
+      if (typeof c === "string") {
+        const trimmed = c.trim();
+        if (!trimmed) return false;
+        // Skip if placeholder message present
+        if (trimmed.includes(PLACEHOLDER)) return false;
+        return true;
+      }
       if (Array.isArray(c)) return c.length > 0;
-      return true; // JSX or any truthy content
+      // Treat any JSX/ReactNode as contentful
+      return true;
     };
 
     const computeDefaultActive = () => {
+      // 1) Prefer Overview if it has valid content
       const overview = tabs.find(t => typeof t.name === "string" && t.name.toLowerCase() === "overview");
-      if (overview && hasContent(overview.content)) return overview.name;
-      const firstWithContent = tabs.find(t => hasContent(t.content));
+      if (overview && hasValidContent(overview.content)) return overview.name;
+      // 2) Otherwise first tab with content
+      const firstWithContent = tabs.find(t => hasValidContent(t.content));
       return firstWithContent ? firstWithContent.name : (tabs[0]?.name || "");
     };
 
     const defaultActive = initName || computeDefaultActive();
-    const [active, setActive] = useState(() => activeName || defaultActive);
-    const [mounted, setMounted] = useState(() => new Set((activeName || defaultActive) ? [activeName || defaultActive] : []));
-
-    // Sync internal state when parent drives active tab
-    useEffect(() => {
-      if (!activeName) return;
-      setActive(prev => (prev === activeName ? prev : activeName));
-      setMounted(prev => {
-        const next = new Set(prev);
-        next.add(activeName);
-        return next;
-      });
-    }, [activeName]);
+    const [active, setActive] = useState(() => defaultActive);
 
     const onClickTab = (name) => {
       setActive(name);
-      setMounted(prev => {
-        const next = new Set(prev);
-        next.add(name);
-        return next;
-      });
       if (onTabChange) onTabChange(name);
     };
 
-    const currentActive = activeName || active;
     const titleize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
     return (
@@ -946,7 +939,7 @@ const cleanupFlixMedia = () => {
               key={tab.name}
               onClick={() => onClickTab(tab.name)}
               className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                currentActive === tab.name
+                active === tab.name
                   ? "border border-black text-black font-semibold"
                   : "text-gray-500 hover:text-black"
               }`}
@@ -957,17 +950,14 @@ const cleanupFlixMedia = () => {
         </div>
 
         <div className="max-w-2xl mx-auto px-4 py-6 text-center">
-          {tabs.map((tab) => {
-            const isMounted = mounted.has(tab.name);
-            return (
-              <div
-                key={tab.name}
-                style={{ display: currentActive === tab.name ? "block" : "none" }}
-              >
-                {isMounted ? tab.content : null}
-              </div>
-            );
-          })}
+          {tabs.map((tab) => (
+            <div
+              key={tab.name}
+              style={{ display: active === tab.name ? "block" : "none" }}
+            >
+              {tab.content}
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -1102,7 +1092,31 @@ const cleanupFlixMedia = () => {
       </div>
     );
   })();
-
+ {/*   {activeTab === "videos" && (
+          <div>
+            <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Product Videos</h2>
+            {tabData.videos.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 mt-2 sm:mt-4">
+                {tabData.videos.map((video, index) => (
+                  <div key={index} className="aspect-w-16 aspect-h-9">
+                    <iframe
+                      className="w-full h-48 sm:h-64 rounded-lg"
+                      src={video.url}
+                      title={video.title || `Product Video ${index + 1}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                    {video.title && (
+                      <p className="mt-1 sm:mt-2 font-medium text-gray-800 text-sm sm:text-base">{video.title}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">No videos available for this product.</p>
+            )}
+          </div>
+        )} */}
 
   const reviewsContent = (
     <div>
@@ -1154,13 +1168,21 @@ const cleanupFlixMedia = () => {
 
   // Compute initialActiveName AFTER tabsForUI is initialized
   const initialActiveName = (() => {
-    const hasContent = (c) => {
+    const PLACEHOLDER = "There is no product overview available for this item.";
+    const hasValidContent = (c) => {
       if (c === null || c === undefined || c === false) return false;
-      if (typeof c === "string") return c.trim().length > 0;
+      if (typeof c === "string") {
+        const trimmed = c.trim();
+        if (!trimmed) return false;
+        if (trimmed.includes(PLACEHOLDER)) return false;
+        return true;
+      }
       if (Array.isArray(c)) return c.length > 0;
-      return true; // JSX or any other truthy content
+      return true; // JSX or other truthy content
     };
-    const firstWithContent = tabsForUI.find(t => hasContent(t.content));
+    const overview = tabsForUI.find(t => t.name.toLowerCase() === "overview");
+    if (overview && hasValidContent(overview.content)) return overview.name;
+    const firstWithContent = tabsForUI.find(t => hasValidContent(t.content));
     return firstWithContent ? firstWithContent.name : (tabsForUI[0]?.name || "");
   })();
 
@@ -1193,7 +1215,6 @@ const cleanupFlixMedia = () => {
         tabs={tabsForUI}
         initialActiveName={initialActiveName}
         onTabChange={setActiveTab}
-        activeName={activeTab}
       />
     </div>
   );
