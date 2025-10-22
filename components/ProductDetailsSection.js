@@ -53,20 +53,28 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   const tabs = ["overview", "description", "videos", "reviews"];
   
   // Check if a tab has content
-const hasTabContent = (tabId) => {
-  switch (tabId) {
-    case "overview":
-      return product.overview && product.overview.trim() !== "";
-    case "description":
-      return product.description && product.description.trim() !== "";
-    case "videos":
-      return product.videos && product.videos.length > 0;
-    case "reviews":
-      return true;
-    default:
-      return false;
-  }
-};
+  const hasTabContent = (tabId) => {
+    const PLACEHOLDER = "There is no product overview available for this item.";
+    switch (tabId) {
+      case "overview":
+        return Boolean(
+          ((product.overview && product.overview.trim() !== "" && product.overview.trim() !== PLACEHOLDER)) ||
+          (product.overview_image &&
+            (Array.isArray(product.overview_image)
+              ? product.overview_image.length > 0
+              : String(product.overview_image).split(",").filter(Boolean).length > 0)) ||
+          (product.flix_data && (product.flix_data.inpage || product.flix_data.widget))
+        );
+      case "description":
+        return product.description && product.description.trim() !== "";
+      case "videos":
+        return product.videos && product.videos.length > 0;
+      case "reviews":
+        return true;
+      default:
+        return false;
+    }
+  };
 
 // ✅ Find the first tab with content
 const getFirstTabWithContent = () => {
@@ -894,42 +902,10 @@ const cleanupFlixMedia = () => {
     }
   };
 
-  // Small, self-contained tab component (no useEffect)
-  function DynamicTabs({ tabs, initialActiveName: initName, onTabChange }) {
-    const PLACEHOLDER = "There is no product overview available for this item.";
-
-    const hasValidContent = (c) => {
-      if (c === null || c === undefined || c === false) return false;
-      if (typeof c === "string") {
-        const trimmed = c.trim();
-        if (!trimmed) return false;
-        // Skip if placeholder message present
-        if (trimmed.includes(PLACEHOLDER)) return false;
-        return true;
-      }
-      if (Array.isArray(c)) return c.length > 0;
-      // Treat any JSX/ReactNode as contentful
-      return true;
-    };
-
-    const computeDefaultActive = () => {
-      // 1) Prefer Overview if it has valid content
-      const overview = tabs.find(t => typeof t.name === "string" && t.name.toLowerCase() === "overview");
-      if (overview && hasValidContent(overview.content)) return overview.name;
-      // 2) Otherwise first tab with content
-      const firstWithContent = tabs.find(t => hasValidContent(t.content));
-      return firstWithContent ? firstWithContent.name : (tabs[0]?.name || "");
-    };
-
-    const defaultActive = initName || computeDefaultActive();
-    const [active, setActive] = useState(() => defaultActive);
-
-    const onClickTab = (name) => {
-      setActive(name);
-      if (onTabChange) onTabChange(name);
-    };
-
+  // Small, controlled tab component: single render of active tab content, Tailwind layout per tab
+  function DynamicTabs({ tabs, activeName, onTabChange }) {
     const titleize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+    const activeTabObj = tabs.find((t) => t.name === activeName) || tabs[0];
 
     return (
       <div>
@@ -937,9 +913,9 @@ const cleanupFlixMedia = () => {
           {tabs.map((tab) => (
             <button
               key={tab.name}
-              onClick={() => onClickTab(tab.name)}
+              onClick={() => onTabChange && onTabChange(tab.name)}
               className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                active === tab.name
+                activeName === tab.name
                   ? "border border-black text-black font-semibold"
                   : "text-gray-500 hover:text-black"
               }`}
@@ -951,21 +927,13 @@ const cleanupFlixMedia = () => {
 
         <div
           className={
-            active === "overview"
-              ? "w-screen h-screen flex items-center justify-center px-4 py-6 text-center bg-gray-50"
+            activeName === "overview"
+              ? "min-h-screen w-full flex items-center justify-center px-4 py-6 text-center bg-gray-50"
               : "max-w-2xl mx-auto px-4 py-6 text-center"
           }
-      >
-        {tabs.map((tab) => (
-          <div
-            key={tab.name}
-            style={{ display: active === tab.name ? "block" : "none" }}
-          >
-            {tab.content}
-          </div>
-        ))}
-      </div>
-
+        >
+          {activeTabObj?.content}
+        </div>
       </div>
     );
   }
@@ -1181,6 +1149,7 @@ const cleanupFlixMedia = () => {
       if (typeof c === "string") {
         const trimmed = c.trim();
         if (!trimmed) return false;
+        // Skip if placeholder message present
         if (trimmed.includes(PLACEHOLDER)) return false;
         return true;
       }
@@ -1220,7 +1189,7 @@ const cleanupFlixMedia = () => {
       <ToastContainer position="top-right" autoClose={5000} />
       <DynamicTabs
         tabs={tabsForUI}
-        initialActiveName={initialActiveName}
+        activeName={activeTab}
         onTabChange={setActiveTab}
       />
     </div>
