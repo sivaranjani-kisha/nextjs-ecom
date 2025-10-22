@@ -53,17 +53,14 @@ export async function GET() {
 
     // Step 1: Get top-level categories sorted by position
     const categories = await Category.find().sort({ position: 1 });
-
     // Step 2: For each category, get products and related brand details
     const categoriesWithProducts = await Promise.all(
       categories.map(async (cat) => {
-        // ✅ Get all descendant categories (including itself)
+
         const categoryIds = await getDescendantCategoryIds(cat._id);
 
-        // ✅ Fetch products under this category and its children
         const products = await Product.find({ category: { $in: categoryIds } });
 
-        //✅ Collect unique brand IDs
         const { Types } = require('mongoose');
 
         const brandIds = [...new Set(
@@ -72,7 +69,6 @@ export async function GET() {
             .filter(brandId => brandId && Types.ObjectId.isValid(brandId))
         )];
 
-        // ✅ Fetch brand details
         const brands = brandIds.length > 0  ? await Brand.find({ _id: { $in: brandIds } }) : [];
         return {
           ...cat.toObject(),

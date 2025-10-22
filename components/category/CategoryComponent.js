@@ -110,7 +110,6 @@ export default function CategoryPage() {
           groups[groupId].filters.push(filter);
         }
       });
-      console.log("Filter groups:", groups);
       setFilterGroups(groups);
       
       // Fetch products after setting up initial data

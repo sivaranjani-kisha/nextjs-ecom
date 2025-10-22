@@ -62,9 +62,30 @@ export default function SearchComponent() {
     const fetchInitialData = async (slug) => {
       try {
         setLoading(true);
-        let search_slug = slug;  
-        if(slug === "Televisions" ){
-          search_slug ="Televisions";
+        let search_slug = slug;
+        if( search_slug == "Large Appliance" ){
+          search_slug = "large-appliance";
+        }
+        if( search_slug == "Small Appliances" ){
+          search_slug = "small-appliances";
+        }
+        if( search_slug == "Televisions" ){
+          search_slug = "televisions";
+        }
+        if( search_slug == "Computers & Laptops" ){
+          search_slug = "computers-laptops";
+        }
+        if( search_slug == "Mobiles & Accessories" ){
+          search_slug = "mobiles-accessories";
+        }
+        if( search_slug == "Gadgets" ){
+          search_slug = "gadgets";
+        }
+        if( search_slug == "Accessories" ){
+          search_slug = "accessories";
+        }
+        if( search_slug == "Sound Systems" ){
+          search_slug = "sound-systems";
         }
         const categoryRes = await fetch(`/api/categories/${search_slug}`);
         const categoryData = await categoryRes.json();
@@ -812,12 +833,22 @@ const MAX = priceRange[1] || 100000;
                         />
                       )}
                     
-                      {Number(product.special_price) > 0 &&
-                        Number(product.special_price) < Number(product.price) && (
-                          <span className="absolute top-3 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
-                            {Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}% OFF
-                          </span>
-                      )}
+                      {(() => {
+                          const discount = Math.round(
+                            100-(Number(product.special_price) / Number(product.price)) * 100
+                          );
+
+                          return (
+                            Number(product.special_price) > 0 &&
+                            Number(product.special_price) < Number(product.price) &&
+                            discount > 0 && (
+                              <span className="absolute top-3 left-2 bg-red-500 text-white text-xs font-bold px-4 py-0.5 rounded z-10">
+                                {discount}% OFF
+                              </span>
+                            )
+                          );
+                        })()}
+
                     
                       <div className="absolute top-2 right-2">
                         <ProductCard productId={product._id} />

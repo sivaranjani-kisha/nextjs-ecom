@@ -56,6 +56,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
 
   // Fetch initial data
   useEffect(() => {
+    //alert('ssss');
     if (categorySlug && brandSlug) {
       fetchInitialData();
       fetchBrand();
@@ -68,7 +69,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
       setLoading(true);
       const res = await fetch(`/api/brand/categories/${categorySlug}/brand/${brandSlug}`);
       const data = await res.json();
-      ////////console.("Initial data fetched:", data);
+      //console.log("Initial data fetched:", data);
       setCategoryData({
         ...data,
         allCategoryIds: data.allCategoryIds || []
@@ -144,7 +145,22 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
     if (selectedFilters.subcategories.length > 0) {
       query.set('subcategoryIds', selectedFilters.subcategories.join(','));
     } */
-   
+    // Get current URL path
+    const url = window.location.pathname; // e.g., "/category/brand/televisions/samsung"
+
+    // Split and extract
+    const parts = url.split("/").filter(Boolean); 
+    // ["category", "brand", "televisions", "samsung"]
+
+    const categorySlugName = parts[2]; // "televisions"
+    const brandSlugName = parts[3];    // "samsung"
+
+    console.log(categorySlugName, brandSlugName);
+
+    // Assign to query or use anywhere
+    query.set('categorySlug', categorySlugName);
+    query.set('brandSlug', brandSlugName);
+
     query.set('page', pageNum);
     query.set('limit', itemsPerPage);
     query.set('minPrice', selectedFilters.price.min);
@@ -157,7 +173,7 @@ export default function CategoryBrandComponent({ categorySlug, brandSlug }) {
     const res = await fetch(`/api/product/filter/category-brand/main?${query}`);
    
     const { products, pagination: paginationData } = await res.json();
-
+console.log("Fetched products:", products);
     setProducts(products || []);
 
     if ((!products || products.length === 0) && pageNum === 1) {
