@@ -949,16 +949,23 @@ const cleanupFlixMedia = () => {
           ))}
         </div>
 
-        <div className="max-w-2xl mx-auto px-4 py-6 text-center">
-          {tabs.map((tab) => (
-            <div
-              key={tab.name}
-              style={{ display: active === tab.name ? "block" : "none" }}
-            >
-              {tab.content}
-            </div>
-          ))}
-        </div>
+        <div
+          className={
+            active === "overview"
+              ? "w-screen h-screen flex items-center justify-center px-4 py-6 text-center bg-gray-50"
+              : "max-w-2xl mx-auto px-4 py-6 text-center"
+          }
+      >
+        {tabs.map((tab) => (
+          <div
+            key={tab.name}
+            style={{ display: active === tab.name ? "block" : "none" }}
+          >
+            {tab.content}
+          </div>
+        ))}
+      </div>
+
       </div>
     );
   }
