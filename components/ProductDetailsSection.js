@@ -210,7 +210,8 @@ const handleTabClick = (tabId) => {
       console.error(error.message);
     }
   };
-  
+  const initialActiveName =
+  tabsForUI.find((tab) => tab.content && tab.content !== "")?.name || null;
   useEffect(() => {
     fetchBrand();
   }, []);
