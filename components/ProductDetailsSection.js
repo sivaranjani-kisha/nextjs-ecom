@@ -337,7 +337,8 @@ const buildFlixMinifyUrl = (p = {}, opts = {}) => {
     ftype: "button",
     d: distId,
     l,
-    dom: "flix-minisite",
+    // Render directly into the inpage container inside Overview
+    dom: "flix-inpage",
     p: "1",
     ssl: "1",
     dmn: typeof window !== "undefined" ? safeBtoa(window.location.hostname) : "",
@@ -894,7 +895,7 @@ const cleanupFlixMedia = () => {
   };
 
   // Small, self-contained tab component
-  function DynamicTabs({ tabs, initialActiveName: initName, onTabChange }) {
+  function DynamicTabs({ tabs, initialActiveName: initName, onTabChange, activeName }) {
     const hasContent = (c) => {
       if (c === null || c === undefined || c === false) return false;
       if (typeof c === "string") return c.trim().length > 0;
@@ -910,8 +911,19 @@ const cleanupFlixMedia = () => {
     };
 
     const defaultActive = initName || computeDefaultActive();
-    const [active, setActive] = useState(() => defaultActive);
-    const [mounted, setMounted] = useState(() => new Set(defaultActive ? [defaultActive] : []));
+    const [active, setActive] = useState(() => activeName || defaultActive);
+    const [mounted, setMounted] = useState(() => new Set((activeName || defaultActive) ? [activeName || defaultActive] : []));
+
+    // Sync internal state when parent drives active tab
+    useEffect(() => {
+      if (!activeName) return;
+      setActive(prev => (prev === activeName ? prev : activeName));
+      setMounted(prev => {
+        const next = new Set(prev);
+        next.add(activeName);
+        return next;
+      });
+    }, [activeName]);
 
     const onClickTab = (name) => {
       setActive(name);
@@ -923,6 +935,7 @@ const cleanupFlixMedia = () => {
       if (onTabChange) onTabChange(name);
     };
 
+    const currentActive = activeName || active;
     const titleize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
     return (
@@ -933,7 +946,7 @@ const cleanupFlixMedia = () => {
               key={tab.name}
               onClick={() => onClickTab(tab.name)}
               className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                active === tab.name
+                currentActive === tab.name
                   ? "border border-black text-black font-semibold"
                   : "text-gray-500 hover:text-black"
               }`}
@@ -946,11 +959,10 @@ const cleanupFlixMedia = () => {
         <div className="max-w-2xl mx-auto px-4 py-6 text-center">
           {tabs.map((tab) => {
             const isMounted = mounted.has(tab.name);
-            // Only append content once; keep node in DOM and toggle visibility
             return (
               <div
                 key={tab.name}
-                style={{ display: active === tab.name ? "block" : "none" }}
+                style={{ display: currentActive === tab.name ? "block" : "none" }}
               >
                 {isMounted ? tab.content : null}
               </div>
@@ -962,7 +974,8 @@ const cleanupFlixMedia = () => {
   }
 
   // Prepare tab contents (JSX) once; passed into DynamicTabs
-  const overviewContent = hasTabContent("overview") ? (
+  // Always render the Overview container so Flix can inject content even if product.overview is empty
+  const overviewContent = (
     <div className="mx-auto px-4 py-6 text-center">
       <div id="overview-tab">
         <div className="col-md-12">
@@ -970,7 +983,7 @@ const cleanupFlixMedia = () => {
         </div>
       </div>
     </div>
-  ) : null;
+  );
 
   const descriptionContent = (() => {
     // reuse existing helpers already declared in this file
@@ -1180,6 +1193,7 @@ const cleanupFlixMedia = () => {
         tabs={tabsForUI}
         initialActiveName={initialActiveName}
         onTabChange={setActiveTab}
+        activeName={activeTab}
       />
     </div>
   );
