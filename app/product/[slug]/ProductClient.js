@@ -1876,6 +1876,11 @@ const fetchBrand = async () => {
               />
             )}
             <div className="flex items-start gap-3 flex-1 min-w-0">
+              <Link
+                  href={`/product/${item.slug}`}
+                  className="block mb-1"
+                  onClick={() => handleProductClick(item)}
+                >
               {item.images?.[0] && (
                 <img
                   src={'/uploads/products/' + item.images[0]}
@@ -1883,6 +1888,7 @@ const fetchBrand = async () => {
                   className="w-16 h-16 object-contain flex-shrink-0"
                 />
               )}
+              </Link>
               <div className="text-sm flex-1 min-w-0">
                 <Link
                   href={`/product/${item.slug}`}
