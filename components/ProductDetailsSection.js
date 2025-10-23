@@ -12,9 +12,7 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["400","500","600"] });
 import { formatDistanceToNow, format } from "date-fns";
 import { useHeaderdetails } from '@/context/HeaderContext';
 import { ToastContainer, toast } from 'react-toastify';
-
 export default function ProductDetailsSection({ product, reviews=[], avgRating=0, reviewCount=0}) {
-
   const [brand, setBrand] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -52,7 +50,6 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
     }
   };
   const tabs = ["overview", "description", "videos", "reviews"];
-  
   // Check if a tab has content
   const hasTabContent = (tabId) => {
     const PLACEHOLDER = "There is no product overview available for this item.";
@@ -76,54 +73,48 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
         return false;
     }
   };
-
-// ✅ Find the first tab with content
-const getFirstTabWithContent = () => {
-  for (const tab of tabs) {
-    if (hasTabContent(tab)) return tab;
-  }
-  // fallback if all are empty
-  return "overview";
-};
-
-useEffect(() => {
-  if (product) {
-    // ✅ Check for Flix in-page content (image or embed)
-    const hasFlixInPage = (product.flix_data && (product.flix_data.inpage || product.flix_data.widget));
-    // ✅ Check if overview has content or images
-    const hasOverview =
-      (product.overview && product.overview.trim() !== "") ||
-      (product.overview_image &&
-        (Array.isArray(product.overview_image)
-          ? product.overview_image.length > 0
-          : product.overview_image.split(",").filter(Boolean).length > 0));
-
-    if (hasFlixInPage || hasOverview) {
-      setActiveTab("overview");
-    } else if (product.description && product.description.trim() !== "") {
-      setActiveTab("description");
-    } else if (product.video_url && product.video_url.trim() !== "") {
-      setActiveTab("videos");
-    } else if (product.reviews && product.reviews.length > 0) {
-      setActiveTab("reviews");
-    } else {
-      setActiveTab("overview"); // fallback default
+  const getFirstTabWithContent = () => {
+    for (const tab of tabs) {
+      if (hasTabContent(tab)) return tab;
     }
-  }
-}, [product]);
+    // fallback if all are empty
+    return "overview";
+  };
 
+  useEffect(() => {
+    if (product) {
+      // ✅ Check for Flix in-page content (image or embed)
+      const hasFlixInPage = (product.flix_data && (product.flix_data.inpage || product.flix_data.widget));
+      // ✅ Check if overview has content or images
+      const hasOverview =
+        (product.overview && product.overview.trim() !== "") ||
+        (product.overview_image &&
+          (Array.isArray(product.overview_image)
+            ? product.overview_image.length > 0
+            : product.overview_image.split(",").filter(Boolean).length > 0));
 
-
-// ✅ Set first available tab on mount
-/* useEffect(() => {
-  const firstAvailable = getFirstTabWithContent();
-  setActiveTab(firstAvailable);
-}, [product, reviews]); */
-
-// ✅ Handle tab switching (no disabling)
-const handleTabClick = (tabId) => {
-  setActiveTab(tabId);
-};
+      if (hasFlixInPage || hasOverview) {
+        setActiveTab("overview");
+      } else if (product.description && product.description.trim() !== "") {
+        setActiveTab("description");
+      } else if (product.video_url && product.video_url.trim() !== "") {
+        setActiveTab("videos");
+      } else if (product.reviews && product.reviews.length > 0) {
+        setActiveTab("reviews");
+      } else {
+        setActiveTab("overview"); // fallback default
+      }
+    }
+  }, [product]);
+  // ✅ Set first available tab on mount
+  /* useEffect(() => {
+    const firstAvailable = getFirstTabWithContent();
+    setActiveTab(firstAvailable);
+  }, [product, reviews]); */
+  // ✅ Handle tab switching (no disabling)
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId);
+  };
 
    // Function to find the next available tab with content
   const findNextAvailableTab = (currentTab) => {
@@ -147,7 +138,6 @@ const handleTabClick = (tabId) => {
     // If no tabs have content, return the first tab
     return tabs[0];
   };
-
   //  // Effect to handle tab content availability
   //   useEffect(() => {
   //     if (!hasTabContent(activeTab)) {
@@ -169,9 +159,7 @@ const handleTabClick = (tabId) => {
       }
     }
   }, [activeTab, product.category?._id]);
-
   const reviewsRef = useRef(null);
- 
   useEffect(() => {
     if (window.location.hash === "#reviews") {
       setActiveTab("reviews");
@@ -187,9 +175,6 @@ const handleTabClick = (tabId) => {
       }, 300);
     }
   }, []);
-
-
- 
   const fetchBrand = async () => {
     try {
       const response = await fetch("/api/brand");
@@ -222,11 +207,9 @@ const handleTabClick = (tabId) => {
   // Removed premature initialActiveName calculation; it will be defined after tabsForUI.
   // const initialActiveName =
   //   tabsForUI.find((tab) => tab.content && tab.content !== "")?.name || null;
-
   useEffect(() => {
     fetchBrand();
   }, []);
-
   // Derive brandName from the product object or fallback fields; update when product/brand list changes
   useEffect(() => {
     if (!product) return;
@@ -249,13 +232,12 @@ const handleTabClick = (tabId) => {
     }
   }, [product, brand]); // runs when product or brand options are ready
 
-    useEffect(() => {
+  useEffect(() => {
     if (activeTab === "overview") {
       const timer = setTimeout(() => {
         console.log("[Flix] overview tab effect -> initializeFlixMedia()");
         initializeFlixMedia();
       }, 300);
- 
       return () => clearTimeout(timer);
     }
   }, [activeTab, brandName]); // include brandName so init runs after it becomes available
@@ -302,26 +284,38 @@ const handleTabClick = (tabId) => {
     }
     // run when product changes or cache becomes available
   }, [product?._id, flixLoaded]);
-
   // Avoid re-initializing Flix if already loaded once for this product
   const initializeFlixMedia = () => {
+    // Strong guards to avoid multiple loads
     if (flixInitializedRef.current) {
       console.log("[Flix] already initialized for this product. Skipping.");
       return;
     }
+    const key = product?._id ? `flixLoaded:${product._id}` : null;
+    if (typeof window !== "undefined" && key && sessionStorage.getItem(key) === "1") {
+      console.log("[Flix] session says already loaded. Skipping init.");
+      flixInitializedRef.current = true;
+      return;
+    }
+    const existingContainer = document.getElementById("flix-inpage");
+    if (existingContainer && existingContainer.children.length > 0) {
+      console.log("[Flix] inpage container already has content. Skipping init.");
+      flixInitializedRef.current = true;
+      return;
+    }
+
     console.log("Initializing FlixMedia with brand:", brandName);
- 
-    // Clean up existing FlixMedia elements
+
+    // Clean up existing empty containers only
     const existingInpage = document.getElementById("flix-inpage");
     const existingMinisite = document.getElementById("flix-minisite");
- 
-    if (existingInpage) existingInpage.remove();
-    if (existingMinisite) existingMinisite.remove();
- 
+    if (existingInpage && existingInpage.children.length === 0) existingInpage.remove();
+    if (existingMinisite && existingMinisite.children.length === 0) existingMinisite.remove();
+
     // Create containers for FlixMedia
     const overviewTab = document.querySelector("#overview-tab .col-md-12");
     const keyFea = document.querySelector(".key-fea");
- 
+
     if (overviewTab && !document.getElementById("flix-inpage")) {
       const inpageDiv = document.createElement("div");
       inpageDiv.id = "flix-inpage";
@@ -329,7 +323,7 @@ const handleTabClick = (tabId) => {
       overviewTab.prepend(inpageDiv);
       console.log("Created flix-inpage container");
     }
- 
+
     if (keyFea && !document.getElementById("flix-minisite")) {
       const miniSiteDiv = document.createElement("div");
       miniSiteDiv.id = "flix-minisite";
@@ -337,44 +331,39 @@ const handleTabClick = (tabId) => {
       keyFea.insertAdjacentElement("afterend", miniSiteDiv);
       console.log("Created flix-minisite container");
     }
- 
-    // Remove existing script
+
+    // Remove existing script reference and add fallback
     if (flixScriptRef.current) {
       flixScriptRef.current.remove();
       flixScriptRef.current = null;
     }
- 
-    // Set up fallback timeout
+
     const fallbackTimeout = setTimeout(() => {
       if (!flixInitializedRef.current) {
         console.log("FlixMedia failed to load, showing fallback message");
         showFallbackMessage();
       }
-    }, 3000); // Wait 3 seconds for FlixMedia to load
- 
-    // Add: debug before invoking loader
+    }, 3000);
+
     console.log("[Flix] initialize -> calling loadFlixScript(fallbackTimeout)");
-    // Load FlixMedia script with dynamic brand name
     loadFlixScript(fallbackTimeout);
   };
- 
-// helper to build Flix minify service URL (matches original working format)
-const safeBtoa = (str) => {
-  try { return btoa(str); } catch { return ""; }
-};
-// UPDATED: accept opts (to pass brandName), include brand_code + ean/upc/sku
-const buildFlixMinifyUrl = (p = {}, opts = {}) => {
+
+  // helper to build Flix minify service URL (matches original working format)
+  const safeBtoa = (str) => {
+    try { return btoa(str); } catch { return ""; }
+  };
+  // UPDATED: accept opts (to pass brandName), include brand_code + ean/upc/sku
+  const buildFlixMinifyUrl = (p = {}, opts = {}) => {
   const { mpn, ean, upc, sku, brandCode } = resolveFlixIds(p);
   const distId = "17089";
   const l = "in";
-
   // NEW: primary identifier selection with logging
   const primaryCode = (opts && opts.code) || p.brand_code || p.item_code || null;
   console.log("[Flix] primary identifier selected (brand_code || item_code):", primaryCode, {
     brand_code: p?.brand_code,
     item_code: p?.item_code,
   });
-
   const params = new URLSearchParams({
     url: "/clamps/modularvnew/js/service.js",
     v: "32",
@@ -388,309 +377,311 @@ const buildFlixMinifyUrl = (p = {}, opts = {}) => {
     dmn: typeof window !== "undefined" ? safeBtoa(window.location.hostname) : "",
     ext: ".js",
   });
-
   // Use the chosen code as the primary identifier for mpn
   const mpnToUse = primaryCode || mpn;
   if (mpnToUse) params.append("mpn", String(mpnToUse));
-
   if (ean) params.append("ean", ean);
   if (upc) params.append("upc", upc);
   if (sku) params.append("sku", sku);
-
   // Keep passing brand_code if available
   if (brandCode) params.append("brand_code", brandCode);
-
   // OPTIONAL: pass brand name if available
   if (opts.brandName) params.append("brand", opts.brandName);
-
   const finalUrl = `https://media.flixcar.com/modular/js/minify/${distId}/?${params.toString()}`;
-  console.log("[Flix] minify url:", finalUrl);
-  return finalUrl;
-};
-
-const loadFlixScript = (fallbackTimeout) => {
-  const headID = document.getElementsByTagName("head")[0];
-  console.log(brandName, product);
-  const flixScript = document.createElement("script");
-  flixScript.type = "text/javascript";
-  flixScript.async = true;
-
-  // NEW: choose identifier code and log it
-  const code = product?.brand_code || product?.item_code || null;
-  console.log("[Flix] using identifier code for request:", code, {
-    brand_code: product?.brand_code,
-    item_code: product?.item_code,
-  });
-
-  // UPDATED: pass code to URL builder
-  flixScript.src = buildFlixMinifyUrl(product, { brandName, code });
-
-  flixScript.onload = () => {
+    console.log("[Flix] minify url:", finalUrl);
+    return finalUrl;
+  };
+  const loadFlixScript = (fallbackTimeout) => {
+    const headID = document.getElementsByTagName("head")[0];
     console.log(brandName, product);
-    console.log("FlixMedia script loaded with brand:", brandName);
-    clearTimeout(fallbackTimeout);
-    checkFlixMediaContent();
-  };
 
-  flixScript.onerror = (error) => {
-    console.error("Failed to load FlixMedia script:", error);
-    clearTimeout(fallbackTimeout);
-    showFallbackMessage();
-  };
+    // NEW: avoid duplicate script tags for same src
+    const code = product?.brand_code || product?.item_code || null;
+    console.log("[Flix] using identifier code for request:", code, {
+      brand_code: product?.brand_code,
+      item_code: product?.item_code,
+    });
+    const src = buildFlixMinifyUrl(product, { brandName, code });
 
-  headID.appendChild(flixScript);
-  flixScriptRef.current = flixScript;
-
-  setTimeout(() => {
-    if (window.FlixMedia && typeof window.FlixMedia.load === 'function') {
-      console.log("Manually triggering FlixMedia.load()");
-      window.FlixMedia.load();
-    }
-  }, 500);
-};
- 
-// Add: safely get FlixMedia content array (tries common locations, then falls back to DOM)
-const getFlixMediaArray = () => {
-  try {
-    if (window?.FlixMedia && Array.isArray(window.FlixMedia.content)) return window.FlixMedia.content;
-    if (window?.FlixMedia && Array.isArray(window.FlixMedia.inpage)) return window.FlixMedia.inpage;
-    if (Array.isArray(window?.FlixMediaContent)) return window.FlixMediaContent;
-  } catch (_) {}
-  // Fallback: derive from existing flix-inpage DOM as HTML strings
-  try {
-    const inpage = document.getElementById('flix-inpage');
-    if (inpage && inpage.children.length > 0) {
-      return Array.from(inpage.children).map(el => el.outerHTML);
-    }
-  } catch (_) {}
-  return [];
-};
-
-// Add: append items into the Overview tab without replacing existing content
-const appendFlixInpageContent = () => {
-  // async append to avoid blocking rendering
-  setTimeout(() => {
-    const overviewCol = document.querySelector('#overview-tab .col-md-12');
-    if (!overviewCol) return;
-
-    // ensure main container exists
-    let container = document.getElementById('flix-inpage');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'flix-inpage';
-      container.className = 'flix-inpage-container';
-      overviewCol.prepend(container);
-    }
-
-    // create/ensure a dedicated dynamic wrapper to avoid mixing with provider DOM
-    let dynWrap = container.querySelector('[data-flix-dyn-wrap]');
-    if (!dynWrap) {
-      dynWrap = document.createElement('div');
-      dynWrap.setAttribute('data-flix-dyn-wrap', '');
-      dynWrap.className = 'mt-3 space-y-2 text-left';
-      container.appendChild(dynWrap);
-    }
-
-    // prevent duplicate appends on repeated success triggers
-    if (dynWrap.getAttribute('data-flix-appended') === '1') return;
-
-    const items = getFlixMediaArray();
-
-    if (!items || items.length === 0) {
-      // handle empty gracefully
-      const empty = document.createElement('p');
-      empty.className = 'text-gray-500 text-sm';
-      empty.textContent = 'No additional overview content available.';
-      dynWrap.appendChild(empty);
-      dynWrap.setAttribute('data-flix-appended', '1');
+    const existing = document.querySelector(`script[data-flix="true"][data-flix-src="${src}"]`);
+    if (existing) {
+      console.log("[Flix] script already present, reusing and checking content");
+      flixScriptRef.current = existing;
+      clearTimeout(fallbackTimeout);
+      // give it a moment then check content
+      setTimeout(checkFlixMediaContent, 500);
       return;
     }
 
-    const frag = document.createDocumentFragment();
-    items.forEach((it) => {
-      const block = document.createElement('div');
-      block.className = 'p-3 bg-white rounded-md shadow-sm';
+    const flixScript = document.createElement("script");
+    flixScript.type = "text/javascript";
+    flixScript.async = true;
+    flixScript.setAttribute("data-flix", "true");
+    flixScript.setAttribute("data-flix-src", src);
+    flixScript.src = src;
 
-      if (typeof it === 'string') {
-        // if provider gave ready HTML, append as-is
-        block.innerHTML = it;
-      } else if (it && typeof it === 'object') {
-        const title = it.title || it.name;
-        const desc = it.description || it.text || it.content || '';
+    flixScript.onload = () => {
+      console.log(brandName, product);
+      console.log("FlixMedia script loaded with brand:", brandName);
+      clearTimeout(fallbackTimeout);
+      checkFlixMediaContent();
+    };
 
-        if (title) {
-          const h = document.createElement('h3');
-          h.className = 'text-sm font-semibold';
-          h.textContent = title;
-          block.appendChild(h);
-        }
-        if (desc) {
-          const p = document.createElement('p');
-          p.className = 'text-xs text-gray-700 mt-1';
-          p.innerHTML = typeof desc === 'string' ? desc : JSON.stringify(desc);
-          block.appendChild(p);
-        }
-        if (!title && !desc) {
-          const pre = document.createElement('pre');
-          pre.className = 'text-xs text-gray-600 whitespace-pre-wrap';
-          pre.textContent = JSON.stringify(it, null, 2);
-          block.appendChild(pre);
-        }
-      } else {
-        const p = document.createElement('p');
-        p.className = 'text-xs text-gray-700';
-        p.textContent = String(it);
-        block.appendChild(p);
+    flixScript.onerror = (error) => {
+      console.error("Failed to load FlixMedia script:", error);
+      clearTimeout(fallbackTimeout);
+      showFallbackMessage();
+    };
+
+    headID.appendChild(flixScript);
+    flixScriptRef.current = flixScript;
+
+    setTimeout(() => {
+      if (window.FlixMedia && typeof window.FlixMedia.load === 'function') {
+        console.log("Manually triggering FlixMedia.load()");
+        window.FlixMedia.load();
+      }
+    }, 500);
+  };
+  // Add: safely get FlixMedia content array (tries common locations, then falls back to DOM)
+  const getFlixMediaArray = () => {
+    try {
+      if (window?.FlixMedia && Array.isArray(window.FlixMedia.content)) return window.FlixMedia.content;
+      if (window?.FlixMedia && Array.isArray(window.FlixMedia.inpage)) return window.FlixMedia.inpage;
+      if (Array.isArray(window?.FlixMediaContent)) return window.FlixMediaContent;
+    } catch (_) {}
+    // Fallback: derive from existing flix-inpage DOM as HTML strings
+    try {
+      const inpage = document.getElementById('flix-inpage');
+      if (inpage && inpage.children.length > 0) {
+        return Array.from(inpage.children).map(el => el.outerHTML);
+      }
+    } catch (_) {}
+    return [];
+  };
+  // Add: append items into the Overview tab without replacing existing content
+  const appendFlixInpageContent = () => {
+    // async append to avoid blocking rendering
+    setTimeout(() => {
+      const overviewCol = document.querySelector('#overview-tab .col-md-12');
+      if (!overviewCol) return;
+
+      // ensure main container exists
+      let container = document.getElementById('flix-inpage');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'flix-inpage';
+        container.className = 'flix-inpage-container';
+        overviewCol.prepend(container);
       }
 
-      frag.appendChild(block);
-    });
+      // create/ensure a dedicated dynamic wrapper
+      let dynWrap = container.querySelector('[data-flix-dyn-wrap]');
+      if (!dynWrap) {
+        dynWrap = document.createElement('div');
+        dynWrap.setAttribute('data-flix-dyn-wrap', '');
+        dynWrap.className = 'mt-3 space-y-2 text-left';
+        container.appendChild(dynWrap);
+      }
 
-    dynWrap.appendChild(frag);
-    dynWrap.setAttribute('data-flix-appended', '1');
-  }, 0);
-};
+      const items = getFlixMediaArray();
 
-const checkFlixMediaContent = () => {
-  // Check if FlixMedia containers have content after loading
-  const checkContent = () => {
-    const flixInpage = document.getElementById("flix-inpage");
-    const flixMinisite = document.getElementById("flix-minisite");
-    
-    const hasInpageContent = flixInpage && flixInpage.children.length > 0;
-    const hasMinisiteContent = flixMinisite && flixMinisite.children.length > 0;
-    
-    if (!hasInpageContent && !hasMinisiteContent) {
-      // Wait a bit more and check again
-      setTimeout(() => {
-        const finalCheckInpage = document.getElementById("flix-inpage");
-        const finalCheckMinisite = document.getElementById("flix-minisite");
-        
-        const finalHasInpage = finalCheckInpage && finalCheckInpage.children.length > 0;
-        const finalHasMinisite = finalCheckMinisite && finalCheckMinisite.children.length > 0;
-        
-        if (!finalHasInpage && !finalHasMinisite) {
-          console.log("No FlixMedia content found for this product");
-          showFallbackMessage();
+      // signature-based idempotency
+      let sig = "";
+      try {
+        const j = JSON.stringify(items);
+        sig = `${j.length}:${j.slice(0, 256)}`;
+      } catch {
+        sig = String(items?.length || 0);
+      }
+      if (dynWrap.dataset.sig === sig) {
+        // same content already appended
+        return;
+      }
+
+      // clear previous appended content before writing new
+      while (dynWrap.firstChild) dynWrap.removeChild(dynWrap.firstChild);
+
+      if (!items || items.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'text-gray-500 text-sm';
+        empty.textContent = 'No additional overview content available.';
+        dynWrap.appendChild(empty);
+        dynWrap.dataset.sig = sig || "empty";
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+      items.forEach((it) => {
+        const block = document.createElement('div');
+        block.className = 'p-3 bg-white rounded-md shadow-sm';
+
+        if (typeof it === 'string') {
+          block.innerHTML = it;
+        } else if (it && typeof it === 'object') {
+          const title = it.title || it.name;
+          const desc = it.description || it.text || it.content || '';
+
+          if (title) {
+            const h = document.createElement('h3');
+            h.className = 'text-sm font-semibold';
+            h.textContent = title;
+            block.appendChild(h);
+          }
+          if (desc) {
+            const p = document.createElement('p');
+            p.className = 'text-xs text-gray-700 mt-1';
+            p.innerHTML = typeof desc === 'string' ? desc : JSON.stringify(desc);
+            block.appendChild(p);
+          }
+          if (!title && !desc) {
+            const pre = document.createElement('pre');
+            pre.className = 'text-xs text-gray-600 whitespace-pre-wrap';
+            pre.textContent = JSON.stringify(it, null, 2);
+            block.appendChild(pre);
+          }
         } else {
-          flixInitializedRef.current = true;
-          // remove any fallback message if content eventually loads
-          const fallbackMessage = document.querySelector(".no-overview-message");
-          if (fallbackMessage) fallbackMessage.remove();
-          console.log("FlixMedia content loaded successfully");
-          // Trigger: append FlixMedia content to Overview tab
-          appendFlixInpageContent();
+          const p = document.createElement('p');
+          p.className = 'text-xs text-gray-700';
+          p.textContent = String(it);
+          block.appendChild(p);
         }
-      }, 2000); // Wait 2 more seconds for content to render
-    } else {
+
+        frag.appendChild(block);
+      });
+
+      dynWrap.appendChild(frag);
+      dynWrap.dataset.sig = sig;
+    }, 0);
+  };
+  const checkFlixMediaContent = () => {
+    // Check if FlixMedia containers have content after loading
+    const applySuccess = () => {
       flixInitializedRef.current = true;
-      // remove any fallback message if content is present
+      // persist loaded state per product to avoid re-init
+      try {
+        if (product?._id) {
+          sessionStorage.setItem(`flixLoaded:${product._id}`, '1');
+          setFlixLoaded(true);
+        }
+      } catch {}
+      // remove any fallback message if content eventually loads
       const fallbackMessage = document.querySelector(".no-overview-message");
       if (fallbackMessage) fallbackMessage.remove();
       console.log("FlixMedia content loaded successfully");
       // Trigger: append FlixMedia content to Overview tab
       appendFlixInpageContent();
-    }
+    };
 
-    // NOTE: Removed premature message that showed when only flix-inpage was empty.
+    const checkContent = () => {
+      const flixInpage = document.getElementById("flix-inpage");
+      const flixMinisite = document.getElementById("flix-minisite");
+
+      const hasInpageContent = flixInpage && flixInpage.children.length > 0;
+      const hasMinisiteContent = flixMinisite && flixMinisite.children.length > 0;
+
+      if (!hasInpageContent && !hasMinisiteContent) {
+        setTimeout(() => {
+          const finalCheckInpage = document.getElementById("flix-inpage");
+          const finalCheckMinisite = document.getElementById("flix-minisite");
+
+          const finalHasInpage = finalCheckInpage && finalCheckInpage.children.length > 0;
+          const finalHasMinisite = finalCheckMinisite && finalCheckMinisite.children.length > 0;
+
+          if (!finalHasInpage && !finalHasMinisite) {
+            console.log("No FlixMedia content found for this product");
+            showFallbackMessage();
+          } else {
+            applySuccess();
+          }
+        }, 2000);
+      } else {
+        applySuccess();
+      }
+    };
+
+    // Initial check after a short delay
+    setTimeout(checkContent, 1000);
   };
-
-  // Initial check after a short delay
-  setTimeout(checkContent, 1000);
-};
- 
-const showFallbackMessage = () => {
-  // Remove FlixMedia containers if they exist but are empty
-  const flixInpage = document.getElementById("flix-inpage");
-  const flixMinisite = document.getElementById("flix-minisite");
- 
-  if (flixInpage && flixInpage.children.length === 0) {
-    flixInpage.remove();
-  }
- 
-  if (flixMinisite && flixMinisite.children.length === 0) {
-    flixMinisite.remove();
-  }
- 
-  // Create and show fallback message
-  const overviewTab = document.querySelector("#overview-tab .col-md-12");
-  /* if (overviewTab && !document.querySelector(".no-overview-message")) {
-    const fallbackMessage = document.createElement("p");
-    fallbackMessage.className = "no-overview-message text-gray-500 text-center py-4";
-    fallbackMessage.textContent = "There is no product overview available for this item.";
-    overviewTab.appendChild(fallbackMessage);
-  } */
-
+  const showFallbackMessage = () => {
+    // Remove FlixMedia containers if they exist but are empty
+    const flixInpage = document.getElementById("flix-inpage");
+    const flixMinisite = document.getElementById("flix-minisite");
+    if (flixInpage && flixInpage.children.length === 0) {
+      flixInpage.remove();
+    }
+    if (flixMinisite && flixMinisite.children.length === 0) {
+      flixMinisite.remove();
+    }
+    // Create and show fallback message
+    const overviewTab = document.querySelector("#overview-tab .col-md-12");
+    /* if (overviewTab && !document.querySelector(".no-overview-message")) {
+      const fallbackMessage = document.createElement("p");
+      fallbackMessage.className = "no-overview-message text-gray-500 text-center py-4";
+      fallbackMessage.textContent = "There is no product overview available for this item.";
+      overviewTab.appendChild(fallbackMessage);
+    } */
     if (overviewTab) {
-  // 🧹 Clear existing images/messages first to avoid duplication
-  overviewTab.innerHTML = "";
+      overviewTab.innerHTML = "";
+      if (product.overview_image && product.overview_image.length > 0) {
+        const images = Array.isArray(product.overview_image)
+          ? product.overview_image
+          : product.overview_image.split(",");
 
-  if (product.overview_image && product.overview_image.length > 0) {
-    const images = Array.isArray(product.overview_image)
-      ? product.overview_image
-      : product.overview_image.split(",");
-
-    images.forEach((imgName) => {
-      const img = document.createElement("img");
-      img.src = `/uploads/products/${imgName.trim()}`;
-      img.alt = "Product Overview";
-      img.className =
-        "w-full h-auto object-contain rounded-lg shadow-lg my-4";
-      overviewTab.appendChild(img);
-    });
-  } else {
-    const fallbackMessage = document.createElement("p");
-    fallbackMessage.className =
-      "no-overview-message text-gray-500 text-center py-4";
-    fallbackMessage.textContent =
-      "There is no product overview available for this item.";
-    overviewTab.appendChild(fallbackMessage);
-  }
-}
-
-
- 
-  flixInitializedRef.current = false;
-};
- 
-const cleanupFlixMedia = () => {
-  console.log("Cleaning up FlixMedia...");
- 
-  if (flixScriptRef.current) {
-    flixScriptRef.current.remove();
-    flixScriptRef.current = null;
-  }
- 
-  const flixInpage = document.getElementById("flix-inpage");
-  const flixMinisite = document.getElementById("flix-minisite");
- 
-  if (flixInpage) {
-    flixInpage.remove();
-  }
- 
-  if (flixMinisite) {
-    flixMinisite.remove();
-  }
- 
-  // Also remove fallback message if it exists
-  const fallbackMessage = document.querySelector(".no-overview-message");
-  if (fallbackMessage) {
-    fallbackMessage.remove();
-  }
- 
-  const flixFrames = document.querySelectorAll('iframe[src*="flixmedia"]');
-  flixFrames.forEach(frame => frame.remove());
- 
-  flixInitializedRef.current = false;
-};
- 
+        images.forEach((imgName) => {
+          const img = document.createElement("img");
+          img.src = `/uploads/products/${imgName.trim()}`;
+          img.alt = "Product Overview";
+          img.className =
+            "w-full h-auto object-contain rounded-lg shadow-lg my-4";
+          overviewTab.appendChild(img);
+        });
+      } else {
+        const fallbackMessage = document.createElement("p");
+        fallbackMessage.className =
+          "no-overview-message text-gray-500 text-center py-4";
+        fallbackMessage.textContent =
+          "There is no product overview available for this item.";
+        overviewTab.appendChild(fallbackMessage);
+      }
+    }
+    flixInitializedRef.current = false;
+  };
+  const cleanupFlixMedia = () => {
+    console.log("Cleaning up FlixMedia...");
+  
+    if (flixScriptRef.current) {
+      flixScriptRef.current.remove();
+      flixScriptRef.current = null;
+    }
+  
+    const flixInpage = document.getElementById("flix-inpage");
+    const flixMinisite = document.getElementById("flix-minisite");
+  
+    if (flixInpage) {
+      flixInpage.remove();
+    }
+  
+    if (flixMinisite) {
+      flixMinisite.remove();
+    }
+  
+    // Also remove fallback message if it exists
+    const fallbackMessage = document.querySelector(".no-overview-message");
+    if (fallbackMessage) {
+      fallbackMessage.remove();
+    }
+  
+    const flixFrames = document.querySelectorAll('iframe[src*="flixmedia"]');
+    flixFrames.forEach(frame => frame.remove());
+  
+    flixInitializedRef.current = false;
+  };
   useEffect(() => {
     return () => {
       cleanupFlixMedia();
     };
   }, []);
-
-
   const fetchRelatedProducts = async () => {
     try {
       setLoadingRelated(true);
@@ -707,7 +698,6 @@ const cleanupFlixMedia = () => {
       setLoadingRelated(false);
     }
   };
-
   // put this near the top of your component (before return)
   const parseJSONSafe = (value) => {
     if (!value) return null;
@@ -747,7 +737,6 @@ const cleanupFlixMedia = () => {
 
     return null; // couldn't parse
   };
-
   const decodeAndClean = (str) => {
     if (!str) return "";
 
@@ -761,8 +750,6 @@ const cleanupFlixMedia = () => {
 
     return decoded.trim();
   };
-
-
   const fetchRecentlyViewed = async () => {
     try {
       setLoadingRecentlyViewed(true);
@@ -778,7 +765,6 @@ const cleanupFlixMedia = () => {
       setLoadingRecentlyViewed(false);
     }
   };
-
   const renderProductCard = (product) => {
     const discountPercentage = product.special_price 
       ? Math.round(((product.price - product.special_price) / product.price) * 100)
@@ -841,7 +827,6 @@ const cleanupFlixMedia = () => {
       </div>
     );
   };
-
   const renderLoadingSkeleton = (count = 4) => {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
@@ -857,7 +842,6 @@ const cleanupFlixMedia = () => {
       </div>
     );
   };
-
   function formatReviewDate(date) {
     const reviewDate = new Date(date);
     const now = new Date();
@@ -869,13 +853,11 @@ const cleanupFlixMedia = () => {
       return format(reviewDate, "MMM d, yyyy"); 
     }
   }
-
   const [reviewForm, setReviewForm] = useState({
     title: "",
     rating: 0,
     comment: "",
   });
-
   const [submitting, setSubmitting] = useState(false);
   const userId = "66f03a7b8f...";
 
@@ -937,7 +919,6 @@ const cleanupFlixMedia = () => {
       setSubmitting(false);
     }
   };
-
   // Small, controlled tab component: keep Overview mounted to preserve injected DOM
   function DynamicTabs({ tabs, activeName, onTabChange }) {
     const titleize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
@@ -978,7 +959,6 @@ const cleanupFlixMedia = () => {
       </div>
     );
   }
-
   // Prepare tab contents (JSX) once; passed into DynamicTabs
   // Always render the Overview container so Flix can inject content even if product.overview is empty
   const overviewContent = (
@@ -990,7 +970,6 @@ const cleanupFlixMedia = () => {
       </div>
     </div>
   );
-
   const descriptionContent = (() => {
     // reuse existing helpers already declared in this file
     const descObj = parseJSONSafe(product?.description);
@@ -1108,32 +1087,6 @@ const cleanupFlixMedia = () => {
       </div>
     );
   })();
- {/*   {activeTab === "videos" && (
-          <div>
-            <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Product Videos</h2>
-            {tabData.videos.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3 sm:gap-4 mt-2 sm:mt-4">
-                {tabData.videos.map((video, index) => (
-                  <div key={index} className="aspect-w-16 aspect-h-9">
-                    <iframe
-                      className="w-full h-48 sm:h-64 rounded-lg"
-                      src={video.url}
-                      title={video.title || `Product Video ${index + 1}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                    {video.title && (
-                      <p className="mt-1 sm:mt-2 font-medium text-gray-800 text-sm sm:text-base">{video.title}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">No videos available for this product.</p>
-            )}
-          </div>
-        )} */}
-
   const reviewsContent = (
     <div>
       <form onSubmit={handleReviewSubmit} className="bg-white p-4 rounded-md shadow mt-3">
@@ -1174,14 +1127,12 @@ const cleanupFlixMedia = () => {
       )}
     </div>
   );
-
   // Build tabsForUI (name + content)
   const tabsForUI = [
     { name: "overview", content: overviewContent },
     { name: "description", content: descriptionContent },
     { name: "reviews", content: reviewsContent },
   ];
-
   // Compute initialActiveName AFTER tabsForUI is initialized
   const initialActiveName = (() => {
     const PLACEHOLDER = "There is no product overview available for this item.";
