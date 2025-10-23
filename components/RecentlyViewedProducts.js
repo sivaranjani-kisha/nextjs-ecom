@@ -214,77 +214,72 @@ const RecentlyViewedProducts = () => {
                     >
                       
                       {/* Product Image */}
-                      <div className="relative w-full h-[210px] group overflow-hidden rounded-t-lg aspect-square">
+                      {/* Product Image */}
+<div className="relative w-full h-[210px] group overflow-hidden rounded-t-lg aspect-square">
+  <Link
+    href={`/product/${product.slug}`}
+    onClick={() => handleProductClick(product)}
+    className="block w-full h-full"
+  >
+    {/* Default Image */}
+    {product.images?.[0] && (
+      <Image
+        src={
+          product.images[0].startsWith("http")
+            ? product.images[0]
+            : `/uploads/products/${product.images[0]}`
+        }
+        alt={product.name}
+        fill
+        className={`object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out 
+          ${product.images[1]
+            ? "group-hover:opacity-0"   // fade out if second image exists
+            : "group-hover:scale-110"   // zoom if only one image
+          }`}
+        sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+        unoptimized
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = "/uploads/products/placeholder.jpg";
+        }}
+      />
+    )}
 
-                        {product.images?.[0] && (
-                          <>
-                            {/* Default Image */}
-                            <Image
-                              src={
-                                product.images[0].startsWith("http")
-                                  ? product.images[0]
-                                  : `/uploads/products/${product.images[0]}`
-                              }
-                              alt={product.name}
-                              fill
-                
+    {/* Hover Image (if available) */}
+    {product.images?.[1] && (
+      <Image
+        src={
+          product.images[1].startsWith("http")
+            ? product.images[1]
+            : `/uploads/products/${product.images[1]}`
+        }
+        alt={product.name}
+        fill
+        className="object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out opacity-0 group-hover:opacity-100 group-hover:scale-110"
+        sizes="(max-width: 640px) 50vw, 33vw, 25vw"
+        unoptimized
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = `/uploads/products/${product.images[0]}`;
+        }}
+      />
+    )}
+  </Link>
 
-                              className={`object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out 
-                              ${product.images[1] 
-                                ? "group-hover:opacity-0"   // if 2nd image → fade out
-                                : "group-hover:scale-110"   // if only 1 image → zoom
-                              }`}
+  {/* Discount Badge */}
+  {Number(product.special_price) > 0 &&
+    Number(product.special_price) < Number(product.price) && (
+      <span className="absolute top-2 left-2 bg-orange-500 tracking-wider text-white text-xs font-bold px-2 py-1 rounded z-20">
+        -{Math.round(100 - (Number(product.special_price) / Number(product.price)) * 100)}%
+      </span>
+    )}
 
+  {/* Wishlist Icon */}
+  <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+    <ProductCard productId={product._id} isOutOfStock={product.quantity === 0} />
+  </div>
+</div>
 
-                              sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                              unoptimized
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "/uploads/products/placeholder.jpg";
-                              }}
-                            />
-
-                            {/* Hover Image (second image if available) */}
-                            {product.images[1] && (
-                              <Image
-                                src={
-                                  product.images[1].startsWith("http")
-                                    ? product.images[1]
-                                    : `/uploads/products/${product.images[1]}`
-                                }
-                                alt={product.name}
-                                fill                
-                                className="object-contain p-2 md:p-4 transition-all duration-1000 ease-in-out opacity-0 group-hover:opacity-100 group-hover:scale-110"
-                                sizes="(max-width: 640px) 50vw, 33vw, 25vw"
-                                unoptimized
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = `/uploads/products/${product.images[0]}`;
-                                }}
-                              />
-                            )}
-                          </>
-                        )}
-                                                  
-                        {/* Gray overlay on hover */}
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-50 transition-opacity duration-300 z-10"></div>
-
-                        {/* Discount Badge (always visible) */}
-                        {Number(product.special_price) > 0 &&
-                          Number(product.special_price) < Number(product.price) && (
-                            <span className="absolute top-2 left-2 bg-orange-500 tracking-wider text-white text-xs font-bold px-2 py-1 rounded z-20">
-                              -{Math.round(
-                                100 - (Number(product.special_price) / Number(product.price)) * 100
-                              )}
-                              % 
-                            </span>
-                          )}
-
-                        {/* Wishlist (only show on hover) */}
-                        <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <ProductCard productId={product._id} isOutOfStock={product.quantity === 0} />
-                        </div>
-                      </div>
 
 
                       {/* Product Info */}
