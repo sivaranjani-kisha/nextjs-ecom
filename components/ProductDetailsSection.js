@@ -240,7 +240,19 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [activeTab, brandName]); // include brandName so init runs after it becomes available
+  }, [activeTab, brandName]);
+
+  // Trigger only FlixMedia.load() on overview re-activation when already loaded (no append)
+  useEffect(() => {
+    if (activeTab === 'overview' && (flixLoaded || flixInitializedRef.current)) {
+      try {
+        if (typeof window !== 'undefined' && window.FlixMedia && typeof window.FlixMedia.load === 'function') {
+          console.log('[Flix] overview re-activate -> FlixMedia.load() only (no append)');
+          window.FlixMedia.load();
+        }
+      } catch {}
+    }
+  }, [activeTab, flixLoaded]);
 
   // Add: one-time fallback init so loadFlixScript runs even if Overview isn’t active initially
   useEffect(() => {
@@ -459,124 +471,33 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
     } catch (_) {}
     return [];
   };
-  // Add: append items into the Overview tab without replacing existing content
+  // Make append a no-op: rely on Flix provider DOM to avoid duplicates
   const appendFlixInpageContent = () => {
-    // async append to avoid blocking rendering
-    setTimeout(() => {
-      const overviewCol = document.querySelector('#overview-tab .col-md-12');
-      if (!overviewCol) return;
-
-      // ensure main container exists
-      let container = document.getElementById('flix-inpage');
-      if (!container) {
-        container = document.createElement('div');
-        container.id = 'flix-inpage';
-        container.className = 'flix-inpage-container';
-        overviewCol.prepend(container);
-      }
-
-      // create/ensure a dedicated dynamic wrapper
-      let dynWrap = container.querySelector('[data-flix-dyn-wrap]');
-      if (!dynWrap) {
-        dynWrap = document.createElement('div');
-        dynWrap.setAttribute('data-flix-dyn-wrap', '');
-        dynWrap.className = 'mt-3 space-y-2 text-left';
-        container.appendChild(dynWrap);
-      }
-
-      const items = getFlixMediaArray();
-
-      // signature-based idempotency
-      let sig = "";
-      try {
-        const j = JSON.stringify(items);
-        sig = `${j.length}:${j.slice(0, 256)}`;
-      } catch {
-        sig = String(items?.length || 0);
-      }
-      if (dynWrap.dataset.sig === sig) {
-        // same content already appended
-        return;
-      }
-
-      // clear previous appended content before writing new
-      while (dynWrap.firstChild) dynWrap.removeChild(dynWrap.firstChild);
-
-      if (!items || items.length === 0) {
-        const empty = document.createElement('p');
-        empty.className = 'text-gray-500 text-sm';
-        empty.textContent = 'No additional overview content available.';
-        dynWrap.appendChild(empty);
-        dynWrap.dataset.sig = sig || "empty";
-        return;
-      }
-
-      const frag = document.createDocumentFragment();
-      items.forEach((it) => {
-        const block = document.createElement('div');
-        block.className = 'p-3 bg-white rounded-md shadow-sm';
-
-        if (typeof it === 'string') {
-          block.innerHTML = it;
-        } else if (it && typeof it === 'object') {
-          const title = it.title || it.name;
-          const desc = it.description || it.text || it.content || '';
-
-          if (title) {
-            const h = document.createElement('h3');
-            h.className = 'text-sm font-semibold';
-            h.textContent = title;
-            block.appendChild(h);
-          }
-          if (desc) {
-            const p = document.createElement('p');
-            p.className = 'text-xs text-gray-700 mt-1';
-            p.innerHTML = typeof desc === 'string' ? desc : JSON.stringify(desc);
-            block.appendChild(p);
-          }
-          if (!title && !desc) {
-            const pre = document.createElement('pre');
-            pre.className = 'text-xs text-gray-600 whitespace-pre-wrap';
-            pre.textContent = JSON.stringify(it, null, 2);
-            block.appendChild(pre);
-          }
-        } else {
-          const p = document.createElement('p');
-          p.className = 'text-xs text-gray-700';
-          p.textContent = String(it);
-          block.appendChild(p);
-        }
-
-        frag.appendChild(block);
-      });
-
-      dynWrap.appendChild(frag);
-      dynWrap.dataset.sig = sig;
-    }, 0);
+    // Intentionally left blank to prevent duplicate appends.
+    // We rely on Flix to render into #flix-inpage and avoid any custom injection.
+    return;
   };
+
   const checkFlixMediaContent = () => {
     // Check if FlixMedia containers have content after loading
     const applySuccess = () => {
       flixInitializedRef.current = true;
-      // persist loaded state per product to avoid re-init
       try {
         if (product?._id) {
           sessionStorage.setItem(`flixLoaded:${product._id}`, '1');
           setFlixLoaded(true);
         }
       } catch {}
-      // remove any fallback message if content eventually loads
       const fallbackMessage = document.querySelector(".no-overview-message");
       if (fallbackMessage) fallbackMessage.remove();
       console.log("FlixMedia content loaded successfully");
-      // Trigger: append FlixMedia content to Overview tab
-      appendFlixInpageContent();
+      // Do not append custom content; Flix manages DOM itself.
+      // appendFlixInpageContent();
     };
 
     const checkContent = () => {
       const flixInpage = document.getElementById("flix-inpage");
       const flixMinisite = document.getElementById("flix-minisite");
-
       const hasInpageContent = flixInpage && flixInpage.children.length > 0;
       const hasMinisiteContent = flixMinisite && flixMinisite.children.length > 0;
 
@@ -584,7 +505,6 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
         setTimeout(() => {
           const finalCheckInpage = document.getElementById("flix-inpage");
           const finalCheckMinisite = document.getElementById("flix-minisite");
-
           const finalHasInpage = finalCheckInpage && finalCheckInpage.children.length > 0;
           const finalHasMinisite = finalCheckMinisite && finalCheckMinisite.children.length > 0;
 
@@ -600,51 +520,54 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       }
     };
 
-    // Initial check after a short delay
     setTimeout(checkContent, 1000);
   };
+
   const showFallbackMessage = () => {
-    // Remove FlixMedia containers if they exist but are empty
+    // Remove empty Flix containers only (do not clear existing content)
     const flixInpage = document.getElementById("flix-inpage");
     const flixMinisite = document.getElementById("flix-minisite");
-    if (flixInpage && flixInpage.children.length === 0) {
-      flixInpage.remove();
-    }
-    if (flixMinisite && flixMinisite.children.length === 0) {
-      flixMinisite.remove();
-    }
-    // Create and show fallback message
-    const overviewTab = document.querySelector("#overview-tab .col-md-12");
-    /* if (overviewTab && !document.querySelector(".no-overview-message")) {
-      const fallbackMessage = document.createElement("p");
-      fallbackMessage.className = "no-overview-message text-gray-500 text-center py-4";
-      fallbackMessage.textContent = "There is no product overview available for this item.";
-      overviewTab.appendChild(fallbackMessage);
-    } */
-    if (overviewTab) {
-      overviewTab.innerHTML = "";
-      if (product.overview_image && product.overview_image.length > 0) {
-        const images = Array.isArray(product.overview_image)
-          ? product.overview_image
-          : product.overview_image.split(",");
+    if (flixInpage && flixInpage.children.length === 0) flixInpage.remove();
+    if (flixMinisite && flixMinisite.children.length === 0) flixMinisite.remove();
 
+    const overviewTab = document.querySelector("#overview-tab .col-md-12");
+
+    // If Flix content is present, do nothing
+    if ((flixInpage && flixInpage.children.length > 0) || (flixMinisite && flixMinisite.children.length > 0)) {
+      return;
+    }
+
+    // Avoid duplicating fallback
+    if (!overviewTab || document.querySelector(".no-overview-message")) {
+      flixInitializedRef.current = false;
+      return;
+    }
+
+    if (product.overview_image && product.overview_image.length > 0) {
+      const images = Array.isArray(product.overview_image)
+        ? product.overview_image
+        : String(product.overview_image).split(",").filter(Boolean);
+
+      // Only append images if no existing images were added before
+      if (!overviewTab.querySelector('[data-overview-images="1"]')) {
+        const wrap = document.createElement("div");
+        wrap.setAttribute("data-overview-images", "1");
         images.forEach((imgName) => {
           const img = document.createElement("img");
           img.src = `/uploads/products/${imgName.trim()}`;
           img.alt = "Product Overview";
-          img.className =
-            "w-full h-auto object-contain rounded-lg shadow-lg my-4";
-          overviewTab.appendChild(img);
+          img.className = "w-full h-auto object-contain rounded-lg shadow-lg my-4";
+          wrap.appendChild(img);
         });
-      } else {
-        const fallbackMessage = document.createElement("p");
-        fallbackMessage.className =
-          "no-overview-message text-gray-500 text-center py-4";
-        fallbackMessage.textContent =
-          "There is no product overview available for this item.";
-        overviewTab.appendChild(fallbackMessage);
+        overviewTab.appendChild(wrap);
       }
+    } else {
+      const fallbackMessage = document.createElement("p");
+      fallbackMessage.className = "no-overview-message text-gray-500 text-center py-4";
+      fallbackMessage.textContent = "There is no product overview available for this item.";
+      overviewTab.appendChild(fallbackMessage);
     }
+
     flixInitializedRef.current = false;
   };
   const cleanupFlixMedia = () => {
