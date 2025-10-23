@@ -880,6 +880,11 @@ export default function CategoryPage() {
                           <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
                             {/* Product Image */}
                             <div className="relative aspect-square bg-white">
+                              <Link
+                                href={`/product/${product.slug}`}
+                                className="block mb-2"
+                                onClick={() => handleProductClick(product)}
+                              >
                               {product.images?.[0] && (
                                 <Image
                                   src={
@@ -894,6 +899,7 @@ export default function CategoryPage() {
                                   unoptimized
                                 />
                               )}
+                              </Link>
          
                               {/* Discount Badge */}
                               {Number(product.special_price) > 0 &&

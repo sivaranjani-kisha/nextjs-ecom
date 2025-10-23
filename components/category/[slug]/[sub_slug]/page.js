@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback,useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "react-feather";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
@@ -45,6 +45,7 @@ export default function CategoryPage() {
   const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0);
   const [nofound,setNofound]=useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const router = useRouter(); // Added router
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -109,11 +110,16 @@ export default function CategoryPage() {
         }
       });
       setFilterGroups(groups);
-      // if (categoryData.products?.length > 0) {
-      // await fetchFilteredProducts(categoryData, 1, true);
-      // }
+      if (categoryData.products?.length > 0) {
+      await fetchFilteredProducts(categoryData, 1, true);
+      }else{
+        // Redirect to 404 if no products found
+        router.push('/404');
+      }
     } catch (error) {
       toast.error("Error fetching initial data");
+      // Redirect to 404 on error as well
+      router.push('/404');
     } finally {
       // setLoading(false);
     }
@@ -173,6 +179,8 @@ export default function CategoryPage() {
       }
     } catch (error) {
       toast.error('Error fetching products'+error);
+      // Redirect to 404 on error as well
+      router.push('/404');
     } finally {
       setLoading(false);
     }
@@ -946,6 +954,11 @@ export default function CategoryPage() {
                         className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full"
                       >
                         <div className="relative aspect-square bg-white">
+                          <Link
+                            href={`/product/${product.slug}`}
+                            className="block mb-2"
+                            onClick={() => handleProductClick(product)}
+                          >
                           {product.images?.[0] && (
                             <Image
                               src={
@@ -960,6 +973,7 @@ export default function CategoryPage() {
                               unoptimized
                             />
                           )}
+                          </Link>
 
                           {Number(product.special_price) > 0 &&
                             Number(product.special_price) < Number(product.price) && (
