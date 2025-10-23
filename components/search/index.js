@@ -818,6 +818,11 @@ const MAX = priceRange[1] || 100000;
                 {filteredProducts.map(product => (
                   <div key={product._id} className="group relative bg-white rounded-lg border hover:border-blue-200 transition-all shadow-sm hover:shadow-md flex flex-col h-full">
                     <div className="relative aspect-square bg-white">
+                       <Link
+                        href={`/product/${product.slug}`}
+                        className="block mb-2"
+                        onClick={() => handleProductClick(product)}
+                      >
                       {product.images?.[0] && (
                         <Image
                           src={
@@ -832,6 +837,7 @@ const MAX = priceRange[1] || 100000;
                           unoptimized
                         />
                       )}
+                      </Link>
                     
                       {(() => {
                           const discount = Math.round(
