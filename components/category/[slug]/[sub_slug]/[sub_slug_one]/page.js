@@ -2,7 +2,7 @@
 import  React,{ useState, useEffect,useRef,useCallback  } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight  } from "react-feather";
 import ProductCard from "@/components/ProductCard";
 import Addtocart from "@/components/AddToCart";
@@ -65,6 +65,8 @@ export default function CategoryPage() {
 
   const sentinelRef = useRef(null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const router = useRouter(); // Added router
+  
 
   useEffect(() => {
     if (sub_slug) {
@@ -138,10 +140,13 @@ export default function CategoryPage() {
       if (categoryData.products?.length > 0) {
         await fetchFilteredProducts(categoryData.category._id, 1, true);
       }else{
-        setNofound(true);
+        // Redirect to 404 if no products found
+        router.push('/404');
       }
     } catch (error) {
       toast.error('Error fetching initial data:', error);
+      // Redirect to 404 on error as well
+      router.push('/404');
     } finally {
       // setLoading(false);
     }
@@ -200,6 +205,8 @@ export default function CategoryPage() {
       }
     } catch (error) {
       toast.error('Error fetching filtered products:', error);
+      // Redirect to 404 on error
+      router.push('/404');
     } finally {
       setLoading(false);
     }
