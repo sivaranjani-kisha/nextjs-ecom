@@ -1082,99 +1082,142 @@ export default function CartComponent() {
         {/* Left Side - Cart Table (big width) */}
         <div className="lg:col-span-2">
           {/* Updated table for responsiveness */}
-          <div className="overflow-x-auto bg-white rounded-lg border">
-            <table className="min-w-full border">
-              <thead className="bg-white-50 border-b">
-                <tr>
-                  <th className="py-3 px-4 text-left text-gray-500 text-sm font-semibold">Product</th>
-                  <th className="text-center text-gray-500 text-sm font-semibold">Quantity</th>
-                  <th className="text-center text-gray-500 text-sm font-semibold">Subtotal</th>
-                  <th className="text-center text-gray-500 text-sm font-semibold">&emsp;</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartData.items.map((item) => ( 
-                  <Fragment key={item.productId}>
-                    <tr className="border-b">
-                      <td className="flex items-center py-4 px-4 gap-3">
-                         <div className="w-20 h-20 flex items-center justify-center border rounded-md overflow-hidden">
-                            <Image
-                              src={`/uploads/products/${item.image}`}
-                              alt={item.name}
-                              width={80}
-                              height={80}
-                              className="object-contain w-full h-full"
-                            />
-                          </div>
-                        <div className="flex flex-col gap-1 text-sm md:text-base">
-                          <h3 className="text-xs text-gray-500 uppercase">{item.item_code}</h3>
-                          <Link href={`/product/${slugify(item.name)}`}>
-                            <p className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
-                              {item.name.length > 50 ? item.name.slice(0, 50) + "..." : item.name}
-                            </p>
-                          </Link>
-                          <div className="flex items-center gap-2">
-                            {item.price > 0 ? (
-                              <>
-                                <h3 className="text-base font-semibold text-red-600">₹{(item.price ?? 0).toFixed(2)}</h3>
-                                <h3 className="text-xs text-gray-500 line-through">₹{(item.actual_price ?? item.price ?? 0).toFixed(2)}</h3>
-                              </>
-                            ) : (
-                              <h3 className="text-base font-semibold text-red-600">₹{(item.actual_price ?? 0).toFixed(2)}</h3>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <div className="flex justify-center items-center gap-2 border border-gray-300 rounded p-1">
-                          <button
-                            className="px-2 py-1 text-black hover:text-blue-600"
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
-                            disabled={item.quantity <= 1}
-                          >
-                            −
-                          </button>
-                          <span>{item.quantity}</span>
-                          <button
-                            className="px-2 py-1 text-black hover:text-blue-600"
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1, item.original_quantity)}
-                          >
-                            +
-                          </button>
-                        </div>
-                        <button
-                          className="text-gray-500 text-xs font-semibold hover:text-blue-600"
-                          onClick={() => confirmRemoveItem(item.productId)}
-                        >
-                          Remove
-                        </button>
-                      </td>
-                      <td className="py-4 px-4 text-center font-semibold text-gray-900">
-                        ₹{(((item.price > 0 ? item.price : item.actual_price) ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-                      </td>
-                      <td className="py-4 px-4 text-center">&emsp;</td>
-                    </tr>
-                    {(item.warranty > 0 || item.extendedWarranty > 0) && (
-                      <tr className="border-b bg-gray-100">
-                        <td className="py-4 px-4 text-center">&emsp;</td>
-                        <td className="py-4 px-4 text-center">
-                          <h3 className="text-gray-500 text-sm font-semibold">Warranty</h3>
-                          <h3 className="text-gray-500 text-sm font-semibold">Extended Warranty</h3>
-                          <h3 className="text-gray-500 text-sm font-semibold">Discount</h3>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <h3 className="text-gray-500 text-sm font-semibold">₹{item.warranty.toFixed(2)}</h3>
-                          <h3 className="text-gray-500 text-sm font-semibold">₹{item.extendedWarranty.toFixed(2)}</h3>
-                          <h3 className="text-gray-500 text-sm font-semibold">₹{item.discount.toFixed(2)}</h3>
-                        </td>
-                        <td className="py-4 px-4 text-center">&emsp;</td>
-                      </tr>
-                    )}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
+         {/* ✅ Desktop Table View */}
+<div className="overflow-x-auto bg-white rounded-lg border hidden md:block">
+  <table className="min-w-full border">
+    <thead className="bg-white-50 border-b">
+      <tr>
+        <th className="py-3 px-4 text-left text-gray-500 text-sm font-semibold">Product</th>
+        <th className="text-center text-gray-500 text-sm font-semibold">Quantity</th>
+        <th className="text-center text-gray-500 text-sm font-semibold">Subtotal</th>
+        <th className="text-center text-gray-500 text-sm font-semibold">&emsp;</th>
+      </tr>
+    </thead>
+    <tbody>
+      {cartData.items.map((item) => (
+        <Fragment key={item.productId}>
+          <tr className="border-b">
+            <td className="flex items-center py-4 px-4 gap-3">
+              <div className="w-20 h-20 flex items-center justify-center border rounded-md overflow-hidden">
+                <Link href={`/product/${slugify(item.name)}`}>
+                <Image
+                  src={`/uploads/products/${item.image}`}
+                  alt={item.name}
+                  width={80}
+                  height={80}
+                  className="object-contain w-full h-full"
+                />
+                </Link>
+
+              </div>
+              <div className="flex flex-col gap-1 text-sm md:text-base">
+                <h3 className="text-xs text-gray-500 uppercase">{item.item_code}</h3>
+                <Link href={`/product/${slugify(item.name)}`}>
+                  <p className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-2 min-h-[40px]">
+                    {item.name.length > 50 ? item.name.slice(0, 50) + "..." : item.name}
+                  </p>
+                </Link>
+                <div className="flex items-center gap-2">
+                  {item.price > 0 ? (
+                    <>
+                      <h3 className="text-base font-semibold text-red-600">₹{(item.price ?? 0).toFixed(2)}</h3>
+                      <h3 className="text-xs text-gray-500 line-through">
+                        ₹{(item.actual_price ?? item.price ?? 0).toFixed(2)}
+                      </h3>
+                    </>
+                  ) : (
+                    <h3 className="text-base font-semibold text-red-600">
+                      ₹{(item.actual_price ?? 0).toFixed(2)}
+                    </h3>
+                  )}
+                </div>
+              </div>
+            </td>
+            <td className="py-4 px-4 text-center">
+              <div className="flex justify-center items-center gap-2 border border-gray-300 rounded p-1">
+                <button
+                  className="px-2 py-1 text-black hover:text-blue-600"
+                  onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
+                  disabled={item.quantity <= 1}
+                >
+                  −
+                </button>
+                <span>{item.quantity}</span>
+                <button
+                  className="px-2 py-1 text-black hover:text-blue-600"
+                  onClick={() => updateQuantity(item.productId, item.quantity + 1, item.original_quantity)}
+                >
+                  +
+                </button>
+              </div>
+              <button
+                className="text-gray-500 text-xs font-semibold hover:text-blue-600"
+                onClick={() => confirmRemoveItem(item.productId)}
+              >
+                Remove
+              </button>
+            </td>
+            <td className="py-4 px-4 text-center font-semibold text-gray-900">
+              ₹{(((item.price > 0 ? item.price : item.actual_price) ?? 0) * (item.quantity ?? 1)).toFixed(2)}
+            </td>
+            <td className="py-4 px-4 text-center">&emsp;</td>
+          </tr>
+        </Fragment>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+{/* ✅ Mobile Simplified View */}
+<div className="block md:hidden space-y-4">
+  {cartData.items.map((item) => (
+    <div key={item.productId} className="flex gap-3 border rounded-lg p-3">
+      <div className="w-20 h-20 flex items-center justify-center border rounded-md overflow-hidden">
+        <Link href={`/product/${slugify(item.name)}`}>
+        <Image
+          src={`/uploads/products/${item.image}`}
+          alt={item.name}
+          width={80}
+          height={80}
+          className="object-contain w-full h-full"
+        />
+        </Link>
+      </div>
+      <div className="flex flex-col justify-between w-full">
+        <div>
+           <Link href={`/product/${slugify(item.name)}`}>
+          <p className="text-sm font-medium text-[#0069c6] hover:text-[#00badb]">
+            {item.name.length > 40 ? item.name.slice(0, 40) + "..." : item.name}
+          </p>
+          </Link>
+          <p className="text-xs text-gray-500 uppercase">{item.item_code}</p>
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <div className="flex items-center gap-2 border border-gray-300 rounded p-1">
+            <button
+              className="px-2 py-1 text-black hover:text-blue-600"
+              onClick={() => updateQuantity(item.productId, item.quantity - 1, null)}
+              disabled={item.quantity <= 1}
+            >
+              −
+            </button>
+            <span>{item.quantity}</span>
+            <button
+              className="px-2 py-1 text-black hover:text-blue-600"
+              onClick={() => updateQuantity(item.productId, item.quantity + 1, item.original_quantity)}
+            >
+              +
+            </button>
           </div>
+          <div className="text-base font-semibold text-red-600">
+            ₹{(((item.price > 0 ? item.price : item.actual_price) ?? 0) * (item.quantity ?? 1)).toFixed(2)}
+          </div>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
             {/* Continue Shopping Button */}
           {/* <div className="flex justify-between items-center mt-6 flex-wrap gap-2">
             <button
