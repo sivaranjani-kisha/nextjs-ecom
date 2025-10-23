@@ -30,6 +30,7 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   const [flixLoaded, setFlixLoaded] = useState(false);
   // NEW: observer ref to watch for injected Flix nodes
   const flixObserverRef = useRef(null);
+  const mountedRef = useRef(false);
  
   const tabData = {
     overview: product.overview || "No overview available.",
@@ -90,11 +91,6 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
 
   // REPLACE the multi-effect activeTab setters with a single, one-time initializer per product
   useEffect(() => {
-    // reset the one-time flag when product changes
-    defaultTabSetRef.current = false;
-  }, [product?._id]);
-
-  useEffect(() => {
     if (!product || defaultTabSetRef.current) return;
     const firstAvailable = getFirstTabWithContent();
     setActiveTab(firstAvailable);
@@ -113,6 +109,8 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   useEffect(() => {
     if (window.location.hash === "#reviews") {
       setActiveTab("reviews");
+      // Mark that we've set the initial tab so other effects won't override it
+      defaultTabSetRef.current = true;
       setTimeout(() => {
         const headerEl = document.querySelector("header"); // get header
         const headerHeight = headerEl ? headerEl.offsetHeight : 0;
@@ -125,6 +123,15 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       }, 300);
     }
   }, []);
+
+  // NEW: ensure initial mount shows "overview" by default (unless #reviews handled above)
+  useEffect(() => {
+    if (!defaultTabSetRef.current) {
+      setActiveTab("overview");
+      defaultTabSetRef.current = true;
+    }
+  }, []);
+
   const fetchBrand = async () => {
     try {
       const response = await fetch("/api/brand");
@@ -229,6 +236,9 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   // Set default active tab once per product based on cached flix or actual overview content
   useEffect(() => {
     if (!product) return;
+    // Do not override an initial one-time selection (e.g., overview set on mount or #reviews)
+    if (defaultTabSetRef.current) return;
+
     const hasTextOrImages =
       (product.overview && product.overview.trim() !== "") ||
       (product.overview_image &&
@@ -241,35 +251,39 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
     } else if (product.description && product.description.trim() !== "") {
       setActiveTab("description");
     } else {
-      const next = findNextAvailableTab("overview");
+      // use existing helper that finds first UI tab with content
+      const next = getFirstTabWithContent();
       setActiveTab(next);
     }
+
+    // mark default chosen for this product
+    defaultTabSetRef.current = true;
     // run when product changes or cache becomes available
   }, [product?._id, flixLoaded]);
   // Avoid re-initializing Flix if already loaded once for this product
   const initializeFlixMedia = () => {
     // Strong guards to avoid multiple loads
-    // if (flixInitializedRef.current) {
-    //   console.log("[Flix] already initialized for this product. Skipping.");
-    //   return;
-    // }
-    // const key = product?._id ? `flixLoaded:${product._id}` : null;
-    // if (typeof window !== "undefined" && key && sessionStorage.getItem(key) === "1") {
-    //   console.log("[Flix] session says already loaded. Skipping init.");
-    //   flixInitializedRef.current = true;
-    //   // Ensure placeholder is hidden if content already exists
-    //   hideFlixPlaceholder();
-    //   startFlixObserver();
-    //   return;
-    // }
-    // const existingContainer = document.getElementById("flix-inpage");
-    // if (existingContainer && existingContainer.children.length > 0) {
-    //   console.log("[Flix] inpage container already has content. Skipping init.");
-    //   flixInitializedRef.current = true;
-    //   hideFlixPlaceholder();
-    //   startFlixObserver();
-    //   return;
-    // }
+    if (flixInitializedRef.current) {
+      console.log("[Flix] already initialized for this product. Skipping.");
+      //return;
+    }
+    const key = product?._id ? `flixLoaded:${product._id}` : null;
+    if (typeof window !== "undefined" && key && sessionStorage.getItem(key) === "1") {
+      console.log("[Flix] session says already loaded. Skipping init.");
+      flixInitializedRef.current = true;
+      // Ensure placeholder is hidden if content already exists
+      hideFlixPlaceholder();
+      startFlixObserver();
+      //return;
+    }
+    const existingContainer = document.getElementById("flix-inpage");
+    if (existingContainer && existingContainer.children.length > 0) {
+      console.log("[Flix] inpage container already has content. Skipping init.");
+      flixInitializedRef.current = true;
+      hideFlixPlaceholder();
+      startFlixObserver();
+      //return;
+    }
 
     console.log("Initializing FlixMedia with brand:", brandName);
 
@@ -393,10 +407,10 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
     flixScript.onload = () => {
       console.log(brandName, product);
       console.log("FlixMedia script loaded with brand:", brandName);
-      clearTimeout(fallbackTimeout);
+      //clearTimeout(fallbackTimeout);
       // start observer to catch async injection
-      startFlixObserver();
-      checkFlixMediaContent();
+      //startFlixObserver();
+      //checkFlixMediaContent();
     };
 
     flixScript.onerror = (error) => {
@@ -882,7 +896,7 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
             style={{ display: activeName === tab.name ? "block" : "none" }}
             className={
               tab.name === "overview"
-                ? "min-h-screen w-full flex items-center justify-center px-4 py-6 text-center bg-gray-50"
+                ? "w-full flex items-center justify-center px-4 py-6 text-center bg-gray-50"
                 : "max-w-2xl mx-auto px-4 py-6 text-center"
             }
           >
