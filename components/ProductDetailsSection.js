@@ -903,7 +903,7 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
             id="flix-placeholder"
             className="min-h-[240px] w-full flex items-center justify-center text-gray-400"
           >
-            Loading product content...
+            There is no product overview available for this item.
           </div>
           {/* flix-inpage will be inserted here */}
         </div>
