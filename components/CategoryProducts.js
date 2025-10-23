@@ -178,6 +178,7 @@ const CategoryProducts = () => {
                               >
                                 {/* Image */}
                                 <div className="relative aspect-square bg-white">
+                                  <Link href={`/product/${product.slug}`} onClick={() => handleProductClick(product)} className="block mb-1">
                                   {product.images?.[0] && (
                                     <>
                                       <Image
@@ -198,6 +199,7 @@ const CategoryProducts = () => {
                                       </div>
                                     </>
                                   )}
+                                  </Link>
                                 </div>
 
                                 {/* Info */}
