@@ -875,75 +875,79 @@ const fetchBrand = async () => {
 {/* Lightbox Modal */}
 {lightboxOpen && (
   <div
-    className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-2 p-40"
+    className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-6 overflow-y-auto"
     onClick={closeLightbox}
   >
     <div
-      className="relative bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-auto flex flex-col items-center max-h-[70vh] p-6"
+      className="relative bg-white rounded-lg shadow-2xl w-full max-w-md sm:max-w-2xl mx-auto flex flex-col items-center max-h-[80vh] sm:max-h-[70vh] p-3 sm:p-6 mt-[10rem] sm:mt-32"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Close button */}
       <button
-        className="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors duration-200 z-50"
+        className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 transition-colors duration-200 z-50"
         onClick={closeLightbox}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-5 h-5 sm:w-6 sm:h-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
 
       {/* Main Image */}
-      <div className="relative w-full flex items-center justify-center">
-        {/* <button
-          className="absolute left-1 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/60 rounded-full w-8 h-8 flex items-center justify-center text-black text-xl z-50"
-          onClick={(e) => { e.stopPropagation(); navigateLightbox("prev"); }}
-        >
-          &#8249;
-        </button> */}
+     <div className="relative w-full flex items-center justify-center"> 
+    <img 
+    src={resolveImagePath(product.images[selectedImageIndex])} alt={product?.name || "Product"} 
+    className="object-contain max-h-[60vh] sm:max-h-[50vh] w-full  rounded-md" /> 
+</div>
 
-        <img
-          src={resolveImagePath(product.images[selectedImageIndex])}
-          alt={product?.name || "Product"}
-          className="object-contain max-h-[50vh] border border-gray-400 rounded-lg w-auto rounded-md"
-        />
-
-        {/* <button
-          className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/60 rounded-full w-8 h-8 flex items-center justify-center text-black text-xl z-50"
-          onClick={(e) => { e.stopPropagation(); navigateLightbox("next"); }}
-        >
-          &#8250;
-        </button> */}
-      </div>
+      {/* Divider line */}
+      <div className="w-full border-t border-gray-300 my-3"></div>
 
       {/* Thumbnails */}
-     {product.images && product.images .filter(img => img && img.trim() !== "" && img.trim().toLowerCase() !== "null")
-  .length > 0 && (
-  <div className="flex justify-center gap-3 mt-3">
-    {product.images .filter(img => img && img.trim() !== "" && img.trim().toLowerCase() !== "null")
-      .map((image, index) => {
-        // Validate path (skip broken/empty before rendering)
-        const imgPath =
-          image.startsWith("http") || image.startsWith("blob:") || image.startsWith("data:")
-            ? image
-            : `/uploads/products/${image}`;
+      {product.images &&
+        product.images.filter(
+          (img) => img && img.trim() !== '' && img.trim().toLowerCase() !== 'null'
+        ).length > 0 && (
+          <div className="flex justify-center flex-wrap gap-2 sm:gap-3">
+            {product.images
+              .filter(
+                (img) => img && img.trim() !== '' && img.trim().toLowerCase() !== 'null'
+              )
+              .map((image, index) => {
+                const imgPath =
+                  image.startsWith('http') ||
+                  image.startsWith('blob:') ||
+                  image.startsWith('data:')
+                    ? image
+                    : `/uploads/products/${image}`;
 
-        return (
-          <img
-            key={index}
-            src={imgPath}
-            alt={`Thumbnail ${index + 1}`}
-            className="object-cover w-16 h-16 rounded-sm cursor-pointer transition-transform duration-300 hover:scale-110"
-            onClick={() => setSelectedImageIndex(index)}
-            onError={(e) => e.currentTarget.remove()} // remove if broken
-          />
-        );
-      })}
-  </div>
-)}
-
+                return (
+                  <img
+                    key={index}
+                    src={imgPath}
+                    alt={`Thumbnail ${index + 1}`}
+                    className={`object-cover w-14 h-14 sm:w-16 sm:h-16 rounded-sm cursor-pointer transition-transform duration-300 hover:scale-105 ${
+                      selectedImageIndex === index ? 'ring-2 ring-blue-400' : ''
+                    }`}
+                    onClick={() => setSelectedImageIndex(index)}
+                    onError={(e) => e.currentTarget.remove()}
+                  />
+                );
+              })}
+          </div>
+        )}
     </div>
   </div>
 )}
+
+
+
 
 
 
