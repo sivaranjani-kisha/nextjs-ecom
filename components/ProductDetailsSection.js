@@ -882,7 +882,7 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
             style={{ display: activeName === tab.name ? "block" : "none" }}
             className={
               tab.name === "overview"
-                ? "min-h-screen w-full flex items-center justify-center px-4 py-6 text-center bg-gray-50"
+                ? " w-full flex items-center justify-center px-4 py-6 text-center bg-gray-50"
                 : "max-w-2xl mx-auto px-4 py-6 text-center"
             }
           >
