@@ -15,6 +15,8 @@ import { ToastContainer, toast } from 'react-toastify';
 export default function ProductDetailsSection({ product, reviews=[], avgRating=0, reviewCount=0}) {
   const [brand, setBrand] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
+  // NEW: ensure default tab is set only once per product id
+  const defaultTabSetRef = useRef(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
@@ -26,6 +28,8 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   const flixLoadAttemptedRef = useRef(false);
   // NEW: track if flix content has loaded before (persisted per product)
   const [flixLoaded, setFlixLoaded] = useState(false);
+  // NEW: observer ref to watch for injected Flix nodes
+  const flixObserverRef = useRef(null);
  
   const tabData = {
     overview: product.overview || "No overview available.",
@@ -49,7 +53,10 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       }))
     }
   };
-  const tabs = ["overview", "description", "videos", "reviews"];
+  // Replace "tabs" with UI-aligned tabs only (videos is not rendered in tabsForUI)
+  // const tabs = ["overview", "description", "videos", "reviews"];
+  const uiTabs = ["overview", "description", "reviews"];
+
   // Check if a tab has content
   const hasTabContent = (tabId) => {
     const PLACEHOLDER = "There is no product overview available for this item.";
@@ -65,100 +72,43 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
         );
       case "description":
         return product.description && product.description.trim() !== "";
-      case "videos":
-        return product.videos && product.videos.length > 0;
       case "reviews":
         return true;
+      // "videos" is intentionally ignored because it is not rendered in tabsForUI
       default:
         return false;
     }
   };
+
+  // Only consider the tabs actually rendered by the UI
   const getFirstTabWithContent = () => {
-    for (const tab of tabs) {
+    for (const tab of uiTabs) {
       if (hasTabContent(tab)) return tab;
     }
-    // fallback if all are empty
     return "overview";
   };
 
+  // REPLACE the multi-effect activeTab setters with a single, one-time initializer per product
   useEffect(() => {
-    if (product) {
-      // ✅ Check for Flix in-page content (image or embed)
-      const hasFlixInPage = (product.flix_data && (product.flix_data.inpage || product.flix_data.widget));
-      // ✅ Check if overview has content or images
-      const hasOverview =
-        (product.overview && product.overview.trim() !== "") ||
-        (product.overview_image &&
-          (Array.isArray(product.overview_image)
-            ? product.overview_image.length > 0
-            : product.overview_image.split(",").filter(Boolean).length > 0));
+    // reset the one-time flag when product changes
+    defaultTabSetRef.current = false;
+  }, [product?._id]);
 
-      if (hasFlixInPage || hasOverview) {
-        setActiveTab("overview");
-      } else if (product.description && product.description.trim() !== "") {
-        setActiveTab("description");
-      } else if (product.video_url && product.video_url.trim() !== "") {
-        setActiveTab("videos");
-      } else if (product.reviews && product.reviews.length > 0) {
-        setActiveTab("reviews");
-      } else {
-        setActiveTab("overview"); // fallback default
-      }
-    }
-  }, [product]);
-  // ✅ Set first available tab on mount
-  /* useEffect(() => {
+  useEffect(() => {
+    if (!product || defaultTabSetRef.current) return;
     const firstAvailable = getFirstTabWithContent();
     setActiveTab(firstAvailable);
-  }, [product, reviews]); */
-  // ✅ Handle tab switching (no disabling)
-  const handleTabClick = (tabId) => {
-    setActiveTab(tabId);
-  };
+    defaultTabSetRef.current = true;
+  }, [product, reviews?.length]);
 
-   // Function to find the next available tab with content
-  const findNextAvailableTab = (currentTab) => {
-    const tabs = ["overview", "description", "videos", "reviews"];
-    const currentIndex = tabs.indexOf(currentTab);
-    
-    // Check remaining tabs starting from current position
-    for (let i = currentIndex; i < tabs.length; i++) {
-      if (hasTabContent(tabs[i])) {
-        return tabs[i];
-      }
-    }
-    
-    // If no content found in remaining tabs, check from beginning
-    for (let i = 0; i < currentIndex; i++) {
-      if (hasTabContent(tabs[i])) {
-        return tabs[i];
-      }
-    }
-    
-    // If no tabs have content, return the first tab
-    return tabs[0];
-  };
-  //  // Effect to handle tab content availability
-  //   useEffect(() => {
-  //     if (!hasTabContent(activeTab)) {
-  //       const nextTab = findNextAvailableTab(activeTab);
-  //       if (nextTab !== activeTab) {
-  //         setActiveTab(nextTab);
-  //         // toast.info(`No content available in ${activeTab}. Showing ${nextTab} instead.`);
-  //       }
-  //     }
-  //   }, [activeTab, product, reviews]);
+  // DELETE this effect to prevent tab flicker and "overview" disappearing:
+  // useEffect(() => {
+  //   if (!product) return;
+  //   const hasTextOrImages = /* ...existing code... */;
+  //   if (flixLoaded || hasTextOrImages) { setActiveTab("overview"); } else if (...) { ... } else { ... }
+  // }, [product?._id, flixLoaded]);
 
-  useEffect(() => {
-    if ((activeTab === "relatedProducts" || activeTab === "recentlyViewed") && product.category?._id) {
-      if (activeTab === "relatedProducts" && relatedProducts.length === 0) {
-        fetchRelatedProducts();
-      }
-      if (activeTab === "recentlyViewed" && recentlyViewed.length === 0) {
-        fetchRecentlyViewed();
-      }
-    }
-  }, [activeTab, product.category?._id]);
+  // Keep any deep-link (#reviews) override
   const reviewsRef = useRef(null);
   useEffect(() => {
     if (window.location.hash === "#reviews") {
@@ -299,22 +249,27 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
   // Avoid re-initializing Flix if already loaded once for this product
   const initializeFlixMedia = () => {
     // Strong guards to avoid multiple loads
-    if (flixInitializedRef.current) {
-      console.log("[Flix] already initialized for this product. Skipping.");
-      return;
-    }
-    const key = product?._id ? `flixLoaded:${product._id}` : null;
-    if (typeof window !== "undefined" && key && sessionStorage.getItem(key) === "1") {
-      console.log("[Flix] session says already loaded. Skipping init.");
-      flixInitializedRef.current = true;
-      return;
-    }
-    const existingContainer = document.getElementById("flix-inpage");
-    if (existingContainer && existingContainer.children.length > 0) {
-      console.log("[Flix] inpage container already has content. Skipping init.");
-      flixInitializedRef.current = true;
-      return;
-    }
+    // if (flixInitializedRef.current) {
+    //   console.log("[Flix] already initialized for this product. Skipping.");
+    //   return;
+    // }
+    // const key = product?._id ? `flixLoaded:${product._id}` : null;
+    // if (typeof window !== "undefined" && key && sessionStorage.getItem(key) === "1") {
+    //   console.log("[Flix] session says already loaded. Skipping init.");
+    //   flixInitializedRef.current = true;
+    //   // Ensure placeholder is hidden if content already exists
+    //   hideFlixPlaceholder();
+    //   startFlixObserver();
+    //   return;
+    // }
+    // const existingContainer = document.getElementById("flix-inpage");
+    // if (existingContainer && existingContainer.children.length > 0) {
+    //   console.log("[Flix] inpage container already has content. Skipping init.");
+    //   flixInitializedRef.current = true;
+    //   hideFlixPlaceholder();
+    //   startFlixObserver();
+    //   return;
+    // }
 
     console.log("Initializing FlixMedia with brand:", brandName);
 
@@ -331,7 +286,7 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
     if (overviewTab && !document.getElementById("flix-inpage")) {
       const inpageDiv = document.createElement("div");
       inpageDiv.id = "flix-inpage";
-      inpageDiv.className = "flix-inpage-container";
+      inpageDiv.className = "flix-inpage-container w-full";
       overviewTab.prepend(inpageDiv);
       console.log("Created flix-inpage container");
     }
@@ -339,10 +294,13 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
     if (keyFea && !document.getElementById("flix-minisite")) {
       const miniSiteDiv = document.createElement("div");
       miniSiteDiv.id = "flix-minisite";
-      miniSiteDiv.className = "flix-minisite-container";
+      miniSiteDiv.className = "flix-minisite-container w-full";
       keyFea.insertAdjacentElement("afterend", miniSiteDiv);
       console.log("Created flix-minisite container");
     }
+
+    // Start observing once containers exist
+    startFlixObserver();
 
     // Remove existing script reference and add fallback
     if (flixScriptRef.current) {
@@ -436,6 +394,8 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       console.log(brandName, product);
       console.log("FlixMedia script loaded with brand:", brandName);
       clearTimeout(fallbackTimeout);
+      // start observer to catch async injection
+      startFlixObserver();
       checkFlixMediaContent();
     };
 
@@ -490,6 +450,8 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       } catch {}
       const fallbackMessage = document.querySelector(".no-overview-message");
       if (fallbackMessage) fallbackMessage.remove();
+      // NEW: hide the overview placeholder once we have content
+      hideFlixPlaceholder();
       console.log("FlixMedia content loaded successfully");
       // Do not append custom content; Flix manages DOM itself.
       // appendFlixInpageContent();
@@ -521,6 +483,46 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
     };
 
     setTimeout(checkContent, 1000);
+  };
+
+  // Add a tiny helper to hide the overview placeholder after content arrives
+  const hideFlixPlaceholder = () => {
+    try {
+      const ph = document.getElementById('flix-placeholder');
+      if (ph) ph.style.display = 'none';
+    } catch {}
+  };
+
+  // NEW: observe #flix-inpage for injected content and hide placeholder immediately
+  const startFlixObserver = () => {
+    try {
+      const el = document.getElementById('flix-inpage');
+      if (!el) return;
+      // if content already present, hide placeholder and skip observing
+      if (el.children.length > 0) {
+        hideFlixPlaceholder();
+        flixInitializedRef.current = true;
+        return;
+      }
+      // disconnect any previous observer
+      if (flixObserverRef.current) {
+        try { flixObserverRef.current.disconnect(); } catch {}
+        flixObserverRef.current = null;
+      }
+      const obs = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.addedNodes && m.addedNodes.length > 0) {
+            hideFlixPlaceholder();
+            flixInitializedRef.current = true;
+            try { obs.disconnect(); } catch {}
+            flixObserverRef.current = null;
+            return;
+          }
+        }
+      });
+      obs.observe(el, { childList: true, subtree: true });
+      flixObserverRef.current = obs;
+    } catch {}
   };
 
   const showFallbackMessage = () => {
@@ -568,10 +570,18 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       overviewTab.appendChild(fallbackMessage);
     }
 
+    // NEW: hide placeholder because we now have either images or a fallback message
+    hideFlixPlaceholder();
+
     flixInitializedRef.current = false;
   };
   const cleanupFlixMedia = () => {
     console.log("Cleaning up FlixMedia...");
+    // NEW: disconnect observer
+    if (flixObserverRef.current) {
+      try { flixObserverRef.current.disconnect(); } catch {}
+      flixObserverRef.current = null;
+    }
   
     if (flixScriptRef.current) {
       flixScriptRef.current.remove();
@@ -888,6 +898,13 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
     <div className="mx-auto px-4 py-6 text-center">
       <div id="overview-tab">
         <div className="col-md-12">
+          {/* Stable placeholder to prevent layout collapse while Flix loads */}
+          <div
+            id="flix-placeholder"
+            className="min-h-[240px] w-full flex items-center justify-center text-gray-400"
+          >
+            Loading product content...
+          </div>
           {/* flix-inpage will be inserted here */}
         </div>
       </div>
@@ -1010,6 +1027,32 @@ export default function ProductDetailsSection({ product, reviews=[], avgRating=0
       </div>
     );
   })();
+  //const resolveFlixIds = (p = {}) => { ... }
+{/*   {activeTab === "videos" && (
+          <div>
+            <h2 className={`text-sm font-bold transition-all duration-200 text-left mt-3 ${poppins.className}`}>Product Videos</h2>
+            {tabData.videos.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 mt-2 sm:mt-4">
+                {tabData.videos.map((video, index) => (
+                  <div key={index} className="aspect-w-16 aspect-h-9">
+                    <iframe
+                      className="w-full h-48 sm:h-64 rounded-lg"
+                      src={video.url}
+                      title={video.title || `Product Video ${index + 1}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                    {video.title && (
+                      <p className="mt-1 sm:mt-2 font-medium text-gray-800 text-sm sm:text-base">{video.title}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">No videos available for this product.</p>
+            )}
+          </div>
+        )} */}
   const reviewsContent = (
     <div>
       <form onSubmit={handleReviewSubmit} className="bg-white p-4 rounded-md shadow mt-3">
