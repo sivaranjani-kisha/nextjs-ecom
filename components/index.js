@@ -873,6 +873,100 @@ export default function HomeComponent() {
       fetchOfferProducts();
     }, []);
 
+
+    const [singleBannerNewData, setSingleBannerNewData] = useState({
+      singlebanner_new: { items: [] }
+    });
+    const [isSingleBannerNewLoading, setIsSingleBannerNewLoading] = useState(false);
+    const fetchSingleBannerNewData = async () => {
+      setIsSingleBannerNewLoading(true);
+      try {
+        const response = await fetch("/api/singlebanner");
+        const data = await response.json();
+
+        if (data.success && data.banners?.length > 0) {
+          const bannerItems = data.banners
+            .filter((banner) => banner.status === "Active")
+            .map((banner) => ({
+              id: banner._id,
+              redirect_url: banner.redirect_url || "/shop",
+              bgImageUrl: banner.banner_image,
+            }));
+
+          setSingleBannerNewData({
+            singlebanner_new: { items: bannerItems },
+          });
+        } else {
+          setSingleBannerNewData({
+            singlebanner_new: {
+              items: [
+                {
+                  id: 1,
+                  redirect_url: "/shop",
+                  bgImageUrl: "/images/default-singlebanner.png",
+                },
+              ],
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching singlebanner_new:", error);
+      } finally {
+        setIsSingleBannerNewLoading(false);
+      }
+    };
+
+    useEffect(() => {
+      fetchSingleBannerNewData();
+    }, []);
+
+
+    const [singleBannerTwoData, setSingleBannerTwoData] = useState({
+      singlebanner_two: { items: [] },
+    });
+    const [isSingleBannerTwoLoading, setIsSingleBannerTwoLoading] = useState(false);
+
+    const fetchSingleBannerTwoData = async () => {
+      setIsSingleBannerTwoLoading(true);
+      try {
+        const response = await fetch("/api/singlebanner-two");
+        const data = await response.json();
+
+        if (data.success && data.banners?.length > 0) {
+          const bannerItems = data.banners
+            .filter((banner) => banner.status === "Active")
+            .map((banner) => ({
+              id: banner._id,
+              redirect_url: banner.redirect_url || "/shop",
+              bgImageUrl: banner.banner_image,
+            }));
+
+          setSingleBannerTwoData({
+            singlebanner_two: { items: bannerItems },
+          });
+        } else {
+          setSingleBannerTwoData({
+            singlebanner_two: {
+              items: [
+                {
+                  id: 1,
+                  redirect_url: "/shop",
+                  bgImageUrl: "/images/default-singlebanner.png",
+                },
+              ],
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching singlebanner_two:", error);
+      } finally {
+        setIsSingleBannerTwoLoading(false);
+      }
+    };
+
+    useEffect(() => {
+      fetchSingleBannerTwoData();
+    }, []);
   
     // Helper function to render sections in the correct order
     console.log(categoryBanner);
@@ -1717,7 +1811,6 @@ export default function HomeComponent() {
                           className="relative w-full aspect-[2000/667] max-h-auto"
                           variants={itemVariants}
                         >
-                          <a href={item.buttonLink} target="_self" className="block">
                           <div className="absolute inset-0 overflow-hidden">
                             <Image
                               src={item.bgImageUrl}
@@ -1729,7 +1822,6 @@ export default function HomeComponent() {
                               priority
                             />
                           </div>
-                          </a>
                         </motion.div>
                       ))}
                     </Slider>
@@ -1738,7 +1830,6 @@ export default function HomeComponent() {
                       className="p-4 md:p-6 relative aspect-[2000/667] max-h-auto"
                       variants={itemVariants}
                     >
-                      <a href={bannerData.banner.items[0].buttonLink} target="_self" className="block">
                       <div className="absolute inset-0 flex justify-center items-center bg-white">
                         <Image
                           src={bannerData.banner.items[0].bgImageUrl}
@@ -1748,7 +1839,6 @@ export default function HomeComponent() {
                           priority
                         />
                       </div>
-                      </a>
                     </motion.div>
                   )
                 ) : (
@@ -1760,84 +1850,197 @@ export default function HomeComponent() {
                 )}
               </div>
             </motion.section>
-            )
- 
-
+          )
+          
           case 'singlebanner':
             return (
-              <motion.section id="singlebanner"
-                ref={refs.singlebanner}
+              <motion.section
+                id="singlebanner"
                 initial="hidden"
                 animate="visible"
                 variants={containerVariants}
                 className="overflow-hidden pt-7 px-4 sm:px-6 md:px-6"
               >
                 <div className="relative">
-                  {isSingleBannerLoading ? (
-                    <div className="p-2 flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full border-t-2 border-b-2 border-blue-600"></div>
+                  {isSingleBannerNewLoading ? (
+                    <div className="p-6 flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
                     </div>
-                  ) : singleBannerData.singlebanner.items.length > 0 ? (
-                    singleBannerData.singlebanner.items.length > 1 ? (
-                      <Slider {...settings} className="relative">
-                        {singleBannerData.singlebanner.items.map((item) => (
+                  ) : singleBannerNewData.singlebanner_new.items.length > 0 ? (
+                    singleBannerNewData.singlebanner_new.items.length > 1 ? (
+                      <Slider {...settings}>
+                        {singleBannerNewData.singlebanner_new.items.map((item) => (
                           <motion.div
                             key={item.id}
-                            className="relative w-full 
-                                      aspect-[16/9] max-h-[110px] 
-                                      sm:aspect-[16/6] sm:max-h-[180px]
-                                      md:aspect-[16/8] md:max-h-[200px]
-                                      lg:aspect-[16/9] lg:max-h-[300px]
-                                      xl:aspect-[16/10] xl:max-h-[400px]
-                                      2xl:aspect-[16/12] 2xl:max-h-[700px]"
+                            className="relative w-full aspect-[1900/400]"
                             variants={itemVariants}
                           >
                             <Link href={item.redirect_url || "#"} className="block w-full h-full">
-                              <div className="absolute inset-0 flex justify-center items-center bg-white">
-                                <Image
-                                  src={item.bgImageUrl}
-                                  alt="Banner"
-                                  fill
-                                  quality={100}
-                                  className="object-fill w-full h-full"
-                                  priority
-                                />
-                              </div>
+                              <Image
+                                src={item.bgImageUrl}
+                                alt="Single Banner New"
+                                fill
+                                quality={100}
+                                className="object-fill w-full h-full"
+                                priority
+                              />
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </Slider>
+                    ) : (
+                      <motion.div className="relative w-full aspect-[1900/400]" variants={itemVariants}>
+                        <Link href={singleBannerNewData.singlebanner_new.items[0].redirect_url || "#"}>
+                          <Image
+                            src={singleBannerNewData.singlebanner_new.items[0].bgImageUrl}
+                            alt="Single Banner New"
+                            width={1900}
+                            height={400}
+                            className="w-full h-auto object-fill"
+                            priority
+                          />
+                        </Link>
+                      </motion.div>
+                    )
+                  ) : null}
+                </div>
+              </motion.section>
+            );
+
+          // case 'singlebanner':
+          //   return (
+          //     <motion.section id="singlebanner"
+          //       ref={refs.singlebanner}
+          //       initial="hidden"
+          //       animate="visible"
+          //       variants={containerVariants}
+          //       className="overflow-hidden pt-7 px-4 sm:px-6 md:px-6"
+          //     >
+          //       <div className="relative">
+          //         {isSingleBannerLoading ? (
+          //           <div className="p-2 flex justify-center items-center h-64">
+          //             <div className="animate-spin rounded-full border-t-2 border-b-2 border-blue-600"></div>
+          //           </div>
+          //         ) : singleBannerData.singlebanner.items.length > 0 ? (
+          //           singleBannerData.singlebanner.items.length > 1 ? (
+          //             <Slider {...settings} className="relative">
+          //               {singleBannerData.singlebanner.items.map((item) => (
+          //                 <motion.div
+          //                   key={item.id}
+          //                   className="relative w-full 
+          //                             aspect-[16/9] max-h-[110px] 
+          //                             sm:aspect-[16/6] sm:max-h-[180px]
+          //                             md:aspect-[16/8] md:max-h-[200px]
+          //                             lg:aspect-[16/9] lg:max-h-[300px]
+          //                             xl:aspect-[16/10] xl:max-h-[400px]
+          //                             2xl:aspect-[16/12] 2xl:max-h-[700px]"
+          //                   variants={itemVariants}
+          //                 >
+          //                   <Link href={item.redirect_url || "#"} className="block w-full h-full">
+          //                     <div className="absolute inset-0 flex justify-center items-center bg-white">
+          //                       <Image
+          //                         src={item.bgImageUrl}
+          //                         alt="Banner"
+          //                         fill
+          //                         quality={100}
+          //                         className="object-fill w-full h-full"
+          //                         priority
+          //                       />
+          //                     </div>
+          //                   </Link>
+          //                 </motion.div>
+          //               ))}
+          //             </Slider>
+          //           ) : (
+          //             <motion.div
+          //               className="relative w-full "
+          //               variants={itemVariants}
+          //             >
+          //               <Link
+          //                 href={singleBannerData.singlebanner.items[0].redirect_url || "#"}
+          //                 className="block w-full h-full"
+          //               >
+          //                 <div className="relative w-full">
+          //                   <Image
+          //                     src={singleBannerData.singlebanner.items[0].bgImageUrl}
+          //                       alt="Single Banner"
+          //                       width={1920}
+          //                       height={500}
+          //                       quality={100}
+          //                       className="w-full h-auto object-contain"
+          //                       priority
+          //                   />
+          //                 </div>
+          //               </Link>
+          //             </motion.div>
+          //           )
+          //         ) : (
+          //           <div className="p-6 text-center">
+          //           </div>
+          //         )}
+          //       </div>
+          //     </motion.section>
+          // )
+          
+          case "singlebanner-two":
+            return (
+              <motion.section
+                id="singlebanner-two"
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
+                className="overflow-hidden pt-7 px-4 sm:px-6 md:px-6"
+              >
+                <div className="relative">
+                  {isSingleBannerTwoLoading ? (
+                    <div className="p-6 flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : singleBannerTwoData.singlebanner_two.items.length > 0 ? (
+                    singleBannerTwoData.singlebanner_two.items.length > 1 ? (
+                      <Slider {...settings}>
+                        {singleBannerTwoData.singlebanner_two.items.map((item) => (
+                          <motion.div
+                            key={item.id}
+                            className="relative w-full aspect-[1900/400]"
+                            variants={itemVariants}
+                          >
+                            <Link href={item.redirect_url || "#"} className="block w-full h-full">
+                              <Image
+                                src={item.bgImageUrl}
+                                alt="Single Banner Two"
+                                fill
+                                quality={100}
+                                className="object-fill w-full h-full"
+                                priority
+                              />
                             </Link>
                           </motion.div>
                         ))}
                       </Slider>
                     ) : (
                       <motion.div
-                        className="relative w-full "
+                        className="relative w-full aspect-[1900/400]"
                         variants={itemVariants}
                       >
-                        <Link
-                          href={singleBannerData.singlebanner.items[0].redirect_url || "#"}
-                          className="block w-full h-full"
-                        >
-                          <div className="relative w-full">
-                            <Image
-                              src={singleBannerData.singlebanner.items[0].bgImageUrl}
-                                alt="Single Banner"
-                                width={1920}
-                                height={500}
-                                quality={100}
-                                className="w-full h-auto object-contain"
-                                priority
-                            />
-                          </div>
+                        <Link href={singleBannerTwoData.singlebanner_two.items[0].redirect_url || "#"}>
+                          <Image
+                            src={singleBannerTwoData.singlebanner_two.items[0].bgImageUrl}
+                            alt="Single Banner Two"
+                            width={1900}
+                            height={400}
+                            className="w-full h-auto object-fill"
+                            priority
+                          />
                         </Link>
                       </motion.div>
                     )
-                  ) : (
-                    <div className="p-6 text-center">
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </motion.section>
-          )
-          
+            );
+
+
           case 'videocard':
             return(
               <motion.section id="videocard"
@@ -2092,6 +2295,8 @@ return (
                 'flashsale': 'flash_sales',
                 'Brands': 'brands',
                 'topbanner' : 'topbanner',
+                'singlebanner': 'singlebanner',
+                'singlebanner-two': 'singlebanner-two',
                 'features' : 'features',
                 'product'  :'product',
                 // Add more mappings as needed

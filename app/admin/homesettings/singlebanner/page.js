@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export default function SingleBannerPage() {
-  const [banner, setBanner] = useState(null);
+  const [banners, setBanners] = useState([]);
   const [newBanner, setNewBanner] = useState({
     banner_image: null,
     redirect_url: "",
@@ -15,56 +16,43 @@ export default function SingleBannerPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bannerToDelete, setBannerToDelete] = useState(null);
-  const [editingStates, setEditingStates] = useState({
-    redirect_url: "",
-    status: "Active",
-    banner_image: null,
-    hasChanges: false,
-    error: "",
-  });
+  const [editingStates, setEditingStates] = useState({});
 
-  // Fetch single banner
-  const fetchBanner = async () => {
+  // ✅ Fetch banners
+  const fetchBanners = async () => {
     try {
       const res = await fetch("/api/singlebanner");
       const data = await res.json();
-      
       if (data.success) {
-        // If we have a banner, set it and hide the add form
-        if (data.banners && data.banners.length > 0) {
-          setBanner(data.banners[0]);
-          setShowAddForm(false);
-          
-          // Set editing states
-          setEditingStates({
-            redirect_url: data.banners[0].redirect_url || "",
-            status: data.banners[0].status || "Active",
+        setBanners(data.banners);
+        const states = {};
+        data.banners.forEach((banner) => {
+          states[banner._id] = {
+            redirect_url: banner.redirect_url || "",
+            status: banner.status || "Active",
             banner_image: null,
             hasChanges: false,
             error: "",
-          });
-        } else {
-          // If no banner exists, show the add form
-          setBanner(null);
-          setShowAddForm(true);
-        }
+          };
+        });
+        setEditingStates(states);
       }
     } catch (err) {
-      setError("Failed to fetch banner");
+      setError("Failed to fetch banners");
     }
   };
 
   useEffect(() => {
-    fetchBanner();
+    fetchBanners();
   }, []);
 
-  // Save (create/replace single)
+  // ✅ Save new banner
   const handleSave = async () => {
     setError("");
     setImageError("");
 
     if (!newBanner.banner_image) {
-      setImageError("Please choose an image (1900x400).");
+      setImageError("Please choose an image.");
       return;
     }
     if (!newBanner.redirect_url) {
@@ -82,10 +70,12 @@ export default function SingleBannerPage() {
         method: "POST",
         body: formData,
       });
+
       const data = await res.json();
       if (data.success) {
         setNewBanner({ banner_image: null, redirect_url: "", status: "Active" });
-        fetchBanner(); // Refresh the banner
+        setShowAddForm(false);
+        fetchBanners();
       } else {
         if (data.message.includes("1900x400")) {
           setImageError(data.message);
@@ -98,15 +88,13 @@ export default function SingleBannerPage() {
     }
   };
 
-  // Update banner
-  const handleUpdate = async (field, value) => {
-    if (!banner) return;
-    
+  // ✅ Update banner
+  const handleUpdate = async (id, field, value) => {
     setError("");
     setImageError("");
 
     const formData = new FormData();
-    formData.append("id", banner._id);
+    formData.append("id", id);
 
     if (field === "banner_image") {
       formData.append("banner_image", value);
@@ -124,18 +112,24 @@ export default function SingleBannerPage() {
       const data = await res.json();
 
       if (data.success) {
-        setEditingStates(prev => ({
+        setEditingStates((prev) => ({
           ...prev,
-          [field]: field === "banner_image" ? null : value,
-          hasChanges: false,
-          error: "",
+          [id]: {
+            ...prev[id],
+            [field]: field === "banner_image" ? null : value,
+            hasChanges: false,
+            error: "",
+          },
         }));
-        fetchBanner(); // Refresh the banner
+        fetchBanners();
       } else {
         if (data.message.includes("1900x400")) {
-          setEditingStates(prev => ({
+          setEditingStates((prev) => ({
             ...prev,
-            error: data.message,
+            [id]: {
+              ...prev[id],
+              error: data.message,
+            },
           }));
         } else {
           setError(data.message || "Update failed.");
@@ -146,17 +140,19 @@ export default function SingleBannerPage() {
     }
   };
 
-  // Handle input changes
-  const handleInputChange = (field, value) => {
-    setEditingStates(prev => ({
+  const handleInputChange = (id, field, value) => {
+    setEditingStates((prev) => ({
       ...prev,
-      [field]: value,
-      hasChanges: true,
-      error: "",
+      [id]: {
+        ...prev[id],
+        [field]: value,
+        hasChanges: true,
+        error: "",
+      },
     }));
   };
 
-  // Delete banner
+  // ✅ Delete banner
   const handleDelete = async () => {
     if (!bannerToDelete) return;
 
@@ -166,7 +162,7 @@ export default function SingleBannerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: bannerToDelete._id }),
       });
-      fetchBanner(); // Refresh the banner
+      fetchBanners();
       closeDeleteModal();
     } catch (err) {
       setError("Failed to delete banner");
@@ -174,7 +170,7 @@ export default function SingleBannerPage() {
     }
   };
 
-  const openDeleteModal = () => {
+  const openDeleteModal = (banner) => {
     setBannerToDelete(banner);
     setShowDeleteModal(true);
   };
@@ -182,6 +178,38 @@ export default function SingleBannerPage() {
   const closeDeleteModal = () => {
     setShowDeleteModal(false);
     setBannerToDelete(null);
+  };
+
+  const onDragEnd = async (result) => {
+    const { destination, source } = result;
+    if (!destination) return;
+    if (destination.index === source.index) return;
+
+    const prev = banners;
+    const reordered = Array.from(banners);
+    const [moved] = reordered.splice(source.index, 1);
+    reordered.splice(destination.index, 0, moved);
+
+    const reorderedWithOrder = reordered.map((b, i) => ({ ...b, order: i + 1 }));
+    setBanners(reorderedWithOrder);
+
+    const orderedIds = reordered.map((b) => b._id);
+    try {
+      const res = await fetch("/api/singlebanner", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+      if (!res.ok) {
+        setError("Failed to update order");
+        setBanners(prev);
+        fetchBanners();
+      }
+    } catch {
+      setError("Failed to update order");
+      setBanners(prev);
+      fetchBanners();
+    }
   };
 
   return (
@@ -199,181 +227,220 @@ export default function SingleBannerPage() {
       <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
-        {/* Add New (create/replace) - Only show if no banner exists */}
-        {!banner && (
-          <div className="mb-6">
-            {!showAddForm ? (
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded"
-              >
-                + Add New Banner
-              </button>
-            ) : (
-              <div className="border p-4 rounded-lg space-y-3">
-                <h3 className="font-medium text-lg">Add Banner</h3>
+        {/* Add New Banner */}
+        <div className="mb-6">
+          {!showAddForm ? (
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded"
+            >
+              + Add New Banner
+            </button>
+          ) : (
+            <div className="border p-4 rounded-lg space-y-3">
+              <h3 className="font-medium text-lg">Add New Banner</h3>
 
-                <div>
-                  <input
-                    type="file"
-                    onChange={(e) =>
-                      setNewBanner({ ...newBanner, banner_image: e.target.files[0] })
-                    }
-                    className="border px-2 py-1 rounded w-full"
-                  />
-                  {imageError && <p className="text-red-500 text-sm mt-1">{imageError}</p>}
-                </div>
-
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Redirect URL"
-                    value={newBanner.redirect_url}
-                    onChange={(e) =>
-                      setNewBanner({ ...newBanner, redirect_url: e.target.value })
-                    }
-                    className="border px-2 py-1 rounded w-full"
-                  />
-                  {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-                </div>
-
-                <select
-                  value={newBanner.status}
+              <div>
+                <p className="text-gray-500 text-sm mb-2">
+                  Banner size: <span className="font-semibold">1920 × 550 px</span>
+                </p>
+                <input
+                  type="file"
                   onChange={(e) =>
-                    setNewBanner({ ...newBanner, status: e.target.value })
+                    setNewBanner({ ...newBanner, banner_image: e.target.files[0] })
                   }
                   className="border px-2 py-1 rounded w-full"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSave}
-                    className="bg-blue-600 text-white px-4 py-2 rounded"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => {
-                      setNewBanner({ banner_image: null, redirect_url: "", status: "Active" });
-                      setShowAddForm(false);
-                    }}
-                    className="bg-gray-500 text-white px-4 py-2 rounded"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                />
+                {imageError && <p className="text-red-500 text-sm mt-1">{imageError}</p>}
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Existing Banner */}
-        {banner && (
-          <div className="flex flex-col md:flex-row items-center gap-4 border p-4 rounded-lg">
-            <img
-              src={banner.banner_image}
-              alt="banner"
-              className="w-48 h-20 object-cover rounded"
-            />
+              <div>
+                <input
+                  type="text"
+                  placeholder="Redirect URL"
+                  value={newBanner.redirect_url}
+                  onChange={(e) =>
+                    setNewBanner({ ...newBanner, redirect_url: e.target.value })
+                  }
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+              </div>
 
-            {/* URL */}
-            <div className="flex flex-col md:flex-row gap-2 items-center flex-grow">
-              <input
-                type="text"
-                value={editingStates.redirect_url || ""}
-                onChange={(e) =>
-                  handleInputChange("redirect_url", e.target.value)
-                }
-                className="border px-2 py-1 rounded flex-grow"
-              />
-              <button
-                onClick={() =>
-                  handleUpdate("redirect_url", editingStates.redirect_url)
-                }
-                disabled={!editingStates.hasChanges}
-                className={`p-2 rounded ${
-                  editingStates.hasChanges
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-300 text-gray-500"
-                }`}
-              >
-                ✔
-              </button>
-            </div>
-
-            {/* Status */}
-            <div className="flex flex-col md:flex-row gap-2 items-center">
               <select
-                value={editingStates.status || "Active"}
+                value={newBanner.status}
                 onChange={(e) =>
-                  handleInputChange("status", e.target.value)
+                  setNewBanner({ ...newBanner, status: e.target.value })
                 }
-                className="border px-2 py-1 rounded"
+                className="border px-2 py-1 rounded w-full"
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
-              <button
-                onClick={() =>
-                  handleUpdate("status", editingStates.status)
-                }
-                disabled={!editingStates.hasChanges}
-                className={`p-2 rounded ${
-                  editingStates.hasChanges
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-300 text-gray-500"
-                }`}
-              >
-                ✔
-              </button>
-            </div>
 
-            {/* Update Image */}
-            <div className="flex flex-col md:flex-row gap-2 items-center">
-              <div className="flex flex-col">
-                <input
-                  type="file"
-                  onChange={(e) => {
-                    if (e.target.files[0]) {
-                      handleInputChange("banner_image", e.target.files[0]);
-                    }
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  className="bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => {
+                    setNewBanner({ banner_image: null, redirect_url: "", status: "Active" });
+                    setShowAddForm(false);
                   }}
-                  className="border rounded w-40 text-sm px-2 py-1"
-                />
-                {editingStates.error && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {editingStates.error}
-                  </p>
-                )}
+                  className="bg-gray-500 text-white px-4 py-2 rounded"
+                >
+                  Cancel
+                </button>
               </div>
-
-              <button
-                onClick={() =>
-                  handleUpdate("banner_image", editingStates.banner_image)
-                }
-                disabled={!editingStates.banner_image}
-                className={`p-2 rounded ${
-                  editingStates.banner_image
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-300 text-gray-500"
-                }`}
-              >
-                ✔
-              </button>
             </div>
+          )}
+        </div>
 
-            {/* Delete */}
-            <button
-              onClick={openDeleteModal}
-              className="bg-red-500 text-white p-2 rounded"
-            >
-              🗑
-            </button>
-          </div>
-        )}
+        {/* Existing Banners */}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="banners">
+            {(dropProvided) => (
+              <div
+                className="space-y-4"
+                ref={dropProvided.innerRef}
+                {...dropProvided.droppableProps}
+              >
+                {banners.map((banner, index) => (
+                  <Draggable key={banner._id} draggableId={banner._id} index={index}>
+                    {(dragProvided) => (
+                      <div
+                        ref={dragProvided.innerRef}
+                        {...dragProvided.draggableProps}
+                        {...dragProvided.dragHandleProps}
+                        className="flex flex-col md:flex-row items-center gap-4 border p-4 rounded-lg"
+                      >
+                        <img
+                          src={banner.banner_image}
+                          alt="banner"
+                          className="w-48 h-20 object-cover rounded"
+                        />
+
+                        {/* Redirect URL */}
+                        <div className="flex flex-col md:flex-row gap-2 items-center flex-grow">
+                          <input
+                            type="text"
+                            value={editingStates[banner._id]?.redirect_url || ""}
+                            onChange={(e) =>
+                              handleInputChange(banner._id, "redirect_url", e.target.value)
+                            }
+                            className="border px-2 py-1 rounded flex-grow"
+                          />
+                          <button
+                            onClick={() =>
+                              handleUpdate(
+                                banner._id,
+                                "redirect_url",
+                                editingStates[banner._id]?.redirect_url
+                              )
+                            }
+                            disabled={!editingStates[banner._id]?.hasChanges}
+                            className={`p-2 rounded ${
+                              editingStates[banner._id]?.hasChanges
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-300 text-gray-500"
+                            }`}
+                          >
+                            ✔
+                          </button>
+                        </div>
+
+                        {/* Status */}
+                        <div className="flex flex-col md:flex-row gap-2 items-center">
+                          <select
+                            value={editingStates[banner._id]?.status || "Active"}
+                            onChange={(e) =>
+                              handleInputChange(banner._id, "status", e.target.value)
+                            }
+                            className="border px-2 py-1 rounded"
+                          >
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                          </select>
+                          <button
+                            onClick={() =>
+                              handleUpdate(
+                                banner._id,
+                                "status",
+                                editingStates[banner._id]?.status
+                              )
+                            }
+                            disabled={!editingStates[banner._id]?.hasChanges}
+                            className={`p-2 rounded ${
+                              editingStates[banner._id]?.hasChanges
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-300 text-gray-500"
+                            }`}
+                          >
+                            ✔
+                          </button>
+                        </div>
+
+                        {/* Update Image */}
+                        <div className="flex flex-col md:flex-row gap-2 items-center">
+                          <div className="flex flex-col">
+                            <input
+                              type="file"
+                              onChange={(e) => {
+                                if (e.target.files[0]) {
+                                  handleInputChange(
+                                    banner._id,
+                                    "banner_image",
+                                    e.target.files[0]
+                                  );
+                                }
+                              }}
+                              className="border rounded w-40 text-sm px-2 py-1"
+                            />
+                            {editingStates[banner._id]?.error && (
+                              <p className="text-red-500 text-sm mt-1">
+                                {editingStates[banner._id].error}
+                              </p>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              handleUpdate(
+                                banner._id,
+                                "banner_image",
+                                editingStates[banner._id]?.banner_image
+                              )
+                            }
+                            disabled={!editingStates[banner._id]?.banner_image}
+                            className={`p-2 rounded ${
+                              editingStates[banner._id]?.banner_image
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-300 text-gray-500"
+                            }`}
+                          >
+                            ✔
+                          </button>
+                        </div>
+
+                        {/* Delete */}
+                        <button
+                          onClick={() => openDeleteModal(banner)}
+                          className="bg-red-500 text-white p-2 rounded"
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {dropProvided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       </div>
 
       {/* Delete Modal */}

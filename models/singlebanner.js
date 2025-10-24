@@ -1,12 +1,13 @@
 import mongoose from "mongoose";
 
-const SingleBannerSchema = new mongoose.Schema({
-  banner_image: { type: String, required: true }, // image path under /public
+const SingleBannerNewSchema = new mongoose.Schema({
+  banner_image: { type: String, required: true }, // store image path
   redirect_url: { type: String, required: true },
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
+  order: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
 
-export default mongoose.models.single_banners ||
-  mongoose.model("single_banners", SingleBannerSchema);
+export default mongoose.models.singlebanner_news ||
+  mongoose.model("singlebanner_new", SingleBannerNewSchema);

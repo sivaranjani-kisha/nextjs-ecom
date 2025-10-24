@@ -1,66 +1,65 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
-import SingleBanner from "@/models/singlebanner-two";
+import SingleBannerTwo from "@/models/singlebanner-two";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 
-// ✅ Save file with 1900x400 validation
+// ✅ Save File Function with 1900x400 dimension validation
 async function saveFile(file) {
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  let metadata;
   try {
-    metadata = await sharp(buffer).metadata();
-  } catch {
-    throw new Error("Invalid image file. Please upload a valid image.");
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    let metadata;
+    try {
+      metadata = await sharp(buffer).metadata();
+    } catch (err) {
+      throw new Error("Invalid image file. Please upload a valid image.");
+    }
+
+    // ✅ Enforce exact 1900x400 dimensions
+    if (metadata.width !== 1900 || metadata.height !== 400) {
+      throw new Error(
+        `Image must be exactly 1900x400 pixels. Your image is ${metadata.width}x${metadata.height} pixels.`
+      );
+    }
+
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "singlebanner-two");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filename = Date.now() + "-" + file.name.replace(/\s/g, "_");
+    const filepath = path.join(uploadDir, filename);
+
+    await sharp(buffer).toFile(filepath);
+
+    return "/uploads/singlebanner-two/" + filename;
+  } catch (err) {
+    console.error("Save file error:", err);
+    throw err;
   }
-
-  if (metadata.width !== 1900 || metadata.height !== 400) {
-    throw new Error(
-      `Image must be exactly 1900x400 pixels. Your image is ${metadata.width}x${metadata.height} pixels.`
-    );
-  }
-
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "singlebanner");
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
-  const filename = Date.now() + "-" + file.name.replace(/\s/g, "_");
-  const filepath = path.join(uploadDir, filename);
-
-  await sharp(buffer).toFile(filepath);
-  return "/uploads/singlebanner/" + filename;
 }
 
-// ✅ GET: return all banners
+// ✅ GET all banners
 export async function GET() {
   try {
     await dbConnect();
-    const banners = await SingleBanner.find({}).sort({ createdAt: -1 });
+    const banners = await SingleBannerTwo.find({}).sort({ order: 1 });
     return NextResponse.json({ success: true, banners });
   } catch (err) {
-    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: err.message },
+      { status: 500 }
+    );
   }
 }
 
-// ✅ POST: create new banner (delete existing one first)
+// ✅ POST add new banner
 export async function POST(req) {
   try {
     await dbConnect();
-    
-    // First, delete any existing banners
-    const existingBanners = await SingleBanner.find({});
-    for (const banner of existingBanners) {
-      if (banner.banner_image) {
-        const oldFile = path.join(process.cwd(), "public", banner.banner_image);
-        if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
-      }
-      await SingleBanner.findByIdAndDelete(banner._id);
-    }
-    
     const formData = await req.formData();
 
     const file = formData.get("banner_image");
@@ -73,6 +72,7 @@ export async function POST(req) {
         { status: 400 }
       );
     }
+
     if (!redirect_url) {
       return NextResponse.json(
         { success: false, message: "Redirect URL is required" },
@@ -84,23 +84,36 @@ export async function POST(req) {
     try {
       filePath = await saveFile(file);
     } catch (err) {
-      return NextResponse.json({ success: false, message: err.message }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: err.message },
+        { status: 400 }
+      );
     }
 
-    const banner = await SingleBanner.create({
+    const lastBanner = await SingleBannerTwo.findOne().sort({ order: -1 });
+    const newOrder =
+      lastBanner && typeof lastBanner.order === "number" ? lastBanner.order + 1 : 1;
+
+    const newBanner = new SingleBannerTwo({
       banner_image: filePath,
       redirect_url,
       status,
+      order: newOrder,
     });
 
-    return NextResponse.json({ success: true, banner });
+    await newBanner.save();
+
+    return NextResponse.json({ success: true, banner: newBanner });
   } catch (err) {
     console.error("POST ERROR:", err);
-    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: err.message },
+      { status: 500 }
+    );
   }
 }
 
-// ✅ PUT: update by id
+// ✅ PUT update banner
 export async function PUT(req) {
   try {
     await dbConnect();
@@ -114,15 +127,15 @@ export async function PUT(req) {
       );
     }
 
-    const existing = await SingleBanner.findById(id);
-    if (!existing) {
+    const existingBanner = await SingleBannerTwo.findById(id);
+    if (!existingBanner) {
       return NextResponse.json(
         { success: false, message: "Banner not found" },
         { status: 404 }
       );
     }
 
-    const updateData = { updatedAt: new Date() };
+    let updateData = { updatedAt: new Date() };
 
     const redirect_url = formData.get("redirect_url");
     if (redirect_url !== null) updateData.redirect_url = redirect_url;
@@ -132,30 +145,74 @@ export async function PUT(req) {
 
     const file = formData.get("banner_image");
     if (file && file.size > 0) {
-      let filePath;
       try {
-        filePath = await saveFile(file);
-      } catch (err) {
-        return NextResponse.json({ success: false, message: err.message }, { status: 400 });
-      }
+        const filePath = await saveFile(file);
+        updateData.banner_image = filePath;
 
-      // delete old image
-      if (existing.banner_image) {
-        const oldFile = path.join(process.cwd(), "public", existing.banner_image);
-        if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+        if (existingBanner.banner_image) {
+          const oldFilePath = path.join(
+            process.cwd(),
+            "public",
+            existingBanner.banner_image
+          );
+          if (fs.existsSync(oldFilePath)) {
+            fs.unlinkSync(oldFilePath);
+          }
+        }
+      } catch (err) {
+        return NextResponse.json(
+          { success: false, message: err.message },
+          { status: 400 }
+        );
       }
-      updateData.banner_image = filePath;
     }
 
-    const updated = await SingleBanner.findByIdAndUpdate(id, updateData, { new: true });
-    return NextResponse.json({ success: true, banner: updated });
+    const updatedBanner = await SingleBannerTwo.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+
+    return NextResponse.json({ success: true, banner: updatedBanner });
   } catch (err) {
     console.error("PUT ERROR:", err);
-    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: err.message },
+      { status: 500 }
+    );
   }
 }
 
-// ✅ DELETE: delete by id
+// ✅ PATCH reorder banners
+export async function PATCH(req) {
+  try {
+    await dbConnect();
+    const { orderedIds } = await req.json();
+
+    if (!Array.isArray(orderedIds)) {
+      return NextResponse.json(
+        { success: false, message: "orderedIds must be an array" },
+        { status: 400 }
+      );
+    }
+
+    await SingleBannerTwo.bulkWrite(
+      orderedIds.map((id, i) => ({
+        updateOne: {
+          filter: { _id: id },
+          update: { $set: { order: i + 1 } },
+        },
+      }))
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json(
+      { success: false, message: err.message },
+      { status: 500 }
+    );
+  }
+}
+
+// ✅ DELETE banner
 export async function DELETE(req) {
   try {
     await dbConnect();
@@ -168,7 +225,7 @@ export async function DELETE(req) {
       );
     }
 
-    const banner = await SingleBanner.findById(id);
+    const banner = await SingleBannerTwo.findById(id);
     if (!banner) {
       return NextResponse.json(
         { success: false, message: "Banner not found" },
@@ -178,13 +235,18 @@ export async function DELETE(req) {
 
     if (banner.banner_image) {
       const filePath = path.join(process.cwd(), "public", banner.banner_image);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
 
-    await SingleBanner.findByIdAndDelete(id);
+    await SingleBannerTwo.findByIdAndDelete(id);
     return NextResponse.json({ success: true, message: "Banner deleted" });
   } catch (err) {
     console.error("DELETE ERROR:", err);
-    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: err.message },
+      { status: 500 }
+    );
   }
 }
