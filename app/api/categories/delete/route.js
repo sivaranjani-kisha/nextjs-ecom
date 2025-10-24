@@ -14,11 +14,11 @@ export async function POST(req) {
             return NextResponse.json({ error: "Category not found" }, { status: 404 });
         }
 
-        // Update the category to inactive
-        await Category.findByIdAndUpdate(categoryId, { status: "Inactive" });
+        // Delete all subcategories where parentid matches the category's name
+        await Category.deleteMany({ parentid: category.category_name });
 
-        // Also set all subcategories to inactive
-        await Category.updateMany({ parentid: category.category_name }, { status: "Inactive" });
+        // Delete the main category itself
+        await Category.findByIdAndDelete(categoryId);
 
         return NextResponse.json({ success: true, message: "Category and subcategories set to inactive" });
     } catch (error) {
