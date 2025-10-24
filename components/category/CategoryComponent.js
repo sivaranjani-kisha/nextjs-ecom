@@ -1252,7 +1252,7 @@ export default function CategoryPage() {
           
 
             {/* Products Section */}
-           <div className="flex-1">
+            <div className="flex-1">
   {products.length > 0 ? (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
@@ -1306,17 +1306,16 @@ export default function CategoryPage() {
                 </Link>
               </h4>
 
-              {/* Title with responsive height - FIXED */}
-              <div className="mb-2 min-h-[2.5rem] sm:min-h-[3rem]">
-                <Link
-                  href={`/product/${product.slug}`}
-                  onClick={() => handleProductClick(product)}
-                >
-                  <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-3 leading-tight">
-                    {product.name}
-                  </h3>
-                </Link>
-              </div>
+              {/* Title with improved responsive height */}
+              <Link
+                href={`/product/${product.slug}`}
+                className="block mb-2 flex-1"
+                onClick={() => handleProductClick(product)}
+              >
+                <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-3  leading-tight">
+                  {product.name}
+                </h3>
+              </Link>
 
               {/* Price Row */}
               <div className="flex items-center gap-2 mb-3">
