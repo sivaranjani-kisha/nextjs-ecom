@@ -242,7 +242,7 @@ export default function SingleBannerPage() {
 
               <div>
                 <p className="text-gray-500 text-sm mb-2">
-                  Banner size: <span className="font-semibold">1920 × 550 px</span>
+                  Banner size: <span className="font-semibold">1900 × 400 px</span>
                 </p>
                 <input
                   type="file"
