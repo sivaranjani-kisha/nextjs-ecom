@@ -141,12 +141,12 @@ export default function CategoryPage() {
         await fetchFilteredProducts(categoryData.category._id, 1, true);
       }else{
         // Redirect to 404 if no products found
-        router.push('/404');
+        router.push('/noproduct');
       }
     } catch (error) {
       toast.error('Error fetching initial data:', error);
       // Redirect to 404 on error as well
-      router.push('/404');
+      router.push('/noproduct');
     } finally {
       // setLoading(false);
     }
@@ -206,7 +206,7 @@ export default function CategoryPage() {
     } catch (error) {
       toast.error('Error fetching filtered products:', error);
       // Redirect to 404 on error
-      router.push('/404');
+      router.push('/noproduct');
     } finally {
       setLoading(false);
     }

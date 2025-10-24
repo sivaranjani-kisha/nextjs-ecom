@@ -118,7 +118,7 @@ export default function CategoryPage() {
     } catch (error) {
       toast.error("Error fetching initial data");
       // Redirect to 404 on error as well
-      router.push('/404');
+      router.push('/noproduct');
     } finally {
       setInitialLoadComplete(true);
       // setLoading(false);
@@ -195,7 +195,7 @@ export default function CategoryPage() {
     } catch (error) {
       toast.error('Error fetching products'+error);
       // Redirect to 404 on error
-      router.push('/404');
+      router.push('/noproduct');
     } finally {
       if (!initialLoad) setLoading(false);
     }
