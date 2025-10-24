@@ -237,13 +237,24 @@ const handleSave = async (subcategoryId) => {
 
     const data = formData[subcategoryId] || {};
 
-    // Only append files if they exist and are actually File objects
+// Only append files if they exist and are actually File objects
     if (data.bannerImage instanceof File) {
-      fd.append("bannerImage", data.bannerImage);
+      // Replace spaces with underscores (or remove them)
+      const sanitizedBanner = new File(
+        [data.bannerImage],
+        data.bannerImage.name.replace(/\s+/g, "_"), // replace spaces with _
+        { type: data.bannerImage.type }
+      );
+      fd.append("bannerImage", sanitizedBanner);
     }
-    
+
     if (data.categoryImage instanceof File) {
-      fd.append("categoryImage", data.categoryImage);
+      const sanitizedCategory = new File(
+        [data.categoryImage],
+        data.categoryImage.name.replace(/\s+/g, "_"), // replace spaces with _
+        { type: data.categoryImage.type }
+      );
+      fd.append("categoryImage", sanitizedCategory);
     }
     
     // Append other fields
@@ -253,7 +264,7 @@ const handleSave = async (subcategoryId) => {
     fd.append("position", data.position || 0);
     fd.append("bannerRedirectUrl", data.bannerRedirectUrl || "");
     fd.append("categoryRedirectUrl", data.categoryRedirectUrl || "");
-
+    //console.log("FormData prepared:", Array.from(fd.entries()));
     // Determine if we're updating or creating
     const method = existingCategoryProducts[subcategoryId] ? "PUT" : "POST";
     
