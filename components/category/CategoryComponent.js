@@ -1312,8 +1312,9 @@ export default function CategoryPage() {
                 className="block mb-2 flex-1"
                 onClick={() => handleProductClick(product)}
               >
-                <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb] line-clamp-3 min-h-[3rem] sm:min-h-[2.5rem] leading-tight">
-                  {product.name}
+                <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb]  line-clamp-2 min-h-[3rem] sm:min-h-[2.5rem] leading-tight">
+                  {/* {product.name} */}
+                  {window.innerWidth < 540 && product.name.length > 140 ? product.name.slice(0, 100) + "..." : product.name}
                 </h3>
               </Link>
 
