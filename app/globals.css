@@ -330,3 +330,8 @@ body::-webkit-scrollbar {
   }
 }
 
+@media (width <= 425px) {
+  .aspect-square {
+    aspect-ratio: 2;
+  }
+}
