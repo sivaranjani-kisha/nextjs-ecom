@@ -63,7 +63,7 @@ export async function GET() {
 
         const { Types } = require('mongoose');
 
-        const brandIds = [...new Set(
+        const brandIds = [...new Set( 
           products
             .map((p) => p.brand?.toString())
             .filter(brandId => brandId && Types.ObjectId.isValid(brandId))
