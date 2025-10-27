@@ -330,6 +330,41 @@ const Header = () => {
       return ['Mobiles', 'Laptops', 'Television', 'Air Conditioner', 'Refrigerator'];
     };
 
+    // ADD: robust fetch + JSON parsing helper (normalize shapes and avoid throws)
+const safeFetchJson = async (url, opts = {}, defaultValue = null) => {
+  try {
+    const res = await fetch(url, opts);
+    // read text first to avoid "Unexpected end of JSON input"
+    const text = await res.text();
+    if (!text) {
+      // no body -> return default but indicate non-ok if status not ok
+      return { ok: res.ok, data: defaultValue, error: res.ok ? "" : `Empty response (status ${res.status})` };
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (err) {
+      // invalid JSON -> return default
+      return { ok: res.ok, data: defaultValue, error: `Invalid JSON: ${err.message}` };
+    }
+
+    // Normalize common shapes: { success, data, error } or { data: ... } or raw array/object
+    if (parsed && typeof parsed === "object") {
+      if ("success" in parsed && "data" in parsed) {
+        return { ok: res.ok, data: parsed.data ?? defaultValue, error: parsed.error || "" };
+      }
+      if ("data" in parsed) {
+        return { ok: res.ok, data: parsed.data ?? defaultValue, error: parsed.error || "" };
+      }
+    }
+
+    // fallback: use parsed as data
+    return { ok: res.ok, data: parsed ?? defaultValue, error: "" };
+  } catch (err) {
+    return { ok: false, data: defaultValue, error: err?.message || String(err) };
+  }
+};
+
     useEffect(() => {
       const key = 'categories_raw_cache';
       let mounted = true;
@@ -353,14 +388,14 @@ const Header = () => {
 
         // fallback to fetch and then cache
         try {
-          const response = await fetch("/api/categories/get");
-          const raw = await response.json();
+          const { ok, data: raw, error } = await safeFetchJson("/api/categories/get", { method: "GET" }, []);
           if (!mounted) return;
-          // CHANGED: extract array safely + fallback
           const arr = extractCategoryArray(raw);
           setCategorieslist(arr);
           setWords(ensureWordsNotEmpty(arr.map((cat) => cat.category_name)));
-          saveCache(key, raw);
+          // Save raw response exactly as returned (keep shape consistent for other consumers)
+          saveCache(key, raw ?? []);
+          if (!ok) console.warn('categories/get returned not ok:', error);
         } catch (error) {
           console.error("Error fetching categories:", error);
           // Fallback words if fetch fails
@@ -416,9 +451,12 @@ const Header = () => {
               if (rawCached && (Date.now() - rawCached.ts) < CACHE_TTL_MS) {
                 raw = rawCached.data;
               } else {
-                const res = await fetch("/api/categories/get");
-                raw = await res.json();
+                // SAFE fetch using helper
+                const { ok, data, error } = await safeFetchJson("/api/categories/get", { method: "GET" }, []);
+                raw = data ?? [];
+                // always cache raw (even if empty) to avoid repeated broken responses
                 saveCache(rawKey, raw);
+                if (!ok) console.warn('categories/get fetch warning:', error);
               }
 
               if (!mounted) return;
@@ -897,13 +935,12 @@ const Header = () => {
     useEffect(() => {
         const fetchOffers = async () => {
             try {
-                const response = await fetch("/api/offers/get");
-                const result = await response.json();
-
+                const { ok, data, error } = await safeFetchJson("/api/offers/get", { method: "GET" }, []);
+                const resultData = Array.isArray(data) ? data : (data?.data || []);
                 // Process and format dates before setting state
-                const activeOffers = result.data
-                    .filter((offer) => offer.fest_offer_status === "active")
+                const activeOffers = resultData.filter((offer) => offer.fest_offer_status === "active");
                 setOffers(activeOffers);
+                if (!ok) console.warn('offers/get returned not ok:', error);
             } catch (err) {
                 console.error("Failed to fetch offers", err);
             }
@@ -914,28 +951,27 @@ const Header = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch("/api/categories/get");
-                const data = await response.json();
-
-                // Keep only active categories
-                const activeCategories = data.filter(cat => cat.status === "Active");
-
+                const { ok, data, error } = await safeFetchJson("/api/categories/get", { method: "GET" }, []);
+                const raw = Array.isArray(data) ? data : (data?.data || []);
+                // Keep only active categories (safe guard: raw may be null)
+                const activeCategories = Array.isArray(raw) ? raw.filter(cat => cat.status === "Active") : [];
                 const categoryMap = {};
                 activeCategories.forEach((cat) => {
-                    cat.subcategories = [];
-                    categoryMap[cat._id] = cat;
+                  cat.subcategories = [];
+                  categoryMap[cat._id] = cat;
                 });
 
                 const nestedCategories = [];
                 activeCategories.forEach((cat) => {
-                    if (cat.parentid === "none") {
-                        nestedCategories.push(cat);
-                    } else if (categoryMap[cat.parentid]) {
-                        categoryMap[cat.parentid].subcategories.push(cat);
-                    }
+                  if (cat.parentid === "none") {
+                    nestedCategories.push(cat);
+                  } else if (categoryMap[cat.parentid]) {
+                    categoryMap[cat.parentid].subcategories.push(cat);
+                  }
                 });
 
                 setCategories(nestedCategories);
+                if (!ok) console.warn('categories/get returned not ok:', error);
             } catch (err) {
                 console.error("Failed to fetch categories", err);
             }
@@ -1730,37 +1766,7 @@ const Header = () => {
                     </div>
 
                     {/* Search Bar (Hidden on mobile - will show in mobile menu) */}
-                    <div className="search-bar relative hidden sm:flex flex-1 w-full max-w-[900px] mx-auto items-center bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200" role="search" style={{minHeight: '40px', display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        background: 'var(--bg)',
-                        borderRadius: '10px',
-                        padding: '4px 8px',
-                        border: '3px solid var(--outline)',
-                        boxShadow: 'var(--shadow)',
-                        transition:
-                          'box-shadow .25s ease, transform .12s ease, border-color .18s ease',
-                        width: '100%',
-                        maxWidth: '900px',
-                        margin: '0 auto',}}>
-                      <div className="search-bar-inner" style={{ position: 'relative', width: '100%' }}>
-                        <div className="select-wrap">
-                          <select
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="search-select"
-                            aria-label="Search category"
-                          >
-                            <option value="All Category">All Category</option>
-                            {categories.map((cat) => (
-                              <option key={cat._id} value={cat.category_name}>
-                                {cat.category_name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        {/* input wrapper with absolute overlay */}
-                        <div className="relative flex-1">
+               <div className="relative flex-1">
                           <input
                             type="search"
                             name="q"
@@ -1792,21 +1798,7 @@ const Header = () => {
                             </div>
                           )}
                         </div>
-                        {/* CHANGE: wire desktop .search-btn to immediate redirect handler */}
-                        <button
-                          type="button"
-                          className="search-btn"
-                          style={{color:'#2453d3'}}
-                          onClick={handleSearchBtnClick}
-                          aria-label="Search"
-                        >
-                          <FaSearch />
-                        </button>
-                        <div className="shimmer" aria-hidden="true"></div>
-                        {/* DROPDOWN MOVED OUTSIDE TO SUPPORT MOBILE */ }
-                        {/* (was here previously) */}
-                      </div>                    
-                    </div>
+
                     {/* Icons Group */}
                     <div className="flex items-center gap-[2rem] sm:gap-4">
                         {/* Mobile Search Button (Hidden on desktop) */}
