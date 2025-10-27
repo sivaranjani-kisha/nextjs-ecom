@@ -2367,5 +2367,5 @@ return (
                   <RecentlyViewedProducts /> 
             </div>
         </>
-    );
+    ); 
 }
