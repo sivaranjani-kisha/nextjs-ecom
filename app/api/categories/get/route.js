@@ -1,87 +1,86 @@
-// import dbConnect from "@/lib/db";
-// import Category from "@/models/ecom_category_info";
-// import { NextResponse } from "next/server";
-
-// export async function GET() {
-//   try {
-//     await dbConnect();
-//      const categories = await Category.find().sort({ position: 1 });
-//     //const categories = await Category.find();
-//     return NextResponse.json(categories, { status: 200 });
-//   } catch (error) {
-//     console.error("Error fetching categories:", error);
-//     return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 });
-//   }
-// }
-// app/api/categories/get/route.js
-// import dbConnect from "@/lib/db";
-// import Category from "@/models/ecom_category_info";
-// import { NextResponse } from "next/server";
-
-// export async function GET() {
-//   try {
-//     await dbConnect();
-//     // Get categories sorted by position
-//     const categories = await Category.find().sort({ position: 1 });
-//     return NextResponse.json(categories, { status: 200 });
-//   } catch (error) {
-//     console.error("Error fetching categories:", error);
-//     return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 });
-//   }
-// }
 import dbConnect from "@/lib/db";
 import Category from "@/models/ecom_category_info";
 import Product from "@/models/product";
 import Brand from "@/models/ecom_brand_info";
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 
-async function getDescendantCategoryIds(categoryId) {
+/**
+ * Recursively fetch all descendant category IDs
+ */
+async function getDescendantCategoryIds(categoryId, visited = new Set()) {
+  if (!mongoose.Types.ObjectId.isValid(categoryId)) return [];
+
+  const idStr = categoryId.toString();
+  if (visited.has(idStr)) return []; // avoid loops
+  visited.add(idStr);
+
   const children = await Category.find({ parentid: categoryId });
-  let ids = [categoryId]; // include self
+  let ids = [categoryId];
 
   for (const child of children) {
-    const childIds = await getDescendantCategoryIds(child._id);
+    const childIds = await getDescendantCategoryIds(child._id, visited);
     ids = ids.concat(childIds);
   }
 
   return ids;
 }
 
+/**
+ * GET /api/categories/get
+ * Fetch all categories with their products and related brands
+ */
 export async function GET() {
   try {
     await dbConnect();
 
-    // Step 1: Get top-level categories sorted by position
     const categories = await Category.find().sort({ position: 1 });
-    // Step 2: For each category, get products and related brand details
+
     const categoriesWithProducts = await Promise.all(
       categories.map(async (cat) => {
+        console.log(`📂 Processing category: ${cat.category_name} (${cat._id})`);
 
+        // fetch all descendant IDs (including itself)
         const categoryIds = await getDescendantCategoryIds(cat._id);
 
-        const products = await Product.find({ category: { $in: categoryIds } });
+        // fetch products within these categories
+        const products = await Product.find({ category: { $in: categoryIds } }).sort({ createdAt: -1 });
 
-        const { Types } = require('mongoose');
+        if (products.length > 0) {
+          console.log(`✅ Found ${products.length} products for "${cat.category_name}"`);
+        } else {
+          console.log(`⚠️ No products found for "${cat.category_name}"`);
+        }
 
-        const brandIds = [...new Set( 
-          products
-            .map((p) => p.brand?.toString())
-            .filter(brandId => brandId && Types.ObjectId.isValid(brandId))
-        )];
+        // extract unique valid brand IDs
+        const brandIds = [
+          ...new Set(
+            products
+              .map((p) => p.brand?.toString())
+              .filter((id) => id && mongoose.Types.ObjectId.isValid(id))
+          ),
+        ];
 
-        const brands = brandIds.length > 0  ? await Brand.find({ _id: { $in: brandIds } }) : [];
+        // fetch related brands
+        const brands = brandIds.length
+          ? await Brand.find({ _id: { $in: brandIds } })
+          : [];
+
         return {
           ...cat.toObject(),
+          products,
           brands,
         };
       })
     );
 
+    console.log(`✅ Done! Fetched ${categoriesWithProducts.length} categories.`);
     return NextResponse.json(categoriesWithProducts, { status: 200 });
+
   } catch (error) {
-    console.error("Error fetching categories with products and brands:", error);
+    console.error("❌ Error fetching categories with products/brands:", error);
     return NextResponse.json(
-      { error: "Failed to fetch categories" },
+      { error: "Failed to fetch categories", details: error.message },
       { status: 500 }
     );
   }
