@@ -41,9 +41,10 @@ export async function GET() {
         console.log(`📂 Processing category: ${cat.category_name} (${cat._id})`);
 
         // fetch all descendant IDs (including itself)
-        const categoryIds = await getDescendantCategoryIds(cat._id);
+        //const categoryIds = await getDescendantCategoryIds(cat._id);
 
         // fetch products within these categories
+        /*
         const products = await Product.find({ category: { $in: categoryIds } }).sort({ createdAt: -1 });
 
         if (products.length > 0) {
@@ -70,7 +71,32 @@ export async function GET() {
           ...cat.toObject(),
           products,
           brands,
+        }; */
+        
+        // fetch all descendant IDs (including itself)
+        const categoryIds = await getDescendantCategoryIds(cat._id);
+
+        // fetch products within these categories
+        
+        const brandIds = await Product.distinct('brand', { category: { $in: categoryIds } });
+
+        if (brandIds.length > 0) {
+          console.log(`✅ Found ${brandIds.length} brands for "${cat.category_name}"`);
+        } else {
+          console.log(`⚠️ No brands found for "${cat.category_name}"`);
+        }
+
+        const validBrandIds = brandIds.filter(id => id && mongoose.Types.ObjectId.isValid(id));
+
+        const brands = validBrandIds.length
+          ? await Brand.find({ _id: { $in: validBrandIds } })
+          : [];
+
+        return {
+          ...cat.toObject(),
+          brands,
         };
+        
       })
     );
 
