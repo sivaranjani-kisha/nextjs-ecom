@@ -190,8 +190,8 @@ const CategoryProducts = () => {
                       <div className="flex-shrink-0 relative w-full md:w-[350px] h-48 sm:h-64 md:h-auto">
                         <div style={styleObj} className={`absolute inset-0 bg-cover bg-center    ${alignment === "right" ? "md:rounded-tr-lg md:rounded-br-lg" : "md:rounded-tl-lg md:rounded-bl-lg" }`}/>
                           <div className="relative z-10 h-full flex flex-col justify-end p-4 sm:p-6 text-white">
-                            <h2 className="text-lg sm:text-2xl font-bold mb-2">{category.category_name}</h2>
-                            <Link href={categoryProduct.categoryRedirectUrl || `/category/${category.category_slug}`} className="mt-2 bg-white hover:bg-gray-100 text-blue-700 text-xs sm:text-sm font-semibold py-1.5 px-3 rounded w-fit" onClick={() => setNavigating(true)} >
+                            {/* <h2 className="text-lg sm:text-2xl font-bold mb-2">{category.category_name}</h2> */}
+                            <Link href={categoryProduct.categoryRedirectUrl || `/category/${category.category_slug}`} className="mt-2 bg-white/50 hover:bg-white/70 text-blue-700 text-xs sm:text-sm font-semibold py-1.5 px-3 rounded w-fit backdrop-blur-sm" onClick={() => setNavigating(true)} >
                               Shop Now →
                             </Link>
                           </div>
