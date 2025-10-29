@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
+import BulkFilterGroupUploadPage from "../filter/filter_upload";
 import { Icon } from '@iconify/react';
 import dynamic from 'next/dynamic';
 const Select = dynamic(() => import('react-select'), { ssr: false });
@@ -14,6 +15,7 @@ export default function FilterComponent() {
   const [filterGroups, setFilterGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const customStyles = {
   menu: (provided) => ({
@@ -352,13 +354,20 @@ useEffect(() => {
   }}
   className="border px-3 py-2 rounded-md w-64"
 />
-
+<div className="flex gap-3">
             <button
               onClick={() => Modelopen(true)}
               className="bg-red-500 text-white px-4 py-2 rounded-md"
             >
               + Add Filter
             </button>
+            <button
+            onClick={() => setIsFilterModalOpen(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded-md"
+          >
+            ⬆️ Bulk Upload
+          </button>
+            </div>
           </div>
 
           <table className="w-full border border-gray-300">
@@ -527,6 +536,21 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+       {/* Modal for Bulk Upload */}
+            {isFilterModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl relative">
+                  <button
+                    onClick={() => setIsFilterModalOpen(false)}
+                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-xl"
+                  >
+                    ✕
+                  </button>
+                  <BulkFilterGroupUploadPage />
+                </div>
+              </div>
+            )}
 
       {/* Success Modal */}
       {showSuccessModal && (

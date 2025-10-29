@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 
-export default function BulkFilterGroupUploadPage() {
+export default function BulkFilterUploadPage() {
   const [excelFile, setExcelFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,7 +31,7 @@ export default function BulkFilterGroupUploadPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("/api/filter_group/bulk-upload", {
+      const res = await fetch("/api/filter/bulk_upload", {
         method: "POST",
         body: formData,
       });
@@ -39,29 +39,26 @@ export default function BulkFilterGroupUploadPage() {
       const data = await res.json();
 
       if (res.ok || res.status === 207) {
-        // 207 means partial success
-        if (res.status === 201) {
-          toast.success(data.message);
-        } else {
-          toast.success(data.message);
-          // Show detailed errors if any
-          if (data.details && data.details.length > 0) {
-            data.details.forEach(error => {
-              toast.error(`Row ${error.row}: ${error.error}`);
-            });
-          }
+        // 207 = partial success
+        toast.success(data.message);
+
+        // show detailed row errors if any
+        if (data.details && data.details.length > 0) {
+          data.details.forEach((error) => {
+            toast.error(`Row ${error.row}: ${error.error}`);
+          });
         }
-        
-        // Reset form
+
+        // reset form
         setExcelFile(null);
         const fileInput = document.querySelector('input[type="file"]');
-        if (fileInput) fileInput.value = '';
+        if (fileInput) fileInput.value = "";
       } else {
         toast.error(data.error || "Upload failed");
       }
     } catch (err) {
-      toast.error("Upload failed. Please try again.");
       console.error("Upload error:", err);
+      toast.error("Upload failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -69,8 +66,8 @@ export default function BulkFilterGroupUploadPage() {
 
   const handleSampleDownload = () => {
     const link = document.createElement("a");
-    link.href = `/uploads/files/sample_filter.xlsx?t=${Date.now()}`;
-    link.download = "FilterGroupSample.xlsx";
+    link.href = `/uploads/files/sample_filter_upload.xlsx?t=${Date.now()}`;
+    link.download = "FilterUploadSample.xlsx";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -81,10 +78,10 @@ export default function BulkFilterGroupUploadPage() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Bulk Filter Group Upload
+            Bulk Filter Upload
           </h1>
           <p className="text-gray-600">
-            Upload multiple filter groups at once using Excel/CSV file
+            Upload multiple filters (with their groups) at once using an Excel/CSV file
           </p>
         </div>
 
@@ -97,19 +94,26 @@ export default function BulkFilterGroupUploadPage() {
               Upload Excel/CSV File
             </h3>
             <p className="text-sm text-gray-500 mb-4">
-              Each row should have columns: <b>filtergroup_name</b>, <b>status</b>
+              Each row should have columns:{" "}
+              <b>filter_group_name</b>, <b>filter_name</b>, and <b>status</b>.
             </p>
             <p className="text-xs text-gray-400 mb-4">
-              • <b>filtergroup_name</b>: Name of the filter group (required)<br/>
-              • <b>status</b>: Active or Inactive (default: Active)<br/>
-              • <b>filtergroup_slug</b> will be auto-generated from the name
+              • <b>filter_group_name</b>: Name of the filter group (required)
+              <br />
+              • <b>filter_name</b>: Name of the filter under that group (required)
+              <br />
+              • <b>status</b>: Active or Inactive (default: Active)
+              <br />
+              • Slugs will be auto-generated
             </p>
 
             <input
               type="file"
               accept=".xlsx,.csv"
               onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 
+                         file:rounded-lg file:border-0 file:text-sm file:font-semibold 
+                         file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               required
             />
 
@@ -139,18 +143,38 @@ export default function BulkFilterGroupUploadPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-50 transition-colors flex items-center"
+              className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg 
+                         hover:bg-blue-700 focus:outline-none disabled:opacity-50 
+                         transition-colors flex items-center"
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 
+                      5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 
+                      5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Uploading...
                 </>
               ) : (
-                "Upload Filter Groups"
+                "Upload Filters"
               )}
             </button>
           </div>
