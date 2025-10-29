@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
-import BulkFilterGroupUploadPage from "../filter/filter_upload";
+import BulkFilterGroupUploadPage from "../filter/filter_group_upload";
 import { Icon } from '@iconify/react';
 
 export default function FiltergroupComponent() {
