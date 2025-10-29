@@ -8,6 +8,7 @@ import { writeFile } from 'fs/promises';
 import Product from "@/models/product";
 import Category from  "@/models/ecom_category_info";
 import Brand  from "@/models/ecom_brand_info";
+import formidable from 'formidable';
 import md5 from "md5";
 import mongoose from 'mongoose';
 import Filter from "@/models/ecom_filter_infos";
@@ -172,16 +173,16 @@ export async function POST(req) {
       }
 
       // Extended warranty (expects JSON string in Excel column 21)
-let extend_warranty = [];
-if (row[20] && typeof row[20] === 'string') {
-  try {
-    extend_warranty = JSON.parse(row[20].trim());
-    if (!Array.isArray(extend_warranty)) extend_warranty = [];
-  } catch (error) {
-    console.error(`Error parsing extend_warranty at row ${i + 1}: ${error.message}`);
-    extend_warranty = [];
-  }
-}
+      let extend_warranty = [];
+      if (row[20] && typeof row[20] === 'string') {
+        try {
+          extend_warranty = JSON.parse(row[20].trim());
+          if (!Array.isArray(extend_warranty)) extend_warranty = [];
+        } catch (error) {
+          console.error(`Error parsing extend_warranty at row ${i + 1}: ${error.message}`);
+          extend_warranty = [];
+        }
+      }
 
       
       // Check for existing product
@@ -304,5 +305,164 @@ if (row[20] && typeof row[20] === 'string') {
       { error: 'Failed to process upload: ' + error.message },
       { status: 500 }
     );
+  }
+}
+
+// export async function PATCH(req) {
+//   // if (req.method !== 'PATCH') {
+//   //   return NextResponse.json(
+//   //     { error: 'Method not allowed' },
+//   //     { status: 405 }
+//   //   );
+//   // }
+
+//   try {
+
+//     // Parse form data using formidable
+//     // const form   = formidable({ multiples: false });
+//     const formData        = await req.formData();
+//     // const [fields, files] = await form.parse(req);
+//     // const file = files.excel;
+//     const file = formData.get('excel');
+
+//     if (!file) {
+//       return NextResponse.json(
+//         { error: 'Excel or CSV file is required.' },
+//         { status: 400 }
+//       );
+//     }
+
+//     const filePath  = file[0].filepath;
+//     const fileName  = file[0].originalFilename.toLowerCase();
+//     const buffer    = await writeFile(join(process.cwd(), 'temp-upload.xlsx'), await fs.readFile(filePath));
+
+//     let rows = [];
+
+//     if (fileName.endsWith('.csv')) {
+//       const csvText   = buffer.toString('utf-8');
+//       const workbook  = read(csvText, { type: 'string' });
+//       rows            = utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+//     } else {
+//       const workbook  = read(buffer);
+//       rows            = utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+//     }
+
+//     if (!Array.isArray(rows) || rows.length === 0) {
+//       return NextResponse.json(
+//         { error: 'No data found in the uploaded file.' },
+//         { status: 400 }
+//       )
+//     }
+
+//     // Prepare bulk operations
+//     const bulkOps = rows.map((row, index) => {
+//       if (!row.item_code || typeof row.movement === 'undefined') {
+//         console.warn(`Skipping row ${index + 2}: Missing item_code or movement`);
+//         return null;
+//       }
+
+//       return {
+//         updateOne: {
+//           filter: { item_code: row.item_code },
+//           update: { $set: { movement: row.movement } },
+//           upsert: false,
+//         },
+//       };
+//     }).filter(Boolean); // Remove nulls
+
+//     // Chunking for large datasets
+//     const chunkSize = 1000;
+//     let updatedCount = 0;
+
+//     for (let i = 0; i < bulkOps.length; i += chunkSize) {
+//       const chunk = bulkOps.slice(i, i + chunkSize);
+//       const result = await Product.bulkWrite(chunk, { ordered: false });
+//       updatedCount += result.modifiedCount;
+//     }
+
+//     return NextResponse.json(
+//       { message: `Successfully updated ${updatedCount} products.`, totalRows: rows.length },
+//       { status: 200 }
+//     );
+
+//   } catch (error) {
+//     return NextResponse.json(
+//       { error: 'Bulk update error: ' + error.message },
+//       { status: 500 }
+//     )
+//   }
+// }
+
+export async function PATCH(req) {
+  try {
+
+    const formData  = await req.formData();
+    const file      = formData.get('excel');
+
+    if (!file) {
+      return NextResponse.json(
+        { error: 'Excel or CSV file is required.' },
+        { status: 400 }
+      );
+    }
+
+    const fileName  = file.name.toLowerCase();
+    const buffer    = Buffer.from(await file.arrayBuffer());
+
+    let rows = [];
+
+    if (fileName.endsWith('.csv')) {
+      const csvText   = buffer.toString('utf-8');
+      const workbook  = XLSX.read(csvText, { type: 'string' });
+      rows            = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+    } else {
+      const workbook  = XLSX.read(buffer);
+      rows            = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+    }
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return NextResponse.json(
+        { error: 'No data found in the uploaded file.' },
+        { status: 400 }
+      )
+    }
+
+    // Prepare bulk operations
+    const bulkOps = rows.map((row, index) => {
+      if (!row.item_code || typeof row.movement === 'undefined') {
+        console.warn(`Skipping row ${index + 2}: Missing item_code or movement`);
+        return null;
+      }
+
+      return {
+        updateOne: {
+          filter: { item_code: row.item_code },
+          update: { $set: { movement: row.movement } },
+          upsert: false,
+        },
+      };
+    }).filter(Boolean); // Remove nulls
+
+    // Chunking for large datasets
+    const chunkSize = 1000;
+    let updatedCount = 0;
+
+    for (let i = 0; i < bulkOps.length; i += chunkSize) {
+      const chunk = bulkOps.slice(i, i + chunkSize);
+      const result = await Product.bulkWrite(chunk, { ordered: false });
+      updatedCount += result.modifiedCount;
+    }
+
+    return NextResponse.json(
+      { message: `Successfully updated ${updatedCount} products.`, totalRows: rows.length },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    console.error('Bulk update error:', error);
+    return NextResponse.json(
+      { error: 'Bulk update error: ' + error.message },
+      { status: 500 }
+    )
   }
 }

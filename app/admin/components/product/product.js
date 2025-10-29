@@ -8,12 +8,13 @@ import EditProductModal from "./EditProductModal";
 import { Icon } from '@iconify/react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
+import { ToastContainer, toast } from "react-toastify";
 
 export default function CategoryComponent() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -21,6 +22,8 @@ export default function CategoryComponent() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [SelectedProduct, setSelectedProduct] = useState("");
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   
   
   // Filters
@@ -31,7 +34,7 @@ export default function CategoryComponent() {
     startDate: null,
     endDate: null
   });
- const [stockFilter, setStockFilter] = useState("");
+  const [stockFilter, setStockFilter] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -55,15 +58,15 @@ export default function CategoryComponent() {
 
   const [subcategories, setSubcategories] = useState([]);
 
-const fetchSubcategories = async () => {
-  try {
-    const response = await fetch("/api/categories");
-    const data = await response.json();
-    setSubcategories(data);
-  } catch (error) {
-    console.error("Error fetching subcategories:", error);
-  }
-};
+  const fetchSubcategories = async () => {
+    try {
+      const response = await fetch("/api/categories");
+      const data = await response.json();
+      setSubcategories(data);
+    } catch (error) {
+      console.error("Error fetching subcategories:", error);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -106,64 +109,66 @@ const fetchSubcategories = async () => {
       clearTimeout(handler);
     };
   }, [searchQuery]);
-// const exportToExcel = () => {
-//   // Prepare data in the exact requested format
-//   const dataForExport = filteredProducts.map(product => ({
-//     'Item No.': product.item_code,
-//     'Product Name': product.name,
-//     'StockQty': product.quantity,
-//     'Category': product.category?.category_name || product.category || 'No Category',
-//     'Subcategory': product.sub_category || 'No Subcategory',
-//     'Brand': product.brand?.brand_name || product.brand || 'No Brand',
-//     'Size': product.filter?.size || '',
-//     'Star': product.featured_products?.star_rating || '',
-//     'Movement': product.stock_status === "In Stock" ? "In Stock" : "Out of Stock",
-//     'MRP PRICE': product.price,
-//     'Special Price': product.special_price,
-//     'Description': product.description || '',
-//     'Key Features': product.key_specifications || '',
-//     'image1': product.images?.[0] || '',
-//     'image2': product.images?.[1] || '',
-//     'image3': product.images?.[2] || '',
-//     'overview images': product.overview_image?.join(", ") || '',
-//     'overview_description': product.overviewdescription || '',
-//     'variants': product.hasVariants ? JSON.stringify(product.variants) : '',
-//     'Status': product.status
-//   }));
 
-//   // Create worksheet with the exact column order
-//   const worksheet = XLSX.utils.json_to_sheet(dataForExport, {
-//     header: [
-//       'Item No.',
-//       'Product Name',
-//       'StockQty',
-//       'Category',
-//       'Subcategory',
-//       'Brand',
-//       'Size',
-//       'Star',
-//       'Movement',
-//       'MRP PRICE',
-//       'Special Price',
-//       'Description',
-//       'Key Features',
-//       'image1',
-//       'image2',
-//       'image3',
-//       'overview images',
-//       'overview_description',
-//       'variants',
-//       'Status'
-//     ]
-//   });
-  
-//   // Create workbook
-//   const workbook = XLSX.utils.book_new();
-//   XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-  
-//   // Generate file and trigger download
-//   XLSX.writeFile(workbook, `products_export_${new Date().toISOString().slice(0,10)}.xlsx`);
-// };
+  // const exportToExcel = () => {
+  //   // Prepare data in the exact requested format
+  //   const dataForExport = filteredProducts.map(product => ({
+  //     'Item No.': product.item_code,
+  //     'Product Name': product.name,
+  //     'StockQty': product.quantity,
+  //     'Category': product.category?.category_name || product.category || 'No Category',
+  //     'Subcategory': product.sub_category || 'No Subcategory',
+  //     'Brand': product.brand?.brand_name || product.brand || 'No Brand',
+  //     'Size': product.filter?.size || '',
+  //     'Star': product.featured_products?.star_rating || '',
+  //     'Movement': product.stock_status === "In Stock" ? "In Stock" : "Out of Stock",
+  //     'MRP PRICE': product.price,
+  //     'Special Price': product.special_price,
+  //     'Description': product.description || '',
+  //     'Key Features': product.key_specifications || '',
+  //     'image1': product.images?.[0] || '',
+  //     'image2': product.images?.[1] || '',
+  //     'image3': product.images?.[2] || '',
+  //     'overview images': product.overview_image?.join(", ") || '',
+  //     'overview_description': product.overviewdescription || '',
+  //     'variants': product.hasVariants ? JSON.stringify(product.variants) : '',
+  //     'Status': product.status
+  //   }));
+
+  //   // Create worksheet with the exact column order
+  //   const worksheet = XLSX.utils.json_to_sheet(dataForExport, {
+  //     header: [
+  //       'Item No.',
+  //       'Product Name',
+  //       'StockQty',
+  //       'Category',
+  //       'Subcategory',
+  //       'Brand',
+  //       'Size',
+  //       'Star',
+  //       'Movement',
+  //       'MRP PRICE',
+  //       'Special Price',
+  //       'Description',
+  //       'Key Features',
+  //       'image1',
+  //       'image2',
+  //       'image3',
+  //       'overview images',
+  //       'overview_description',
+  //       'variants',
+  //       'Status'
+  //     ]
+  //   });
+    
+  //   // Create workbook
+  //   const workbook = XLSX.utils.book_new();
+  //   XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+    
+  //   // Generate file and trigger download
+  //   XLSX.writeFile(workbook, `products_export_${new Date().toISOString().slice(0,10)}.xlsx`);
+  // };
+
   // Export to Excel function
   // const exportToExcel = () => {
   //   const dataForExport = filteredProducts.map(product => ({
@@ -183,116 +188,128 @@ const fetchSubcategories = async () => {
   //   XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
   //   XLSX.writeFile(workbook, `products_export_${new Date().toISOString().slice(0,10)}.xlsx`);
   // };
-const exportToExcel = () => {
-  // Create mapping objects for faster lookup
-  const categoryMap = {};
-  categories.forEach(cat => {
-    categoryMap[cat._id] = cat.category_name;
-  });
-
-  const brandMap = {};
-  brands.forEach(brand => {
-    // Check what ID field your brands actually have
-    const brandId = brand._id || brand.id;
-    if (brandId) {
-      brandMap[brandId] = brand.brand_name || brand.name;
-    }
-  });
-
-  // Prepare data with names instead of IDs
-  const dataForExport = filteredProducts.map(product => {
-    // Resolve category name
-    let categoryName = 'No Category';
-    if (product.category) {
-      if (typeof product.category === 'object') {
-        categoryName = product.category.category_name;
-      } else if (categoryMap[product.category]) {
-        categoryName = categoryMap[product.category];
-      }
-    }
-
-    // Resolve subcategory name
-    let subcategoryName = 'No Subcategory';
-    if (product.sub_category) {
-      if (typeof product.sub_category === 'object') {
-        subcategoryName = product.sub_category.category_name;
-      } else if (categoryMap[product.sub_category]) {
-        subcategoryName = categoryMap[product.sub_category];
-      }
-    }
-
-    // Resolve brand name
-    let brandName = 'No Brand';
-    if (product.brand) {
-      if (typeof product.brand === 'object') {
-        brandName = product.brand.brand_name || product.brand.name || 'No Brand Name';
-      } else {
-        // If brand is stored as ID
-        brandName = brandMap[product.brand] || 'Brand not found';
-      }
-    }
-
-//     const brandName = brands.find(b => b._id === product.brand)?.name || '';
-// // const categoryName = categories.find(c => c._id === product.category)?.name || '';
-// const subcategoryName = subcategories.find(sc => sc._id === product.sub_category)?.name || '';
-
-    return {
-      'Item No.': product.item_code,
-      'Product Name': product.name,
-      'StockQty': product.quantity,
-      'Category': categoryName,
-      'Subcategory': subcategoryName,
-      'Brand': brandName,
-      'Size': product.size,
-      'Star': product.star || '',
-      'Movement': product.movement,
-      'MRP PRICE': product.price,
-      'Special Price': product.special_price,
-      'Description': product.description || '',
-      'Key Features': product.key_specifications || '',
-      'image1': product.images?.[0] || '',
-      'image2': product.images?.[1] || '',
-      'image3': product.images?.[2] || '',
-      'overview images': product.overview_image?.join(", ") || '',
-      'overview_description': product.overviewdescription || '',
-      'variants': product.hasVariants ? JSON.stringify(product.variants) : '',
-      'Status': product.status
-    };
-  });
-
-  // Create worksheet with the exact column order
-  const worksheet = XLSX.utils.json_to_sheet(dataForExport, {
-    header: [
-      'Item No.',
-      'Product Name',
-      'StockQty',
-      'Category',
-      'Subcategory',
-      'Brand',
-      'Size',
-      'Star',
-      'Movement',
-      'MRP PRICE',
-      'Special Price',
-      'Description',
-      'Key Features',
-      'image1',
-      'image2',
-      'image3',
-      'overview images',
-      'overview_description',
-      'variants',
-      'Status'
-    ]
-  });
   
-  // Create workbook
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-  
-  // Generate file and trigger download
-  XLSX.writeFile(workbook, `products_export_${new Date().toISOString().slice(0,10)}.xlsx`);
-};
+  const exportToExcel = () => {
+    // Create mapping objects for faster lookup
+    const categoryMap = {};
+    categories.forEach(cat => {
+      categoryMap[cat._id] = cat.category_name;
+    });
+
+    const brandMap = {};
+    brands.forEach(brand => {
+      // Check what ID field your brands actually have
+      const brandId = brand._id || brand.id;
+      if (brandId) {
+        brandMap[brandId] = brand.brand_name || brand.name;
+      }
+    });
+
+    // Prepare data with names instead of IDs
+    const dataForExport = filteredProducts.map(product => {
+      // Resolve category name
+      let categoryName = 'No Category';
+      if (product.category) {
+        if (typeof product.category === 'object') {
+          categoryName = product.category.category_name;
+        } else if (categoryMap[product.category]) {
+          categoryName = categoryMap[product.category];
+        }
+      }
+
+      // Resolve subcategory name
+      let subcategoryName = 'No Subcategory';
+      if (product.sub_category) {
+        if (typeof product.sub_category === 'object') {
+          subcategoryName = product.sub_category.category_name;
+        } else if (categoryMap[product.sub_category]) {
+          subcategoryName = categoryMap[product.sub_category];
+        }
+      }
+
+      // Resolve brand name
+      let brandName = 'No Brand';
+      if (product.brand) {
+        if (typeof product.brand === 'object') {
+          brandName = product.brand.brand_name || product.brand.name || 'No Brand Name';
+        } else {
+          // If brand is stored as ID
+          brandName = brandMap[product.brand] || 'Brand not found';
+        }
+      }
+
+  //     const brandName = brands.find(b => b._id === product.brand)?.name || '';
+  // // const categoryName = categories.find(c => c._id === product.category)?.name || '';
+  // const subcategoryName = subcategories.find(sc => sc._id === product.sub_category)?.name || '';
+
+      return {
+        'Item No.': product.item_code,
+        'Product Name': product.name,
+        'StockQty': product.quantity,
+        'Category': categoryName,
+        'Subcategory': subcategoryName,
+        'Brand': brandName,
+        'Size': product.size,
+        'Star': product.star || '',
+        'Movement': product.movement,
+        'MRP PRICE': product.price,
+        'Special Price': product.special_price,
+        'Description': product.description || '',
+        'Key Features': product.key_specifications || '',
+        'image1': product.images?.[0] || '',
+        'image2': product.images?.[1] || '',
+        'image3': product.images?.[2] || '',
+        'overview images': product.overview_image?.join(", ") || '',
+        'overview_description': product.overviewdescription || '',
+        'variants': product.hasVariants ? JSON.stringify(product.variants) : '',
+        'Status': product.status
+      };
+    });
+
+    // Create worksheet with the exact column order
+    const worksheet = XLSX.utils.json_to_sheet(dataForExport, {
+      header: [
+        'Item No.',
+        'Product Name',
+        'StockQty',
+        'Category',
+        'Subcategory',
+        'Brand',
+        'Size',
+        'Star',
+        'Movement',
+        'MRP PRICE',
+        'Special Price',
+        'Description',
+        'Key Features',
+        'image1',
+        'image2',
+        'image3',
+        'overview images',
+        'overview_description',
+        'variants',
+        'Status'
+      ]
+    });
+    
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+    
+    // Generate file and trigger download
+    XLSX.writeFile(workbook, `products_export_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  const [isBulkUploadModel, setIsBulkUploadModel] = useState(false);
+
+  const OpenModelBulk = () => {
+    setIsBulkUploadModel(true);
+  };
+
+  const CloseModal = () => {
+    setIsBulkUploadModel(false);
+  };
+
   const handleEditProduct = (product) => {
     setSelectedProduct(product);
     setShowEditModal(true);
@@ -401,7 +418,8 @@ const exportToExcel = () => {
       ))
     ];
   };
-const getFilteredProducts = () => {
+
+  const getFilteredProducts = () => {
     const flattenedProducts = flattenProducts(products);
    
     return flattenedProducts.filter((product) => {
@@ -486,6 +504,7 @@ if (stockFilter) {
       return matchesSearch && matchesStatus && matchesDate && matchesCategory && matchesBrand && matchesStock;
     });
   };
+
   // const getFilteredProducts = () => {
   //   const flattenedProducts = flattenProducts(products);
     
@@ -572,6 +591,62 @@ if (stockFilter) {
     (currentPage + 1) * itemsPerPage
   );
 
+    const handleDownload = () => {
+      const link = document.createElement('a');
+      link.href = `/uploads/files/sample_bulk_upload.xlsx?t=${Date.now()}`;
+      link.download = 'SampleFormat.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+  const validateFile = (file, allowedExtensions) => {
+    if (!file) return false;
+    const fileName = file.name.toLowerCase();
+    return allowedExtensions.some((ext) => fileName.endsWith(ext));
+  };
+
+  const [excelFile ,setExcelFile] = useState();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if(!excelFile || !validateFile(excelFile, ['.xlsx', '.csv'])) {
+      toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage(null);
+
+    const formData = new FormData();
+    formData.append("excel", excelFile);
+
+    try {
+      const response = await fetch('/api/product/bulk-upload', {
+        method: "PATCH",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.error);
+      }
+
+    }catch (error){
+      toast.error(error);
+    }finally {
+      setIsLoading(false);
+    }
+
+    setIsBulkUploadModel(false);
+
+  }
+
+
   return (
     <div className="container mx-auto p-4">
       {showAlert && (
@@ -580,23 +655,27 @@ if (stockFilter) {
         </div>
       )}
 
-  <div className="flex justify-between items-center mb-5">
-  <h2 className="text-2xl font-bold">Product List</h2>
-  
-  <div className="flex items-center gap-4">
-    <button
-      onClick={exportToExcel}
-      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
-    >
-      <Icon icon="mdi:microsoft-excel" className="text-lg" />
-      Export to Excel
-    </button>
+      <div className="flex justify-between items-center mb-5">
+        <h2 className="text-2xl font-bold">Product List</h2>
+        
+        <div className="flex items-center gap-4">
+          <button onClick={OpenModelBulk} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2" >
+            <Icon icon="mdi:upload" className="text-lg" /> Bulk uploads
+          </button>
 
-    <Link href="/admin/product/create" className="bg-red-500 text-white px-4 py-2 rounded-md">
-      + Add Product
-    </Link>
-  </div>
-</div>
+          <button
+            onClick={exportToExcel}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+          >
+            <Icon icon="mdi:microsoft-excel" className="text-lg" />
+            Export to Excel
+          </button>
+
+          <Link href="/admin/product/create" className="bg-red-500 text-white px-4 py-2 rounded-md">
+            + Add Product
+          </Link>
+        </div>
+      </div>
 
 
       {isLoading ? (
@@ -925,6 +1004,46 @@ if (stockFilter) {
           }}
         />
       )}
+
+      {isBulkUploadModel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-md shadow-lg w-[70vw]">
+            <h2 className="text-xl font-semibold mb-4">Bulk Upload</h2>
+            <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Excel/CSV File
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">Upload your product data file</p>
+              </div>
+              <div className="space-y-4">
+                <input type="file" accept=".xlsx,.csv" onChange={(e) => setExcelFile(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100" required />
+              </div>
+
+              <button type="button" onClick={handleDownload} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Sample Format
+              </button>
+            </div>
+            <div className="flex mt-5 justify-between">
+              <button onClick={handleSubmit} className="bg-[#3B82F6] hover:bg-[#3B82F6] text-white px-3 py-2 rounded-md flex items-center gap-2" >
+                <Icon icon="mdi:upload" className="text-lg" />Upload
+              </button>
+
+              <button onClick={CloseModal} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md" >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ToastContainer position="top-right" autoClose={5000} />
     </div>
   );
 }
