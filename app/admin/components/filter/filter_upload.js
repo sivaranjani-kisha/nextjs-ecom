@@ -69,7 +69,7 @@ export default function BulkFilterGroupUploadPage() {
 
   const handleSampleDownload = () => {
     const link = document.createElement("a");
-    link.href = `/uploads/files/FilterGroupSample.xlsx?t=${Date.now()}`;
+    link.href = `/uploads/files/sample_filter.xlsx?t=${Date.now()}`;
     link.download = "FilterGroupSample.xlsx";
     document.body.appendChild(link);
     link.click();

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
+import BulkFilterGroupUploadPage from "../filter/filter_upload";
 import { Icon } from '@iconify/react';
 
 export default function FiltergroupComponent() {
@@ -19,7 +20,7 @@ export default function FiltergroupComponent() {
   const [filterGroupToDelete, setFilterGroupToDelete] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-
+const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 20;
 
@@ -203,20 +204,28 @@ useEffect(() => {
       ) : (
         <div className="bg-white shadow-md rounded-lg p-5 overflow-x-auto">
           <div className="flex justify-between mb-5">
-            <input
-              type="text"
-              placeholder="Search filter group..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border px-3 py-2 rounded-md w-64"
-            />
-            <button
+        <input
+          type="text"
+          placeholder="Search filter group..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="border px-3 py-2 rounded-md w-64"
+        />
+        <div className="flex gap-3">
+          <button
               onClick={() => setIsModalOpen(true)}
               className="bg-red-500 text-white px-4 py-2 rounded-md"
             >
               + Add Filter Group
             </button>
-          </div>
+          <button
+            onClick={() => setIsFilterModalOpen(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded-md"
+          >
+            ⬆️ Bulk Upload
+          </button>
+        </div>
+      </div>
 
           <table className="w-full border border-gray-300">
             <thead>
@@ -370,6 +379,21 @@ useEffect(() => {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Bulk Upload */}
+      {isFilterModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl relative">
+            <button
+              onClick={() => setIsFilterModalOpen(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-xl"
+            >
+              ✕
+            </button>
+            <BulkFilterGroupUploadPage />
           </div>
         </div>
       )}
