@@ -361,12 +361,12 @@ useEffect(() => {
             >
               + Add Filter
             </button>
-            <button
+            {/* <button
             onClick={() => setIsFilterModalOpen(true)}
             className="bg-blue-500 text-white px-4 py-2 rounded-md"
           >
             ⬆️ Bulk Upload
-          </button>
+          </button> */}
             </div>
           </div>
 
