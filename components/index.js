@@ -61,7 +61,7 @@ export default function HomeComponent() {
     const [isBrandsLoading, setIsBrandsLoading] = useState(true);
     const [scrollDirection, setScrollDirection] = useState('down');
     const [categories, setCategories] = useState([]);
-    const [products, setProducts] = useState([]);
+    //const [products, setProducts] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState();
     const [parentCategories, setParentCategories] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -302,6 +302,7 @@ export default function HomeComponent() {
               console.error("Error fetching categories:", error);
           }
         };
+        {/* 
         const fetchProducts = async () => {
             try {
                 const response = await fetch("/api/product/get");
@@ -310,7 +311,7 @@ export default function HomeComponent() {
             } catch (error) {
                 console.error("Error fetching products:", error);
             }
-        };
+        }; */}
         const fetchCategoryBanners = async () => {
           try {
             const response = await fetch("/api/categorybanner"); 
@@ -457,7 +458,7 @@ export default function HomeComponent() {
         fetchFlashSales();
         fetchBrands();
         fetchCategories();
-        fetchProducts();
+        //fetchProducts();
         fetchSingleBannerData();
         fetchSingleBannerDatatwo();
         const timer = setTimeout(() => {
@@ -774,7 +775,7 @@ export default function HomeComponent() {
         .filter(cat => cat.parentid === parentId)
         .map(sub => sub.category_slug);
     };
-    const filteredProducts = selectedCategory
+    {/* const filteredProducts = selectedCategory
     ? (() => {
         const subCategories = categories.filter(
           cat => cat.parentid === selectedCategory._id
@@ -788,7 +789,7 @@ export default function HomeComponent() {
           product.category && 
           validCategoryIds.includes(product.category.toString())
         );
-    })() : products;
+})() : products; */}
     const handleProductClick = (product) => {
       if (navigating) return;
       setNavigating(true);
