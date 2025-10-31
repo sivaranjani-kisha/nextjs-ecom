@@ -162,7 +162,7 @@ const CategoryProducts = () => {
       )}
       <motion.section id="category-products" initial="hidden" animate="visible" className="category-products px-3 sm:px-6 pt-6">
         <div className="rounded-[23px] py-4">
-          <div className="space-y-6 max-w-8xl mx-auto">
+          <div className="space-y-6 max-w-7xl mx-auto">
             <div className="flex justify-between items-center flex-wrap gap-4 mb-3 sm:mb-5">
               <h5 className="text-lg sm:text-2xl font-bold">Shop by Category</h5>
             </div>
