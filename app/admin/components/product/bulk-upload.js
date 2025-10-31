@@ -10,6 +10,9 @@ export default function BulkUploadPage() {
   const [overviewZip, setOverviewZip] = useState(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFilterUploadLoading, setIsFilterUploadLoading] = useState(false);
+  const [isFilterGroupUploadLoading, setIsFilterGroupUploadLoading] = useState(false);
+  
 
   const validateFile = (file, allowedExtensions) => {
     if (!file) return false;
@@ -42,7 +45,7 @@ export default function BulkUploadPage() {
         const formData = new FormData();
         formData.append("excel", excelFile);
     
-        setIsLoading(true);
+        setIsFilterUploadLoading(true);
     
         try {
           const res = await fetch("/api/filter/bulk_upload", {
@@ -74,7 +77,7 @@ export default function BulkUploadPage() {
           console.error("Upload error:", err);
           toast.error("Upload failed. Please try again.");
         } finally {
-          setIsLoading(false);
+          setIsFilterUploadLoading(false);
         }
       };
 
@@ -101,7 +104,7 @@ export default function BulkUploadPage() {
           const formData = new FormData();
           formData.append("excel", excelFile);
       
-          setIsLoading(true);
+          setIsFilterGroupUploadLoading(true);
       
           try {
             const res = await fetch("/api/filter_group/bulk-upload", {
@@ -138,7 +141,7 @@ export default function BulkUploadPage() {
             toast.error("Upload failed. Please try again.");
             console.error("Upload error:", err);
           } finally {
-            setIsLoading(false);
+            setIsFilterGroupUploadLoading(true);
           }
          
         };
@@ -332,7 +335,7 @@ export default function BulkUploadPage() {
           {/* Filter Bulk Upload section */}
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
-               <h2 className="text-xl font-semibold text-blue-600 mb-6 border-b pb-2">
+               <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">
                 Filter Bulk Upload
               </h2>
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -364,10 +367,10 @@ export default function BulkUploadPage() {
               <div className="flex mt-5 justify-between">
           <button
             onClick={handleFilterSubmit}
-            disabled={isLoading}
+            disabled={isFilterUploadLoading}
             className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-50 transition-colors flex items-center"
           >
-            {isLoading ? (
+            {isFilterUploadLoading ? (
               <>
                 <svg
                   className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
@@ -403,7 +406,7 @@ export default function BulkUploadPage() {
           {/* Filter Group Section */}
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
-               <h2 className="text-xl font-semibold text-blue-600 mb-6 border-b pb-2">
+               <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">
                 Filter Group Bulk Upload
               </h2>
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -434,10 +437,10 @@ export default function BulkUploadPage() {
               <div className="flex mt-5 justify-between">
           <button
             onClick={handleFilterGroupSubmit}
-            disabled={isLoading}
+            disabled={isFilterGroupUploadLoading}
             className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-50 transition-colors flex items-center"
           >
-            {isLoading ? (
+            {isFilterGroupUploadLoading ? (
               <>
                 <svg
                   className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
