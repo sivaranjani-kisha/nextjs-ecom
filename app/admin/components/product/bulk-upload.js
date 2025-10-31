@@ -24,129 +24,119 @@ export default function BulkUploadPage() {
     import("react-toastify/dist/ReactToastify.css");
   }, []);
 
-   useEffect(() => {
-        import("react-toastify/dist/ReactToastify.css");
-      }, []);
-    
-      const validateFilterFile = (file) => {
-        if (!file) return false;
-        const name = file.name.toLowerCase();
-        return name.endsWith(".xlsx") || name.endsWith(".csv");
-      };
+  const validateFilterFile = (file) => {
+    if (!file) return false;
+    const name = file.name.toLowerCase();
+    return name.endsWith(".xlsx") || name.endsWith(".csv");
+  };
 
   const handleFilterSubmit = async (e) => {
-        e.preventDefault();
-    
-        if (!excelFile || !validateFilterFile(excelFile)) {
-          toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
-          return;
-        }
-    
-        const formData = new FormData();
-        formData.append("excel", excelFile);
-    
-        setIsFilterUploadLoading(true);
-    
-        try {
-          const res = await fetch("/api/filter/bulk_upload", {
-            method: "POST",
-            body: formData,
+    e.preventDefault();
+
+    if (!excelFile || !validateFilterFile(excelFile)) {
+      toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("excel", excelFile);
+
+    setIsFilterUploadLoading(true);
+
+    try {
+      const res = await fetch("/api/filter/bulk_upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok || res.status === 207) {
+        // 207 = partial success
+        toast.success(data.message);
+
+        // show detailed row errors if any
+        if (data.details && data.details.length > 0) {
+          data.details.forEach((error) => {
+            toast.error(`Row ${error.row}: ${error.error}`);
           });
-    
-          const data = await res.json();
-    
-          if (res.ok || res.status === 207) {
-            // 207 = partial success
-            toast.success(data.message);
-    
-            // show detailed row errors if any
-            if (data.details && data.details.length > 0) {
-              data.details.forEach((error) => {
-                toast.error(`Row ${error.row}: ${error.error}`);
-              });
-            }
-    
-            // reset form
-            setExcelFile(null);
-            const fileInput = document.querySelector('input[type="file"]');
-            if (fileInput) fileInput.value = "";
-          } else {
-            toast.error(data.error || "Upload failed");
-          }
-        } catch (err) {
-          console.error("Upload error:", err);
-          toast.error("Upload failed. Please try again.");
-        } finally {
-          setIsFilterUploadLoading(false);
         }
-      };
 
-      useEffect(() => {
-          import("react-toastify/dist/ReactToastify.css");
-        }, []);
-      
-        const validateGroupFilterFile = (file) => {
-          if (!file) return false;
-          const name = file.name.toLowerCase();
-          return name.endsWith(".xlsx") || name.endsWith(".csv");
-        };
-      
-      
+        // reset form
+        setExcelFile(null);
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) fileInput.value = "";
+      } else {
+        toast.error(data.error || "Upload failed");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("Upload failed. Please try again.");
+    } finally {
+      setIsFilterUploadLoading(false);
+    }
+  };
 
-      const handleFilterGroupSubmit = async (e) => {
-          e.preventDefault();
-      
-          if (!excelFile || !validateGroupFilterFile(excelFile)) {
-            toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
-            return;
-          }
-      
-          const formData = new FormData();
-          formData.append("excel", excelFile);
-      
-          setIsFilterGroupUploadLoading(true);
-      
-          try {
-            const res = await fetch("/api/filter_group/bulk-upload", {
-              method: "POST",
-              body: formData,
+  const validateGroupFilterFile = (file) => {
+    if (!file) return false;
+    const name = file.name.toLowerCase();
+    return name.endsWith(".xlsx") || name.endsWith(".csv");
+  };
+
+  const handleFilterGroupSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!excelFile || !validateGroupFilterFile(excelFile)) {
+      toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("excel", excelFile);
+
+    setIsFilterGroupUploadLoading(true);
+
+    try {
+      const res = await fetch("/api/filter_group/bulk-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok || res.status === 207) {
+        // 207 means partial success
+        if (res.status === 201) {
+          toast.success(data.message);
+        } else {
+          toast.success(data.message);
+          // Show detailed errors if any
+          if (data.details && data.details.length > 0) {
+            data.details.forEach(error => {
+              toast.error(`Row ${error.row}: ${error.error}`);
             });
-      
-            const data = await res.json();
-      
-            if (res.ok || res.status === 207) {
-              // 207 means partial success
-              if (res.status === 201) {
-                toast.success(data.message);
-              } else {
-                toast.success(data.message);
-                // Show detailed errors if any
-                if (data.details && data.details.length > 0) {
-                  data.details.forEach(error => {
-                    toast.error(`Row ${error.row}: ${error.error}`);
-                  });
-                }
-              }
-            //    // Refresh the filter groups data
-            // fetchFilterGroups();
-            
-              // Reset form
-              setExcelFile(null);
-              const fileInput = document.querySelector('input[type="file"]');
-              if (fileInput) fileInput.value = '';
-            } else {
-              toast.error(data.error || "Upload failed");
-            }
-          } catch (err) {
-            toast.error("Upload failed. Please try again.");
-            console.error("Upload error:", err);
-          } finally {
-            setIsFilterGroupUploadLoading(true);
           }
-         
-        };
+        }
+      //    // Refresh the filter groups data
+      // fetchFilterGroups();
+      
+        // Reset form
+        setExcelFile(null);
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) fileInput.value = '';
+      } else {
+        toast.error(data.error || "Upload failed");
+      }
+    } catch (err) {
+      toast.error("Upload failed. Please try again.");
+      console.error("Upload error:", err);
+    } finally {
+      setIsFilterGroupUploadLoading(false);
+    }
+    
+  };
 
-      const handleFilterGroupSampleDownload = () => {
+  const handleFilterGroupSampleDownload = () => {
     const link = document.createElement("a");
     link.href = `/uploads/files/sample_filter.xlsx?t=${Date.now()}`;
     link.download = "FilterGroupSample.xlsx";
@@ -214,22 +204,22 @@ export default function BulkUploadPage() {
   };
 
   const handleDownload = () => {
-  const link = document.createElement('a');
-  link.href = `/uploads/files/SampleFormat.xlsx?t=${Date.now()}`;
-  link.download = 'SampleFormat.xlsx';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+    const link = document.createElement('a');
+    link.href = `/uploads/files/SampleFormat.xlsx?t=${Date.now()}`;
+    link.download = 'SampleFormat.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
- const handleZipDownload = () => {
-  const link = document.createElement('a');
-  link.href = `/uploads/files/Sample.zip?t=${Date.now()}`;
-  link.download = 'Sample.zip';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+  const handleZipDownload = () => {
+    const link = document.createElement('a');
+    link.href = `/uploads/files/Sample.zip?t=${Date.now()}`;
+    link.download = 'Sample.zip';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
