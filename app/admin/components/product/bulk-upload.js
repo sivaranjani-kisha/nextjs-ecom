@@ -21,6 +21,146 @@ export default function BulkUploadPage() {
     import("react-toastify/dist/ReactToastify.css");
   }, []);
 
+   useEffect(() => {
+        import("react-toastify/dist/ReactToastify.css");
+      }, []);
+    
+      const validateFilterFile = (file) => {
+        if (!file) return false;
+        const name = file.name.toLowerCase();
+        return name.endsWith(".xlsx") || name.endsWith(".csv");
+      };
+
+  const handleFilterSubmit = async (e) => {
+        e.preventDefault();
+    
+        if (!excelFile || !validateFilterFile(excelFile)) {
+          toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+          return;
+        }
+    
+        const formData = new FormData();
+        formData.append("excel", excelFile);
+    
+        setIsLoading(true);
+    
+        try {
+          const res = await fetch("/api/filter/bulk_upload", {
+            method: "POST",
+            body: formData,
+          });
+    
+          const data = await res.json();
+    
+          if (res.ok || res.status === 207) {
+            // 207 = partial success
+            toast.success(data.message);
+    
+            // show detailed row errors if any
+            if (data.details && data.details.length > 0) {
+              data.details.forEach((error) => {
+                toast.error(`Row ${error.row}: ${error.error}`);
+              });
+            }
+    
+            // reset form
+            setExcelFile(null);
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput) fileInput.value = "";
+          } else {
+            toast.error(data.error || "Upload failed");
+          }
+        } catch (err) {
+          console.error("Upload error:", err);
+          toast.error("Upload failed. Please try again.");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      useEffect(() => {
+          import("react-toastify/dist/ReactToastify.css");
+        }, []);
+      
+        const validateGroupFilterFile = (file) => {
+          if (!file) return false;
+          const name = file.name.toLowerCase();
+          return name.endsWith(".xlsx") || name.endsWith(".csv");
+        };
+      
+      
+
+      const handleFilterGroupSubmit = async (e) => {
+          e.preventDefault();
+      
+          if (!excelFile || !validateGroupFilterFile(excelFile)) {
+            toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+            return;
+          }
+      
+          const formData = new FormData();
+          formData.append("excel", excelFile);
+      
+          setIsLoading(true);
+      
+          try {
+            const res = await fetch("/api/filter_group/bulk-upload", {
+              method: "POST",
+              body: formData,
+            });
+      
+            const data = await res.json();
+      
+            if (res.ok || res.status === 207) {
+              // 207 means partial success
+              if (res.status === 201) {
+                toast.success(data.message);
+              } else {
+                toast.success(data.message);
+                // Show detailed errors if any
+                if (data.details && data.details.length > 0) {
+                  data.details.forEach(error => {
+                    toast.error(`Row ${error.row}: ${error.error}`);
+                  });
+                }
+              }
+            //    // Refresh the filter groups data
+            // fetchFilterGroups();
+            
+              // Reset form
+              setExcelFile(null);
+              const fileInput = document.querySelector('input[type="file"]');
+              if (fileInput) fileInput.value = '';
+            } else {
+              toast.error(data.error || "Upload failed");
+            }
+          } catch (err) {
+            toast.error("Upload failed. Please try again.");
+            console.error("Upload error:", err);
+          } finally {
+            setIsLoading(false);
+          }
+         
+        };
+
+      const handleFilterGroupSampleDownload = () => {
+    const link = document.createElement("a");
+    link.href = `/uploads/files/sample_filter.xlsx?t=${Date.now()}`;
+    link.download = "FilterGroupSample.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSampleDownload = () => {
+    const link = document.createElement("a");
+    link.href = `/uploads/files/sample_filter_upload.xlsx?t=${Date.now()}`;
+    link.download = "FilterUploadSample.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -188,7 +328,148 @@ export default function BulkUploadPage() {
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-blue-700 hover:file:bg-red-100"
             />
           </div>
+          
+          {/* Filter Bulk Upload section */}
+          <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
+            <div className="mb-4">
+               <h2 className="text-xl font-semibold text-blue-600 mb-6 border-b pb-2">
+                Filter Bulk Upload
+              </h2>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Excel/CSV File
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Upload your product data file</p>
+            </div>
+            <div className="space-y-4">
+              <input
+                type="file"
+                accept=".xlsx,.csv"
+                onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100"
+                required
+              />
+              <button
+                type="button"   // <-- Add this
+                 onClick={handleSampleDownload}
+                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Sample Format
+              </button>
+              <div className="flex mt-5 justify-between">
+          <button
+            onClick={handleFilterSubmit}
+            disabled={isLoading}
+            className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-50 transition-colors flex items-center"
+          >
+            {isLoading ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Uploading...
+              </>
+            ) : (
+              "Upload Filter Groups"
+            )}
+          </button>
+        </div>
 
+            </div>
+          </div>
+          
+          {/* Filter Group Section */}
+          <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
+            <div className="mb-4">
+               <h2 className="text-xl font-semibold text-blue-600 mb-6 border-b pb-2">
+                Filter Group Bulk Upload
+              </h2>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Excel/CSV File
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Upload your product data file</p>
+            </div>
+            <div className="space-y-4">
+              <input
+            type="file"
+            accept=".xlsx,.csv"
+            onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            required
+          />
+              <button
+                onClick={handleFilterGroupSampleDownload}
+                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Sample Format
+              </button>
+              <div className="flex mt-5 justify-between">
+          <button
+            onClick={handleFilterGroupSubmit}
+            disabled={isLoading}
+            className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-50 transition-colors flex items-center"
+          >
+            {isLoading ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Uploading...
+              </>
+            ) : (
+              "Upload Filter Groups"
+            )}
+          </button>
+        </div>
+
+            </div>
+          </div>
+          
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
             <button
