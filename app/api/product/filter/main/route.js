@@ -109,6 +109,12 @@ export async function GET(req) {
     query._id = { $in: filteredProductIds };
     productsQuery = Product.find(query).populate('brand', 'brand_name brand_slug');
   }
+
+   // Apply sorting: In Stock products first, then Out of Stock
+    productsQuery = productsQuery.sort({ 
+      stock_status: -1, // -1 for descending: "In Stock" comes before "Out of Stock"
+      _id: -1 // Secondary sort by _id or any other field you prefer
+    });
   
   // Apply pagination
   const skip = (page - 1) * limit;
