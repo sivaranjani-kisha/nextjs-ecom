@@ -21,6 +21,29 @@ export async function POST(req) {
       }
     }
 
+    // ✅ Normalize the new fields
+    if (Object.prototype.hasOwnProperty.call(productData, "model_number")) {
+      const trimmed = (productData.model_number ?? "").toString().trim();
+      productData.model_number = trimmed;
+    } else {
+      productData.model_number = "";
+    }
+
+    if (Object.prototype.hasOwnProperty.call(productData, "movement")) {
+      const trimmed = (productData.movement ?? "").toString().trim();
+      productData.movement = trimmed;
+    } else {
+      productData.movement = "";
+    }
+
+    if (Object.prototype.hasOwnProperty.call(productData, "size")) {
+      const trimmed = (productData.size ?? "").toString().trim();
+      productData.size = trimmed;
+    } else {
+      productData.size = "";
+    }
+
+
     const imageFiles = formData.getAll("images");
     // const category   = formData.get("category");
     let variants = JSON.parse(formData.get("variant"));
@@ -33,6 +56,14 @@ export async function POST(req) {
       if (existingProduct) {
         return NextResponse.json({ error: "Product already exists" }, { status: 400 });
       }
+
+      // ✅ Duplicate check for model_number (optional - remove if not needed)
+    if (productData.model_number) {
+      let existingModel = await Product.findOne({ model_number: productData.model_number });
+      if (existingModel) {
+        return NextResponse.json({ error: "Product with this model number already exists" }, { status: 400 });
+      }
+    }
 
       console.log(productData);
 console.log("..............................................................");
