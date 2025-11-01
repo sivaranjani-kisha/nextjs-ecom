@@ -2025,19 +2025,14 @@ const handleSubmit = async (e) => {
       
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Movement</label>
-        <select
+        <input
+          type="text"
           name="movement"
           value={product.movement || ''}
           onChange={handleChange}
           className="w-full border p-2 rounded"
-        >
-          <option value="">Select Movement</option>
-          <option value="Automatic">Automatic</option>
-          <option value="Quartz">Quartz</option>
-          <option value="Mechanical">Mechanical</option>
-          <option value="Solar">Solar</option>
-          <option value="Kinetic">Kinetic</option>
-        </select>
+          placeholder="Enter movement type"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Size</label>
