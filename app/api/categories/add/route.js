@@ -85,7 +85,7 @@ export async function POST(req) {
     });
 
     await newCategory.save();
-    return NextResponse.json({ message: "Category added successfully", category: newCategory }, { status: 201 });
+    return NextResponse.json({ message: "Category added successfullyyyy", category: newCategory }, { status: 201 });
 
   } catch (error) {
     console.error("Error adding category:", error);
