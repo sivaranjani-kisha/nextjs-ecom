@@ -34,7 +34,9 @@ export async function POST(req) {
     }
 
     const results = {
-      successful: 0,
+      created: 0,
+      updated: 0,
+      skipped: 0,
       failed: 0,
       errors: []
     };
@@ -51,26 +53,43 @@ export async function POST(req) {
           throw new Error("Filter group name is required");
         }
 
+        // Generate slug from filter group name
         let filtergroup_slug = filtergroup_name.toLowerCase().replace(/\s+/g, "-");
-
-        let existingFilter = await Filter.findOne({ filtergroup_slug });
-        if (existingFilter) {
-          throw new Error(`Filter group "${filtergroup_name}" already exists`);
-        }
-
+        
+        // Validate status
         const validStatus = ["Active", "Inactive"].includes(status) ? status : "Active";
 
-        const newFilter = new Filter({
-          filtergroup_name,
-          filtergroup_slug,
-          status: validStatus,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+        // Check if filter group already exists (case-insensitive search)
+        let existingFilter = await Filter.findOne({ 
+          filtergroup_name: { $regex: new RegExp(`^${filtergroup_name}$`, 'i') } 
         });
 
-        await newFilter.save();
-        results.successful++;
-        console.log(`Created: ${filtergroup_name}`);
+        if (existingFilter) {
+          // Update only the status if it has changed
+          if (existingFilter.status !== validStatus) {
+            existingFilter.status = validStatus;
+            existingFilter.updatedAt = new Date();
+            await existingFilter.save();
+            results.updated++;
+            console.log(`Updated status for "${filtergroup_name}" to: ${validStatus}`);
+          } else {
+            results.skipped++;
+            console.log(`Skipped "${filtergroup_name}" - status unchanged`);
+          }
+        } else {
+          // Create new filter group
+          const newFilter = new Filter({
+            filtergroup_name,
+            filtergroup_slug,
+            status: validStatus,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+
+          await newFilter.save();
+          results.created++;
+          console.log(`Created new filter group: "${filtergroup_name}"`);
+        }
 
       } catch (error) {
         results.failed++;
@@ -84,7 +103,7 @@ export async function POST(req) {
     }
 
     return NextResponse.json({
-      message: `Bulk upload completed: ${results.successful} successful, ${results.failed} failed`,
+      message: `Bulk upload completed: ${results.created} created, ${results.updated} updated, ${results.skipped} skipped, ${results.failed} failed`,
       details: results
     });
 
