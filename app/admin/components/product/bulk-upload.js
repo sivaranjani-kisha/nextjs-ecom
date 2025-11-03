@@ -7,7 +7,7 @@ import { ToastContainer, toast } from "react-toastify";
 export default function BulkUploadPage() {
   const [excelFile, setExcelFile]                                   = useState(null);
   const [excelFileMovement, setExcelFileMovement]                   = useState(null);
-  // const [productFilterValue, setProductFilterValue]                 = useState(null);
+  const [productFilterValue, setProductFilterValue]                 = useState(null);
   const [imageZip, setImageZip]                                     = useState(null);
   const [overviewZip, setOverviewZip]                               = useState(null);
   const [message, setMessage]                                       = useState("");
@@ -297,29 +297,38 @@ export default function BulkUploadPage() {
         setIsLoading(false);
       }
 
+    }else if (uploadType == "filter_values") {
+
+      if(!productFilterValue || !validateFile(productFilterValue, ['.xlsx', '.csv'])) {
+        toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+        return;
+      }
+
+      setIsLoading(true);
+      setMessage(null);
+      formData.append("excel", productFilterValue);
+
+      try {
+        const response = await fetch('/api/product/bulk-upload/filter', {
+          method: "POST",
+          body: formData,
+        });
+
+        const data    = await response.json();
+
+        if(response.ok) {
+          toast.success(data.message);
+        }else {
+          toast.error(data.error);
+        }
+
+      }catch(error) {
+        toast.error(error);
+      }finally {
+        setIsLoading(false);
+      }
+
     }
-    // else if (uploadType == "filter_values") {
-
-    //   if(!productFilterValue || !validateFile(productFilterValue, ['.xlsx', '.csv'])) {
-    //     toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
-    //     return;
-    //   }
-
-    //   setIsLoading(true);
-    //   setMessage(null);
-    //   formData.append("excel", productFilterValue);
-
-    //   try {
-    //     const response = await fetch('/api/product/bulk-upload/filter', {
-          
-    //     });
-    //   }catch(error) {
-    //     toast.error(error);
-    //   }finally {
-
-    //   }
-
-    // }
   };
 
   const handleDownload = () => {
@@ -340,6 +349,15 @@ export default function BulkUploadPage() {
     document.body.removeChild(link);
   };
 
+  const handleDownloadFilterValues = () => {
+    const link = document.createElement('a');
+    link.href = `/uploads/files/filter_values.xlsx?t=${Date.now()}`;
+    link.download = 'SampleFormatFilterValues.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -795,7 +813,7 @@ export default function BulkUploadPage() {
           </div>
         </form>
 
-        {/* <form onSubmit={(e) => handleSubmit(e, "filter_values")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
+        <form onSubmit={(e) => handleSubmit(e, "filter_values")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
               <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Filter Values Bulk Upload</h2>
@@ -811,7 +829,7 @@ export default function BulkUploadPage() {
               <input type="file" accept=".xlsx,.csv" onChange={(e) => setProductFilterValue(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100" required />
             </div>
 
-            <button type="button" onClick={handleDownload} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
+            <button type="button" onClick={handleDownloadFilterValues} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
@@ -839,7 +857,7 @@ export default function BulkUploadPage() {
             </button>
 
           </div>
-        </form> */}
+        </form>
 
         <ToastContainer position="top-right" autoClose={5000} />
       </div>
