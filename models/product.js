@@ -56,6 +56,5 @@ const ProductSchema = new mongoose.Schema({
   sub_category_new_name: String,
 });
 
-//export default mongoose.models.Product || mongoose.model("Product", ProductSchema);
-export default mongoose.models.Product ||
-  mongoose.model("Product", ProductSchema, "products_copy_new");
+export default mongoose.models.Product || mongoose.model("Product", ProductSchema);
+//export default mongoose.models.Product || mongoose.model("Product", ProductSchema, "products_copy_new");
