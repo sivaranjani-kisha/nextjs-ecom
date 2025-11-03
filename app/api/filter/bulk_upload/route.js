@@ -88,12 +88,12 @@ export async function POST(req) {
           }
         } else {
           // Create unique slug by including filter group reference
-          const baseSlug = filterName.toLowerCase().replace(/\s+/g, "-");
-          const uniqueSlug = `${baseSlug}-${filterGroup._id.toString().slice(-6)}`;
+          const baseSlug = filterName.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+          // const uniqueSlug = `${baseSlug}-${filterGroup._id.toString().slice(-6)}`;
 
           await Filter.create({
             filter_name: filterName,
-            filter_slug: uniqueSlug,
+            filter_slug: baseSlug,
             filter_group: filterGroup._id,
             status: statusValue,
           });
