@@ -34,7 +34,19 @@ export default function CategoryPage() {
   const [sortOption, setSortOption] = useState('');
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(true);
   const [isBrandsExpanded, setIsBrandsExpanded] = useState(true);
-  const [expandedFilters, setExpandedFilters] = useState({}); 
+  const [expandedFilters, setExpandedFilters] = useState(() => {
+  // Initialize all filter groups as expanded
+  const initialExpanded = {};
+  if (categoryData.filters) {
+    categoryData.filters.forEach(filter => {
+      const groupId = filter.filter_group_name;
+      if (groupId) {
+        initialExpanded[groupId] = true;
+      }
+    });
+  }
+  return initialExpanded;
+}); 
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
   const [wishlist, setWishlist] = useState([]); 
   const toggleFilters = () => setIsFiltersExpanded(!isFiltersExpanded);
@@ -115,6 +127,12 @@ export default function CategoryPage() {
         }
       });
       setFilterGroups(groups);
+
+      const initialExpanded = {};
+        Object.keys(groups).forEach(groupId => {
+          initialExpanded[groupId] = true;
+        });
+        setExpandedFilters(initialExpanded);
       
       // Fetch products after setting up initial data
       await fetchFilteredProducts(categoryData, 1, true);
