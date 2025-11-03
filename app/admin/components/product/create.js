@@ -349,6 +349,11 @@ useEffect(() => {
       variants: productData.variants || [],
       images: productData.images || ['', '', '', ''],
       files: productData.files || [],
+
+      // Add new fields with fallbacks
+      size: productData.size || "",
+      movement: productData.movement || "",
+      model_number: productData.model_number || "",
       // FIX: Use overview_image from database
       overviewImage: Array.isArray(productData.overview_image) && productData.overview_image.length > 0 
         ? productData.overview_image 
@@ -2004,6 +2009,43 @@ const handleSubmit = async (e) => {
 ))}
 
 </div>
+
+<div className="grid grid-cols-2 gap-4 border p-4 rounded">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Model Number</label>
+        <input
+          type="text"
+          name="model_number"
+          value={product.model_number || ''}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          placeholder="Enter model number"
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Movement</label>
+        <input
+          type="text"
+          name="movement"
+          value={product.movement || ''}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          placeholder="Enter movement type"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Size</label>
+        <input
+          type="text"
+          name="size"
+          value={product.size || ''}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          placeholder="e.g., 42mm, 40mm, etc."
+        />
+      </div>
+    </div>
 
   </div>
 )}

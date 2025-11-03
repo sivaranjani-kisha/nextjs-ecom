@@ -57,6 +57,22 @@ if (productData.slug) {
     );
   }
 }
+
+ // ✅ Duplicate check for model_number (if you want it to be unique)
+    if (productData.model_number) {
+      const existingModel = await Product.findOne({
+        model_number: productData.model_number,
+        _id: { $ne: productId } // exclude current product
+      });
+
+      if (existingModel) {
+        return NextResponse.json(
+          { error: "Product with this model number already exists" },
+          { status: 400 }
+        );
+      }
+    }
+
  // ✅ Get extend_warranty from productData instead of separate formData
     const extend_warranty = (productData.extend_warranty || []).map(item => ({
       year: Number(item.year) || 0,
@@ -175,6 +191,10 @@ const updatedProduct = await Product.findByIdAndUpdate(
   productId,
   {
     ...productData,
+    // Ensure new fields are properly set
+      model_number: productData.model_number || "",
+      movement: productData.movement || "",
+      size: productData.size || "",
      category: productData.category, // Parent category
   sub_category: productData.sub_category, // Subcategory
     images: finalImages,
