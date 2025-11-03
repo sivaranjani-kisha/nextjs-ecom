@@ -6,19 +6,17 @@ import { writeFile } from "fs/promises";
 import path from "path";
 
 function convertSlug(slug) {
-  let result = slug.replace(/ /g, "-"); // replace spaces with hyphens
-  result = result.replace(/[^A-Za-z0-9\-]/g, ""); // remove special chars
-  result = result.replace(/-+/g, "-"); // collapse multiple hyphens
+  let result = slug.replace(/ /g, "-");
+  result = result.replace(/[^A-Za-z0-9\-]/g, "");
+  result = result.replace(/-+/g, "-");
   result = result.toLowerCase();
-
   return result;
-
 }
+
 export async function POST(req) {
   try {
     await dbConnect();
 
-    // Parse formData instead of req.body
     const formData = await req.formData();
     const category_name = formData.get("category_name");
     const parentid = formData.get("parentid") || "none";
@@ -39,34 +37,43 @@ export async function POST(req) {
       return NextResponse.json({ error: "Category already exists" }, { status: 400 });
     }
 
-    // Save the image locally if provided
+    // Safe file processing - check if file exists and has data
     let image_url = "";
-    // FIX: Only process image if it exists and is a valid file
-    if (file && file instanceof File && file.size > 0 && file.name) {
+    if (file && typeof file !== "string" && file.name && file.size > 0) {
       try {
-        const buffer = Buffer.from(await file.arrayBuffer());
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        
+        // Ensure upload directory exists
         const uploadDir = path.join(process.cwd(), "public/uploads/categories");
-        await writeFile(path.join(uploadDir, file.name), buffer);
-        image_url = `http://localhost:3000/uploads/categories/${file.name}`;
+        
+        // You might want to create the directory if it doesn't exist
+        // const fs = require('fs');
+        // if (!fs.existsSync(uploadDir)) {
+        //   fs.mkdirSync(uploadDir, { recursive: true });
+        // }
+        
+        const filename = `${Date.now()}-${file.name}`;
+        await writeFile(path.join(uploadDir, filename), buffer);
+        image_url = `/uploads/categories/${filename}`; // Use relative path instead of localhost
       } catch (fileError) {
         console.error("Error processing image file:", fileError);
-        // Continue without image if file processing fails
       }
     }
 
     // Handle navImage upload
     let nav_image_url = "";
     const navFile = formData.get("navImage");
-    // FIX: Only process navImage if it exists and is a valid file
-    if (navFile && navFile instanceof File && navFile.size > 0 && navFile.name) {
+    if (navFile && typeof navFile !== "string" && navFile.name && navFile.size > 0) {
       try {
-        const buffer = Buffer.from(await navFile.arrayBuffer());
+        const bytes = await navFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
         const uploadDir = path.join(process.cwd(), "public/uploads/categories");
-        await writeFile(path.join(uploadDir, navFile.name), buffer);
-        nav_image_url = `http://localhost:3000/uploads/categories/${navFile.name}`;
+        const filename = `${Date.now()}-nav-${navFile.name}`;
+        await writeFile(path.join(uploadDir, filename), buffer);
+        nav_image_url = `/uploads/categories/${filename}`;
       } catch (fileError) {
         console.error("Error processing nav image file:", fileError);
-        // Continue without nav image if file processing fails
       }
     }
 
@@ -78,14 +85,14 @@ export async function POST(req) {
       parentid,
       status,
       show_on_home,
-      image: image_url, // Will be empty string if no image
-      navImage: nav_image_url, // Will be empty string if no nav image
+      image: image_url,
+      navImage: nav_image_url,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
     await newCategory.save();
-    return NextResponse.json({ message: "Category added successfullyyyy", category: newCategory }, { status: 201 });
+    return NextResponse.json({ message: "Category added successfully", category: newCategory }, { status: 201 });
 
   } catch (error) {
     console.error("Error adding category:", error);
