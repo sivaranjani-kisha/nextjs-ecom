@@ -99,10 +99,13 @@ const handleImageChange = async (e) => {
   const file = e.target.files[0];
   setImageError("");
   
-  if (!file) {
-    setImageError("Image is required");
-    return;
-  }
+ // AFTER (Optional):
+if (!file) {
+  // No file selected - this is allowed now
+  setNewCategory(prev => ({ ...prev, image: null }));
+  setImagePreview(null);
+  return;
+}
 
   // Check image dimensions
   const img = new Image();
@@ -139,10 +142,13 @@ const handleImageChange = async (e) => {
   setErrorMessage("");
 
   // Check if image is provided
-  if (!newCategory.image) {
-    setImageError("Image is required and must be 260px width and 240px height");
-    return;
-  }
+  // if (!newCategory.image) {
+  //   setImageError("Image is required and must be 260px width and 240px height");
+  //   return;
+  // }
+
+
+  // AFTER (Optional - removed the required check):
 
   // Trim and check if category name is empty
   const trimmedCategoryName = newCategory.category_name.trim();
@@ -162,6 +168,12 @@ const handleImageChange = async (e) => {
   formData.append("parentid", newCategory.parentid);
   formData.append("status", newCategory.status);
   formData.append("image", newCategory.image);
+
+  // Only append image if provided
+if (newCategory.image) {
+  formData.append("image", newCategory.image);
+}
+
   if (newCategory.navImage) {
     formData.append("navImage", newCategory.navImage);
   }
@@ -183,6 +195,7 @@ const handleImageChange = async (e) => {
         parentid: "none",
         status: "Active",
         image: null,
+        navImage: null,
       });
       setImagePreview(null);
 
@@ -816,6 +829,7 @@ const handleUpdateNavImageChange = async (e) => {
         parentid: "none",
         status: "Active",
         image: null,
+        navImage: null,
       })}
               }
               className="text-gray-400 hover:text-gray-700 focus:outline-none"
@@ -880,7 +894,7 @@ const handleUpdateNavImageChange = async (e) => {
               </div>
 
               <div>
-                <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image (260px X 240px)</label>
+                <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image (260px X 240px) - Optional</label>
               <input
     type="file"
     onChange={handleImageChange}
