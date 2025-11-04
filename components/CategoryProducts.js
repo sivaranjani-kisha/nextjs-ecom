@@ -193,7 +193,7 @@ const CategoryProducts = () => {
                              <div className="w-full flex items-center justify-between mt-6 sm:mt-8 px-0 py-3 -mb-[11%]">
                                 <Link
                                   href={categoryProduct.categoryRedirectUrl || `/category/${category.category_slug}`}
-                                  className="bg-gradient-to-r from-black/40 to-black/20 hover:from-black/60 hover:to-black/30 text-white text-xs sm:text-sm font-semibold py-2 px-2 rounded-lg backdrop-blur-sm shadow-md transition-all duration-300"
+                                  className="bg-gradient-to-r from-black/40 to-black/20 hover:from-black/60 hover:to-black/30 text-white text-xs sm:text-sm font-semibold py-1 px-2 rounded-lg backdrop-blur-sm shadow-md transition-all duration-300"
                                   style={{
                                   textShadow: "0 1px 3px rgba(0, 0, 0, 0.6)",
                                   }}
