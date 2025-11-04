@@ -201,9 +201,15 @@ const CategoryProducts = () => {
                                 >
                                 Shop Now →
                                 </Link>
-                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight text-right">
-                                  {category.category_name}
-                                </h2>
+                               <h2
+                                className="text-base sm:text-xl font-semibold leading-tight text-right"
+                                style={{
+                                  color: "#ffffff",
+                                  textShadow: "rgba(49, 39, 39, 0.8) 0px 0px 3px, rgb(28 16 16 / 60%) 0px 0px 6px",
+                                }}
+                              >
+                                {category.category_name}
+                              </h2>
                               </div>
                           </div>
                         </div>
