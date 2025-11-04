@@ -190,7 +190,7 @@ const CategoryProducts = () => {
                       <div className="flex-shrink-0 relative w-full md:w-[350px] h-48 sm:h-64 md:h-auto">
                         <div style={styleObj} className={`absolute inset-0 bg-cover bg-center    ${alignment === "right" ? "md:rounded-tr-lg md:rounded-br-lg" : "md:rounded-tl-lg md:rounded-bl-lg" }`}/>
                         <div className="relative z-10 h-full flex flex-col justify-end p-4 sm:p-6 text-white">
-                             <div className="w-full flex items-center justify-between mt-6 sm:mt-8 px-0 py-3 -mb-[11%]">
+                                <div className="w-full flex items-center justify-between mt-6 sm:mt-8 px-0 py-3 -mb-[11%]" style={{ margin: "0% 0% -9.5%" }}>
                                 <Link
                                   href={categoryProduct.categoryRedirectUrl || `/category/${category.category_slug}`}
                                   className="bg-gradient-to-r from-black/40 to-black/20 hover:from-black/60 hover:to-black/30 text-white text-xs sm:text-sm font-semibold py-1 px-2 rounded-lg backdrop-blur-sm shadow-md transition-all duration-300"
