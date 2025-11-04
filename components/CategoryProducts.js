@@ -201,10 +201,9 @@ const CategoryProducts = () => {
                                 >
                                 Shop Now →
                                 </Link>
-                                <h2 className="text-base sm:text-xl font-semibold text-red-500 leading-tight text-right">
-                                {category.category_name}
+                                <h2 className="text-base sm:text-xl font-semibold text-white leading-tight text-right">
+                                  {category.category_name}
                                 </h2>
-
                               </div>
                           </div>
                         </div>
