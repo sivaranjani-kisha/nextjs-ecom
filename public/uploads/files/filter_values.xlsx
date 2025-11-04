@@ -1,3 +1,5 @@
 item_code	filter_group_name	filter_name
 HIACRASE512PCBIB	size	large
 HIACRASG318PCCISS	blade	3 blade
+HIACRASG318PCC2SS	type 	full hd
+HIACRASV322PCAISH	capacity	256 l

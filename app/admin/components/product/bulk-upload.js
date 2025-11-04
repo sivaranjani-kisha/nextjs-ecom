@@ -8,6 +8,7 @@ export default function BulkUploadPage() {
   const [excelFile, setExcelFile]                                   = useState(null);
   const [excelFileMovement, setExcelFileMovement]                   = useState(null);
   const [productFilterValue, setProductFilterValue]                 = useState(null);
+  const [categoryUpload, setCategoryUpload]                         = useState(null);
   const [imageZip, setImageZip]                                     = useState(null);
   const [overviewZip, setOverviewZip]                               = useState(null);
   const [message, setMessage]                                       = useState("");
@@ -20,6 +21,8 @@ export default function BulkUploadPage() {
   const movementFormRef                                             = useRef(null);
   const filterGroupFormRef                                          = useRef(null);
   const filterFormRef                                               = useRef(null);
+  const categoryFormRef                                             = useRef(null);
+  
   
 
   const validateFile = (file, allowedExtensions) => {
@@ -175,55 +178,6 @@ export default function BulkUploadPage() {
     link.click();
     document.body.removeChild(link);
   };
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-
-  //   // Validate required files - only Excel is required now
-  //   if (!excelFile || !validateFile(excelFile, [".xlsx", ".csv"])) {
-  //     toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
-  //     return;
-  //   }
-
-  //   // Validate optional image ZIP file
-  //   if (imageZip && !validateFile(imageZip, [".zip"])) {
-  //     toast.error("Please upload a valid .zip file for product images.");
-  //     return;
-  //   }
-
-  //   // Validate optional Overview ZIP file
-  //   if (overviewZip && !validateFile(overviewZip, [".zip"])) {
-  //     toast.error("Please upload a valid .zip file for overview images.");
-  //     return;
-  //   }
-
-  //   setIsLoading(true);
-  //   setMessage(null);
-
-  //   const formData = new FormData();
-  //   formData.append("excel", excelFile);
-  //   if (imageZip) formData.append("images", imageZip);
-  //   if (overviewZip) formData.append("overview", overviewZip);
-
-  //   try {
-  //     const response = await fetch("/api/product/bulk-upload", {
-  //       method: "POST",
-  //       body: formData,
-  //     });
-
-  //     const data = await response.json();
-
-  //     if (response.ok) {
-  //       toast.success(data.message);
-  //     } else {
-  //       toast.error(data.error);
-  //     }
-  //   } catch (error) {
-  //     toast.error(error);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
   const handleSubmit = async (e, uploadType) => {
     e.preventDefault();
@@ -701,7 +655,7 @@ export default function BulkUploadPage() {
         <form ref={filterValueFormRef} onSubmit={(e) => handleSubmit(e, "filter_values")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
-              <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Filter Values Bulk Upload</h2>
+              <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Filter Values Bulk Upload <small className="items-start"> (size,capacity,type,etc,..)</small> </h2>
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -743,6 +697,52 @@ export default function BulkUploadPage() {
 
           </div>
         </form>
+
+        {/* <form ref={categoryFormRef} onSubmit={(e) => handleSubmit(e, "category")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
+          <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
+            <div className="mb-4">
+              <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Filter Values Bulk Upload</h2>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Excel/CSV File
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Upload your Category file</p>
+            </div>
+            <div className="space-y-4">
+              <input type="file" accept=".xlsx,.csv" onChange={(e) => setCategoryUpload(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100" required />
+            </div>
+
+            <button type="button" onClick={handleDownloadFilterValues} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download Sample Format
+            </button>
+          </div>
+
+          <div className="flex mt-5 justify-between">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-[#3B82F6] hover:bg-[#3B82F6] text-white px-3 py-2 rounded-md flex items-center gap-2"
+            >
+              {isLoading && activeUploadType == "category" ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Uploading...
+                </span>
+              ) : (
+                'Upload Product Filter Values'
+              )}
+            </button>
+
+          </div>
+        </form> */}
 
         <ToastContainer position="top-right" autoClose={5000} />
       </div>
