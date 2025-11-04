@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { ToastContainer, toast } from "react-toastify";
 
@@ -12,8 +12,14 @@ export default function BulkUploadPage() {
   const [overviewZip, setOverviewZip]                               = useState(null);
   const [message, setMessage]                                       = useState("");
   const [isLoading, setIsLoading]                                   = useState(false);
+  const [activeUploadType, setActiveUploadType]                     = useState(null);
   const [isFilterUploadLoading, setIsFilterUploadLoading]           = useState(false);
   const [isFilterGroupUploadLoading, setIsFilterGroupUploadLoading] = useState(false);
+  const overviewFormRef                                             = useRef(null);
+  const filterValueFormRef                                          = useRef(null);
+  const movementFormRef                                             = useRef(null);
+  const filterGroupFormRef                                          = useRef(null);
+  const filterFormRef                                               = useRef(null);
   
 
   const validateFile = (file, allowedExtensions) => {
@@ -71,6 +77,10 @@ export default function BulkUploadPage() {
       } else {
         toast.error(data.error || "Upload failed");
       }
+
+      filterFormRef.current?.reset();
+      setExcelFile(null);
+
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Upload failed. Please try again.");
@@ -119,16 +129,17 @@ export default function BulkUploadPage() {
             });
           }
         }
-      //    // Refresh the filter groups data
-      // fetchFilterGroups();
-      
-        // Reset form
+  
         setExcelFile(null);
         const fileInput = document.querySelector('input[type="file"]');
         if (fileInput) fileInput.value = '';
       } else {
         toast.error(data.error || "Upload failed");
       }
+
+      filterGroupFormRef.current?.reset();
+      setExcelFile(null);
+
     } catch (err) {
       toast.error("Upload failed. Please try again.");
       console.error("Upload error:", err);
@@ -261,6 +272,10 @@ export default function BulkUploadPage() {
         } else {
           toast.error(data.error);
         }
+
+        overviewFormRef.current?.reset();
+        setExcelFile(null);
+        
       } catch (error) {
         toast.error(error);
       } finally {
@@ -274,6 +289,7 @@ export default function BulkUploadPage() {
       }
     
       setIsLoading(true);
+      setActiveUploadType(uploadType);
       setMessage(null);
       formData.append("excel", excelFileMovement);
   
@@ -290,11 +306,15 @@ export default function BulkUploadPage() {
         } else {
           toast.error(data.error);
         }
+
+        movementFormRef.current?.reset();
+        setExcelFileMovement(null);
   
       }catch (error){
         toast.error(error);
       }finally {
         setIsLoading(false);
+        setActiveUploadType(uploadType);
       }
 
     }else if (uploadType == "filter_values") {
@@ -305,6 +325,7 @@ export default function BulkUploadPage() {
       }
 
       setIsLoading(true);
+      setActiveUploadType(uploadType);
       setMessage(null);
       formData.append("excel", productFilterValue);
 
@@ -322,13 +343,18 @@ export default function BulkUploadPage() {
           toast.error(data.error);
         }
 
+        filterValueFormRef.current?.reset();
+        setProductFilterValue(null);
+
       }catch(error) {
         toast.error(error);
       }finally {
         setIsLoading(false);
+        setActiveUploadType(uploadType);
       }
 
     }
+
   };
 
   const handleDownload = () => {
@@ -366,7 +392,7 @@ export default function BulkUploadPage() {
           <p className="text-gray-600">Upload products in bulk using Excel/CSV and ZIP files</p>
         </div>
 
-        <form onSubmit={(e) => handleSubmit(e, "overview")} className="bg-white rounded-xl shadow-lg overflow-hidden p-6 space-y-8">
+        <form ref={overviewFormRef} onSubmit={(e) => handleSubmit(e, "overview")} className="bg-white rounded-xl shadow-lg overflow-hidden p-6 space-y-8">
           <Link
             href="/admin/product/status_bulk"
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition duration-150 inline-block"
@@ -459,147 +485,6 @@ export default function BulkUploadPage() {
             />
           </div>
           
-          {/* Filter Bulk Upload section */}
-          {/* <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
-            <div className="mb-4">
-               <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">
-                Filter Bulk Upload
-              </h2>
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Excel/CSV File
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">Upload your product data file</p>
-            </div>
-            <div className="space-y-4">
-              <input
-                type="file"
-                accept=".xlsx,.csv"
-                onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100"
-                required
-              />
-              <button
-                type="button"   // <-- Add this
-                 onClick={handleSampleDownload}
-                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download Sample Format
-              </button>
-              <div className="flex mt-5 justify-between">
-          <button
-            onClick={handleFilterSubmit}
-            disabled={isFilterUploadLoading}
-            className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-50 transition-colors flex items-center"
-          >
-            {isFilterUploadLoading ? (
-              <>
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Uploading...
-              </>
-            ) : (
-              "Upload Filter Groups"
-            )}
-          </button>
-        </div>
-
-            </div>
-          </div> */}
-          
-          {/* Filter Group Section */}
-          {/* <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
-            <div className="mb-4">
-               <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">
-                Filter Group Bulk Upload
-              </h2>
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Excel/CSV File
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">Upload your product data file</p>
-            </div>
-            <div className="space-y-4">
-              <input
-            type="file"
-            accept=".xlsx,.csv"
-            onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            required
-          />
-              <button
-                onClick={handleFilterGroupSampleDownload}
-                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download Sample Format
-              </button>
-              <div className="flex mt-5 justify-between">
-          <button
-            onClick={handleFilterGroupSubmit}
-            disabled={isFilterGroupUploadLoading}
-            className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-50 transition-colors flex items-center"
-          >
-            {isFilterGroupUploadLoading ? (
-              <>
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Uploading...
-              </>
-            ) : (
-              "Upload Filter Groups"
-            )}
-          </button>
-        </div>
-
-            </div>
-          </div> */}
-          
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-start gap-3 mt-8">
             <button
@@ -607,7 +492,7 @@ export default function BulkUploadPage() {
               disabled={isLoading}
               className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {isLoading ? (
+              {isLoading && activeUploadType == "overview" ? (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -766,7 +651,7 @@ export default function BulkUploadPage() {
           </div>
         </form>
 
-        <form onSubmit={(e) => handleSubmit(e, "movement")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
+        <form ref={movementFormRef} onSubmit={(e) => handleSubmit(e, "movement")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           {/* Bulk UPload Movement Section */}
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
@@ -797,7 +682,7 @@ export default function BulkUploadPage() {
               disabled={isLoading}
               className="bg-[#3B82F6] hover:bg-[#3B82F6] text-white px-3 py-2 rounded-md flex items-center gap-2"
             >
-              {isLoading ? (
+              {isLoading && activeUploadType == "movement" ? (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -813,7 +698,7 @@ export default function BulkUploadPage() {
           </div>
         </form>
 
-        <form onSubmit={(e) => handleSubmit(e, "filter_values")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
+        <form ref={filterValueFormRef} onSubmit={(e) => handleSubmit(e, "filter_values")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
               <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Filter Values Bulk Upload</h2>
@@ -843,7 +728,7 @@ export default function BulkUploadPage() {
               disabled={isLoading}
               className="bg-[#3B82F6] hover:bg-[#3B82F6] text-white px-3 py-2 rounded-md flex items-center gap-2"
             >
-              {isLoading ? (
+              {isLoading && activeUploadType == "filter_values" ? (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
