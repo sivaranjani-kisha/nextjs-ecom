@@ -16,7 +16,8 @@ export async function GET(req) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 5;
     // Base query - always filter by category
-   let query = { sub_category: categoryId, status: "Active" };
+   let query = { sub_category: categoryId, status: "Active", quantity: { $gt: 0 }
+ };
     
 
     // Add brand filters if any

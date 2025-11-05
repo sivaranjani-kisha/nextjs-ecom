@@ -20,7 +20,8 @@ export async function GET(req) {
     // Base query - always filter by category
     let query = { 
         sub_category: { $in: categoryIds }, // Use $in for multiple categories
-        status: "Active" 
+        status: "Active",
+        quantity: { $gt: 0 } 
       };
 
     // Add brand filters if any
