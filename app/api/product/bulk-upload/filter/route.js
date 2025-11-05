@@ -73,7 +73,7 @@ export async function POST(req) {
             if (!filterGroup && filterGroup == null) {
                 filterGroup = await FilterGroup.create({
                     filtergroup_name: filter_group_name,
-                    filtergroup_slug: filter_group_name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, ''),
+                    filtergroup_slug: filter_group_name.toLowerCase().replace(/[^\w\s.-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, ''),
                     status: "Active",
                 });
             }
@@ -90,7 +90,7 @@ export async function POST(req) {
             } else {
                 existingFilter =  await Filter.create({
                     filter_name: filter_name.trim(),
-                    filter_slug: filter_name.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, ''),
+                    filter_slug: filter_name.trim().toLowerCase().replace(/[^\w\s.-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, ''),
                     filter_group: filterGroup._id,
                     status: "Active",
                 });
