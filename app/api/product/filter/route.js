@@ -15,9 +15,10 @@ export async function GET(req) {
     const filterIds = searchParams.get('filters')?.split(',') || [];
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 5;
+   const escapedId = categoryId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const tokenRegex = new RegExp(`(^|#)${escapedId}($|#)`);
     // Base query - always filter by category
-   let query = { sub_category: categoryId, status: "Active", quantity: { $gt: 0 }
- };
+   let query = { sub_category: categoryId, status: "Active" };
     
 
     // Add brand filters if any
@@ -40,40 +41,6 @@ export async function GET(req) {
         ]
       }
     ];
-    
-    // First fetch products matching brand and price filters
-    // let products = await Product.find(query)
-    //   .populate('brand', 'brand_name brand_slug')
-    //   .lean();
-    
-    // // Apply additional filters if any
-    // if (filterIds.length > 0) {
-    //   const productIds = products.map(p => p._id);
-      
-    //   // Get all product-filter relationships that match our criteria
-    //   const productFilters = await ProductFilter.find({
-    //     product_id: { $in: productIds },
-    //     filter_id: { $in: filterIds }
-    //   });
-      
-    //   // Group filters by product
-    //   const filtersByProduct = productFilters.reduce((acc, pf) => {
-    //     const productId = pf.product_id.toString();
-    //     if (!acc[productId]) acc[productId] = new Set();
-    //     acc[productId].add(pf.filter_id.toString());
-    //     return acc;
-    //   }, {});
-      
-    //   // Filter products to only those that have ALL selected filters
-    //   products = products.filter(product => {
-    //     const productId = product._id.toString();
-    //     const productFilterIds = filtersByProduct[productId] || new Set();
-    //     //return filterIds.every(fid => productFilterIds.has(fid));
-    //     return filterIds.some(fid => productFilterIds.has(fid));
-    //   });
-    // }
-    
-    // return Response.json(products);
 
 
        let productsQuery = Product.find(query)
@@ -133,6 +100,42 @@ export async function GET(req) {
           hasMore: page < totalPages
         }
       });
+
+    
+    // First fetch products matching brand and price filters
+    // let products = await Product.find(query)
+    //   .populate('brand', 'brand_name brand_slug')
+    //   .lean();
+    
+    // // Apply additional filters if any
+    // if (filterIds.length > 0) {
+    //   const productIds = products.map(p => p._id);
+      
+    //   // Get all product-filter relationships that match our criteria
+    //   const productFilters = await ProductFilter.find({
+    //     product_id: { $in: productIds },
+    //     filter_id: { $in: filterIds }
+    //   });
+      
+    //   // Group filters by product
+    //   const filtersByProduct = productFilters.reduce((acc, pf) => {
+    //     const productId = pf.product_id.toString();
+    //     if (!acc[productId]) acc[productId] = new Set();
+    //     acc[productId].add(pf.filter_id.toString());
+    //     return acc;
+    //   }, {});
+      
+    //   // Filter products to only those that have ALL selected filters
+    //   products = products.filter(product => {
+    //     const productId = product._id.toString();
+    //     const productFilterIds = filtersByProduct[productId] || new Set();
+    //     //return filterIds.every(fid => productFilterIds.has(fid));
+    //     return filterIds.some(fid => productFilterIds.has(fid));
+    //   });
+    // }
+    
+    // return Response.json(products);
+
 
       
   } catch (error) {

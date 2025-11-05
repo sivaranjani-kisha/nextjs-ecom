@@ -345,6 +345,7 @@ export default function CategoryComponent() {
   };
 
   const handleEditProduct = (product) => {
+    console.log("Editing product:", product);
     setSelectedProduct(product);
     setShowEditModal(true);
     setEditingProduct(product._id);
@@ -755,7 +756,7 @@ if (stockFilter) {
                 }}
                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
               >
-                <option value="">All Statuses</option>
+                <option value="">All Status</option>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
