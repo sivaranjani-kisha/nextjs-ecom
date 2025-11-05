@@ -14,6 +14,7 @@ import { Check } from "react-feather";
 const steps = [
   { title: "Basic Information" },
   { title: "Images & Description" },
+
   { title: "Variants & Filters" },
   { title: "Others" },
 ];
@@ -760,6 +761,52 @@ setProduct(prev => ({
     }));
   };
 
+  // const handleCategoryChange = (category, isChecked) => {
+  //   console.log(category,isChecked);
+  //   const updatedSelection = new Set(selectedCategories);
+
+  //   const toggleChildren = (children, select) => {
+  //     children.forEach((child) => {
+  //       if (select) {
+  //         updatedSelection.add(child._id);
+  //       } else {
+  //         updatedSelection.delete(child._id);
+  //       }
+  //       if (child.children.length > 0) {
+  //         toggleChildren(child.children, select);
+  //       }
+  //     });
+  //   };
+
+  //   if (isChecked) {
+  //     updatedSelection.add(category._id);
+  //     toggleChildren(category.children, true);
+  //   } else {
+  //     updatedSelection.delete(category._id);
+  //     toggleChildren(category.children, false);
+  //   }
+
+  //   const toggleParents = (parentId) => {
+  //     if (!parentId || parentId === "none") return;
+  //     const parent = findCategoryById(categories, parentId);
+  //     if (parent) {
+  //       const allChildrenSelected = parent.children.every((child) =>
+  //         updatedSelection.has(child._id)
+  //       );
+  //       if (allChildrenSelected) {
+  //         updatedSelection.add(parent._id);
+  //       } else {
+  //         updatedSelection.delete(parent._id);
+  //       }
+  //       toggleParents(parent.parentid);
+  //     }
+  //   };
+
+  //   //toggleParents(category.parentid);
+  //   setSelectedCategories(updatedSelection);
+  //   console.log(updatedSelection);
+  // };
+
   const findCategoryById = (categories, id) => {
     for (const category of categories) {
       if (category._id === id) return category;
@@ -769,7 +816,95 @@ setProduct(prev => ({
     return null;
   };
 
+  // const renderCategoryTree = (categories, level = 0) => {
+  //   console.log(categories);
+  //   return categories.map((category) => (
+  //     <div key={category._id} style={{ paddingLeft: `${level * 20}px` }}>
+  //       <div className="flex items-center cursor-pointer p-2  text-sm font-medium text-gray-700">
+  //         {category.children.length > 0 && (
+  //           <button
+  //             type="button"
+  //             onClick={(e) => {
+  //               e.stopPropagation();
+  //               toggleCategory(category._id);
+  //             }}
+  //             className="mr-2 text-blue-500"
+  //           >
+  //             {expandedCategories[category._id] ? <FaMinus /> : <FaPlus />}
+  //           </button>
+  //         )}
+  //         {category.children.length == 0 && (
+  //         <input
+  //           type="checkbox"
+  //           value={category._id}
+  //           checked={selectedCategories.has(category._id)}
+  //           onChange={(e) => handleCategoryChange(category, e.target.checked)}
+  //           className="mr-2"
+  //         />
+  //         )}
+  //         <span
+  //           className={`font-medium ${
+  //             selectedCategories.has(category._id) ? "text-blue-500" : "text-gray-700"
+  //           }`}
+  //         >
+  //           {category.category_name}
+  //         </span>
+  //       </div>
+  //       {expandedCategories[category._id] && renderCategoryTree(category.children, level + 1)}
+  //     </div>
+  //   ));
+  // };
+  // useEffect(() => {
+  //   if (product.hasVariants && product.variantAttributes.length > 0) {
+  //     const validAttributes = product.variantAttributes.filter(
+  //       attr => attr.name && attr.options.length > 0
+  //     );
 
+  //     if (validAttributes.length === 0) return;
+  //     console.log(validAttributes);
+  //     const optionsArrays = validAttributes.map(attr =>
+  //       attr.options.map(opt => ({ [attr.name]: opt }))
+  //     );
+  //     console.log(optionsArrays);
+  //     const allCombinations = combinations(...optionsArrays);
+      
+  //     const newVariants = allCombinations.map(combination => {
+  //       const existingVariant = product.variants.find(variant =>
+  //         combination.every(c =>
+  //           variant.attributes.some(attr => 
+  //             attr.name === Object.keys(c)[0] &&
+  //             attr.value === Object.values(c)[0]
+  //           )
+  //         )
+  //       );
+
+  //       return existingVariant || {
+  //         attributes: combination.map(c => ({
+  //           name: Object.keys(c)[0],
+  //           value: Object.values(c)[0],
+  //           item_code: "",
+  //           price: "",
+  //           special_price: "",
+  //           quantity: "",
+  //           images: [],
+  //         }))
+  //     });
+
+  //     setProduct(prev => ({
+  //       ...prev,
+  //       variants: newVariants.filter((v, index, self) =>
+  //         index === self.findIndex(t => (
+  //           t.attributes.every(attr => 
+  //             v.attributes.some(a => 
+  //               a.name === attr.name && a.value === attr.value
+  //             )
+  //           )
+  //         ))
+  //       )
+  //     }));
+  //   }
+  // }, [product.variantAttributes, product.hasVariants]);
+ 
   const handleCategoryChange = (category) => {
   setSelectedCategory(category._id);
   
@@ -797,9 +932,18 @@ setProduct(prev => ({
   }));
 };
 
+
+//   useEffect(() => {
+//   if (product) {
+//     setSelectedCategory(product.category); // This is the subcategory ID
+//   }
+// }, [product]);
+
+
+  
+  
   const renderCategoryTree = (categories, level = 0) => {
     return categories.map((category) => (
-      console.log('rendering category:', category),
       <div key={category._id} style={{ paddingLeft: `${level * 20}px` }}>
         <div className="flex items-center cursor-pointer p-2 text-sm font-medium text-gray-700">
           {category.children.length > 0 && (
@@ -935,6 +1079,37 @@ setProduct(prev => ({
     const randomString = Math.random().toString(36).substr(2, 9);
     return `${timestamp}-${randomString}-${originalFileName}`;
   };
+  
+//  const uploadImages = async (files) => {
+//   const uploadedFilePaths = [];
+
+//   for (let i = 0; i < files.length; i++) {
+//     const file = files[i];
+//     if (!file) continue; // ✅ Skip null/undefined files
+
+//     const formData = new FormData();
+//     const uniqueFileName = generateUniqueFileName(file.name);
+//     formData.append("image", file);
+
+//     try {
+//       const response = await fetch("/api/product/upload", {
+//         method: "POST",
+//         body: formData,
+//       });
+
+//       if (response.ok) {
+//         const { savedImages } = await response.json();
+//         uploadedFilePaths.push(savedImages); // push string or array based on your API
+//       } else {
+//         toast.error(response.statusText);
+//       }
+//     } catch (error) {
+//       toast.error(error.message);
+//     }
+//   }
+
+//   return uploadedFilePaths;
+// };
 
 const uploadImages = async (files) => {
   const uploadedFilePaths = [];
@@ -1021,7 +1196,17 @@ const uploadImages = async (files) => {
      } finally {
      }
    }
-
+// const handleFilterChange = (selectedOptions) => {
+//   console.log(selectedOptions);
+//   // Extract only the 'value' from each selected option object
+//   const selectedValues = selectedOptions.map((option) => option.value);
+ 
+//   setProduct((prev) => ({
+//     ...prev,
+//     // Store an array of strings, not objects
+//     filters: selectedValues,
+//   }));
+// };
  
 const handleupdatefilterchange = (filters) => {
   const selectedValues = filters.map((option) => option.value);
@@ -1089,15 +1274,7 @@ const handleSubmit = async (e) => {
 
     // Clean product data
     const { brand_code, removedOverviewImages, ...restProduct } = product;
-
-   
-
-
     const trimmedBrandCode = (brand_code ?? '').toString().trim();
-    const category_new = product.category_new;
-
-
- console.log("Product data before submission:", product);
 
     const cleanedProduct = {
       ...restProduct,
@@ -1277,7 +1454,51 @@ const handleSubmit = async (e) => {
             ))}
           </nav>
         </div>
-    
+      {/* <div className="flex items-center justify-between relative">
+     
+        <div className="absolute  left-0 right-0 h-1 bg-gray-200 transform -translate-y-1/2">
+          <div
+            className="bg-blue-500 h-full transition-all duration-300"
+            style={{ 
+              width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`
+            }}
+          ></div>
+        </div>
+  
+        {steps.map((step, index) => {
+          const isCompleted = currentStep > index + 1;
+          const isActive = currentStep === index + 1;
+          
+          return (
+            <div 
+              key={step.title}
+              className="relative z-10 flex flex-col items-center"
+            >
+           
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center 
+                ${isCompleted ? 'bg-blue-500' : isActive ? 'bg-blue-500' : 'bg-gray-200'}
+                transition-colors duration-300`}>
+                
+                {isCompleted ? (
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                ) : (
+                  <span className={`text-sm ${isActive ? 'text-white' : 'text-gray-600'}`}>
+                    {index + 1}
+                  </span>
+                )}
+              </div>
+  
+           
+              <span className={`text-xs mt-2 text-center ${
+                isActive ? 'text-blue-600 font-medium' : 'text-gray-600'
+              }`}>
+              </span>
+            </div>
+          );
+        })}
+      </div> */}
     </div>
   );
 

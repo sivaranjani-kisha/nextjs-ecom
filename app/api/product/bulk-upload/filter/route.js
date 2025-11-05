@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
+import { join } from 'path';
 import * as XLSX from 'xlsx';
+import AdmZip from 'adm-zip';
+import fs from 'fs/promises';
+import { format } from 'date-fns';
+import { writeFile } from 'fs/promises';
 import Product from "@/models/product";
+import Category from  "@/models/ecom_category_info";
+import Brand  from "@/models/ecom_brand_info";
+import formidable from 'formidable';
+import md5 from "md5";
+import mongoose from 'mongoose';
 import FilterGroup from '@/models/ecom_filter_group_infos';
 import Filter from "@/models/ecom_filter_infos";
 import ProductFilter from "@/models/ecom_productfilter_info";
@@ -13,8 +23,9 @@ export const config = {
 
 export async function POST(req) {
     try {
-        const formData = await req.formData();
-        const file = formData.get('excel');
+
+        const formData  = await req.formData();
+        const file      = formData.get('excel');
 
         if (!file) {
             return NextResponse.json(
@@ -23,29 +34,31 @@ export async function POST(req) {
             );
         }
 
-        const fileName = file.name.toLowerCase();
-        const buffer = Buffer.from(await file.arrayBuffer());
-        let rows = [];
+        const fileName  = file.name.toLowerCase();
+        const buffer    = Buffer.from(await file.arrayBuffer());
+
+        let rows        = [];
 
         if (fileName.endsWith('.csv')) {
-            const csvText = buffer.toString('utf-8');
-            const workbook = XLSX.read(csvText, { type: 'string' });
-            rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            const csvText   = buffer.toString('utf-8');
+            const workbook  = XLSX.read(csvText, { type: 'string' });
+            rows            = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
         } else {
-            const workbook = XLSX.read(buffer);
-            rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            const workbook  = XLSX.read(buffer);
+            rows            = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
         }
 
-        const errors = [];
-        let addedCount = 0;
-        let existCount = 0;
+        const errors        = [];
+        let addedCount      = 0;
+        let existCount      = 0;
 
-        for (let [index, row] of rows.entries()) {
-            const item_code = row.item_code?.toString().trim();
-            const filter_group_name = row.filter_group_name?.toString().trim();
-            const filter_name = row.filter_name?.toString().trim();
-
-            if (!filter_group_name || !filter_name) {
+        for(let [index, row] of rows.entries()) {
+        
+            const item_code                         = row.item_code.toString().trim();
+            const filter_group_name                 = row.filter_group_name.toString().trim();
+            const filter_name                       = row.filter_name.toString().trim(); 
+            
+            if(!filter_group_name || !filter_name) {
                 errors.push({
                     row: index + 2,
                     error: "Missing filter_group_name or filter_name",
@@ -53,96 +66,82 @@ export async function POST(req) {
                 continue;
             }
 
-            const normalizedGroupName = filter_group_name.toLowerCase();
+           const normalizedGroupName = filter_group_name.trim().toLowerCase();
 
-            // ✅ Find filter group ignoring case
-            let filterGroup = await FilterGroup.findOne({
-                filtergroup_name: new RegExp(`^${normalizedGroupName}$`, 'i'),
-            });
+let filterGroup = await FilterGroup.findOne({
+  filtergroup_name: new RegExp(`^${normalizedGroupName}$`, 'i'),
+});
 
-            if (!filterGroup) {
-                const groupSlug = filter_group_name
-                    .toLowerCase()
-                    .replace(/[^\w\s.-]/g, '') // ✅ allow dots for groups too
-                    .replace(/\s+/g, '-')
-                    .replace(/-+/g, '-')
-                    .replace(/^-+|-+$/g, '');
 
+            if (!filterGroup && filterGroup == null) {
                 filterGroup = await FilterGroup.create({
                     filtergroup_name: filter_group_name,
-                    filtergroup_slug: groupSlug,
+                    filtergroup_slug: filter_group_name.toLowerCase().replace(/[^\w\s.-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, ''),
                     status: "Active",
                 });
             }
 
-            // ✅ Build slug that preserves dots
-            const filterSlug = filter_name
-                .trim()
-                .toLowerCase()
-                .replace(/[^\w\s.-]/g, '') // ✅ allow dots
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/^-+|-+$/g, '');
-
-            // ✅ Check for existing filter by slug (safer)
+            // ✅ Check for existing filter correctly
             let existingFilter = await Filter.findOne({
+                filter_name: filter_name.trim(),
                 filter_group: filterGroup._id,
-                filter_slug: filterSlug,
             });
-
+    
             if (existingFilter) {
                 existingFilter.status = "Active";
                 await existingFilter.save();
             } else {
-                existingFilter = await Filter.create({
-                    filter_name: filter_name,
-                    filter_slug: filterSlug,
+                existingFilter =  await Filter.create({
+                    filter_name: filter_name.trim(),
+                    filter_slug: filter_name.trim().toLowerCase().replace(/[^\w\s.-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, ''),
                     filter_group: filterGroup._id,
                     status: "Active",
                 });
             }
 
-            const product = await Product.findOne({ item_code: item_code });
-
-            if (!product) {
-                errors.push({
-                    row: index + 2,
-                    error: `Product not found for item_code: ${item_code}`,
-                });
-                continue;
-            }
-
-            const product_id = product._id;
-
-            const existingProductFilter = await ProductFilter.findOne({
-                product_id,
-                filter_id: existingFilter._id,
+            let products = await Product.findOne({
+                item_code: item_code.trim(),
             });
 
-            if (!existingProductFilter) {
-                await ProductFilter.create({
+            if(products) {
+                const product_id = products._id;
+                const existFilterVal = await ProductFilter.findOne({
+                    product_id: product_id,
                     filter_id: existingFilter._id,
-                    product_id,
                 });
-                addedCount++;
-            } else {
-                existCount++;
+
+                if(!existFilterVal || existFilterVal == null) {
+                    await ProductFilter.create({
+                        filter_id: existingFilter._id,
+                        product_id: product_id,
+                    });
+                    addedCount++;
+                }else {
+                    existCount++;
+                }
+            }else {
+                return NextResponse.json(
+                    { error: 'Product Is not Found On this Item_Code!' },
+                    { status: 404 }
+                )
             }
+
         }
 
         return NextResponse.json(
-            {
-                message: `Upload completed: ${addedCount} added, ${existCount} Product Filters Already Exist.`,
-                details: errors,
-            },
-            { status: errors.length ? 207 : 201 }
-        );
+        {
+            message: `Upload completed: ${addedCount} added, ${existCount} Product Filters Already Exsit.`,
+            details: errors,
+        },
+        { status: errors.length ? 207 : 201 }
+    );
 
-    } catch (error) {
+    } catch(error) {
         console.error('Bulk update error:', error);
         return NextResponse.json(
             { error: 'Bulk update error: ' + error.message },
             { status: 500 }
-        );
+        )
     }
 }
+

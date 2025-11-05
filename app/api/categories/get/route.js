@@ -38,7 +38,7 @@ export async function GET() {
 
     const categoriesWithProducts = await Promise.all(
       categories.map(async (cat) => {
-        //console.log(`📂 Processing category: ${cat.category_name} (${cat._id})`);
+        console.log(`📂 Processing category: ${cat.category_name} (${cat._id})`);
 
         // fetch all descendant IDs (including itself)
         //const categoryIds = await getDescendantCategoryIds(cat._id);
@@ -81,9 +81,9 @@ export async function GET() {
         const brandIds = await Product.distinct('brand', { category: { $in: categoryIds } });
 
         if (brandIds.length > 0) {
-          //console.log(`✅ Found ${brandIds.length} brands for "${cat.category_name}"`);
+          console.log(`✅ Found ${brandIds.length} brands for "${cat.category_name}"`);
         } else {
-          ///console.log(`⚠️ No brands found for "${cat.category_name}"`);
+          console.log(`⚠️ No brands found for "${cat.category_name}"`);
         }
 
         const validBrandIds = brandIds.filter(id => id && mongoose.Types.ObjectId.isValid(id));
@@ -100,7 +100,7 @@ export async function GET() {
       })
     );
 
-   // console.log(`✅ Done! Fetched ${categoriesWithProducts.length} categories.`);
+    console.log(`✅ Done! Fetched ${categoriesWithProducts.length} categories.`);
     return NextResponse.json(categoriesWithProducts, { status: 200 });
 
   } catch (error) {

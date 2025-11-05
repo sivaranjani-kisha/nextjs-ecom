@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react"; 
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import { Icon } from '@iconify/react';
 import DateRangePicker from '@/components/DateRangePicker';
@@ -9,9 +9,9 @@ export default function CategoryComponent() {
   const [categories, setCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [showUpdateAlert, setShowUpdateAlert] = useState(false);
-  const [updateAlertMessage, setUpdateAlertMessage] = useState('');
-  const [updateErrorMessage, setUpdateErrorMessage] = useState("");
-  const [updateImageError, setUpdateImageError] = useState("");
+const [updateAlertMessage, setUpdateAlertMessage] = useState('');
+const [updateErrorMessage, setUpdateErrorMessage] = useState("");
+const [updateImageError, setUpdateImageError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);

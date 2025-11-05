@@ -1,44 +1,33 @@
+// ...
 import { NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import path from "path";
 import fs from "fs";
 import connectDB from "@/lib/db";
 import Product from "@/models/product";
-import Category from "@/models/ecom_category_info";
 import Product_filter from "@/models/ecom_productfilter_info";
 import md5 from "md5";
-import { Types } from "mongoose";
+
 export async function PUT(req, { params }) {
- try {
-  const { productId } = params; 
-  const formData = await req.formData();
-  const productData = JSON.parse(formData.get("product"));
-  if (productData?.category) {
-    let GetSubcategory = null;
-    let GetChildCategory = null;
-    let GetMainCategory = null;
-    GetMainCategory =  await Category.findOne({ _id: productData.sub_category }); 
-    GetSubcategory = await Category.findOne({ _id: GetMainCategory.parentid });
-    GetChildCategory = await Category.findOne({  _id: GetSubcategory.parentid});
-    productData.category_new = GetChildCategory.md5_cat_name;
-    productData.sub_category_new = productData.category_new +"##"+ GetSubcategory.md5_cat_name+"##"+productData.sub_category;
-    productData.sub_category_new_name = GetChildCategory.category_name +"##"+ GetSubcategory.category_name +"##"+ GetMainCategory.category_name;
-  }
-  const imageFiles = formData.getAll("images");
-  const overviewImageFiles = formData.getAll("overviewImages");
-  const category = formData.get("category");
-  const highlights = JSON.parse(formData.get("highlights") || "[]");
-  let variants = JSON.parse(formData.get("variant") || "[]");
-  const Filters  = productData.filters;
+  try {
+    const { productId } = params; 
+    const formData = await req.formData();
+    const productData = JSON.parse(formData.get("product"));
+    const imageFiles = formData.getAll("images");
+    const overviewImageFiles = formData.getAll("overviewImages");
+    const category = formData.get("category");
+    const highlights = JSON.parse(formData.get("highlights") || "[]");
+    let variants = JSON.parse(formData.get("variant") || "[]");
+    const Filters    = productData.filters;
 
 
 console.log(productData);
 console.log("..............................................................");
 
-  const slug = productData.slug;
-  const md5_cat_name = md5(slug);
+    const slug = productData.slug;
+    const md5_cat_name = md5(slug);
 
-  await connectDB();
+    await connectDB();
 // ✅ Duplicate check for item_code
 if (productData.item_code) {
   const existingProduct = await Product.findOne({
@@ -93,7 +82,7 @@ if (productData.slug) {
     console.log("Processed extend_warranty:", extend_warranty);
 console.log(imageFiles);
 // Updated pathing for more reliability
-  // ...
+    // ...
 // Inside your PUT handler
 // ...
 let savedImages = [];
@@ -121,7 +110,7 @@ for (const file of imageFiles) {
 // And the same change for overview images and variant images
 
 // ...
-  const savedOverviewImages = [];
+    const savedOverviewImages = [];
 for (const file of overviewImageFiles) {
   if (!file || typeof file.name !== "string") continue;
   const filename = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
@@ -142,42 +131,42 @@ const finalOverviewImages = [
   ...savedOverviewImages
 ];
 
-  if (productData.hasVariants) {
-   for (let i = 0; i < variants.length; i++) {
-    const variantImages = [];
-    let imgIndex = 0;
+    if (productData.hasVariants) {
+      for (let i = 0; i < variants.length; i++) {
+        const variantImages = [];
+        let imgIndex = 0;
 
-    while (true) {
-     const imageKey = `variant_${i}_image_${imgIndex}`;
-     const imageFile = formData.get(imageKey);
-     if (!imageFile || typeof imageFile.name !== "string") break;
+        while (true) {
+          const imageKey = `variant_${i}_image_${imgIndex}`;
+          const imageFile = formData.get(imageKey);
+          if (!imageFile || typeof imageFile.name !== "string") break;
 
-     const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, "-")}`;
-     const filePath = path.join(uploadDir, filename);
-     const buffer = Buffer.from(await imageFile.arrayBuffer());
-     await writeFile(filePath, buffer);
+          const filename = `${Date.now()}-${imageFile.name.replace(/\s+/g, "-")}`;
+          const filePath = path.join(uploadDir, filename);
+          const buffer = Buffer.from(await imageFile.arrayBuffer());
+          await writeFile(filePath, buffer);
 
-     variantImages.push(imageFile.name.replace(/\s+/g, "-")); // Correct: Save only the original name
-     imgIndex++;
-    }
+          variantImages.push(imageFile.name.replace(/\s+/g, "-")); // Correct: Save only the original name
+          imgIndex++;
+        }
 
-    variants[i].images = variantImages;
-   }
-  } else {
-   variants = [];
-  }
+        variants[i].images = variantImages;
+      }
+    } else {
+      variants = [];
+    }
 
-  productData.product_highlights = highlights;
-  productData.variants = variants;
-  productData.md5_name = md5_cat_name;
+    productData.product_highlights = highlights;
+    productData.variants = variants;
+    productData.md5_name = md5_cat_name;
 
 productData.extend_warranty = extend_warranty;
 
-  if (productData.quantity <= 0) {
-   productData.stock_status = "Out of Stock";
-  }
+    if (productData.quantity <= 0) {
+      productData.stock_status = "Out of Stock";
+    }
 
- let finalImages = [
+   let finalImages = [
   ...(productData.images || []), // old images coming from frontend
   ...(savedImages || [])         // newly uploaded files
 ];
@@ -225,20 +214,20 @@ console.log(Filters);
 const product_id = updatedProduct?._id;
 if (product_id){
 
- if (filterIds.length != 0) {
+  if (filterIds.length != 0) {
 
-  await Product_filter.deleteMany({
-   product_id,
-   filter_id: { $nin: filterIds },
-  });
+    await Product_filter.deleteMany({
+      product_id,
+      filter_id: { $nin: filterIds },
+    });
 
-  const bulkOps = filterIds.map(filter_id => ({
-   updateOne: {
-    filter: { product_id, filter_id },
-    update: { $setOnInsert: { product_id, filter_id } },
-    upsert: true,
-   },
-  }));
+    const bulkOps = filterIds.map(filter_id => ({
+      updateOne: {
+        filter: { product_id, filter_id },
+        update: { $setOnInsert: { product_id, filter_id } },
+        upsert: true,
+      },
+    }));
 
 // In your product update API endpoint
 if (productData.removedOverviewImages && productData.removedOverviewImages.length > 0) {
@@ -271,26 +260,26 @@ if (req.files && req.files.overviewImages) {
   productData.overview_image = [...productData.overview_image, ...overviewImagePaths];
 }
 
-  await Product_filter.bulkWrite(bulkOps);
+    await Product_filter.bulkWrite(bulkOps);
 
- }else{
- await Product_filter.deleteMany({ product_id });
- }
+  }else{
+  await Product_filter.deleteMany({ product_id });
+  }
 }
 
-  if (!updatedProduct) {
-   return NextResponse.json({ error: "Product not found" }, { status: 404 });
-  }
+    if (!updatedProduct) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
 
-  updatedProduct.removalReason = "Outdated";
+    updatedProduct.removalReason = "Outdated";
 
 
-  return NextResponse.json(
-   { message: "Product updated successfully", product: updatedProduct, extend_warranty: updatedProduct.extend_warranty },
-   { status: 200 }
-  );
- } catch (error) {
-  console.error("Error updating product:", error);
-  return NextResponse.json({ error: error.message }, { status: 500 });
- }
+    return NextResponse.json(
+      { message: "Product updated successfully", product: updatedProduct, extend_warranty: updatedProduct.extend_warranty },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
