@@ -110,9 +110,10 @@ export async function GET(req) {
     productsQuery = Product.find(query).populate('brand', 'brand_name brand_slug');
   }
 
-   // Apply sorting: In Stock products first, then Out of Stock
+ 
+    // Apply sorting: Products with quantity > 0 first, then quantity <= 0
     productsQuery = productsQuery.sort({ 
-      stock_status: -1, // -1 for descending: "In Stock" comes before "Out of Stock"
+      quantity: -1, // -1 for descending: quantity > 0 comes first, then quantity <= 0
       _id: -1 // Secondary sort by _id or any other field you prefer
     });
   

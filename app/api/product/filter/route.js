@@ -105,6 +105,12 @@ export async function GET(req) {
         query._id = { $in: filteredProductIds };
         productsQuery = Product.find(query).populate('brand', 'brand_name brand_slug');
       }
+
+      // Apply sorting: Products with quantity > 0 first, then quantity <= 0
+    productsQuery = productsQuery.sort({ 
+      quantity: -1, // -1 for descending: quantity > 0 comes first, then quantity <= 0
+      _id: -1 // Secondary sort by _id or any other field you prefer
+    });
       
       // Apply pagination
       const skip = (page - 1) * limit;
