@@ -54,9 +54,9 @@ export async function POST(req) {
 
         for(let [index, row] of rows.entries()) {
         
-            const item_code                         = row.item_code.trim();
-            const filter_group_name                 = row.filter_group_name.trim();
-            const filter_name                       = row.filter_name.trim();
+            const item_code                         = row.item_code.toString().trim();
+            const filter_group_name                 = row.filter_group_name.toString().trim();
+            const filter_name                       = row.filter_name.toString().trim(); 
             
             if(!filter_group_name || !filter_name) {
                 errors.push({
