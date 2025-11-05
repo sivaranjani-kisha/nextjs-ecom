@@ -16,7 +16,8 @@ const ProductSchema = new mongoose.Schema({
   size: { type: String, default: "" },
   star: { type: String, default: "" },
   category: String,
-  movement: String,
+  movement: { type: String, default: "" },
+  model_number: { type: String, default: "" },
   key_specifications : { type: [String], default: [] },
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   stock_status: { type: String, enum: ["In Stock", "Out of Stock"], default: "In Stock" },
@@ -30,6 +31,7 @@ const ProductSchema = new mongoose.Schema({
   type: [mongoose.Schema.Types.ObjectId], 
   ref: "Product", 
   default: [] 
+
 },
 
   warranty: Number,
@@ -49,6 +51,10 @@ const ProductSchema = new mongoose.Schema({
   meta_description: { type: String, default: "" }, // Add meta_description field
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  category_new: String,
+  sub_category_new: String,
+  sub_category_new_name: String,
 });
 
-export default mongoose.models.Product || mongoose.model("Product", ProductSchema);
+//export default mongoose.models.Product || mongoose.model("Product", ProductSchema);
+export default mongoose.models.Product || mongoose.model("Product", ProductSchema, "products");

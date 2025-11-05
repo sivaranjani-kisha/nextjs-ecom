@@ -313,7 +313,7 @@ export default function BulkUploadPage() {
         if(!productFilterValue || !validateFile(productFilterValue, ['.xlsx', '.csv'])) {
           toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
           return;
-        }
+        } 
         
         setIsLoading(true);
         setActiveUploadType(uploadType);

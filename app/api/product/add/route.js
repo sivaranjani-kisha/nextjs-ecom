@@ -11,6 +11,17 @@ export async function POST(req) {
   try {
     const formData = await req.formData();
     const productData = JSON.parse(formData.get("product"));
+    if (productData?.category) {
+      let GetSubcategory    = null;
+      let GetChildCategory  = null;
+      let GetMainCategory   = null;
+      GetMainCategory                   =  await Category.findOne({ _id: productData.sub_category }); 
+      GetSubcategory                    = await Category.findOne({ _id: GetMainCategory.parentid });
+      GetChildCategory                  = await Category.findOne({  _id: GetSubcategory.parentid});
+      productData.category_new          = GetChildCategory.md5_cat_name;
+      productData.sub_category_new      = productData.category_new +"##"+ GetSubcategory.md5_cat_name+"##"+productData.sub_category;
+      productData.sub_category_new_name = GetChildCategory.category_name +"##"+ GetSubcategory.category_name +"##"+ GetMainCategory.category_name;
+    }
     // Normalize brand_code: keep trimmed when provided, drop when empty
     if (Object.prototype.hasOwnProperty.call(productData, "brand_code")) {
       const trimmed = (productData.brand_code ?? "").toString().trim();

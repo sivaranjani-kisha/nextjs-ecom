@@ -9,9 +9,9 @@ export default function CategoryComponent() {
   const [categories, setCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [showUpdateAlert, setShowUpdateAlert] = useState(false);
-const [updateAlertMessage, setUpdateAlertMessage] = useState('');
-const [updateErrorMessage, setUpdateErrorMessage] = useState("");
-const [updateImageError, setUpdateImageError] = useState("");
+  const [updateAlertMessage, setUpdateAlertMessage] = useState('');
+  const [updateErrorMessage, setUpdateErrorMessage] = useState("");
+  const [updateImageError, setUpdateImageError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
