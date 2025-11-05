@@ -307,6 +307,90 @@ export default function BulkUploadPage() {
         setActiveUploadType(uploadType);
       }
 
+    }else if (uploadType == "category"){
+        // Read and parse the uploaded Excel/CSV on the client,
+        // then call the single-category API per row.
+        if(!productFilterValue || !validateFile(productFilterValue, ['.xlsx', '.csv'])) {
+          toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+          return;
+        }
+        
+        setIsLoading(true);
+        setActiveUploadType(uploadType);
+        setMessage(null);
+        
+        try {
+          const file = productFilterValue;
+          const name = file.name.toLowerCase();
+          const arrayBuffer = await file.arrayBuffer();
+          const XLSX = await import('xlsx');
+          let rows = [];
+
+          if (name.endsWith('.csv')) {
+            const csvText = new TextDecoder('utf-8').decode(arrayBuffer);
+            const workbook = XLSX.read(csvText, { type: 'string' });
+            rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          } else {
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          }
+
+          const results = { added: 0, skipped: 0, errors: [] };
+
+          for (const [idx, row] of rows.entries()) {
+            // Support common header name variations; adapt if your sheet headers differ.
+            const category_name = (row.CategoryName || row.Category || row.category_name || '').toString().trim();
+            const parentid = (row.ParentId || row.Parent || row.parentid || 'none').toString().trim() || 'none';
+            const status = (row.Status || row.status || 'Active').toString().trim() || 'Active';
+            const show_on_home = (row.ShowOnHome || row.show_on_home || 'No').toString().trim() || 'No';
+
+            if (!category_name) {
+              results.errors.push({ row: idx + 2, error: "Missing CategoryName" });
+              continue;
+            }
+
+            const fd = new FormData();
+            fd.append('category_name', category_name);
+            fd.append('parentid', parentid);
+            fd.append('status', status);
+            fd.append('show_on_home', show_on_home);
+
+            try {
+              const res = await fetch('/api/categories/add', { method: 'POST', body: fd });
+              const data = await res.json();
+              if (res.ok) {
+                results.added++;
+              } else {
+                // If server says category exists, count as skipped, otherwise record error
+                const msg = (data && data.error) ? data.error.toString().toLowerCase() : '';
+                if (res.status === 400 && msg.includes('already exists')) {
+                  results.skipped++;
+                } else {
+                  results.errors.push({ row: idx + 2, error: data.error || 'Unknown error' });
+                }
+              }
+            } catch (err) {
+              results.errors.push({ row: idx + 2, error: err.message || 'Network error' });
+            }
+          }
+
+          if (results.added) toast.success(`${results.added} categories added.`);
+          if (results.skipped) toast.info(`${results.skipped} categories skipped (already exist).`);
+          if (results.errors.length) {
+            results.errors.forEach(e => toast.error(`Row ${e.row}: ${e.error}`));
+          }
+
+          filterValueFormRef.current?.reset();
+          setProductFilterValue(null);
+
+        } catch (err) {
+          console.error("Category bulk upload error:", err);
+          toast.error("Upload failed. " + (err.message || ""));
+        } finally {
+          setIsLoading(false);
+          setActiveUploadType(null);
+        }
     }
 
   };
@@ -333,6 +417,15 @@ export default function BulkUploadPage() {
     const link = document.createElement('a');
     link.href = `/uploads/files/filter_values_bulk_upload_new.xlsx?t=${Date.now()}`;
     link.download = 'filter_values_bulk_upload_new.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+    const handleDownloadCategoryValues = () => {
+    const link = document.createElement('a');
+    link.href = `/uploads/files/SampleFormatCategoryValues.xlsx?t=${Date.now()}`;
+    link.download = 'SampleFormatCategoryValues.xlsx';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -407,15 +500,15 @@ export default function BulkUploadPage() {
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-blue-700 hover:file:bg-red-100"
               />
               <button
-  type="button"   // <-- Add this
-  onClick={handleZipDownload}
-  className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
->
-  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-  </svg>
-  Download Sample ZIP
-</button>
+                type="button"   // <-- Add this
+                onClick={handleZipDownload}
+                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Sample ZIP
+              </button>
             </div>
           </div>
 
@@ -698,23 +791,23 @@ export default function BulkUploadPage() {
           </div>
         </form>
 
-        {/* <form ref={categoryFormRef} onSubmit={(e) => handleSubmit(e, "category")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
+        <form ref={filterValueFormRef} onSubmit={(e) => handleSubmit(e, "category")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
-              <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Filter Values Bulk Upload</h2>
+              <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">New Category Bulk Upload  </h2>
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Excel/CSV File
               </h3>
-              <p className="text-sm text-gray-500 mt-1">Upload your Category file</p>
+              <p className="text-sm text-gray-500 mt-1">Please upload your category fields along with their corresponding values.</p>
             </div>
             <div className="space-y-4">
-              <input type="file" accept=".xlsx,.csv" onChange={(e) => setCategoryUpload(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100" required />
+              <input type="file" accept=".xlsx,.csv" onChange={(e) => setProductFilterValue(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100" required />
             </div>
 
-            <button type="button" onClick={handleDownloadFilterValues} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
+            <button type="button" onClick={handleDownloadCategoryValues} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
@@ -728,7 +821,7 @@ export default function BulkUploadPage() {
               disabled={isLoading}
               className="bg-[#3B82F6] hover:bg-[#3B82F6] text-white px-3 py-2 rounded-md flex items-center gap-2"
             >
-              {isLoading && activeUploadType == "category" ? (
+              {isLoading && activeUploadType == "filter_values" ? (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -737,12 +830,12 @@ export default function BulkUploadPage() {
                   Uploading...
                 </span>
               ) : (
-                'Upload Product Filter Values'
+                'upload New Categories'
               )}
             </button>
 
           </div>
-        </form> */}
+        </form>
 
         <ToastContainer position="top-right" autoClose={5000} />
       </div>
