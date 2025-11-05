@@ -332,7 +332,7 @@ export default function BulkUploadPage() {
   const handleDownloadFilterValues = () => {
     const link = document.createElement('a');
     link.href = `/uploads/files/filter_values.xlsx?t=${Date.now()}`;
-    link.download = 'SampleFormatFilterValues.xlsx';
+    link.download = 'Filter_Values_Bulk_Upload.xlsx';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
