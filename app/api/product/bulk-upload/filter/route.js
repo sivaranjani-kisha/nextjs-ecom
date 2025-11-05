@@ -66,9 +66,12 @@ export async function POST(req) {
                 continue;
             }
 
-            let filterGroup = await FilterGroup.findOne({
-                filtergroup_name:   filter_group_name,
-            });
+           const normalizedGroupName = filter_group_name.trim().toLowerCase();
+
+let filterGroup = await FilterGroup.findOne({
+  filtergroup_name: new RegExp(`^${normalizedGroupName}$`, 'i'),
+});
+
 
             if (!filterGroup && filterGroup == null) {
                 filterGroup = await FilterGroup.create({
