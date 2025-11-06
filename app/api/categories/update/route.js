@@ -73,7 +73,7 @@ export async function PUT(req) {
       const uploadDir = path.join(process.cwd(), "public/uploads/categories");
       const fileName = `category_${Date.now()}${path.extname(file.name)}`;
       await writeFile(path.join(uploadDir, fileName), buffer);
-      image_url = `http://localhost:3000/uploads/categories/${fileName}`;
+      image_url = `/uploads/categories/${fileName}`;
     }
  
     // Handle navImage upload/update BEFORE updating category
