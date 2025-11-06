@@ -66,6 +66,17 @@ export default function CategoryPage() {
       fetchInitialData();
     }
   }, [sub_slug]);
+
+  const scrollRef = useRef(null);
+
+  const scroll = (direction) => {
+    if (!scrollRef.current) return;
+    const scrollAmount = scrollRef.current.offsetWidth * 0.6; // adjust scroll distance
+    scrollRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
   
   const fetchInitialData = async () => {
     try {
@@ -668,6 +679,106 @@ export default function CategoryPage() {
           )} */}
         </div>
       )}
+{/* Categories Circle Section - Dynamic based on subcategories */}
+
+
+    <div className="my-12 relative">
+      {/* Left arrow */}
+      <button
+        onClick={() => scroll("left")}
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg hidden md:flex items-center justify-center"
+      >
+        <span className="text-2xl font-bold text-gray-700">{`‹`}</span>
+      </button>
+
+      {/* Right arrow */}
+      <button
+        onClick={() => scroll("right")}
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg hidden md:flex items-center justify-center"
+      >
+        <span className="text-2xl font-bold text-gray-700">{`›`}</span>
+      </button>
+
+      {/* Scroll container */}
+      <div
+        ref={scrollRef}
+        className="flex overflow-x-auto hide-scrollbar scroll-smooth px-10 space-x-8"
+      >
+        {categoryData?.categoryTree?.length > 0 ? (
+          categoryData.categoryTree.map((subcategory) => (
+            <Link
+              key={subcategory._id}
+              href={`/category/${slug}/${sub_slug}/${subcategory.category_slug}`}
+              className="flex flex-col items-center flex-shrink-0 cursor-pointer group"
+            >
+              {/* Circle container */}
+              <div className="w-40 h-40 rounded-full flex items-center justify-center bg-gradient-to-b from-[#b4b4b4] to-[#202020] shadow-md overflow-hidden relative group-hover:scale-105 transition-all duration-300">
+                <div className="w-40 h-40 rounded-full flex items-center justify-center bg-gradient-to-b from-[#b4b4b4] to-[#202020] shadow-md overflow-hidden relative group-hover:scale-105 transition-all duration-300">
+  {/* Inner white circle */}
+  <div className="absolute inset-[8px] bg-white rounded-full flex items-center justify-center overflow-hidden">
+    {subcategory.image ? (
+      <div className="relative w-[120px] h-[120px]">
+        <Image
+          src={
+            subcategory.image.startsWith("http")
+              ? subcategory.image
+              : `${subcategory.image}`
+          }
+          alt={subcategory.category_name}
+          fill
+          className="object-contain transition-transform duration-300 group-hover:scale-110"
+          unoptimized
+          onError={(e) => {
+            e.target.style.display = 'none';
+            const fallback = e.target.nextSibling;
+            if (fallback) {
+              fallback.style.display = 'block';
+            }
+          }}
+        />
+        {/* Fallback image */}
+        <div className="relative w-full h-full" style={{ display: 'none' }}>
+          <Image
+            src="/no-catimg.png" // Add your fallback image path here
+            alt="Fallback image"
+            fill
+            className="object-contain"
+            unoptimized
+          />
+        </div>
+      </div>
+    ) : (
+      // Show fallback image when no image at all
+      <div className="relative w-[120px] h-[120px]">
+        <Image
+          src="/no-catimg.png" // Add your fallback image path here
+          alt="Fallback image"
+          fill
+          className="object-contain"
+          unoptimized
+        />
+      </div>
+    )}
+  </div>
+</div>
+              </div>
+
+              {/* Label */}
+              <span className="text-lg font-semibold text-center text-black mt-4 group-hover:text-blue-600 transition-colors whitespace-nowrap">
+                {subcategory.category_name}
+              </span>
+            </Link>
+          ))
+        ) : (
+          <div className="text-center w-full py-8">
+            <p className="text-gray-500">No subcategories available</p>
+          </div>
+        )}
+      </div>
+    </div>
+ 
+
+
 
       
        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-8">
