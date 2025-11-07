@@ -14,6 +14,7 @@ import mongoose from 'mongoose';
 import FilterGroup from '@/models/ecom_filter_group_infos';
 import Filter from "@/models/ecom_filter_infos";
 import ProductFilter from "@/models/ecom_productfilter_info";
+import GroupInfo from '@/models/ecom_group_name_info';
 
 export const config = {
     api: {
@@ -36,7 +37,6 @@ export async function POST(req) {
 
         const fileName  = file.name.toLowerCase();
         const buffer    = Buffer.from(await file.arrayBuffer());
-
         let rows        = [];
 
         if (fileName.endsWith('.csv')) {
@@ -55,9 +55,38 @@ export async function POST(req) {
         for(let [index, row] of rows.entries()) {
         
             const item_code                         = row.item_code.toString().trim();
-            const filter_group_name                 = row.filter_group_name.toString().trim();
+            let filter_group_name                   = row.filter_group_name.toString().trim();
+
+            let products = await Product.findOne({
+                item_code: item_code.trim(),
+            });
+
+            if(filter_group_name == "size") {
+                let cat_id_str  = products.sub_category?.trim() || products.category?.trim();
+
+                let cat_id;
+                if (mongoose.Types.ObjectId.isValid(cat_id_str)) {
+                    cat_id = new mongoose.Types.ObjectId(cat_id_str);
+                } else {
+                    console.error("Invalid ObjectId:", cat_id_str);
+                }
+
+                let categories = await Category.findOne({
+                    _id: cat_id,
+                });
+
+                if(categories) {
+                    let groupName = await GroupInfo.findOne({
+                        category_slug: categories.category_slug,
+                    });
+                    filter_group_name = groupName.group_name;
+                }else {
+                    filter_group_name = "size";
+                }
+            }
+
             const filter_name                       = row.filter_name.toString().trim(); 
-            
+
             if(!filter_group_name || !filter_name) {
                 errors.push({
                     row: index + 2,
@@ -66,11 +95,11 @@ export async function POST(req) {
                 continue;
             }
 
-           const normalizedGroupName = filter_group_name.trim().toLowerCase();
+            const normalizedGroupName = filter_group_name.trim().toLowerCase();
 
-let filterGroup = await FilterGroup.findOne({
-  filtergroup_name: new RegExp(`^${normalizedGroupName}$`, 'i'),
-});
+            let filterGroup = await FilterGroup.findOne({
+                filtergroup_name: new RegExp(`^${normalizedGroupName}$`, 'i'),
+            });
 
 
             if (!filterGroup && filterGroup == null) {
@@ -81,15 +110,19 @@ let filterGroup = await FilterGroup.findOne({
                 });
             }
 
-            // ✅ Check for existing filter correctly
+            // Check for existing filter correctly
             let existingFilter = await Filter.findOne({
                 filter_name: filter_name.trim(),
                 filter_group: filterGroup._id,
             });
+
+            // console.log(existingFilter);
     
             if (existingFilter) {
-                existingFilter.status = "Active";
-                await existingFilter.save();
+                if (existingFilter.status !== "Active") {
+                    existingFilter.status = "Active";
+                    await existingFilter.save();
+                }
             } else {
                 existingFilter =  await Filter.create({
                     filter_name: filter_name.trim(),
@@ -99,9 +132,9 @@ let filterGroup = await FilterGroup.findOne({
                 });
             }
 
-            let products = await Product.findOne({
-                item_code: item_code.trim(),
-            });
+            // let products = await Product.findOne({
+            //     item_code: item_code.trim(),
+            // });
 
             if(products) {
                 const product_id = products._id;
@@ -129,12 +162,12 @@ let filterGroup = await FilterGroup.findOne({
         }
 
         return NextResponse.json(
-        {
-            message: `Upload completed: ${addedCount} added, ${existCount} Product Filters Already Exsit.`,
-            details: errors,
-        },
-        { status: errors.length ? 207 : 201 }
-    );
+            {
+                message: `Upload completed: ${addedCount} added, ${existCount} Product Filters Already Exsit.`,
+                details: errors,
+            },
+            { status: errors.length ? 207 : 201 }
+        );
 
     } catch(error) {
         console.error('Bulk update error:', error);
