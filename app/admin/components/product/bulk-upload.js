@@ -425,8 +425,8 @@ export default function BulkUploadPage() {
 
   const handleDownloadCategoryValues = () => {
     const link = document.createElement('a');
-    link.href = `/uploads/files/SampleFormatCategoryValues.xlsx?t=${Date.now()}`;
-    link.download = 'SampleFormatCategoryValues.xlsx';
+    link.href = `/uploads/files/NewCategoryBulkUploadSample.xlsx?t=${Date.now()}`;
+    link.download = 'NewCategoryBulkUploadSample.xlsx';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
