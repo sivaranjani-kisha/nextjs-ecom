@@ -19,7 +19,8 @@ export async function POST(req) {
 
     const formData = await req.formData();
     const category_name = formData.get("category_name");
-    const parentid = formData.get("parentid") || "none";
+    let parentid = formData.get("parentid")  ||"none";
+    let parentid_new =  formData.get("parentid_new") ||"none";
     const status = formData.get("status") || "Active";
     const show_on_home = formData.get("show_on_home") || "No";
     const file = formData.get("image");
@@ -30,11 +31,37 @@ export async function POST(req) {
 
     let category_slug = convertSlug(category_name);
     let md5_cat_name = md5(category_slug);
+    if(parentid === "none" ){
+      let getparentcategory = await Category.findOne({ category_name : parentid_new });
+      parentid = getparentcategory ? getparentcategory._id : "none";
+    }else{
+       if( parentid !== "none" ){
+        let getparentcategory = await Category.findOne({ category_name : parentid_new });
+        parentid = getparentcategory ? getparentcategory._id : md5_cat_name;
+      }
+    }
+    if(parentid_new === "none" ){
+      let getparentcategory = await Category.findOne({ category_name : parentid_new });
+      parentid_new = getparentcategory ? getparentcategory.md5_cat_name : "none";
+    }else{
+       if( parentid_new !== "none" ){
+        let getparentcategory = await Category.findOne({ category_name : parentid_new });
+        parentid_new = getparentcategory ? getparentcategory.md5_cat_name : md5_cat_name;
+      }
+    }
 
     // Check if category already exists
-    let existingCategory = await Category.findOne({ category_slug });
+    let existingCategory = await Category.findOne({
+      category_slug: category_slug,
+      parentid: parentid,
+      parentid_new: parentid_new
+    });
+
     if (existingCategory) {
-      return NextResponse.json({ error: "Category already exists" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Category with the same slug and parent already exists" },
+        { status: 400 }
+      );
     }
 
     // Safe file processing - check if file exists and has data
@@ -83,6 +110,7 @@ export async function POST(req) {
       category_slug,
       md5_cat_name,
       parentid,
+      parentid_new,
       status,
       show_on_home,
       image: image_url,
