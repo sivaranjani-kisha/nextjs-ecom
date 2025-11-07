@@ -212,6 +212,31 @@ export default function CartComponent() {
     setTimeout(() => setCopiedCode(null), 1500);
   };
 
+  // NEW: helper to robustly check coupon validity using optional from/to dates
+  const isCouponValid = (coupon) => {
+    try {
+      const now = new Date();
+      const fromRaw = coupon?.from_date ?? coupon?.fromDate ?? coupon?.valid_from ?? null;
+      const toRaw = coupon?.to_date ?? coupon?.toDate ?? coupon?.valid_to ?? null;
+
+      if (!fromRaw && !toRaw) return true; // no date constraints => valid
+
+      const from = fromRaw ? new Date(fromRaw) : null;
+      const to = toRaw ? new Date(toRaw) : null;
+
+      // invalid dates => treat as expired/inapplicable
+      if (from && isNaN(from)) return false;
+      if (to && isNaN(to)) return false;
+
+      const afterFrom = from ? now >= from : true;
+      const beforeTo = to ? now <= to : true;
+
+      return afterFrom && beforeTo;
+    } catch {
+      return false;
+    }
+  };
+
   // NEW: shared fetcher for active offer codes (used by SSE triggers, polling, focus/visibility)
   const fetchActiveCodes = useCallback(async (opts = { silent: false }) => {
     try {
@@ -237,12 +262,15 @@ export default function CartComponent() {
       const json = await resp.json().catch(() => null);
       const offers = Array.isArray(json?.offers)
         ? json.offers.map(o => ({
+            // preserve date fields for client-side validity checks
             code: o.code || o.offer_code || o.offerCode || "",
             percentage: Number(o.percentage || 0) || 0,
             fixed_price: Number(o.fixed_price || 0) || 0,
+            from_date: o.from_date ?? o.fromDate ?? o.valid_from ?? null,
+            to_date: o.to_date ?? o.toDate ?? o.valid_to ?? null,
           })).filter(o => o.code)
         : Array.isArray(json?.codes)
-          ? json.codes.map(c => ({ code: c, percentage: 0, fixed_price: 0 }))
+          ? json.codes.map(c => ({ code: c, percentage: 0, fixed_price: 0, from_date: null, to_date: null }))
           : [];
 
       // Update state only if changed to avoid flicker
@@ -889,11 +917,13 @@ export default function CartComponent() {
               code: o.code || o.offer_code || o.offerCode || "",
               percentage: Number(o.percentage || 0) || 0,
               fixed_price: Number(o.fixed_price || 0) || 0,
+              from_date: o.from_date ?? o.fromDate ?? o.valid_from ?? null,
+              to_date: o.to_date ?? o.toDate ?? o.valid_to ?? null,
             })).filter(o => o.code)
           : Array.isArray(json?.codes)
-            ? json.codes.map(c => ({ code: c, percentage: 0, fixed_price: 0 }))
+            ? json.codes.map(c => ({ code: c, percentage: 0, fixed_price: 0, from_date: null, to_date: null }))
             : [];
-            console.log(offers);
+        // console.log(offers);
         setActiveOfferCodes(offers);
       } catch {
         setActiveOfferCodes([]);
@@ -923,8 +953,10 @@ export default function CartComponent() {
                     code: o.code || o.offer_code || o.offerCode || "",
                     percentage: Number(o.percentage || 0) || 0,
                     fixed_price: Number(o.fixed_price || 0) || 0,
+                    from_date: o.from_date ?? o.fromDate ?? o.valid_from ?? null,
+                    to_date: o.to_date ?? o.toDate ?? o.valid_to ?? null,
                   })).filter(o => o.code)
-                : data.codes.map(c => ({ code: c, percentage: 0, fixed_price: 0 }));
+                : data.codes.map(c => ({ code: c, percentage: 0, fixed_price: 0, from_date: null, to_date: null }));
               if (!isSameOffers(activeOfferCodes, offers)) {
                 setActiveOfferCodes(offers);
               }
@@ -1005,6 +1037,11 @@ export default function CartComponent() {
       if (bc) bc.close();
     };
   }, [fetchActiveCodes]);
+
+  // Derived lists/flags used for rendering
+  const validActiveOfferCodes = Array.isArray(activeOfferCodes) ? activeOfferCodes.filter(isCouponValid) : [];
+  const expiredActiveOfferCodes = Array.isArray(activeOfferCodes) ? activeOfferCodes.filter((c) => !isCouponValid(c)) : [];
+  const hasAnyValidActiveOffer = validActiveOfferCodes.length > 0;
 
   if (loading) {
     return (
@@ -1253,19 +1290,19 @@ export default function CartComponent() {
                 </p>
               </div>
             ) : (
-              // Apply Coupon Card - only show if an active offer exists
-            
-                <div className="bg-[#f2f2f2] shadow-lg rounded-xl p-3 mb-5 max-w-md mx-auto border border-gray-200">
-                  <h3 className="text-gray-700 font-semibold text-sm mb-1">
-                    Apply Coupon
-                  </h3>
-                  <p className="text-gray-900 text-sm mb-1" style={{ fontSize: "10.96px", color: "red", fontWeight: "bold" }}>
-                    Enter your coupon code below to get discounts on eligible products.
-                  </p>
+              <div className="bg-[#f2f2f2] shadow-lg rounded-xl p-3 mb-5 max-w-md mx-auto border border-gray-200">
+                <h3 className="text-gray-700 font-semibold text-sm mb-1">
+                  Apply Coupon
+                </h3>
+                <p className="text-gray-900 text-sm mb-1" style={{ fontSize: "10.96px", color: "red", fontWeight: "bold" }}>
+                  Enter your coupon code below to get discounts on eligible products.
+                </p>
 
-                  {/* Promotional-style offers */}
-                {isOffersLoading && activeOfferCodes.length === 0 ? (
-                  // NEW: lightweight skeleton to avoid flicker
+                {/* Single-branch simplified rendering:
+                    - show skeleton while loading and no offers yet
+                    - else show valid offers if any
+                    - else show "Coupons are expired." when all are expired */}
+                { (isOffersLoading && activeOfferCodes.length === 0) ? (
                   <div className="mt-2 mb-3">
                     <div className="text-sm font-semibold text-gray-800 mb-2">
                       🎉 Limited Time Offers!
@@ -1275,90 +1312,96 @@ export default function CartComponent() {
                       <div className="p-1.5 rounded-md border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 animate-pulse h-10" />
                     </div>
                   </div>
-                ) : activeOfferCodes.length > 0 && (
-                  <div className="mt-2 mb-3">
-                    <div className="text-sm font-semibold text-gray-800 mb-2">
-                      🎉 Limited Time Offers!
-                    </div>
-                    <div className="flex flex-col space-y-1.5">
-                      {activeOfferCodes.map((display_coupon) => (
-                        <div
-                          key={display_coupon.code}
-                          className="p-1.5 rounded-md shadow-sm border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50"
-                        >
-                          <div className="flex flex-wrap items-center gap-2 text-gray-800 text-xs sm:text-sm leading-tight">
-                            <span className="whitespace-nowrap">🔖 Apply</span>
-                            <button
-                              type="button"
-                              onClick={() => handleCopyCoupon(display_coupon.code)}
-                              className={`inline-flex items-center gap-2 px-4 py-1 rounded-md text-white font-semibold text-xs sm:text-sm shadow-sm hover:shadow cursor-pointer active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300
-                                ${copiedCode === display_coupon.code ? "bg-green-400 hover:bg-green-500 border-green-500" : ""}
-                                ${display_coupon.isHot ? "bg-orange-500 hover:bg-orange-600 border-orange-600" : ""}
-                                ${display_coupon.isExpired ? "bg-red-400 hover:bg-red-500 border-red-500" : ""}
-                                ${display_coupon.isSecondary ? "bg-olive-600 hover:bg-olive-700 border-olive-700" : ""}
-                                ${!display_coupon.isHot && !display_coupon.isExpired && !display_coupon.isSecondary && copiedCode !== display_coupon.code ? "bg-[#999999c4] hover:bg-[#808080] border-[#999999c4]" : ""}
-                              `}
+                ) : (
+                  hasAnyValidActiveOffer ? (
+                    <div className="mt-2 mb-3">
+                      <div className="text-sm font-semibold text-gray-800 mb-2">
+                        🎉 Limited Time Offers!
+                      </div>
+                      <div className="flex flex-col space-y-1.5">
+                        {validActiveOfferCodes.map((display_coupon) => {
+                          const isValid = isCouponValid(display_coupon);
+                          if (!isValid) return null; // defensive
+                          return (
+                            <div
+                              key={display_coupon.code}
+                              className="p-1.5 rounded-md shadow-sm border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50"
                             >
-                              <span className="truncate">{display_coupon.code}</span>
-                            </button>
+                              <div className="flex flex-wrap items-center gap-2 text-gray-800 text-xs sm:text-sm leading-tight">
+                                <span className="whitespace-nowrap">🔖 Apply</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCoupon(display_coupon.code)}
+                                  className={`inline-flex items-center gap-2 px-4 py-1 rounded-md text-white font-semibold text-xs sm:text-sm shadow-sm hover:shadow cursor-pointer active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300
+                                    ${copiedCode === display_coupon.code ? "bg-green-400 hover:bg-green-500 border-green-500" : "bg-[#999999c4] hover:bg-[#808080] border-[#999999c4]"}
+                                  `}
+                                >
+                                  <span className="truncate">{display_coupon.code}</span>
+                                </button>
 
-                            {/* Copied Indicator */}
-                            {copiedCode === display_coupon.code && (
-                              <span className="text-green-600 font-semibold ml-1">✅ Copied</span>
-                            )}
+                                {/* Copied Indicator */}
+                                {copiedCode === display_coupon.code && (
+                                  <span className="text-green-600 font-semibold ml-1">✅ Copied</span>
+                                )}
 
-                            {/* Discount Text */}
-                            <span className="whitespace-nowrap">
-                              and get{" "}
-                              {Number(display_coupon.fixed_price) > 0
-                                ? `₹${Number(display_coupon.fixed_price).toFixed(0)} Off`
-                                : `${Number(display_coupon.percentage).toFixed(0)}% Discount`}
-                            </span>
+                                {/* Discount Text */}
+                                <span className="whitespace-nowrap">
+                                  and get{" "}
+                                  {Number(display_coupon.fixed_price) > 0
+                                    ? `₹${Number(display_coupon.fixed_price).toFixed(0)} Off`
+                                    : `${Number(display_coupon.percentage).toFixed(0)}% Discount`}
+                                </span>
 
-                          </div>
-                        </div>
-                      ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="mt-2 mb-3">
+                      {/* <div className="text-sm font-semibold text-gray-800 mb-2">
+                        🎉 Limited Time Offers!
+                      </div>
+                      <p className="text-xs text-gray-500">Coupons are expired.</p> */}
+                    </div>
+                  )
                 )}
 
-
-
-                  <div className="flex items-center space-x-0">
-                    <input
-                      id="coupon_input"
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => {
-                        setCouponCode(e.target.value);
-                        setCouponError("");
-                        setCouponSuccess("");
-                      }}
-                      placeholder="Enter coupon code"
-                      disabled={!couponFeatureEnabled}
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-                    />
-                    <button
-                      onClick={validateCoupon}
-                      disabled={isValidatingCoupon || !couponFeatureEnabled}
-                      className="px-5 py-3 bg-blue-600 text-white text-sm rounded-r-lg font-medium hover:bg-blue-700 transition-all"
-                    >
-                      {isValidatingCoupon ? "Applying..." : "Apply"}
-                    </button>
-                  </div>
-                  {couponError && (
-                    <p className="text-red-500 text-sm mt-2">{couponError}</p>
-                  )}
-                  {couponSuccess && (
-                    <p className="text-green-600 text-sm mt-2">{couponSuccess}</p>
-                  )}
-                  {!couponFeatureEnabled && (
-                    <p className="text-xs text-gray-500 text-center mt-2">
-                      Coupons are currently disabled
-                    </p>
-                  )}
+                <div className="flex items-center space-x-0">
+                  <input
+                    id="coupon_input"
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value);
+                      setCouponError("");
+                      setCouponSuccess("");
+                    }}
+                    placeholder="Enter coupon code"
+                    disabled={!couponFeatureEnabled}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                  />
+                  <button
+                    onClick={validateCoupon}
+                    disabled={isValidatingCoupon || !couponFeatureEnabled}
+                    className="px-5 py-3 bg-blue-600 text-white text-sm rounded-r-lg font-medium hover:bg-blue-700 transition-all"
+                  >
+                    {isValidatingCoupon ? "Applying..." : "Apply"}
+                  </button>
                 </div>
-              
+                {couponError && (
+                  <p className="text-red-500 text-sm mt-2">{couponError}</p>
+                )}
+                {couponSuccess && (
+                  <p className="text-green-600 text-sm mt-2">{couponSuccess}</p>
+                )}
+                {!couponFeatureEnabled && (
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Coupons are currently disabled
+                  </p>
+                )}
+              </div>
             )}
           </div>
 

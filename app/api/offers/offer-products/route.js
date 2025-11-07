@@ -108,6 +108,70 @@ export async function GET(req) {
       (searchParams.get("listActiveCodes") || "").toLowerCase()
     );
 
+    // If listActiveCodes requested, query DB for offers that are active + date-valid today
+    if (listActiveCodes) {
+      try {
+        const today = new Date();
+
+        // Match offers that are active in both status fields and whose date window includes today.
+        // Treat missing from_date or to_date as open-ended (i.e., valid).
+        const query = {
+          $and: [
+            { fest_offer_status: { $regex: /^active$/i } },
+            { fest_offer_status2: { $regex: /^active$/i } },
+            {
+              $or: [
+                { from_date: { $lte: today } },
+                { from_date: { $exists: false } },
+                { from_date: null }
+              ]
+            },
+            {
+              $or: [
+                { to_date: { $gte: today } },
+                { to_date: { $exists: false } },
+                { to_date: null }
+              ]
+            }
+          ]
+        };
+
+        const activeOffers = await Offer.find(query).lean();
+
+        const codes = [
+          ...new Set(
+            activeOffers
+              .map((o) => String(o.offer_code || "").trim())
+              .filter(Boolean)
+          ),
+        ];
+
+        const offers = activeOffers.map((o) => {
+          const pct = Number(o.percentage ?? o.percent ?? o.discountValue ?? 0) || 0;
+          const fixed = Number(o.fixed_price ?? o.fixed ?? o.amount ?? 0) || 0;
+          return {
+            code: String(o.offer_code || "").trim(),
+            percentage: pct > 0 ? pct : 0,
+            fixed_price: fixed > 0 ? fixed : 0,
+            from_date: o.from_date ?? o.fromDate ?? o.valid_from ?? null,
+            to_date: o.to_date ?? o.toDate ?? o.valid_to ?? null,
+          };
+        }).filter(x => x.code);
+
+        if (!offers.length) {
+          return NextResponse.json({ success: true, codes: [], offers: [], message: "No active offers" });
+        }
+
+        return NextResponse.json({ success: true, codes, offers });
+      } catch (err) {
+        console.error("Error fetching active codes:", err);
+        return NextResponse.json(
+          { success: false, codes: [], offers: [], message: "Failed to fetch active offers" },
+          { status: 500 }
+        );
+      }
+    }
+
     // Fetch ALL offers (we'll filter per use-case below)
     const allOffers = await Offer.find({});
 
@@ -268,7 +332,7 @@ export async function GET(req) {
       return NextResponse.json({
         success: true,
         hasActiveOfferProduct,
-        validOffer: true,
+        validOffer: false,
         coupon
       });
     }
