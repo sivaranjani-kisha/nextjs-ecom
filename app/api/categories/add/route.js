@@ -19,8 +19,8 @@ export async function POST(req) {
 
     const formData = await req.formData();
     const category_name = formData.get("category_name");
-    let parentid = formData.get("parentid")  ||"none";
-    let parentid_new =  formData.get("parentid_new") ||"none";
+    let parentid = formData.get("parentid") || formData.get("parentid_new") || "none";
+    let parentid_new = formData.get("parentid_new") || "none";
     const status = formData.get("status") || "Active";
     const show_on_home = formData.get("show_on_home") || "No";
     const file = formData.get("image");
@@ -31,24 +31,78 @@ export async function POST(req) {
 
     let category_slug = convertSlug(category_name);
     let md5_cat_name = md5(category_slug);
-    if(parentid === "none" ){
-      let getparentcategory = await Category.findOne({ category_name : parentid_new });
-      parentid = getparentcategory ? getparentcategory._id : "none";
-    }else{
-       if( parentid !== "none" ){
-        let getparentcategory = await Category.findOne({ category_name : parentid_new });
-        parentid = getparentcategory ? getparentcategory._id : md5_cat_name;
+
+if (parentid === "none") {
+  const getParentCategory = await Category.findOne({ category_name: parentid_new });
+  parentid = getParentCategory ? getParentCategory._id : "none";
+} else {
+  if (parentid.includes(">")) {
+    // Example: "Electronics>Mobiles>Samsung"
+    const parts = parentid.split(">").map(p => p.trim()).filter(Boolean);
+    let foundParent = null;
+
+    for (let i = 0; i < parts.length; i++) {
+      const query = i === 0
+        ? { category_name: parts[i] }
+        : { category_name: parts[i], parentid: foundParent?._id };
+
+      const categoryLevel = await Category.findOne(query);
+
+      if (!categoryLevel) {
+        // Stop search if not found
+        foundParent = null;
+        break;
       }
+
+      foundParent = categoryLevel; // Keep last valid match
     }
-    if(parentid_new === "none" ){
-      let getparentcategory = await Category.findOne({ category_name : parentid_new });
-      parentid_new = getparentcategory ? getparentcategory.md5_cat_name : "none";
-    }else{
-       if( parentid_new !== "none" ){
-        let getparentcategory = await Category.findOne({ category_name : parentid_new });
-        parentid_new = getparentcategory ? getparentcategory.md5_cat_name : md5_cat_name;
+
+    parentid = foundParent ? foundParent._id : md5_cat_name;
+  } else {
+    // Single level
+    const getParentCategory = await Category.findOne({ category_name: parentid });
+    parentid = getParentCategory ? getParentCategory._id : md5_cat_name;
+  }
+}
+
+
+
+
+
+
+
+if (parentid_new === "none") {
+  const getParentCategory = await Category.findOne({ category_name: parentid_new });
+  parentid_new = getParentCategory ? getParentCategory.md5_cat_name : "none";
+} else {
+  if (parentid_new.includes(">")) {
+    // Example: "Gadgets>Item1>Subitem"
+    const parts = parentid_new.split(">").map(p => p.trim()).filter(Boolean);
+    let foundParent = null;
+
+    for (let i = 0; i < parts.length; i++) {
+      const query = i === 0
+        ? { category_name: parts[i] }
+        : { category_name: parts[i], parentid_new: foundParent?.md5_cat_name };
+
+      const categoryLevel = await Category.findOne(query);
+
+      if (!categoryLevel) {
+        foundParent = null;
+        break;
       }
+
+      foundParent = categoryLevel;
     }
+
+    parentid_new = foundParent ? foundParent.md5_cat_name : md5_cat_name;
+  } else {
+    // Single-level category name
+    const getParentCategory = await Category.findOne({ category_name: parentid_new });
+    parentid_new = getParentCategory ? getParentCategory.md5_cat_name : md5_cat_name;
+  }
+}
+
 
     // Check if category already exists
     let existingCategory = await Category.findOne({
@@ -70,16 +124,7 @@ export async function POST(req) {
       try {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
-        // Ensure upload directory exists
         const uploadDir = path.join(process.cwd(), "public/uploads/categories");
-        
-        // You might want to create the directory if it doesn't exist
-        // const fs = require('fs');
-        // if (!fs.existsSync(uploadDir)) {
-        //   fs.mkdirSync(uploadDir, { recursive: true });
-        // }
-        
         const filename = `${Date.now()}-${file.name}`;
         await writeFile(path.join(uploadDir, filename), buffer);
         image_url = `/uploads/categories/${filename}`; // Use relative path instead of localhost

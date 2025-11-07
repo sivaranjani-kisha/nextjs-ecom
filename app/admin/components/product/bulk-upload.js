@@ -342,6 +342,7 @@ export default function BulkUploadPage() {
             // Support common header name variations; adapt if your sheet headers differ.
             const category_name = (row.SubCatgoryName || row.subcatgoryname || row.SubCatgoryName || '').toString().trim();
             const parentid = (row.ParentName || row.parentname || row.parentname || 'none').toString().trim() || 'none';
+            /////alert(`Category: ${category_name}, Parent: ${parentid}`);
             const status = (row.Status || row.status || 'Active').toString().trim() || 'Active';
             const show_on_home = (row.ShowOnHome || row.show_on_home || 'No').toString().trim() || 'No';
 
