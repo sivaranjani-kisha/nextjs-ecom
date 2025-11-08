@@ -183,6 +183,7 @@ export default function BulkUploadPage() {
     const link    = document.createElement("a");
     link.href     = `/uploads/files/sampleCategory.xlsx?t=${Date.now()}`;
     link.download = "Category_Bulk_Upload_Sample.xlsx";
+    document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
