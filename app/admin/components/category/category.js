@@ -311,7 +311,7 @@ const handleUpdateCategory = async (e) => {
     const isValid = await new Promise((resolve) => {
       img.onload = function () {
         if (this.width !== 107 || this.height !== 151) {
-          setUpdateImageError("Image must be exactly 260px width and 240px height");
+          setUpdateImageError("Image must be exactly 107px width and 151px height");
           resolve(false);
         } else {
           resolve(true);
@@ -387,7 +387,7 @@ const handleUpdateImageChange = (e) => {
   
   img.onload = function() {
     if (this.width !== 107 || this.height !== 151) {
-      setUpdateImageError("Image must be exactly 260px width and 240px height");
+      setUpdateImageError("Image must be exactly 107px width and 151px height");
       setCategoryToUpdate(prev => ({ ...prev, image: null }));
     } else {
       setCategoryToUpdate(prev => ({ ...prev, image: file }));
