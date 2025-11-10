@@ -703,21 +703,26 @@ export default function CategoryPage() {
 
       {/* Scroll container */}
       <div
-        ref={scrollRef}
-        className="flex overflow-x-auto scroll-smooth space-x-6 hide-scrollbar py-4"
-        style={{ scrollSnapType: "x mandatory" }}
-      >
+  ref={scrollRef}
+  className={`flex ${
+    categoryData?.categoryTree?.length > 5
+      ? "overflow-x-auto scroll-smooth space-x-6 hide-scrollbar"
+      : "justify-center flex-wrap gap-6"
+  } py-4`}
+  style={{ scrollSnapType: "x mandatory" }}
+>
+
         {categoryData?.categoryTree?.length > 0 ? (
           categoryData.categoryTree.map((subcategory) => (
-            <Link
+          <Link
   key={subcategory._id}
   href={`/category/${slug}/${sub_slug}/${subcategory.category_slug}`}
-  className="flex flex-row items-center flex-shrink-0 w-[310px] h-[270px] border border-gray-200 rounded-xl bg-white hover:-translate-y-1 transition-all duration-300 hover:shadow-lg hover:bg-gray-50 scroll-snap-align-start"
+  className="flex flex-row items-center flex-shrink-0 w-[322px] h-[264px] border border-gray-200 rounded-xl bg-white hover:-translate-y-1 transition-all duration-300 hover:shadow-lg hover:bg-gray-50 scroll-snap-align-start"
 >
   {/* Image section */}
-  <div className="flex justify-center items-center w-[141px] h-full ml-4 flex-shrink-0">
+  <div className="flex justify-center items-center w-[150px] h-full ml-4 flex-shrink-0">
     {subcategory.image ? (
-      <div className="relative w-[160px] h-[160px]">
+      <div className="relative w-[170px] h-[220px] flex items-center justify-center">
         <Image
           src={
             subcategory.image.startsWith("http")
@@ -726,7 +731,7 @@ export default function CategoryPage() {
           }
           alt={subcategory.category_name}
           fill
-          className="object-contain"
+          className="object-contain object-center"
           unoptimized
           onError={(e) => {
             e.target.style.display = "none";
@@ -734,26 +739,23 @@ export default function CategoryPage() {
             if (fallback) fallback.style.display = "block";
           }}
         />
-        <div
-          className="relative w-full h-full"
-          style={{ display: "none" }}
-        >
+        <div className="relative w-full h-full" style={{ display: "none" }}>
           <Image
             src="/no-catimg.png"
             alt="Fallback image"
             fill
-            className="object-contain"
+            className="object-contain object-center"
             unoptimized
           />
         </div>
       </div>
     ) : (
-      <div className="relative w-[140px] h-[140px]">
+      <div className="relative w-[170px] h-[220px] flex items-center justify-center">
         <Image
           src="/no-catimg.png"
           alt="Fallback image"
           fill
-          className="object-contain"
+          className="object-contain object-center"
           unoptimized
         />
       </div>
@@ -761,11 +763,11 @@ export default function CategoryPage() {
   </div>
 
   {/* Content section */}
-  <div className="flex flex-col justify-center text-left px-3 py-6 w-[140px]">
-    <h3 className="text-lg font-bold text-gray-900 mb-2 text-nowrap">
+  <div className="flex flex-col text-left px-3 py-10 w-[150px] h-full">
+    <h3 className="text-lg font-bold text-gray-900 mb-3 text-nowrap">
       {subcategory.category_name}
     </h3>
-    <p className="text-gray-600 text-sm leading-relaxed mb-3 line-clamp-2">
+    <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-2">
       {subcategory.description
         ? subcategory.description
         : "Explore our latest collection"}
@@ -775,6 +777,8 @@ export default function CategoryPage() {
     </button>
   </div>
 </Link>
+
+
 
           ))
         ) : (
