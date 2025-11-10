@@ -705,7 +705,7 @@ export default function CategoryPage() {
       <div
   ref={scrollRef}
   className={`flex ${
-    categoryData?.categoryTree?.length > 5
+    categoryData?.categoryTree?.length > 3
       ? "overflow-x-auto scroll-smooth space-x-6 hide-scrollbar"
       : "justify-center flex-wrap gap-6"
   } py-4`}
