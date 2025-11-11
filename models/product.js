@@ -46,7 +46,10 @@ const ProductSchema = new mongoose.Schema({
   overviewdescription: String,
   product_highlights: {type: [String],default: [],},
   meta_title: { type: String, default: "" }, // Add meta_title field
-  meta_description: { type: String, default: "" }, // Add meta_description field
+  meta_description: { type: String, default: "" }, 
+  category_new: { type: String, default: "" },
+  sub_category_new: { type: String, default: "" },
+  sub_category_new_name: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

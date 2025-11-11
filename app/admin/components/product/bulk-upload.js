@@ -22,8 +22,43 @@ export default function BulkUploadPage() {
   const filterGroupFormRef                                          = useRef(null);
   const filterFormRef                                               = useRef(null);
   const categoryFormRef                                             = useRef(null);
-  
-  
+  const notifiedRef = useRef(false);
+
+  const showToast = (type, message) => {
+    if (notifiedRef.current) return;
+    notifiedRef.current = true;
+    if (type === "success") toast.success(message);
+    else if (type === "error") toast.error(message);
+    else toast.info(message);
+  };
+
+  const resetUploadForm = (opts = {}) => {
+    // clear file states
+    setExcelFile(null);
+    setExcelFileMovement(null);
+    setProductFilterValue(null);
+    setCategoryUpload(null);
+    setImageZip(null);
+    setOverviewZip(null);
+
+    // clear flags and messages
+    setIsLoading(false);
+    setActiveUploadType(null);
+    setIsFilterUploadLoading(false);
+    setIsFilterGroupUploadLoading(false);
+    setMessage("");
+
+    // reset file input elements and forms if refs exist
+    try { overviewFormRef.current?.reset(); } catch(e){}
+    try { movementFormRef.current?.reset(); } catch(e){}
+    try { filterGroupFormRef.current?.reset(); } catch(e){}
+    try { filterFormRef.current?.reset(); } catch(e){}
+    try { categoryFormRef.current?.reset(); } catch(e){}
+    try { filterValueFormRef.current?.reset(); } catch(e){}
+
+    // allow next upload to show a toast
+    notifiedRef.current = false;
+  };
 
   const validateFile = (file, allowedExtensions) => {
     if (!file) return false;
@@ -45,7 +80,7 @@ export default function BulkUploadPage() {
     e.preventDefault();
 
     if (!excelFile || !validateFilterFile(excelFile)) {
-      toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+      showToast("error", "Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
       return;
     }
 
@@ -62,31 +97,24 @@ export default function BulkUploadPage() {
 
       const data = await res.json();
 
+      // Aggregate into one toast message
+      const hasDetails = Array.isArray(data.details) && data.details.length > 0;
       if (res.ok || res.status === 207) {
-        // 207 = partial success
-        toast.success(data.message);
-
-        // show detailed row errors if any
-        if (data.details && data.details.length > 0) {
-          data.details.forEach((error) => {
-            toast.error(`Row ${error.row}: ${error.error}`);
-          });
-        }
-
-        // reset form
-        setExcelFile(null);
-        const fileInput = document.querySelector('input[type="file"]');
-        if (fileInput) fileInput.value = "";
+        const msg = data.message || (hasDetails ? `Upload completed with ${data.details.length} issues.` : "Upload completed successfully.");
+        const toastType = hasDetails ? "info" : "success";
+        showToast(toastType, msg);
       } else {
-        toast.error(data.error || "Upload failed");
+        const msg = data.error || "Upload failed";
+        showToast("error", msg);
       }
 
-      filterFormRef.current?.reset();
-      setExcelFile(null);
+      // ensure form/inputs cleared
+      resetUploadForm();
 
     } catch (err) {
       console.error("Upload error:", err);
-      toast.error("Upload failed. Please try again.");
+      showToast("error", "Upload failed. Please try again.");
+      resetUploadForm();
     } finally {
       setIsFilterUploadLoading(false);
     }
@@ -102,7 +130,7 @@ export default function BulkUploadPage() {
     e.preventDefault();
 
     if (!excelFile || !validateGroupFilterFile(excelFile)) {
-      toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+      showToast("error", "Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
       return;
     }
 
@@ -119,37 +147,23 @@ export default function BulkUploadPage() {
 
       const data = await res.json();
 
+      const hasDetails = Array.isArray(data.details) && data.details.length > 0;
       if (res.ok || res.status === 207) {
-        // 207 means partial success
-        if (res.status === 201) {
-          toast.success(data.message);
-        } else {
-          toast.success(data.message);
-          // Show detailed errors if any
-          if (data.details && data.details.length > 0) {
-            data.details.forEach(error => {
-              toast.error(`Row ${error.row}: ${error.error}`);
-            });
-          }
-        }
-  
-        setExcelFile(null);
-        const fileInput = document.querySelector('input[type="file"]');
-        if (fileInput) fileInput.value = '';
+        const msg = data.message || (hasDetails ? `Upload completed with ${data.details.length} issues.` : "Upload completed successfully.");
+        const toastType = hasDetails ? "info" : "success";
+        showToast(toastType, msg);
       } else {
-        toast.error(data.error || "Upload failed");
+        showToast("error", data.error || "Upload failed");
       }
 
-      filterGroupFormRef.current?.reset();
-      setExcelFile(null);
-
+      resetUploadForm();
     } catch (err) {
-      toast.error("Upload failed. Please try again.");
       console.error("Upload error:", err);
+      showToast("error", "Upload failed. Please try again.");
+      resetUploadForm();
     } finally {
       setIsFilterGroupUploadLoading(false);
     }
-    
   };
 
   const handleFilterGroupSampleDownload = () => {
@@ -190,27 +204,25 @@ export default function BulkUploadPage() {
 
   const handleSubmit = async (e, uploadType) => {
     e.preventDefault();
-
     const form        = e.target;
     const formData    = new FormData(form);
-
     if(uploadType == "overview") {
 
       // Validate required files - only Excel is required now
       if (!excelFile || !validateFile(excelFile, [".xlsx", ".csv"])) {
-        toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+        showToast("error", "Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
         return;
       }
 
       // Validate optional image ZIP file
       if (imageZip && !validateFile(imageZip, [".zip"])) {
-        toast.error("Please upload a valid .zip file for product images.");
+        showToast("error", "Please upload a valid .zip file for product images.");
         return;
       }
 
       // Validate optional Overview ZIP file
       if (overviewZip && !validateFile(overviewZip, [".zip"])) {
-        toast.error("Please upload a valid .zip file for overview images.");
+        showToast("error", "Please upload a valid .zip file for overview images.");
         return;
       }
 
@@ -231,23 +243,22 @@ export default function BulkUploadPage() {
         const data = await response.json();
 
         if (response.ok) {
-          toast.success(data.message);
+          showToast("success", data.message || "Upload completed successfully.");
         } else {
-          toast.error(data.error);
+          showToast("error", data.error || "Upload failed.");
         }
 
-        overviewFormRef.current?.reset();
-        setExcelFile(null);
-        
+        resetUploadForm();
       } catch (error) {
-        toast.error(error);
+        showToast("error", error?.message || String(error) || "Upload failed.");
+        resetUploadForm();
       } finally {
         setIsLoading(false);
       }
 
     }else if (uploadType == "movement") {
       if(!excelFileMovement || !validateFile(excelFileMovement, ['.xlsx', '.csv'])) {
-        toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+        showToast("error", "Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
         return;
       }
     
@@ -265,25 +276,24 @@ export default function BulkUploadPage() {
         const data = await response.json();
   
         if (response.ok) {
-          toast.success(data.message);
+          showToast("success", data.message || "Movement upload completed.");
         } else {
-          toast.error(data.error);
+          showToast("error", data.error || "Movement upload failed.");
         }
 
-        movementFormRef.current?.reset();
-        setExcelFileMovement(null);
-  
+        resetUploadForm();
       }catch (error){
-        toast.error(error);
+        showToast("error", error?.message || String(error) || "Upload failed.");
+        resetUploadForm();
       }finally {
         setIsLoading(false);
-        setActiveUploadType(uploadType);
+        setActiveUploadType(null);
       }
 
     }else if (uploadType == "filter_values") {
 
       if(!productFilterValue || !validateFile(productFilterValue, ['.xlsx', '.csv'])) {
-        toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+        showToast("error", "Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
         return;
       }
 
@@ -301,26 +311,59 @@ export default function BulkUploadPage() {
         const data    = await response.json();
 
         if(response.ok) {
-          toast.success(data.message);
+          showToast("success", data.message || "Filter values uploaded.");
         }else {
-          toast.error(data.error);
+          showToast("error", data.error || "Upload failed.");
         }
 
-        filterValueFormRef.current?.reset();
-        setProductFilterValue(null);
-
+        resetUploadForm();
       }catch(error) {
-        toast.error(error);
+        showToast("error", error?.message || String(error) || "Upload failed.");
+        resetUploadForm();
       }finally {
         setIsLoading(false);
-        setActiveUploadType(uploadType);
+        setActiveUploadType(null);
+      }
+
+    }else if (uploadType == "category_product") {
+      if(!categoryUpload || !validateFile(categoryUpload, ['.xlsx', '.csv'])) {
+        showToast("error", "Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+        return;
+      }
+
+      setIsLoading(true);
+      setActiveUploadType(uploadType);
+      setMessage(null);
+      formData.append("excel", categoryUpload);
+
+      try{
+        const response = await fetch('/api/product/bulk-upload/category', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data    = await response.json();
+
+        if(response.ok) {
+          showToast("success", data.message || "Category product upload completed.");
+        }else {
+          showToast("error", data.error || "Upload failed.");
+        }
+
+        resetUploadForm();
+      }catch(error){
+        showToast("error", error?.message || String(error) || "Upload failed.");
+        resetUploadForm();
+      }finally {
+        setIsLoading(false);
+        setActiveUploadType(null);
       }
 
     }else if (uploadType == "category"){
         // Read and parse the uploaded Excel/CSV on the client,
         // then call the single-category API per row.
         if(!productFilterValue || !validateFile(productFilterValue, ['.xlsx', '.csv'])) {
-          toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+          showToast("error", "Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
           return;
         } 
         
@@ -385,59 +428,179 @@ export default function BulkUploadPage() {
             }
           }
 
-          if (results.added) toast.success(`${results.added} categories added.`);
-          if (results.skipped) toast.info(`${results.skipped} categories skipped (already exist).`);
-          if (results.errors.length) {
-            results.errors.forEach(e => toast.error(`Row ${e.row}: ${e.error}`));
+          // Final aggregated toast: only one toast per attempt
+          if (results.added > 0 && results.errors.length === 0) {
+            showToast("success", `${results.added} categories added.`);
+          } else if (results.added > 0 && results.errors.length > 0) {
+            showToast("info", `${results.added} categories added. ${results.errors.length} rows failed.`);
+          } else if (results.errors.length > 0) {
+            showToast("error", `${results.errors.length} rows failed to add categories.`);
+          } else {
+            showToast("success", "No categories processed.");
           }
 
-          filterValueFormRef.current?.reset();
-          setProductFilterValue(null);
-
+          resetUploadForm();
         } catch (err) {
           console.error("Category bulk upload error:", err);
-          toast.error("Upload failed. " + (err.message || ""));
+          showToast("error", "Upload failed. " + (err.message || ""));
+          resetUploadForm();
         } finally {
           setIsLoading(false);
           setActiveUploadType(null);
         }
-    }else if (uploadType == "category_product") {
-      if(!categoryUpload || !validateFile(categoryUpload, ['.xlsx', '.csv'])) {
-        toast.error("Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
-        return;
-      }
-
-      setIsLoading(true);
-      setActiveUploadType(uploadType);
-      setMessage(null);
-      formData.append("excel", categoryUpload);
-
-      try{
-        const response = await fetch('/api/product/bulk-upload/category', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const data    = await response.json();
-
-        if(response.ok) {
-          toast.success(data.message);
-        }else {
-          toast.error(data.error);
-        }
-
-        categoryFormRef.current?.reset();
-        setCategoryUpload(null);
-
-      }catch(error){
-        toast.error(error);
-      }finally {
-        setIsLoading(false);
+    }else if (uploadType == "map_product_categories"){
+        if(!productFilterValue || !validateFile(productFilterValue, ['.xlsx', '.csv'])) {
+          showToast("error", "Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+          return;
+        } 
+        setIsLoading(true);
         setActiveUploadType(uploadType);
-      }
+        setMessage(null);
+        try {
+          const file = productFilterValue;
+          const name = file.name.toLowerCase();
+          const arrayBuffer = await file.arrayBuffer();
+          const XLSX = await import('xlsx');
+          let rows = [];
+          if (name.endsWith('.csv')) {
+            const csvText = new TextDecoder('utf-8').decode(arrayBuffer);
+            const workbook = XLSX.read(csvText, { type: 'string' });
+            rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          } else {
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          }
+          const results = { added: 0, skipped: 0, errors: [] };
+          for (const [idx, row] of rows.entries()) {
+            const item_code = (row.ItemCode || row.itemno || row.item_no || '').toString().trim();
+            const MappingCategory = (row.MappingCategory || row.mappingcategory || row.mapping_category || '').toString().trim();
+            if (!item_code) {
+              results.errors.push({ row: idx + 2, error: "Missing ItemCode" });
+              continue;
+            }
+           // alert(item_code);
+            const fd = new FormData();
+            fd.append('item_code', item_code);
+            fd.append('MappingCategory', MappingCategory);
+            try {
+               const res = await fetch('/api/product/bulk-upload/product', {
+                method: 'POST',
+                body: fd,
+              });
+              const data = await res.json();
+              if (res.ok) {
+                results.added++;
+              } else {
+                // If server says category exists, count as skipped, otherwise record error
+                const msg = (data && data.error) ? data.error.toString().toLowerCase() : '';
+                if (res.status === 400 && msg.includes('already exists')) {
+                  results.skipped++;
+                } else {
+                  results.errors.push({ row: idx + 2, error: data.error || 'Unknown error' });
+                }
+              }
+            } catch (err) {
+              results.errors.push({ row: idx + 2, error: err.message || 'Network error' });
+            }
+          }
+          // Aggregate messages to a single toast
+          if (results.added > 0 && results.errors.length === 0) {
+            showToast("success", `${results.added} product(s) were mapped to categories.`);
+          } else if (results.added > 0 && results.errors.length > 0) {
+            showToast("info", `${results.added} mapped. ${results.errors.length} failed.`);
+          } else if (results.errors.length > 0) {
+            showToast("error", `${results.errors.length} rows failed to map.`);
+          } else {
+            showToast("info", "No rows processed.");
+          }
 
+          resetUploadForm();
+        } catch (err) {
+          console.error("Bulk upload error:", err);
+          showToast("error", "Upload failed. " + (err.message || ""));
+          resetUploadForm();
+        } finally {
+          setIsLoading(false);
+          setActiveUploadType(null);
+        }
+    }else if (uploadType == "map_product_brands"){
+        if(!productFilterValue || !validateFile(productFilterValue, ['.xlsx', '.csv'])) {
+          showToast("error", "Please upload a valid Excel (.xlsx) or CSV (.csv) file.");
+          return;
+        } 
+        setIsLoading(true);
+        setActiveUploadType(uploadType);
+        setMessage(null);
+        try {
+          const file = productFilterValue;
+          const name = file.name.toLowerCase();
+          const arrayBuffer = await file.arrayBuffer();
+          const XLSX = await import('xlsx');
+          let rows = [];
+          if (name.endsWith('.csv')) {
+            const csvText = new TextDecoder('utf-8').decode(arrayBuffer);
+            const workbook = XLSX.read(csvText, { type: 'string' });
+            rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          } else {
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          }
+          const results = { added: 0, skipped: 0, errors: [] };
+          for (const [idx, row] of rows.entries()) {
+            const item_code = (row.ItemCode || row.itemno || row.item_no || '').toString().trim();
+            const BrandCode = (row.BrandCode || row.brandcode || row.brand_code || '').toString().trim();
+            if (!item_code) {
+              results.errors.push({ row: idx + 2, error: "Missing ItemCode" });
+              continue;
+            }
+           // alert(item_code);
+            const fd = new FormData();
+            fd.append('item_code', item_code);
+            fd.append('BrandCode', BrandCode);
+            try {
+               const res = await fetch('/api/product/bulk-upload/brand', {
+                method: 'POST',
+                body: fd,
+              });
+              const data = await res.json();
+              if (res.ok) {
+                results.added++;
+              } else {
+                // If server says category exists, count as skipped, otherwise record error
+                const msg = (data && data.error) ? data.error.toString().toLowerCase() : '';
+                if (res.status === 400 && msg.includes('already exists')) {
+                  results.skipped++;
+                } else {
+                  results.errors.push({ row: idx + 2, error: data.error || 'Unknown error' });
+                }
+              }
+            } catch (err) {
+              results.errors.push({ row: idx + 2, error: err.message || 'Network error' });
+            }
+          }
+          // Aggregate messages to a single toast
+          if (results.added > 0 && results.errors.length === 0) {
+            showToast("success", `${results.added} product(s) were mapped to categories.`);
+          } else if (results.added > 0 && results.errors.length > 0) {
+            showToast("info", `${results.added} mapped. ${results.errors.length} failed.`);
+          } else if (results.errors.length > 0) {
+            showToast("error", `${results.errors.length} rows failed to map.`);
+          } else {
+            showToast("info", "No rows processed.");
+          }
+
+          resetUploadForm();
+        } catch (err) {
+          console.error("Bulk upload error:", err);
+          showToast("error", "Upload failed. " + (err.message || ""));
+          resetUploadForm();
+        } finally {
+          setIsLoading(false);
+          setActiveUploadType(null);
+        }
     }
-
   };
 
   const handleDownload = () => {
@@ -478,8 +641,17 @@ export default function BulkUploadPage() {
   
   const handleDownloadProductCategoryValues = () => {
     const link = document.createElement('a');
-    link.href = `/uploads/files/SampleFormatProductCategoryValues.xlsx?t=${Date.now()}`;
-    link.download = 'SampleFormatProductCategoryValues.xlsx';
+    link.href = `/uploads/files/UpdatingProductCategoriesSample.xlsx?t=${Date.now()}`;
+    link.download = 'UpdatingProductCategoriesSample.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const handleDownloadProductBrandsValues = () => {
+    const link = document.createElement('a');
+    link.href = `/uploads/files/UpdatingProductBrandsSample.xlsx?t=${Date.now()}`;
+    link.download = 'UpdatingProductBrandsSample.xlsx';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -492,7 +664,6 @@ export default function BulkUploadPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Bulk Product Upload</h1>
           <p className="text-gray-600">Upload products in bulk using Excel/CSV and ZIP files</p>
         </div>
-
         <form ref={overviewFormRef} onSubmit={(e) => handleSubmit(e, "overview")} className="bg-white rounded-xl shadow-lg overflow-hidden p-6 space-y-8">
           <Link
             href="/admin/product/status_bulk"
@@ -607,7 +778,6 @@ export default function BulkUploadPage() {
             </button>
           </div>
         </form>
-
         <form onSubmit={handleSubmit} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           {/* Filter Bulk Upload section */}
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
@@ -680,7 +850,6 @@ export default function BulkUploadPage() {
             </div>
           </div>
         </form>
-
         <form onSubmit={handleSubmit} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
@@ -751,7 +920,6 @@ export default function BulkUploadPage() {
             </div>
           </div>
         </form>
-
         <form ref={movementFormRef} onSubmit={(e) => handleSubmit(e, "movement")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           {/* Bulk UPload Movement Section */}
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
@@ -798,7 +966,6 @@ export default function BulkUploadPage() {
 
           </div>
         </form>
-
         <form ref={filterValueFormRef} onSubmit={(e) => handleSubmit(e, "filter_values")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
@@ -844,7 +1011,51 @@ export default function BulkUploadPage() {
 
           </div>
         </form>
+        {/*<form ref={categoryFormRef} onSubmit={(e) => handleSubmit(e, "category_product")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
+          <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
+            <div className="mb-4">
+              <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Category Bulk Upload</h2>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Excel/CSV File
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Upload your Category file</p>
+            </div>
+            <div className="space-y-4">
+              <input type="file" accept=".xlsx,.csv" onChange={(e) => setCategoryUpload(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100" required />
+            </div>
 
+            <button type="button" onClick={handleDownloadCategories} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download Sample Format
+            </button>
+          </div>
+
+          <div className="flex mt-5 justify-between">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-[#3B82F6] hover:bg-[#3B82F6] text-white px-3 py-2 rounded-md flex items-center gap-2"
+            >
+              {isLoading && activeUploadType == "category_product" ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Uploading...
+                </span>
+              ) : (
+                'Upload Category'
+              )}
+            </button>
+
+          </div>
+        </form> */}
         <form ref={filterValueFormRef} onSubmit={(e) => handleSubmit(e, "category")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
@@ -890,24 +1101,23 @@ export default function BulkUploadPage() {
 
           </div>
         </form>
-
-        <form ref={categoryFormRef} onSubmit={(e) => handleSubmit(e, "category_product")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
+        <form ref={filterValueFormRef} onSubmit={(e) => handleSubmit(e, "map_product_categories")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
           <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
             <div className="mb-4">
-              <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Category Bulk Upload</h2>
+              <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Upload For Updating Product Categories </h2>
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Excel/CSV File
               </h3>
-              <p className="text-sm text-gray-500 mt-1">Upload your Category file</p>
+              <p className="text-sm text-gray-500 mt-1">Please upload the product category fields along with their corresponding values for updating.</p>
             </div>
             <div className="space-y-4">
-              <input type="file" accept=".xlsx,.csv" onChange={(e) => setCategoryUpload(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100" required />
+              <input type="file" accept=".xlsx,.csv" onChange={(e) => setProductFilterValue(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100" required />
             </div>
 
-            <button type="button" onClick={handleDownloadCategories} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
+            <button type="button" onClick={handleDownloadProductCategoryValues} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
@@ -921,7 +1131,7 @@ export default function BulkUploadPage() {
               disabled={isLoading}
               className="bg-[#3B82F6] hover:bg-[#3B82F6] text-white px-3 py-2 rounded-md flex items-center gap-2"
             >
-              {isLoading && activeUploadType == "category_product" ? (
+              {isLoading && activeUploadType == "filter_values" ? (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -930,13 +1140,58 @@ export default function BulkUploadPage() {
                   Uploading...
                 </span>
               ) : (
-                'Upload Category'
+                'Upload Product Categories'
               )}
             </button>
 
           </div>
         </form>
+        
+        <form ref={filterValueFormRef} onSubmit={(e) => handleSubmit(e, "map_product_brands")} className="bg-white rounded-xl mt-6 shadow-lg overflow-hidden p-6 space-y-8">
+          <div className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
+            <div className="mb-4">
+              <h2 className="text-md font-semibold text-blue-600 mb-6 border-b pb-2">Upload For Updating Product Brands </h2>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Excel/CSV File
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Please upload the product brand fields along with their corresponding values for updating.</p>
+            </div>
+            <div className="space-y-4">
+              <input type="file" accept=".xlsx,.csv" onChange={(e) => setProductFilterValue(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-red-100" required />
+            </div>
 
+            <button type="button" onClick={handleDownloadProductBrandsValues} className="inline-flex items-center pt-5 text-sm text-blue-600 hover:text-blue-800 transition-colors" >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download Sample Format
+            </button>
+          </div>
+
+          <div className="flex mt-5 justify-between">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-[#3B82F6] hover:bg-[#3B82F6] text-white px-3 py-2 rounded-md flex items-center gap-2"
+            >
+              {isLoading && activeUploadType == "filter_values" ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Uploading...
+                </span>
+              ) : (
+                'Upload Product Categories'
+              )}
+            </button>
+
+          </div>
+        </form>
         <ToastContainer position="top-right" autoClose={5000} />
       </div>
     </div>
