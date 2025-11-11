@@ -1303,40 +1303,45 @@ console.log("Fetched products:", products);
                           {/* Title with fixed height */}
                           <Link
                             href={`/product/${product.slug}`}
-                            className="block mb-2"
+                            className="block mb-1"
                             onClick={() => handleProductClick(product)}
                           >
                            <h3 className="text-xs sm:text-sm font-medium text-[#0069c6] hover:text-[#00badb]  line-clamp-2 min-h-[3rem] sm:min-h-[2.5rem] leading-tight">
-                  {/* {product.name} */}
-                  {window.innerWidth < 540 && product.name.length > 140 ? product.name.slice(0, 100) + "..." : product.name}
-                </h3>
+                            {/* {product.name} */}
+                            {window.innerWidth < 540 && product.name.length > 140 ? product.name.slice(0, 100) + "..." : product.name}
+                          </h3>
                           </Link>
        
                           {/* Price Row (same level always) */}
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-base font-semibold text-red-600">
-                              ₹ {(
-                                product.special_price &&
-                                product.special_price > 0 &&
-                                product.special_price != '0' &&
-                                product.special_price != 0 &&
-                                product.special_price < product.price
-                                  ? Math.round(product.special_price)
-                                  : Math.round(product.price)
-                              ).toLocaleString()}
-                            </span>
-      
-                            {product.special_price > 0 &&
-                              product.special_price != '0' &&
-                              product.special_price != 0 &&
-                              product.special_price &&
-                              product.special_price < product.price && (
-                                <span className="text-xs text-gray-500 line-through">
-                                  ₹ {Math.round(product.price).toLocaleString()}
+                          <div className="mb-3">
+                           {product.model_number && (
+                              <div className="bg-gray-100 rounded-md inline-block mb-2">
+                                <span className="text-sm font-semibold text-gray-700 tracking-wide">
+                                  Model: <span className="text-[#0069c6]">({product.model_number})</span>
                                 </span>
+                              </div>
                             )}
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-base font-semibold text-red-600">
+                                ₹ {(
+                                  product.special_price &&
+                                  product.special_price > 0 &&
+                                  product.special_price !== '0' &&
+                                  product.special_price < product.price
+                                    ? Math.round(product.special_price)
+                                    : Math.round(product.price)
+                                ).toLocaleString()}
+                              </span>
+
+                              {product.special_price > 0 &&
+                                product.special_price !== '0' &&
+                                product.special_price < product.price && (
+                                  <span className="text-xs text-gray-500 line-through">
+                                    ₹ {Math.round(product.price).toLocaleString()}
+                                  </span>
+                              )}
+                            </div>
                           </div>
-      
                           <h4 className={`text-xs mb-3 ${product.stock_status === "In Stock" && product.quantity ? "text-green-600" : "text-red-600"}`}>
                             {product.stock_status === "In Stock" && product.quantity ? ` ${product.stock_status}` : "Out Of Stock"}
                             {product.stock_status === "In Stock" && product.quantity ? `, ${product.quantity} units` : ""}
