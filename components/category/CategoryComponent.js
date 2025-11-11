@@ -1337,31 +1337,34 @@ export default function CategoryPage() {
               </Link>
 
               {/* Price Row */}
-              <div className="flex items-center gap-2 mb-3">
-                {Number(product.special_price) > Number(product.price) ? (
-                  <span className="text-base font-semibold text-red-600">
-                    ₹ {Math.round(product.special_price).toLocaleString()}
-                  </span>
-                ) : (
-                  <>
-                    <span className="text-base font-semibold text-red-600">
-                      ₹ {(
-                        product.special_price &&
-                        product.special_price > 0 &&
-                        product.special_price < product.price
-                          ? Math.round(product.special_price)
-                          : Math.round(product.price)
-                      ).toLocaleString()}
+              <div className="mb-3">
+                {product.model_number && (
+                  <div className="bg-gray-100 rounded-md inline-block mb-2">
+                    <span className="text-sm font-semibold text-gray-700 tracking-wide">
+                      Model: <span className="text-[#0069c6]">({product.model_number})</span>
                     </span>
-
-                    {product.special_price > 0 &&
-                      product.special_price < product.price && (
-                        <span className="text-xs text-gray-500 line-through">
-                          ₹ {Math.round(product.price).toLocaleString()}
-                        </span>
-                    )}
-                  </>
+                  </div>
                 )}
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-base font-semibold text-red-600">
+                    ₹ {(
+                      product.special_price &&
+                      product.special_price > 0 &&
+                      product.special_price !== '0' &&
+                      product.special_price < product.price
+                        ? Math.round(product.special_price)
+                        : Math.round(product.price)
+                    ).toLocaleString()}
+                  </span>
+
+                  {product.special_price > 0 &&
+                    product.special_price !== '0' &&
+                    product.special_price < product.price && (
+                      <span className="text-xs text-gray-500 line-through">
+                        ₹ {Math.round(product.price).toLocaleString()}
+                      </span>
+                  )}
+                </div>
               </div>
 
               <h4 className={`text-xs mb-3 ${product.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
