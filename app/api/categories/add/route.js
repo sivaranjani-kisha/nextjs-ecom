@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/db";
 import Category from "@/models/ecom_category_info";
+import CategoryFilter from "@/models/ecom_categoryfilters_infos"; // Import the filter model
 import { NextResponse } from "next/server";
 import md5 from "md5";
 import { writeFile } from "fs/promises";
@@ -24,6 +25,7 @@ export async function POST(req) {
     const status = formData.get("status") || "Active";
     const show_on_home = formData.get("show_on_home") || "No";
     const file = formData.get("image");
+    const selectedFilters = formData.get("selectedFilters"); // Get selected filters
 
     if (!category_name) {
       return NextResponse.json({ error: "Category name is required" }, { status: 400 });
@@ -32,77 +34,70 @@ export async function POST(req) {
     let category_slug = convertSlug(category_name);
     let md5_cat_name = md5(category_slug);
 
-if (parentid === "none") {
-  const getParentCategory = await Category.findOne({ category_name: parentid_new });
-  parentid = getParentCategory ? getParentCategory._id : "none";
-} else {
-  if (parentid.includes(">")) {
-    // Example: "Electronics>Mobiles>Samsung"
-    const parts = parentid.split(">").map(p => p.trim()).filter(Boolean);
-    let foundParent = null;
+    if (parentid === "none") {
+      const getParentCategory = await Category.findOne({ category_name: parentid_new });
+      parentid = getParentCategory ? getParentCategory._id : "none";
+    } else {
+      if (parentid.includes(">")) {
+        // Example: "Electronics>Mobiles>Samsung"
+        const parts = parentid.split(">").map(p => p.trim()).filter(Boolean);
+        let foundParent = null;
 
-    for (let i = 0; i < parts.length; i++) {
-      const query = i === 0
-        ? { category_name: parts[i] }
-        : { category_name: parts[i], parentid: foundParent?._id };
+        for (let i = 0; i < parts.length; i++) {
+          const query = i === 0
+            ? { category_name: parts[i] }
+            : { category_name: parts[i], parentid: foundParent?._id };
 
-      const categoryLevel = await Category.findOne(query);
+          const categoryLevel = await Category.findOne(query);
 
-      if (!categoryLevel) {
-        // Stop search if not found
-        foundParent = null;
-        break;
+          if (!categoryLevel) {
+            // Stop search if not found
+            foundParent = null;
+            break;
+          }
+
+          foundParent = categoryLevel; // Keep last valid match
+        }
+
+        parentid = foundParent ? foundParent._id : md5_cat_name;
+      } else {
+        // Single level
+        const getParentCategory = await Category.findOne({ category_name: parentid });
+        parentid = getParentCategory ? getParentCategory._id : md5_cat_name;
       }
-
-      foundParent = categoryLevel; // Keep last valid match
     }
 
-    parentid = foundParent ? foundParent._id : md5_cat_name;
-  } else {
-    // Single level
-    const getParentCategory = await Category.findOne({ category_name: parentid });
-    parentid = getParentCategory ? getParentCategory._id : md5_cat_name;
-  }
-}
+    if (parentid_new === "none") {
+      const getParentCategory = await Category.findOne({ category_name: parentid_new });
+      parentid_new = getParentCategory ? getParentCategory.md5_cat_name : "none";
+    } else {
+      if (parentid_new.includes(">")) {
+        // Example: "Gadgets>Item1>Subitem"
+        const parts = parentid_new.split(">").map(p => p.trim()).filter(Boolean);
+        let foundParent = null;
 
+        for (let i = 0; i < parts.length; i++) {
+          const query = i === 0
+            ? { category_name: parts[i] }
+            : { category_name: parts[i], parentid_new: foundParent?.md5_cat_name };
 
+          const categoryLevel = await Category.findOne(query);
 
+          if (!categoryLevel) {
+            foundParent = null;
+            break;
+          }
 
+          foundParent = categoryLevel;
+        }
 
-
-
-if (parentid_new === "none") {
-  const getParentCategory = await Category.findOne({ category_name: parentid_new });
-  parentid_new = getParentCategory ? getParentCategory.md5_cat_name : "none";
-} else {
-  if (parentid_new.includes(">")) {
-    // Example: "Gadgets>Item1>Subitem"
-    const parts = parentid_new.split(">").map(p => p.trim()).filter(Boolean);
-    let foundParent = null;
-
-    for (let i = 0; i < parts.length; i++) {
-      const query = i === 0
-        ? { category_name: parts[i] }
-        : { category_name: parts[i], parentid_new: foundParent?.md5_cat_name };
-
-      const categoryLevel = await Category.findOne(query);
-
-      if (!categoryLevel) {
-        foundParent = null;
-        break;
+        parentid_new = foundParent ? foundParent.md5_cat_name : md5_cat_name;
+      } else {
+        // Single-level category name
+        const getParentCategory = await Category.findOne({ category_name: parentid_new });
+        parentid_new = getParentCategory ? getParentCategory.md5_cat_name : md5_cat_name;
       }
-
-      foundParent = categoryLevel;
     }
-
-    parentid_new = foundParent ? foundParent.md5_cat_name : md5_cat_name;
-  } else {
-    // Single-level category name
-    const getParentCategory = await Category.findOne({ category_name: parentid_new });
-    parentid_new = getParentCategory ? getParentCategory.md5_cat_name : md5_cat_name;
-  }
-}
-
 
     // Check if category already exists
     let existingCategory = await Category.findOne({
@@ -165,10 +160,43 @@ if (parentid_new === "none") {
     });
 
     await newCategory.save();
-    return NextResponse.json({ message: "Category added successfully", category: newCategory }, { status: 201 });
+
+    // HANDLE FILTERS FOR NEW CATEGORY
+    let filterIds = [];
+    if (selectedFilters) {
+      try {
+        filterIds = JSON.parse(selectedFilters);
+        console.log(`Adding ${filterIds.length} filters for new category ${newCategory._id}:`, filterIds);
+        
+        if (filterIds.length > 0) {
+          const filterPromises = filterIds.map(filterId => 
+            CategoryFilter.create({
+              filter_id: filterId,
+              category_id: newCategory._id
+            })
+          );
+          await Promise.all(filterPromises);
+          console.log(`Successfully added ${filterIds.length} filters for category ${newCategory._id}`);
+        }
+      } catch (error) {
+        console.error("Error adding filters:", error);
+        // Don't fail the entire creation if filters fail, just log it
+      }
+    } else {
+      console.log("No filters selected for new category");
+    }
+
+    return NextResponse.json({ 
+      message: "Category added successfully", 
+      category: newCategory,
+      filtersAdded: filterIds.length 
+    }, { status: 201 });
 
   } catch (error) {
     console.error("Error adding category:", error);
-    return NextResponse.json({ error: "Failed to add category", details: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to add category", 
+      details: error.message 
+    }, { status: 500 });
   }
 }

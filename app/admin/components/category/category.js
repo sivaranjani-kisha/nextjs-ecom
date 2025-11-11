@@ -4,10 +4,25 @@ import React, { useEffect, useState, useMemo } from "react";
 import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
 import { Icon } from '@iconify/react';
 import DateRangePicker from '@/components/DateRangePicker';
+import dynamic from 'next/dynamic';
 import Link from "next/link";
+import { components } from "react-select";
+import { Check } from "react-feather";
+const Select = dynamic(() => import('react-select'), { ssr: false });
+
+// ✅ Custom Option with tick symbol
+const CustomOption = (props) => (
+  <components.Option {...props}>
+    <div className="flex items-center justify-between">
+      <span>{props.label}</span>
+      {props.isSelected && <Check size={16} className="text-green-600" />}
+    </div>
+  </components.Option>
+);
 export default function CategoryComponent() {
   const [categories, setCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [filters, setFilters] = useState([]);
   const [showUpdateAlert, setShowUpdateAlert] = useState(false);
 const [updateAlertMessage, setUpdateAlertMessage] = useState('');
 const [updateErrorMessage, setUpdateErrorMessage] = useState("");
@@ -24,6 +39,7 @@ const [updateImageError, setUpdateImageError] = useState("");
     status: "Active",
     image: null,
     navImage: null,
+    selectedFilters: [],
   });
   const [categoryToUpdate, setCategoryToUpdate] = useState({
     _id: "",
@@ -34,6 +50,8 @@ const [updateImageError, setUpdateImageError] = useState("");
     existingImage: null,
     navImage: null,
     existingNavImage: null,
+    selectedFilters: [],
+    existingFilters: [],
   });
 const [errorMessage, setErrorMessage] = useState("");
   const [dateFilter, setDateFilter] = useState({
@@ -70,9 +88,131 @@ const [errorMessage, setErrorMessage] = useState("");
     }
   };
 
+   // Fetch filters from API - same as product page
+  const fetchFilter = async () => {
+    try {
+      const response = await fetch("/api/filter");
+      const result = await response.json();
+
+      if (result.error) {
+        console.error("Error fetching filters:", result.error);
+        return;
+      }
+
+      const data = result.data;
+
+      // Group filters by filter_group name
+      const groupedFilters = {};
+
+      data.forEach((filter) => {
+        const groupName = filter.filter_group_name || "Other Filters";
+        if (!groupedFilters[groupName]) groupedFilters[groupName] = [];
+
+        groupedFilters[groupName].push({
+          value: filter._id,
+          label: filter.filter_name,
+        });
+      });
+
+      // Convert grouped data into format React-Select can understand
+      const filterOptions = Object.entries(groupedFilters).map(([group, options]) => ({
+        label: group,
+        options,
+      }));
+
+      setFilters(filterOptions);
+    } catch (error) {
+      console.error("Error fetching filters:", error.message);
+    }
+  };
+
+  // Add this function after your fetchFilter function
+const fetchCategoryFilters = async (categoryId) => {
+  try {
+    console.log("Fetching filters for category:", categoryId);
+    
+    const response = await fetch(`/api/categories/filters?categoryId=${categoryId}`);
+    const result = await response.json();
+    
+    console.log("API Response:", result);
+    
+    let selectedFilterObjects = [];
+    
+    if (result.success && result.filters && result.filters.length > 0) {
+      console.log("Raw filter IDs from DB:", result.filters);
+      
+      // Flatten all filter options from grouped filters
+      const allFilterOptions = filters.flatMap(group => group.options || []);
+      console.log("Available filter options:", allFilterOptions);
+      
+      // Find the filter objects that match the filter IDs from database
+      selectedFilterObjects = allFilterOptions.filter(option => 
+        result.filters.includes(option.value)
+      );
+      
+      console.log("Selected filter objects:", selectedFilterObjects);
+    } else {
+      console.log("No filters found for this category");
+    }
+    
+    return selectedFilterObjects;
+  } catch (error) {
+    console.error("Error fetching category filters:", error);
+    return [];
+  }
+};
+
   useEffect(() => {
     fetchCategories();
+    fetchFilter();
   }, []);
+
+  // When opening update modal, populate existing filters
+    // When opening update modal, populate existing filters
+const handleEditClick = async (category) => {
+  try {
+    console.log("Opening edit modal for category:", category._id, category.category_name);
+    
+    // First set the basic category data
+    setCategoryToUpdate({
+      ...category,
+      existingImage: category.image || null,
+      existingNavImage: category.navImage || null,
+      selectedFilters: [], // Initialize as empty
+      existingFilters: [],
+    });
+    
+    setIsUpdateModalOpen(true);
+    
+    // Then fetch and set the filters asynchronously
+    const existingFilters = await fetchCategoryFilters(category._id);
+    console.log("Setting filters for update:", existingFilters);
+    
+    setCategoryToUpdate(prev => ({
+      ...prev,
+      selectedFilters: existingFilters,
+      existingFilters: existingFilters,
+    }));
+    
+  } catch (error) {
+    console.error("Error in handleEditClick:", error);
+    // Ensure modal opens even if filters fail
+    if (!isUpdateModalOpen) {
+      setIsUpdateModalOpen(true);
+    }
+  }
+};
+  
+    // Handle filter selection for new category
+    const handleFilterChange = (selectedOptions) => {
+      setNewCategory({ ...newCategory, selectedFilters: selectedOptions });
+    };
+  
+    // Handle filter selection for update category
+    const handleUpdateFilterChange = (selectedOptions) => {
+      setCategoryToUpdate({ ...categoryToUpdate, selectedFilters: selectedOptions });
+    };
+  
 
   // Toggle subcategories
   const toggleCategory = (categoryId) => {
@@ -168,6 +308,11 @@ if (!file) {
   formData.append("parentid", newCategory.parentid);
   formData.append("status", newCategory.status);
   formData.append("image", newCategory.image);
+
+   // Send selected filters as JSON string
+    formData.append("selectedFilters", JSON.stringify(
+      newCategory.selectedFilters.map(filter => filter.value)
+    ));
 
   // Only append image if provided
 if (newCategory.image) {
@@ -302,6 +447,11 @@ const handleUpdateCategory = async (e) => {
   formData.append("category_name", trimmedCategoryName);
   formData.append("parentid", categoryToUpdate.parentid);
   formData.append("status", categoryToUpdate.status);
+
+  // Send selected filters as JSON string
+    formData.append("selectedFilters", JSON.stringify(
+      categoryToUpdate.selectedFilters.map(filter => filter.value)
+    ));
 
   // Check if a new image is being uploaded
   if (categoryToUpdate.image instanceof File) {
@@ -614,14 +764,7 @@ const handleUpdateNavImageChange = async (e) => {
         <td>
           <div className="flex items-center gap-2 justify-center">
             <button
-              onClick={() => {
-                setCategoryToUpdate({
-                  ...category,
-                  existingImage: category.image || null,
-                  existingNavImage: category.navImage || null,
-                });
-                setIsUpdateModalOpen(true);
-              }}
+             onClick={() => handleEditClick(category)}
               className="w-7 h-7 bg-red-100 text-red-600 rounded-full inline-flex items-center justify-center"
               title="Edit"
             >
@@ -858,20 +1001,20 @@ const handleUpdateNavImageChange = async (e) => {
 
               <div>
                  <label htmlFor="category_name" className="block mb-1 text-sm font-semibold text-gray-700">
-    Category Name
-  </label>
-  <input
-    name="category_name"
-    value={newCategory.category_name}
-    onChange={handleInputChange}
-    id="category_name"
-    className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
-    placeholder="Enter Category Name"
-    required
-  />
-  {errorMessage && (
-    <p className="text-red-500 text-sm mt-1">{errorMessage}</p>
-  )}
+              Category Name
+            </label>
+            <input
+              name="category_name"
+              value={newCategory.category_name}
+              onChange={handleInputChange}
+              id="category_name"
+              className="w-full rounded-md border p-2 focus:ring-2 focus:ring-red-400"
+              placeholder="Enter Category Name"
+              required
+            />
+            {errorMessage && (
+              <p className="text-red-500 text-sm mt-1">{errorMessage}</p>
+            )}
               </div>
 
               <div>
@@ -894,20 +1037,20 @@ const handleUpdateNavImageChange = async (e) => {
               </div>
 
               <div>
-                <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image (260px X 240px) - Optional</label>
+                <label className="block mb-1 text-sm font-semibold text-gray-700">Upload Image (107px X 151px) - Optional</label>
               <input
-    type="file"
-    onChange={handleImageChange}
-    className="block w-full text-sm text-gray-600
-      file:mr-3 file:py-1 file:px-3
-      file:rounded-md file:border-0
-      file:text-sm file:font-semibold
-      file:bg-red-50 file:text-red-700
-      hover:file:bg-red-100"
-  />
-  {imageError && (
-    <p className="text-red-500 text-sm mt-1">{imageError}</p>
-  )}
+                  type="file"
+                  onChange={handleImageChange}
+                  className="block w-full text-sm text-gray-600
+                    file:mr-3 file:py-1 file:px-3
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-red-50 file:text-red-700
+                    hover:file:bg-red-100"
+                />
+                {imageError && (
+                  <p className="text-red-500 text-sm mt-1">{imageError}</p>
+                )}
                 {imagePreview && (
                   <img
                     src={imagePreview}
@@ -932,6 +1075,40 @@ const handleUpdateNavImageChange = async (e) => {
                     hover:file:bg-red-100"
                 />
               </div>
+               {/* Filter Selection for Update - EXACTLY LIKE PRODUCT PAGE */}
+                             <div className="border p-4 rounded">
+  <label className="block text-sm font-medium text-gray-700 mb-2">Filters</label>
+  <Select
+    options={filters}
+    isMulti
+    hideSelectedOptions={false}
+    closeMenuOnSelect={false}
+    components={{ Option: CustomOption }}
+    value={newCategory.selectedFilters} 
+    onChange={handleFilterChange} 
+    placeholder="Select filters..."
+    styles={{
+      groupHeading: (base) => ({
+        ...base,
+        backgroundColor: '#f3f4f6',
+        color: '#1f2937',
+        fontWeight: 600,
+        padding: '8px 12px',
+        borderBottom: '1px solid #e5e7eb',
+        borderRadius: '4px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+      }),
+      option: (base, state) => ({
+        ...base,
+        backgroundColor: state.isSelected ? '#e6f4ea' : state.isFocused ? '#f9fafb' : 'white',
+        color: '#111827',
+        fontWeight: state.isSelected ? 600 : 400,
+      }),
+    }}
+  />
+</div>
+              
 
               <div>
                 <label htmlFor="status" className="block mb-1 text-sm font-semibold text-gray-700">
@@ -1044,7 +1221,7 @@ const handleUpdateNavImageChange = async (e) => {
           {/* Image Upload */}
           <div>
             <label className="block mb-1 text-sm font-semibold text-gray-700">
-              Upload Image (260px X 240px)
+              Upload Image (107px X 151px)
             </label>
             <input
               type="file"
@@ -1110,6 +1287,39 @@ const handleUpdateNavImageChange = async (e) => {
               </div>
             )}
           </div>
+          {/* Filter Selection for Update - EXACTLY LIKE PRODUCT PAGE */}
+                          <div className="border p-4 rounded">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Filters</label>
+                            <Select
+                              options={filters}
+                              isMulti
+                              hideSelectedOptions={false}
+                              closeMenuOnSelect={false}
+                              components={{ Option: CustomOption }}
+                              value={categoryToUpdate.selectedFilters}
+                              onChange={handleUpdateFilterChange}
+                              placeholder="Select filters..."
+                              styles={{
+                                groupHeading: (base) => ({
+                                  ...base,
+                                  backgroundColor: '#f3f4f6',
+                                  color: '#1f2937',
+                                  fontWeight: 600,
+                                  padding: '8px 12px',
+                                  borderBottom: '1px solid #e5e7eb',
+                                  borderRadius: '4px',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px',
+                                }),
+                                option: (base, state) => ({
+                                  ...base,
+                                  backgroundColor: state.isSelected ? '#e6f4ea' : state.isFocused ? '#f9fafb' : 'white',
+                                  color: '#111827',
+                                  fontWeight: state.isSelected ? 600 : 400,
+                                }),
+                              }}
+                            />
+                          </div>
 
           {/* Status */}
           <div>
