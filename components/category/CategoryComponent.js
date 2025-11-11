@@ -1330,7 +1330,7 @@ export default function CategoryPage() {
                                 Model: <span className="text-[#0069c6]">({product.model_number})</span>
                               </span>
                             </div>
-                          )}
+                          )}   
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-base font-semibold text-red-600">
                               ₹ {(

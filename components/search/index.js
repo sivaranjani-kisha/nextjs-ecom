@@ -881,7 +881,7 @@ const MAX = priceRange[1] || 100000;
                       </Link>
                       
                           <div className="mb-3">
-                           {product.model_number && (
+                           {product.model_number && ( 
                               <div className="bg-gray-100 rounded-md inline-block mb-2">
                                 <span className="text-sm font-semibold text-gray-700 tracking-wide">
                                   Model: <span className="text-[#0069c6]">({product.model_number})</span>
