@@ -308,6 +308,13 @@ const CategoryProducts = () => {
                                          </Link>
  
                                          {/* Price */}
+                                         {product.model_number && (
+                                          <div className="bg-gray-100 rounded-md inline-block mb-2">
+                                            <span className="text-sm font-semibold text-gray-700 tracking-wide">
+                                              Model: <span className="text-[#0069c6]">({product.model_number})</span>
+                                            </span>
+                                          </div>
+                                        )}
                                          <div className="flex items-center gap-2 mb-2 sm:mb-3">
                                            <span className="text-sm sm:text-base font-semibold text-red-600">
                                              ₹ {(product.special_price > 0 && product.special_price < product.price
